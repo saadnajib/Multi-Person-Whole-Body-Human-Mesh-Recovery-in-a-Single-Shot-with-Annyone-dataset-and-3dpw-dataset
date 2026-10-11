@@ -27,22 +27,7 @@
 #SBATCH --error=logs/train_distill_vits_v8_final_%j.err
 
 COMMAND=$(cat <<'EOF'
-source /netscratch/najib/miniconda3/etc/profile.d/conda.sh
-conda activate multihmr
-
-export HF_HOME="/netscratch/najib/hf_cache"
-export TORCH_HOME="/netscratch/najib/torch_cache"
-export TORCH_EXTENSIONS_DIR="/netscratch/najib/torch_extensions"
-export XDG_CACHE_HOME="/netscratch/najib/.cache"
-mkdir -p $HF_HOME $TORCH_HOME $TORCH_EXTENSIONS_DIR $XDG_CACHE_HOME
-mkdir -p /netscratch/najib/anny_cache "$HOME/.cache"
-[ -e "$HOME/.cache/anny" ] || ln -sfn /netscratch/najib/anny_cache "$HOME/.cache/anny"
-
-cd /netscratch/najib/multi-hmr
-export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
-
-python -c "import torch; torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14', pretrained=False)" || true
-find /netscratch/najib/torch_cache/hub/facebookresearch_dinov2_main/dinov2 -name "*.py" -exec sed -i 's/ | None//g' {} +
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 
 # Refuse to run on an unpatched train.py - the flags would be silently ignored
 # by argparse and the run would be a repeat of v2.

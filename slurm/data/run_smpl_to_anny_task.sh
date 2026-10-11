@@ -61,13 +61,8 @@ fi
 
 COMMAND=$(cat <<EOF
 set -uo pipefail
-source /netscratch/najib/miniconda3/etc/profile.d/conda.sh
-conda activate multihmr
-export TORCH_HOME=/netscratch/najib/torch_cache
-export XDG_CACHE_HOME="/netscratch/najib/.cache"
-mkdir -p "\$XDG_CACHE_HOME" /netscratch/najib/anny_cache "\$HOME/.cache" "${OUT_ROOT}/${SPLIT}"
-[ -e "\$HOME/.cache/anny" ] || ln -sfn /netscratch/najib/anny_cache "\$HOME/.cache/anny"
-cd /netscratch/najib/multi-hmr
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
+mkdir -p "${OUT_ROOT}/${SPLIT}"
 [ -f "${SMPL_MODEL}" ] || { echo "ERROR: SMPL model missing: ${SMPL_MODEL}"; exit 1; }
 PKL="${EXTRACT_DIR}/sequenceFiles/${SPLIT}/${SEQ}.pkl"
 [ -f "\$PKL" ] || { echo "ERROR: \$PKL not found (run run_3dpw_list.sh first)"; exit 1; }

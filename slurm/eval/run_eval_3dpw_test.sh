@@ -42,24 +42,7 @@ VAL_3DPW_N=0        # 0 = all 9,722 test images
 COMMAND=$(cat <<EOF
 set -euo pipefail
 
-source /netscratch/najib/miniconda3/etc/profile.d/conda.sh
-conda activate multihmr
-
-export HF_HOME="/netscratch/najib/hf_cache"
-export TORCH_HOME="/netscratch/najib/torch_cache"
-export XDG_CACHE_HOME="/netscratch/najib/.cache"
-mkdir -p \$HF_HOME \$TORCH_HOME \$XDG_CACHE_HOME
-mkdir -p /netscratch/najib/anny_cache "\$HOME/.cache"
-[ -e "\$HOME/.cache/anny" ] || ln -sfn /netscratch/najib/anny_cache "\$HOME/.cache/anny"
-
-export OMP_NUM_THREADS=1
-export MKL_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-
-cd /netscratch/najib/multi-hmr
-
-python -c "import torch; torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14', pretrained=False)" || true
-find /netscratch/najib/torch_cache/hub/facebookresearch_dinov2_main/dinov2 -name "*.py" -exec sed -i 's/ | None//g' {} + || true
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 
 CKPT="${CKPT_ARG}"
 if [ ! -f "\$CKPT" ]; then

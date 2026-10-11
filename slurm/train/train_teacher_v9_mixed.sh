@@ -36,37 +36,7 @@
 #SBATCH --error=logs/train_teacher_v9_mixed_%j.err
 
 COMMAND=$(cat <<'EOF'
-# 1. Initialize conda
-source /netscratch/najib/miniconda3/etc/profile.d/conda.sh
-conda activate multihmr
-
-# 2. Fix Cache Paths (routed to netscratch, away from the over-quota ~ )
-export HF_HOME="/netscratch/najib/hf_cache"
-export TORCH_HOME="/netscratch/najib/torch_cache"
-export TORCH_EXTENSIONS_DIR="/netscratch/najib/torch_extensions"
-export XDG_CACHE_HOME="/netscratch/najib/.cache"
-mkdir -p $HF_HOME $TORCH_HOME $TORCH_EXTENSIONS_DIR $XDG_CACHE_HOME
-
-# Route anny's hardcoded ~/.cache/anny onto netscratch so create_fullbody_model
-# cannot die on the home-dir disk quota.
-mkdir -p /netscratch/najib/anny_cache
-mkdir -p "$HOME/.cache"
-[ -e "$HOME/.cache/anny" ] || ln -sfn /netscratch/najib/anny_cache "$HOME/.cache/anny"
-
-# 3. Navigate
-cd /netscratch/najib/multi-hmr
-
-# --- CRITICAL FIX FOR DEADLOCKS ---
-export OMP_NUM_THREADS=1
-export MKL_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-# ----------------------------------
-
-echo "Ensuring DINOv2 is downloaded to cache..."
-python -c "import torch; torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14', pretrained=False)" || true
-
-echo "Patching DINOv2 cache to remove Python 3.10+ type hints..."
-find /netscratch/najib/torch_cache/hub/facebookresearch_dinov2_main/dinov2 -name "*.py" -exec sed -i 's/ | None//g' {} +
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 
 # Fail fast if the continuation checkpoint is missing.
 # >>> continuing from v5 (the run that fixed the shape head).
