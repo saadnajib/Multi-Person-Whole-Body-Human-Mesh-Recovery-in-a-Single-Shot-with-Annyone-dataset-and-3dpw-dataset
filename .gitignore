@@ -3,7 +3,10 @@ __pycache__/
 logs/
 models/
 data/
-datasets/
+# datasets/ holds the dataloader CODE (annyone.py, bedlam.py, threedpw.py,
+# threedpw_anny.py, ...) which train.py imports - track the .py files, ignore data.
+datasets/*
+!datasets/*.py
 demo_out*/
 *.npz
 *.npy
@@ -18,3 +21,13 @@ demo_out*/
 *copy*
 *_old.py
 *_orignal.py
+
+# 3DPW -> Anny conversion outputs (fits, renders). Only the label index files are tracked.
+threedpw_anny/
+threedpw_anny_v21/
+annyone_3dpw/
+threedpw_anny_full/*
+!threedpw_anny_full/labels/
+
+# generated reports
+shape_report.txt
