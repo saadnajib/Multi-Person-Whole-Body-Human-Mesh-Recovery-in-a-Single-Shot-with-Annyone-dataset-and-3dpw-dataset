@@ -21,10 +21,6 @@ DRI_MOUNT=""
 COMMAND=$(cat <<'EOF'
 set -euo pipefail
 
-export PROJECT_ROOT="/netscratch/najib/multi-hmr"
-export CONDA_SH="/netscratch/najib/miniconda3/etc/profile.d/conda.sh"
-source "$CONDA_SH"
-
 echo "======================================================"
 echo "1. Installing Native EGL Graphics Routing..."
 echo "======================================================"
@@ -46,21 +42,8 @@ export __EGL_VENDOR_LIBRARY_DIRS=/usr/share/glvnd/egl_vendor.d
 echo "======================================================"
 echo "2. Activating Env..."
 echo "======================================================"
-conda activate multihmr
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 pip install --quiet --exists-action i pyglet pyopengl
-
-export TORCH_HOME=/netscratch/najib/torch_cache
-export XDG_CACHE_HOME="/netscratch/najib/.cache"
-mkdir -p "$XDG_CACHE_HOME" /netscratch/najib/anny_cache "$HOME/.cache"
-[ -e "$HOME/.cache/anny" ] || ln -sfn /netscratch/najib/anny_cache "$HOME/.cache/anny"
-
-echo "======================================================"
-echo "2b. Patching DINOv2 for Python 3.9 compatibility..."
-echo "======================================================"
-python -c "import torch; torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14', pretrained=False)" || true
-find /netscratch/najib/torch_cache/hub/facebookresearch_dinov2_main/dinov2 -name "*.py" -exec sed -i 's/ | None//g' {} + || true
-
-cd "$PROJECT_ROOT"
 
 echo "======================================================"
 echo "2c. Exporting images from the AnnyOne dataset..."

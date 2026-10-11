@@ -17,9 +17,7 @@ OUT="/netscratch/najib/multi-hmr/threedpw_anny_full/labels"
 
 COMMAND=$(cat <<EOF
 set -euo pipefail
-source /netscratch/najib/miniconda3/etc/profile.d/conda.sh
-conda activate multihmr
-cd /netscratch/najib/multi-hmr
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 python scripts/data/build_threedpw_anny_labels.py --fits "${FITS}" --images "${IMAGES}" --out "${OUT}"
 echo "unconverted tasks (no .npz yet):"
 while read -r SPLIT SEQ PERSON N; do

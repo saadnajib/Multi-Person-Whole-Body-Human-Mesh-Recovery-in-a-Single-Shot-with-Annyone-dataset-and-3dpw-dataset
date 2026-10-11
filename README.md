@@ -45,7 +45,7 @@ It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** 
 ├── blocks/                  # network building blocks (DINOv2 backbone, cross-attention HPH, camera embedding, SMPL layer)
 ├── multi_hmr_anny/          # NAVER's reference Anny Multi-HMR (used to load the official multiHMR_672_L_anny checkpoint)
 ├── utils/                   # camera, rendering, image, tensor and training helpers
-├── datasets/                # ⚠ dataloaders (annyone.py, bedlam.py, threedpw.py, threedpw_anny.py …) — NOT YET COMMITTED, see below
+├── datasets/                # dataloaders: annyone.py, bedlam.py, ehf.py, threedpw.py, threedpw_anny.py
 │
 ├── scripts/
 │   ├── data/                # dataset conversion and export (SMPL→Anny fitting, label building, image export)
@@ -53,10 +53,12 @@ It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** 
 │   └── patches/             # historical apply_*.py patches (already applied to train.py / model.py)
 │
 ├── slurm/
-│   ├── train/               # one sbatch script per training run (teacher + student lineage)
-│   ├── eval/                # evaluation jobs (AnnyOne holdout, 3DPW val/test)
+│   ├── env.sh               # shared job setup (conda, caches, cd, DINOv2 patch) — edit paths here
+│   ├── train/               # current runs: teacher v9, final student v8, v10 ablation
+│   ├── eval/                # evaluation jobs (AnnyOne holdout, 3DPW val/test, dataloader test)
 │   ├── demo/                # demo / visual comparison jobs
-│   └── data/                # 3DPW→Anny conversion and diagnostic jobs
+│   ├── data/                # 3DPW→Anny conversion pipeline + fit check
+│   └── history/             # finished runs and one-off jobs, kept unchanged as the experiment record
 │
 ├── configs/
 │   └── threedpw_tasks.txt   # 3DPW (split, sequence, person, n_frames) task list for the conversion array job
@@ -93,8 +95,7 @@ Read this before trying to reproduce anything.
 
 | Gap | Impact | Fix |
 |---|---|---|
-| **`datasets/` is not in the repo.** The old `.gitignore` excluded the whole folder, which also holds the dataloader *code*. `train.py` imports `datasets.annyone`, `datasets.bedlam`, `datasets.ehf`, `datasets.threedpw` and `datasets.threedpw_anny`. | `train.py`, the evaluation scripts and several analysis scripts **cannot run from a fresh clone**. | `.gitignore` now tracks `datasets/*.py`. Copy the folder from the cluster checkout and commit it: `git add datasets/*.py`. |
-| **Absolute cluster paths.** Every `slurm/*.sh` script hard-codes `/netscratch/najib/...` (conda, caches, data, checkpoints, the container image). | The scripts only run on the original cluster. | Change `cd`/`PROJECT_ROOT` and the data/checkpoint paths for your setup. |
+| **Cluster paths.** Conda, caches and the project root are set once in `slurm/env.sh`, but job scripts still name `/netscratch/najib/...` for checkpoints, data, logs and the container image. | The scripts only run on the original cluster as-is. | Edit `slurm/env.sh`, then search-and-replace `/netscratch/najib` in the job you want to run. |
 | **Checkpoints are not versioned** (`*.pt` is git-ignored). | Final teacher/student weights must be obtained separately. | Expected location: `models/multiHMR/<name>.pt`. |
 | `scripts/patches/apply_*.py` are historical. | All six patches are already applied to `train.py` / `model.py`. The guard checks in the training scripts pass. | Do not re-run them. They refuse to patch twice anyway. |
 
@@ -198,7 +199,8 @@ Current label set: **4,451 train / 2,458 validation / 9,722 test** images.
 ## Pipeline 2: training the ViT-L teacher
 
 All runs start from NAVER's `multiHMR_672_L_anny.pt` backbone (`--pretrained_remap 1 --load_only_backbone 1`) at 672 px on AnnyOne, unless noted.
-Each `slurm/train/*.sh` file is the full, self-documenting record of a run. Its header explains the reasoning and quotes the previous run's numbers.
+Each training script is the full, self-documenting record of a run. Its header explains the reasoning and quotes the previous run's numbers.
+Scripts of finished runs live in `slurm/history/` (unchanged); the runs still in use are in `slurm/train/`.
 
 | Order | Script | Run name | Idea |
 |---|---|---|---|
@@ -264,7 +266,7 @@ sbatch slurm/train/train_distill_vits_v8_final.sh
 | `slurm/eval/run_eval_3dpw.sh` | Student on 3DPW-validation (Anny labels) |
 | `slurm/eval/run_eval_3dpw_teacher.sh` | Teacher on 3DPW-validation |
 | `slurm/eval/run_eval_3dpw_test.sh` | **3DPW-test: run once, at the end** |
-| `slurm/eval/run_eval_test.sh` | Legacy AnnyOne evaluation through `archive/train_v3.py` |
+| `slurm/history/run_eval_test.sh` | Legacy AnnyOne evaluation through `archive/train_v3.py` |
 | `slurm/eval/run_test.sh` | Dataloader smoke test (`scripts/analysis/test_loader.py`) |
 
 Evaluation goes through `train.py --eval_only 1`.
@@ -328,7 +330,10 @@ Qualitative ablations on real photos are in `results/demos/`:
 
 ## Running on the cluster (Slurm)
 
-Each script in `slurm/` is a standalone `sbatch` job. It activates conda inside an enroot container, sets up caches, patches DINOv2, `cd`s into the project root and runs one command.
+Each script in `slurm/` is a standalone `sbatch` job that runs one command inside an enroot container.
+The setup every job needs (conda, cache directories, the `~/.cache/anny` redirect, thread limits, `cd` to the project root, the DINOv2 Python 3.9 patch) lives in **`slurm/env.sh`**; active jobs start with `source /netscratch/najib/multi-hmr/slurm/env.sh`.
+Scripts in `slurm/history/` predate `env.sh` and still carry their own copy of that setup.
+
 Submit jobs from the repo root so that relative `logs/` paths resolve:
 
 ```bash
@@ -351,7 +356,6 @@ The original SMPL-X functionality is unchanged:
 - The official checkpoints (`multiHMR_896_L`, `multiHMR_672_{L,B,S}`, `multiHMR_672_L_anny`, …).
 
 See the [upstream README](https://github.com/naver/multi-hmr#readme) for dataset preparation, the checkpoint table and the CUFFS dataset.
-Upstream commands that call `datasets/*.py` need the `datasets/` folder described in [Status and known gaps](#status-and-known-gaps).
 
 ---
 

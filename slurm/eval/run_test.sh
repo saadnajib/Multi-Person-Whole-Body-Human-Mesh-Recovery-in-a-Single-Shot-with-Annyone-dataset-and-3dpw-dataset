@@ -12,24 +12,7 @@
 
 # We wrap the entire process in a COMMAND variable to pass into the container.
 COMMAND=$(cat <<'EOF'
-# 1. Initialize conda
-source /netscratch/najib/miniconda3/etc/profile.d/conda.sh
-conda activate multihmr
-
-# 2. Fix Cache Paths (Safely routed to netscratch)
-export HF_HOME="/netscratch/najib/hf_cache"
-export TORCH_HOME="/netscratch/najib/torch_cache"
-export TORCH_EXTENSIONS_DIR="/netscratch/najib/torch_extensions"
-mkdir -p $HF_HOME $TORCH_HOME $TORCH_EXTENSIONS_DIR
-
-# 3. Navigate
-cd /netscratch/najib/multi-hmr
-
-# --- CRITICAL FIX FOR DEADLOCKS ---
-export OMP_NUM_THREADS=1
-export MKL_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-# ----------------------------------
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 
 # 4. Run the Dataloader Test!
 python scripts/analysis/test_loader.py

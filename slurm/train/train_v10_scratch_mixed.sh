@@ -33,35 +33,7 @@
 #SBATCH --error=logs/train_v10_scratch_mixed_%j.err
 
 COMMAND=$(cat <<'EOF'
-# 1. Initialize conda
-source /netscratch/najib/miniconda3/etc/profile.d/conda.sh
-conda activate multihmr
-
-# 2. Fix Cache Paths
-export HF_HOME="/netscratch/najib/hf_cache"
-export TORCH_HOME="/netscratch/najib/torch_cache"
-export TORCH_EXTENSIONS_DIR="/netscratch/najib/torch_extensions"
-export XDG_CACHE_HOME="/netscratch/najib/.cache"
-mkdir -p $HF_HOME $TORCH_HOME $TORCH_EXTENSIONS_DIR $XDG_CACHE_HOME
-
-mkdir -p /netscratch/najib/anny_cache
-mkdir -p "$HOME/.cache"
-[ -e "$HOME/.cache/anny" ] || ln -sfn /netscratch/najib/anny_cache "$HOME/.cache/anny"
-
-# 3. Navigate
-cd /netscratch/najib/multi-hmr
-
-# --- CRITICAL FIX FOR DEADLOCKS ---
-export OMP_NUM_THREADS=1
-export MKL_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-# ----------------------------------
-
-echo "Ensuring DINOv2 is downloaded to cache..."
-python -c "import torch; torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14', pretrained=False)" || true
-
-echo "Patching DINOv2 cache to remove Python 3.10+ type hints..."
-find /netscratch/najib/torch_cache/hub/facebookresearch_dinov2_main/dinov2 -name "*.py" -exec sed -i 's/ | None//g' {} +
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 
 CKPT="/netscratch/najib/multi-hmr/models/multiHMR/multiHMR_672_L_anny.pt"
 if [ ! -f "$CKPT" ]; then

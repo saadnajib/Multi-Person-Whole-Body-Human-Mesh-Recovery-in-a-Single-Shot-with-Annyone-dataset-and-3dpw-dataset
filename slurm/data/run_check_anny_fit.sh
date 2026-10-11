@@ -18,9 +18,7 @@ OUT_DIR="/netscratch/najib/multi-hmr/results/anny_fit_check/$(basename "${FIT_NP
 
 COMMAND=$(cat <<EOF
 set -euo pipefail
-source /netscratch/najib/miniconda3/etc/profile.d/conda.sh
-conda activate multihmr
-cd /netscratch/najib/multi-hmr
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 python -c "import matplotlib" 2>/dev/null || pip install -q matplotlib
 python scripts/analysis/check_anny_fit.py "${FIT_NPZ}" --out "${OUT_DIR}" --max-frames 12
 EOF

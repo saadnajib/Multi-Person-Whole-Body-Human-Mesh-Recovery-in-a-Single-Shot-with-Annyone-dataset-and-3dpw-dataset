@@ -29,9 +29,7 @@ TASKS="/netscratch/najib/multi-hmr/configs/threedpw_tasks.txt"
 
 COMMAND=$(cat <<EOF
 set -euo pipefail
-source /netscratch/najib/miniconda3/etc/profile.d/conda.sh
-conda activate multihmr
-cd /netscratch/najib/multi-hmr
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 [ -d "${ZIP_ROOT}" ] || { echo "ERROR: ${ZIP_ROOT} not mounted in container"; exit 1; }
 mkdir -p "${EXTRACT_DIR}"
 [ -d "${EXTRACT_DIR}/sequenceFiles" ] || { echo "extracting sequenceFiles.zip"; unzip -q "${ZIP_ROOT}/sequenceFiles.zip" -d "${EXTRACT_DIR}"; }
