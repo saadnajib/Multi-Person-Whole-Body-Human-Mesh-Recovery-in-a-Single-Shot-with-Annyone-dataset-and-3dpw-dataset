@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+logs/
+models/
+data/
+datasets/
+demo_out*/
+*.npz
+*.npy
+*.pkl
+*.pt
+*.pt.*
+*.pth
+*.ckpt
+*.glb
+*.bak*
+* - Copy*
+*copy*
+*_old.py
+*_orignal.py
