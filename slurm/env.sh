@@ -27,6 +27,9 @@ export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 cd "$PROJECT_ROOT"
 
 # DINOv2 from torch.hub uses `X | None` hints that Python 3.9 rejects: download once, strip them
-python -c "import torch; torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14', pretrained=False)" >/dev/null 2>&1 || true
-grep -rlZ --include="*.py" ' | None' "$TORCH_HOME/hub/facebookresearch_dinov2_main/dinov2" 2>/dev/null \
+DINOV2_DIR="$TORCH_HOME/hub/facebookresearch_dinov2_main/dinov2"
+if [ ! -d "$DINOV2_DIR" ]; then
+  python -c "import torch; torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14', pretrained=False)" >/dev/null 2>&1 || true
+fi
+grep -rlZ --include="*.py" ' | None' "$DINOV2_DIR" 2>/dev/null \
   | xargs -0 -r sed -i 's/ | None//g' || true   # only touches files not yet patched
