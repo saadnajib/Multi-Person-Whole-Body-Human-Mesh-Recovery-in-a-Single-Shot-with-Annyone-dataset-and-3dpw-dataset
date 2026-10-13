@@ -8,15 +8,19 @@
 #SBATCH --mem=48G
 #SBATCH --cpus-per-task=8
 #SBATCH --time=01:30:00
-#SBATCH --output=logs/diag_young_%j.out
-#SBATCH --error=logs/diag_young_%j.err
+#SBATCH --output=/netscratch/najib/multi-hmr/logs/diag_young_%j.out
+#SBATCH --error=/netscratch/najib/multi-hmr/logs/diag_young_%j.err
 set -euo pipefail
-mkdir -p logs
+mkdir -p /netscratch/najib/multi-hmr/logs
 export NVIDIA_DRIVER_CAPABILITIES=all
 DRI_MOUNT=""; [ -d /dev/dri ] && DRI_MOUNT=",/dev/dri:/dev/dri"
 
 CKPT="${CKPT:-/netscratch/najib/multi-hmr/logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt}"
-TAG="${TAG:-$(basename "$(dirname "$(dirname "$CKPT")")")_$(basename "$CKPT" .pt)}"
+if [ "$(basename "$(dirname "$CKPT")")" = checkpoints ]; then   # logs/anny_model/<run>/checkpoints/<ep>.pt
+  TAG="${TAG:-$(basename "$(dirname "$(dirname "$CKPT")")")_$(basename "$CKPT" .pt)}"
+else                                                             # models/multiHMR/<name>.pt
+  TAG="${TAG:-$(basename "$CKPT" .pt)}"
+fi
 SCAN="${SCAN:-20000}"
 N="${N:-50}"
 

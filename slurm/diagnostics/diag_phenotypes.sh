@@ -8,10 +8,10 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
 #SBATCH --time=00:40:00
-#SBATCH --output=logs/diag_pheno_%j.out
-#SBATCH --error=logs/diag_pheno_%j.err
+#SBATCH --output=/netscratch/najib/multi-hmr/logs/diag_pheno_%j.out
+#SBATCH --error=/netscratch/najib/multi-hmr/logs/diag_pheno_%j.err
 set -euo pipefail
-mkdir -p logs
+mkdir -p /netscratch/najib/multi-hmr/logs
 N="${N:-20000}"
 
 COMMAND=$(cat <<EOF2

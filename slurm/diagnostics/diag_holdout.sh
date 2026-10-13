@@ -1,6 +1,6 @@
 #!/bin/bash
 # E1: trace the 100 held-out AnnyOne images through GT + 4 inference variants.
-# Override the checkpoint:  CKPT=/path/to/00149.pt sbatch slurm/diagnostics/diag_holdout.sh
+# CKPT must be a file path (the sbatch wrapper checks it exists):  CKPT=/path/to/00149.pt sbatch slurm/diagnostics/diag_holdout.sh
 #SBATCH --job-name=diag-holdout
 #SBATCH --partition=A100-40GB,A100-80GB,L40S-AV,A100-RP,A100-PCI,RTXA6000
 #SBATCH --gpus=1
@@ -8,15 +8,19 @@
 #SBATCH --mem=48G
 #SBATCH --cpus-per-task=8
 #SBATCH --time=01:30:00
-#SBATCH --output=logs/diag_holdout_%j.out
-#SBATCH --error=logs/diag_holdout_%j.err
+#SBATCH --output=/netscratch/najib/multi-hmr/logs/diag_holdout_%j.out
+#SBATCH --error=/netscratch/najib/multi-hmr/logs/diag_holdout_%j.err
 set -euo pipefail
-mkdir -p logs
+mkdir -p /netscratch/najib/multi-hmr/logs
 export NVIDIA_DRIVER_CAPABILITIES=all
 DRI_MOUNT=""; [ -d /dev/dri ] && DRI_MOUNT=",/dev/dri:/dev/dri"
 
 CKPT="${CKPT:-/netscratch/najib/multi-hmr/logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt}"
-TAG="${TAG:-$(basename "$(dirname "$(dirname "$CKPT")")")_$(basename "$CKPT" .pt)}"
+if [ "$(basename "$(dirname "$CKPT")")" = checkpoints ]; then   # logs/anny_model/<run>/checkpoints/<ep>.pt
+  TAG="${TAG:-$(basename "$(dirname "$(dirname "$CKPT")")")_$(basename "$CKPT" .pt)}"
+else                                                             # models/multiHMR/<name>.pt
+  TAG="${TAG:-$(basename "$CKPT" .pt)}"
+fi
 N="${N:-100}"
 
 COMMAND=$(cat <<EOF2

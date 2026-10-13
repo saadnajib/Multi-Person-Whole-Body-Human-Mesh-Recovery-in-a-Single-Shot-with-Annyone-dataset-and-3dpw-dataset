@@ -18,14 +18,18 @@ job is itself a test; if a job fails, send the `.err` log back.
 | C1a | demo normalises images differently from training | **false** | `utils/image.py:12` defaults `imagenet_normalization=True`; `demo.py:95,364` use the default; `datasets/annyone.py:46` passes `1`. Same normalisation. |
 | C1b | demo runs fp16, eval runs fp32 | confirmed | `demo.py:464` `autocast(enabled=True)`; `train.py:570` `autocast(enabled=bool(args.amp))` with `--amp 0` in `slurm/eval/run_eval_3dpw.sh`. |
 | C2 | detector-path crops get the full-image fov as K | confirmed | `demo.py:366`; K also feeds the network via `model.embedd_camera` (`model.py:333`). |
-| C3 | `--relax_hands 1` forces every finger bone to identity | confirmed | `model.py:368-371`; on in `slurm/demo/run_demo.sh` (real photos), off in `run_demo_syn.sh`. |
+| C3 | `--relax_hands 1` forces every finger/thumb phalanx to identity (metacarpals stay predicted) | confirmed | `model.py:168-174,368-371`; on in `slurm/demo/run_demo.sh` (real photos), off in `run_demo_syn.sh`. |
 | C4 | colour-jitter / flip flags are inert for AnnyOne | confirmed | only `train.py:1340-1344` argparse entries; no reader in `datasets/annyone.py`. |
 | C5 | 3DPW labels have age fixed at 0.55 | confirmed (design choice) | `scripts/data/smpl_to_anny.py:229`, `slurm/data/run_smpl_to_anny_task.sh:48`. |
 | C7 (new) | eval and demo do not run the same model: `train.py evaluate()` never sets `model.mask_helper_joints`, so the 74 mm PVE was measured with the 88 helper bones **unmasked**, while every demo masks them | confirmed | `train.py:859-861` sets only `mask_helper_joints_train`; `model.py:360` condition; `demo.py` default `--mask_helper_joints 1`. |
-| C8 (new) | the dataset K after contain+pad is only right for a centred principal point | confirmed by derivation, data unverified | `datasets/annyone.py:52-56`. E1 measures `princpt/W`, `princpt/H` on every holdout image. |
+| C8 (new) | the dataset K after contain+pad skips the padding offset: the long-axis principal-point coordinate is always right, the short-axis one only for a centred principal point | confirmed; `datasets/threedpw_anny.py:16-19` implements the correct formula and names AnnyOne's omission | `datasets/annyone.py:52-56`. E1 measures `princpt/W`, `princpt/H` on every holdout image; if centred, C8 is harmless for AnnyOne. |
 
 PVE cannot see the neck (C6 in the analysis) is arithmetic, not a code fact: head+neck vertices are a
-few percent of 19k, so E1 also reports `PVE_headneck` (vertices within 35 cm of the head joint).
+few percent of 19k, so E1 also reports `PVE_hn` (vertices from the neck01 joint up to the crown).
+
+Definitions used everywhere below: **skeletal height** = head joint (skull base) → mean ankle joint,
+about 25 cm short of stature; **head size** = head joint → crown along the neck axis. Both are
+compared GT-vs-prediction under the same definition; neither is a stature in metres.
 
 ---
 
@@ -71,13 +75,18 @@ For each of the 100 held-out images (indices 579860..579959, never trained on):
 |---|---|---|---|---|---|
 | `V0_eval_unmasked` | fp32 | dataset | unmasked | predicted | `train.py evaluate()` (the 74 mm number) |
 | `V1_eval_masked` | fp32 | dataset | masked | predicted | eval numbers with the demo's masking |
-| `V2_demo` | fp16 | fov-derived | masked | predicted | `demo.py` in-domain path (`run_demo_syn.sh`) |
-| `V3_demo_relaxhands` | fp16 | fov-derived | masked | identity | `run_demo.sh` real-photo setting |
+| `V2_demo` | fp16 | fov-derived | masked | predicted | the `demo.py` **network call** of the in-domain path (`run_demo_syn.sh`); not its `filter_humans` / `max_persons` post-processing |
+| `V3_demo_relaxhands` | fp16 | fov-derived | masked | identity (phalanges) | V2 + the `--relax_hands` flag of `run_demo.sh`; not the detector-crop path (that is E4) |
 
-4. matches detections to GT people (same greedy matcher as `train.py`) and reports per variant:
-   recall/FP, PVE, PA-PVE, MPJPE, `PVE_headneck`, rotation error per bone group (active bones
-   only, masked bones separately), per-phenotype shape bias and error, neck length and
-   neck/height ratio vs GT, head size vs GT, and the **neck factorisation**:
+V1 vs V2 isolates fp16 only where `K_fov` equals the dataset K; `summary.json → camera.k_fov_within_1px_frac`
+says on how many images that holds (it requires a centred principal point and fx = fy).
+
+4. keeps the GT people `train.py prepare_gt` keeps (root in front of the camera, inside the image,
+   one per heatmap cell), matches detections to them (same greedy matcher) and reports per variant:
+   recall/FP, PVE, PA-PVE, MPJPE, `PVE_hn`, rotation error per bone group (active bones only; the
+   88 helper bones' prediction error for V0 only, since V1–V3 force them to identity), per-phenotype
+   shape bias and error, neck length, neck/skeletal-height and head/skeletal-height ratios vs GT
+   (computed per person, then averaged), and the **neck factorisation**:
 
 | neck length under | isolates |
 |---|---|
@@ -86,7 +95,11 @@ For each of the 100 held-out images (indices 579860..579959, never trained on):
 | predicted pose + GT shape | the neck rotations' contribution |
 | rest pose + GT / predicted shape | shape alone, no pose |
 
-Outputs: `summary.json`, `per_person.csv`, `vis/<idx>.jpg` = `[image | GT | V1 | V2]`.
+Also reported once per run: whether any non-root bone in the GT poses carries a translation
+(`camera.nonroot_translation_max`; the factorisation assumes none), and how far the GT helper bones
+are from identity (`gt_helper_bones_angle_deg`: the irreducible floor the mask introduces, a dataset property).
+
+Outputs: `summary.json`, `per_person.csv` (phenotype columns are prefixed `pheno_`), `vis/<idx>.jpg` = `[image | GT | V1 | V2]`.
 
 ### How to read E1
 
@@ -98,8 +111,10 @@ Outputs: `summary.json`, `per_person.csv`, `vis/<idx>.jpg` = `[image | GT | V1 |
 | V1 ≈ V2 | fp16 and fov-K are harmless; demo renders are faithful | drop C1b |
 | `neck%` ≫ 100 and `GTpose+PREDshape` ≈ pred | neck error is in the **shape head** (`proportions`/`height`) | shape-loss reweighting, check `proportions` bias |
 | `neck%` ≫ 100 and `PREDpose+GTshape` ≈ pred | neck error is in the **neck rotations** | neck-weighted rotation loss / more neck supervision |
-| `neck%` ≈ 100 but renders look long-necked | rendering/placement artefact, not the model | inspect `overlay_human_meshes` units logic |
+| `neck%` ≈ 100, `PVE_hn` elevated, renders long-necked | the skeleton is right but the neck **surface** is not: a skinning (LBS) effect of neck01–03 | compare `--rest_pose 1` renders; this is the only route to the current "rig property" claim |
+| `neck%` ≈ 100, `PVE_hn` normal, renders look long-necked | rendering/placement artefact, not the model | inspect `overlay_human_meshes` units logic (`demo.py:565-573`) |
 | `rot_fingers` ≫ other groups in V1 but V3 fingers "look fine" | the fingers are undertrained and `--relax_hands` hides it (C3) | hand supervision; never report V3 hands as predictions |
+| `helper_bones_pred_err_deg` (V0) ≫ `gt_helper_bones_angle_deg` | the unmasked eval mesh carries untrained helper-bone rotations | report V1 numbers, not V0, as "the model" |
 | `shape_bias[age]` > 0 in the low GT-age bucket | regression to the adult prior | see E2/E3 |
 
 ---
@@ -107,14 +122,16 @@ Outputs: `summary.json`, `per_person.csv`, `vis/<idx>.jpg` = `[image | GT | V1 |
 ## E2: phenotype distribution + body-model probe (`diag_phenotypes.py`)
 
 Part A reads 20 000 evenly spaced training annotations (pkl only, no images): per-phenotype
-statistics, an **age histogram**, the fraction of people below age 0.2 / 0.3 / 0.4, and the same for
-the holdout. Part B puts Anny in rest pose at the dataset-mean shape and sweeps `age` 0 → 1,
-printing body height, neck/height and head/height.
+statistics, an **age histogram**, the fraction of people below age 0.2 / 0.3 / 0.4 / 0.5, and the same
+for the holdout. Anny inherits MakeHuman's age scale (`scripts/data/smpl_to_anny.py:149`): 0.0 ≈ 1 y,
+0.19 ≈ 11 y, 0.3 ≈ 16 y, 0.5 = 25 y, 1.0 = 90 y, so **< 0.2 is "child", 0.2–0.3 "adolescent"**.
+Part B puts Anny in rest pose at the dataset-mean shape and sweeps `age` 0 → 1, printing skeletal
+height, neck/height and head/height.
 
 | observation | meaning |
 |---|---|
-| age < 0.3 is a fraction of a percent | there is almost no child supervision; with an L1 shape loss and a 0.5 prior the network will regress children to adults: **a data cause**; the 3DPW labels (age fixed 0.55, C5) add none |
-| several percent below 0.3 | children exist in training; run E3 |
+| age < 0.2 is a fraction of a percent | there is almost no child supervision; with an L1 shape loss and a 0.5 prior the network will regress children to adults: **a data cause**; the 3DPW labels (age fixed 0.55, C5) add none |
+| several percent below 0.2 | children exist in training; run E3 |
 | Part B: height drops and head/height rises as age → 0 | Anny can represent a child; the failure is network/data-side, not the body model |
 | Part B: proportions barely move | `age` alone does not make a child in this rig; `height`/`proportions` must move too, which changes what "child supervision" means |
 
@@ -135,18 +152,19 @@ not whether it generalises.
 
 ## E4: crop camera (`diag_crop_camera.py`)
 
-Reproduces the demo's detector crops on `example_data` and runs the model with the demo K
-(full-image fov, `demo.py:366`) and with the corrected crop K (`f·672/S`, shifted principal point),
-fp32, on the same crop. Reports predicted age/height/proportions, body height, neck/height and depth
-under both.
+Reproduces the demo's detector crops on `example_data` (same EXIF handling, same crop formula and
+clamp) and runs the model with the demo K (full-image fov, `demo.py:366`) and with the corrected crop
+K (`f·672/S`, shifted principal point), fp32, on the same crop. Reports predicted age/height/proportions
+phenotypes, skeletal height, neck/height, head/height and depth under both.
 
 | observation | meaning |
 |---|---|
-| mean |Δage| or |Δheight| > ~0.05 | K shapes the body: the crop-camera bug affects shape, not just placement; fix `demo.py:366` and re-render the children |
+| mean \|Δ pheno_age\| or \|Δ pheno_height\| > ~0.05 (phenotype units, 0–1) | K shapes the body: the crop-camera bug affects shape, not just placement; fix `demo.py:366` and re-render the children |
 | changes ≈ 0 | C2 is placement-only and `anchor_to_box` already compensates; the children come from the data (E2) |
 
-Caveat: the corrected K has a narrower fov than anything in AnnyOne (51–118°), so the network may be
-out of its camera distribution either way; E4 says whether K matters, not which K is right.
+Caveat: the corrected fov is `2·atan(S / 2f_full)`: narrower than AnnyOne's 51–118° when the crop is
+smaller than the image, wider when `S > max(W,H)` (frame-filling people). Either way the network may be
+out of its camera distribution; E4 says whether K matters, not which K is right.
 
 ---
 
@@ -157,7 +175,7 @@ out of its camera distribution either way; E4 says whether K matters, not which 
 | failure | cause | fix effort |
 |---|---|---|
 | all demo artefacts | eval and demo run different model behaviour (C7: helper-bone masking) and precision (C1b) | one flag / one line each; E1 quantifies |
-| fingers | `--relax_hands 1` replaces predictions with rest hands (C3); the real finger predictions have not been looked at since | none; E1 `rot_fingers` measures them |
+| fingers | `--relax_hands 1` replaces the phalanx predictions with rest hands (C3); the real finger predictions have not been looked at since | none; E1 `rot_fingers` measures them |
 | children (real photos) | crop K is the full-image camera (C2) | ~10 lines in `demo.py`; E4 says whether it matters |
 | children (all) | 3DPW labels carry no child ages (C5); AnnyOne child fraction unknown (E2) | data |
 | thesis text | no colour augmentation was ever applied (C4) | correct the text |

@@ -18,9 +18,11 @@ For each person it prints the predicted phenotypes (age, height, proportions),
 body height, neck/height ratio and depth under both cameras, and the mean
 absolute change. Optionally saves crop overlays for both.
 
-Caveat (unverified): the corrected K has a NARROWER fov than anything in
-AnnyOne (51-118 deg), so the network may be out of its camera distribution
-either way; the experiment tells you whether K matters, not which K is right.
+Caveat: the corrected fov is 2*atan(S / (2 f_full)): narrower than the AnnyOne
+range (51-118 deg) when the crop is smaller than the image, wider when S exceeds
+max(W,H) (frame-filling people, S up to 3x). Either way the network may be out of
+its camera distribution; the experiment tells you whether K matters, not which K
+is right. 'Body height' below is the SKELETAL span head-joint -> mean ankle.
 
 USAGE (GPU node, multihmr env):
     python scripts/diagnostics/diag_crop_camera.py \
@@ -39,19 +41,23 @@ import diag_common as dc  # noqa: E402
 
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
-from PIL import Image  # noqa: E402
+from PIL import Image, ImageOps  # noqa: E402
 
 from utils import normalize_rgb  # noqa: E402
 
 
-def detect_people(img_pil, device, thresh):
+def build_detector(device):
+    """Same COCO Faster R-CNN as demo.get_person_detector(), built once."""
     from torchvision.models.detection import fasterrcnn_resnet50_fpn
     try:
         from torchvision.models.detection import FasterRCNN_ResNet50_FPN_Weights
         det = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
     except ImportError:
         det = fasterrcnn_resnet50_fpn(pretrained=True)
-    det = det.to(device).eval()
+    return det.to(device).eval()
+
+
+def detect_people(det, img_pil, device, thresh):
     import torchvision.transforms.functional as TF
     with torch.no_grad():
         out = det([TF.to_tensor(img_pil).to(device)])[0]
@@ -96,12 +102,13 @@ def main():
     chain = dc.neck_chain(names); faces = dc.faces_tri(bm); S_net = model.img_size
 
     imgs = sorted(f for f in os.listdir(args.img_folder) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')))
+    detector = build_detector(device)
     rows = []
     n_vis = 0
     for fname in imgs:
-        img_full = Image.open(os.path.join(args.img_folder, fname)).convert('RGB')
+        img_full = ImageOps.exif_transpose(Image.open(os.path.join(args.img_folder, fname))).convert('RGB')  # as demo.py
         W, H = img_full.size
-        boxes, scores = detect_people(img_full, device, args.detector_thresh)
+        boxes, scores = detect_people(detector, img_full, device, args.detector_thresh)
         print(f"\n[{fname}] {W}x{H}, {len(boxes)} people detected")
         f_full = max(W, H) / (2 * math.tan(math.radians(args.fov) / 2))     # fov spans the long side (open_image pads to square)
         for bi, (box, dsc) in enumerate(zip(boxes, scores)):
@@ -129,7 +136,7 @@ def main():
                 j = best['j3d'].float().unsqueeze(0); v = best['v3d'].float().unsqueeze(0)
                 sh = best['shape'].float().reshape(-1)
                 height = dc.body_height(j, names)[0].item(); neck = dc.chain_length(j, chain)[0].item()
-                res[kname] = dict(depth=float(j[0, 0, 2]), height_m=height, neck_over_height=neck / max(height, 1e-6),
+                res[kname] = dict(depth=float(j[0, 0, 2]), skel_height_m=height, neck_over_height=neck / max(height, 1e-6),
                                   head_over_height=dc.head_size(v, j, names)[0].item() / max(height, 1e-6),
                                   shape={n: float(sh[i]) for i, n in enumerate(phen)}, v3d=v[0].cpu().numpy())
             if res.get('demo') is None or res.get('fixed') is None:
@@ -138,16 +145,17 @@ def main():
             d, f = res['demo'], res['fixed']
             row = dict(image=fname, person=bi, det_score=float(dsc), crop_S=S, crop_frac_of_image=S / max(W, H),
                        fov_demo=args.fov, fov_fixed=fov_fix, focal_demo=float(K_demo[0, 0, 0]), focal_fixed=float(K_fix[0, 0, 0]),
-                       depth_demo=d['depth'], depth_fixed=f['depth'], height_demo=d['height_m'], height_fixed=f['height_m'],
+                       depth_demo=d['depth'], depth_fixed=f['depth'],
+                       skel_height_demo=d['skel_height_m'], skel_height_fixed=f['skel_height_m'],
                        neck_h_demo=d['neck_over_height'], neck_h_fixed=f['neck_over_height'],
                        head_h_demo=d['head_over_height'], head_h_fixed=f['head_over_height'])
-            for n in phen:
-                row[f'{n}_demo'] = d['shape'][n]; row[f'{n}_fixed'] = f['shape'][n]
+            for n in phen:   # namespaced: the 'height' phenotype must not collide with the metric columns
+                row[f'pheno_{n}_demo'] = d['shape'][n]; row[f'pheno_{n}_fixed'] = f['shape'][n]
             rows.append(row)
             print(f"  person {bi}: crop S={S} ({S / max(W, H):.2f} of image)  fov demo {args.fov:.0f} -> fixed {fov_fix:.0f} deg")
             print(f"     age   {d['shape']['age']:.2f} -> {f['shape']['age']:.2f}   height-pheno {d['shape']['height']:.2f} -> {f['shape']['height']:.2f}"
                   f"   proportions {d['shape']['proportions']:.2f} -> {f['shape']['proportions']:.2f}")
-            print(f"     body height {d['height_m']:.2f} -> {f['height_m']:.2f} m   neck/height {d['neck_over_height']:.3f} -> {f['neck_over_height']:.3f}"
+            print(f"     skeletal height {d['skel_height_m']:.2f} -> {f['skel_height_m']:.2f} m   neck/height {d['neck_over_height']:.3f} -> {f['neck_over_height']:.3f}"
                   f"   depth {d['depth']:.2f} -> {f['depth']:.2f} m")
             if n_vis < args.n_vis:
                 cu8 = np.asarray(crop.resize((S_net, S_net), Image.BILINEAR)).astype(np.uint8)
@@ -164,17 +172,18 @@ def main():
     with open(os.path.join(args.out, 'per_person.csv'), 'w', newline='') as f:
         w = csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)
     summ = dict(n_people=len(rows), mean_abs_change={}, mean_signed_change={})
-    for n in phen + ['height', 'depth', 'neck_h', 'head_h']:
-        a = np.asarray([r[f'{n}_demo'] for r in rows]); b = np.asarray([r[f'{n}_fixed'] for r in rows])
-        summ['mean_abs_change'][n] = float(np.abs(b - a).mean()); summ['mean_signed_change'][n] = float((b - a).mean())
+    for n in [f'pheno_{q}' for q in phen] + ['skel_height', 'depth', 'neck_h', 'head_h']:
+        a = np.asarray([r[f'{n}_demo'] for r in rows], dtype=np.float64); b = np.asarray([r[f'{n}_fixed'] for r in rows], dtype=np.float64)
+        ok = np.isfinite(a) & np.isfinite(b)
+        summ['mean_abs_change'][n] = dc.mean_or_none(np.abs(b - a)[ok]); summ['mean_signed_change'][n] = dc.mean_or_none((b - a)[ok])
     print("\n=== MEAN CHANGE demo K -> corrected K (signed / abs) ===")
     for n, v in summ['mean_signed_change'].items():
-        print(f"  {n:<12} {v:+.3f} / {summ['mean_abs_change'][n]:.3f}")
-    print("READ: |age| or |height| change > ~0.05 => K is shaping the body, so the crop camera bug (C2) affects")
+        print(f"  {n:<18} {(v if v is not None else float('nan')):+.3f} / {dc.fmt(summ['mean_abs_change'][n], 3)}")
+    print("READ: |pheno_age| or |pheno_height| change > ~0.05 (phenotype units, 0-1) => K is shaping the body, so the crop camera bug (C2) affects")
     print("      shape, not just placement, and fixing demo.py:366 is worth a real test. Changes ~0 => C2 is")
     print("      placement-only and anchor_to_box already compensates; look at the data (E2) for the children.")
     with open(os.path.join(args.out, 'summary.json'), 'w') as f:
-        json.dump(summ, f, indent=2)
+        json.dump(dc.json_safe(summ), f, indent=2, allow_nan=False)
     print(f"wrote {args.out}/summary.json, per_person.csv, vis/")
 
 

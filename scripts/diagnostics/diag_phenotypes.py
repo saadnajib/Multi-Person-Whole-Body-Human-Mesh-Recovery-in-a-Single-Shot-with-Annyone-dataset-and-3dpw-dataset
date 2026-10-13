@@ -52,6 +52,8 @@ def part_a(args):
         return np.concatenate(rows, 0) if rows else np.zeros((0, 11)), np.asarray(per_img)
 
     P, per_img = collect(idx)
+    if P.shape[0] == 0:
+        sys.exit(f"no people found in {len(idx)} scanned samples (n_total={n_total}, train_pool={train_pool})")
     H, _ = collect(dc.holdout_indices(n_total))
     print(f"[data] {P.shape[0]} people in the training sample ({per_img.mean():.2f}/image), {H.shape[0]} in the holdout")
 
@@ -74,16 +76,17 @@ def part_a(args):
     out['age_hist'] = {f'{bins[i]:.1f}-{bins[i + 1]:.1f}': int(hist[i]) for i in range(10)}
     out['age_frac_below'] = {str(t): float((age < t).mean()) for t in (0.2, 0.3, 0.4, 0.5)}
     print("\n=== AGE HISTOGRAM (training sample) ===")
+    print("    MakeHuman convention, inherited by Anny: 0.0 ~ 1 y, 0.19 ~ 11 y, 0.3 ~ 16 y, 0.4 ~ 20 y, 0.5 = 25 y, 1.0 = 90 y")
     for k, v in out['age_hist'].items():
         print(f"  {k}: {v:7d}  {'#' * int(60 * v / max(hist.max(), 1))}")
-    print("fraction of people with age < 0.2 / 0.3 / 0.4 / 0.5: " +
+    print("fraction of people with age < 0.2 (~child, <11y) / 0.3 (~<16y) / 0.4 (~<20y) / 0.5: " +
           " / ".join(f"{out['age_frac_below'][str(t)] * 100:.2f}%" for t in (0.2, 0.3, 0.4, 0.5)))
     # correlation age <-> height phenotype: in Anny 'height' is a separate control
     cc = np.corrcoef(P[:, 1], P[:, 4])[0, 1] if len(P) > 2 else float('nan')
     out['corr_age_height_pheno'] = float(cc)
     print(f"corr(age, height phenotype) = {cc:+.3f}")
-    print("\nREAD: Anny age 0.5 ~ adult; children sit well below ~0.3 (see Part B for what each value looks like).")
-    print("      If <0.3 is a fraction of a percent, the network has almost no child supervision and an")
+    print("\nREAD: Anny age 0.5 = 25 y; children are below ~0.2, adolescents 0.2-0.3 (see Part B for what each value looks like).")
+    print("      If <0.2 is a fraction of a percent, the network has almost no child supervision and an")
     print("      L1 shape loss toward a 0.5 prior will regress every child to an adult: a DATA cause.")
     print("      The 3DPW labels used from v7/v9 on have age FIXED at 0.55 (scripts/data/smpl_to_anny.py),")
     print("      so mixed training adds zero child supervision as well.")
@@ -116,12 +119,13 @@ def part_b(args, mean_shape):
     base = torch.tensor(mean_shape, dtype=torch.float32).reshape(1, 11).repeat(len(ages), 1)
     base[:, phen.index('age')] = torch.tensor(ages)
     v, j = dc.run_body_model(bm, dc.identity_pose(len(ages), len(names), torch.device('cpu')), base)
-    height = dc.body_height(j, names); neck = dc.chain_length(j, chain); head = dc.head_size(v, j, names)
+    height = dc.skeletal_height(j, names); neck = dc.chain_length(j, chain); head = dc.head_size(v, j, names)
     rows = []
-    print(f"{'age':>5}{'height_m':>10}{'neck_m':>9}{'neck/height':>13}{'head/height':>13}")
+    print("    (skeletal height = head joint -> mean ankle, ~25 cm short of stature; head = head-joint -> crown along the neck axis)")
+    print(f"{'age':>5}{'skel_height_m':>15}{'neck_m':>9}{'head_m':>9}{'neck/height':>13}{'head/height':>13}")
     for a, h, n, hd in zip(ages, height.tolist(), neck.tolist(), head.tolist()):
-        print(f"{a:>5.1f}{h:>10.3f}{n:>9.4f}{n / h:>13.4f}{hd / h:>13.4f}")
-        rows.append(dict(age=a, height_m=h, neck_m=n, neck_over_height=n / h, head_over_height=hd / h))
+        print(f"{a:>5.1f}{h:>15.3f}{n:>9.4f}{hd:>9.4f}{n / h:>13.4f}{hd / h:>13.4f}")
+        rows.append(dict(age=a, skel_height_m=h, neck_m=n, head_m=hd, neck_over_height=n / h, head_over_height=hd / h))
     print("READ: a real child has a LARGER head/height and a SMALLER height. If the sweep shows that,")
     print("      Anny can represent children and the adult-looking outputs are a prediction (data/loss) problem.")
     return rows
@@ -139,7 +143,7 @@ def main():
     if args.probe_body_model:
         out['body_model_age_sweep'] = part_b(args, mean_shape)
     with open(os.path.join(args.out, 'summary.json'), 'w') as f:
-        json.dump(out, f, indent=2)
+        json.dump(dc.json_safe(out), f, indent=2, allow_nan=False)
     print(f"\nwrote {args.out}/summary.json")
 
 

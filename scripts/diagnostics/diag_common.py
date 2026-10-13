@@ -199,8 +199,10 @@ def bone_groups(names):
             g = 'arm'
         elif 'wrist' in lo:
             g = 'wrist'
-        elif 'finger' in lo or 'thumb' in lo:
-            g = 'fingers'
+        elif 'finger' in lo or 'thumb' in lo or 'metacarpal' in lo:
+            g = 'fingers'          # NB: model.relax_hands masks finger/thumb only, NOT metacarpals
+        elif lo == 'jaw':
+            g = 'head'
         elif 'upperleg' in lo or 'lowerleg' in lo or 'pelvis' in lo:
             g = 'leg'
         elif 'foot' in lo or 'toe' in lo:
@@ -233,8 +235,13 @@ def chain_length(j3d, chain):
     return (pts[:, 1:] - pts[:, :-1]).norm(dim=-1).sum(-1)
 
 
-def body_height(j3d, names):
-    """Head joint to mean-of-feet distance, frame independent. [N]"""
+def skeletal_height(j3d, names):
+    """
+    Head-joint (skull base) to mean-ankle distance, frame independent. [N]
+    This is a SKELETAL span, ~25 cm short of stature (no skull above the atlas,
+    no foot below the ankle); use it only to compare GT with prediction under
+    one definition, never as a stature in metres.
+    """
     head = [i for i, n in enumerate(names) if n.lower() == 'head']
     feet = feet_indices(names)
     if not head or not feet:
@@ -243,16 +250,76 @@ def body_height(j3d, names):
     return (j3d[:, head[0]] - j3d[:, feet].mean(1)).norm(dim=-1)
 
 
+body_height = skeletal_height   # backwards-compatible alias
+
+
 def head_size(v3d, j3d, names):
-    """Approximate head size: max distance of vertices within 25 cm of the head joint. [N]"""
+    """
+    Head height: distance from the head-bone origin to the crown, measured
+    along the neck axis (neck01 -> head), over vertices within 40 cm of the
+    head joint. [N]. (A plain 'vertices within r of the head joint' measure
+    saturates at r for every body because the torso surface is continuous.)
+    """
     head = [i for i, n in enumerate(names) if n.lower() == 'head']
+    chain = neck_chain(names)
     if not head:
-        return torch.zeros(v3d.shape[0], device=v3d.device)
-    hj = j3d[:, head[0]].unsqueeze(1)
-    d = (v3d - hj).norm(dim=-1)
-    near = d < 0.25
-    d = torch.where(near, d, torch.zeros_like(d))
-    return d.max(1).values
+        return torch.full((v3d.shape[0],), float('nan'), device=v3d.device)
+    hj = j3d[:, head[0]]                                           # [N,3]
+    base = j3d[:, chain[0]] if len(chain) >= 2 else j3d[:, 0]     # neck01 (or root)
+    u = hj - base
+    u = u / torch.clamp(u.norm(dim=-1, keepdim=True), min=1e-6)   # [N,3] up-axis of the head
+    rel = v3d - hj.unsqueeze(1)                                   # [N,V,3]
+    p = (rel * u.unsqueeze(1)).sum(-1)                            # signed height above head origin
+    near = rel.norm(dim=-1) < 0.40                                # exclude raised hands etc.
+    p = torch.where(near, p, torch.full_like(p, -1.0))
+    return torch.clamp(p.max(1).values, min=0.0)
+
+
+def visible_gt_mask(gt_j, K, img_size, patch_size):
+    """
+    Replicates the GT filter in train.py prepare_gt (lines ~250-277): keep a
+    human only if its ROOT joint is in front of the camera (z > 0.1) and projects
+    inside the image, and drop a second human whose root lands in an already
+    occupied patch cell. gt_j [N,163,3], K [1,3,3]. Returns a bool mask [N].
+    """
+    root = gt_j[:, 0:1]                                           # [N,1,3]
+    loc = project(root, K)[:, 0]                                  # [N,2]
+    in_front = root[:, 0, 2] > 0.1
+    in_img = (loc[:, 0] >= 0) & (loc[:, 0] < img_size) & (loc[:, 1] >= 0) & (loc[:, 1] < img_size)
+    keep = (in_front & in_img).clone()
+    n_patch = img_size // patch_size
+    cell = torch.clamp((loc // patch_size).long(), 0, n_patch - 1)
+    seen = set()
+    for k in range(gt_j.shape[0]):
+        if not bool(keep[k]):
+            continue
+        c = (int(cell[k, 0]), int(cell[k, 1]))
+        if c in seen:
+            keep[k] = False
+        else:
+            seen.add(c)
+    return keep
+
+
+def mean_or_none(a):
+    a = np.asarray(a, dtype=np.float64)
+    a = a[np.isfinite(a)]
+    return float(a.mean()) if a.size else None
+
+
+def json_safe(o):
+    """Recursively turn NaN/inf and numpy scalars into JSON-valid values."""
+    if isinstance(o, dict):
+        return {str(k): json_safe(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [json_safe(v) for v in o]
+    if isinstance(o, (np.floating, float)):
+        return float(o) if math.isfinite(float(o)) else None
+    if isinstance(o, (np.integer,)):
+        return int(o)
+    if isinstance(o, np.ndarray):
+        return json_safe(o.tolist())
+    return o
 
 
 # --------------------------------------------------------------------------- #
