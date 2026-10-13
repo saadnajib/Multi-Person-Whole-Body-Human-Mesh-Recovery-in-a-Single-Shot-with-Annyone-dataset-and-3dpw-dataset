@@ -182,6 +182,16 @@ def run_body_model(bm, pose44, shape11):
     return out['vertices'], out['bone_poses'][:, :, :3, -1]
 
 
+def run_body_model_full(bm, pose44, shape11):
+    """As run_body_model but also returns the GLOBAL bone poses [N, 163, 4, 4]."""
+    labels = list(bm.phenotype_labels)
+    shape11 = torch.clamp(shape11, 0.0, 1.0)
+    kw = {k: shape11[:, i] for i, k in enumerate(labels)}
+    with torch.no_grad():
+        out = bm(pose_parameters=pose44, phenotype_kwargs=kw)
+    return out['vertices'], out['bone_poses'][:, :, :3, -1], out['bone_poses']
+
+
 def bone_groups(names):
     """Name-based bone groups; prints membership so the grouping can be checked."""
     groups = {k: [] for k in ['root', 'spine', 'neck', 'head', 'clavicle_shoulder', 'arm', 'wrist',
@@ -321,6 +331,54 @@ def visible_gt_mask(gt_j, K, img_size, patch_size):
         else:
             seen.add(c)
     return keep
+
+
+# --------------------------------------------------------------------------- #
+# age scale: read the body model's anchors instead of asserting a convention
+# --------------------------------------------------------------------------- #
+# anny >= 0.6 interpolates 'age' over anchors (default linspace(-1/3, 1, 5)) for the
+# MakeHuman targets newborn / baby / child / young / old (0 / 1 / 11 / 25 / 90 years).
+# The MakeHuman slider itself uses 0.1875 = 11 y and 0.5 = 25 y; the two scales differ.
+MH_TARGET_YEARS = [0.0, 1.0, 11.0, 25.0, 90.0]
+ANNY_DEFAULT_AGE_ANCHORS = [-1.0 / 3.0, 0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0]
+
+
+def age_anchors(bm=None):
+    """(anchor positions, source string). Reads bm.anchors['age'] when the installed anny exposes it."""
+    if bm is not None:
+        try:
+            anc = getattr(bm, 'anchors', None)
+            if anc is not None and 'age' in anc:
+                vals = [float(x) for x in torch.as_tensor(anc['age']).reshape(-1).tolist()]
+                if len(vals) == len(MH_TARGET_YEARS):
+                    return vals, 'bm.anchors[age]'
+                return vals, f'bm.anchors[age] (len {len(vals)} != 5; years not derivable)'
+        except Exception:  # noqa
+            pass
+    return list(ANNY_DEFAULT_AGE_ANCHORS), 'ASSUMED anny default linspace(-1/3, 1, 5); verify against the installed anny'
+
+
+def age_to_years(a, anchors=None):
+    """Piecewise-linear MakeHuman target age for an anny 'age' value. None if the anchors are unusable."""
+    anc = anchors if anchors is not None else ANNY_DEFAULT_AGE_ANCHORS
+    if len(anc) != len(MH_TARGET_YEARS):
+        return None
+    a = float(a)
+    xs, ys = list(anc), MH_TARGET_YEARS
+    if a <= xs[0]:
+        return ys[0]
+    for i in range(len(xs) - 1):
+        if a <= xs[i + 1]:
+            t = (a - xs[i]) / max(xs[i + 1] - xs[i], 1e-9)
+            return ys[i] + t * (ys[i + 1] - ys[i])
+    return ys[-1]
+
+
+def age_scale_text(bm=None):
+    anc, src = age_anchors(bm)
+    pts = ", ".join(f"{v:.2f}->{age_to_years(v, anc):.0f}y" for v in (0.0, 0.2, 1.0 / 3.0, 0.5, 2.0 / 3.0, 1.0)
+                    if age_to_years(v, anc) is not None)
+    return f"age scale [{src}]: {pts}"
 
 
 def mean_or_none(a):

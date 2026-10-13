@@ -36,6 +36,11 @@ USAGE (repo root, multihmr env, GPU node):
     # E3: the youngest people in the first --scan training samples (IN-SAMPLE)
     python scripts/diagnostics/diag_holdout_trace.py --ckpt ... \
         --select youngest --scan 20000 --n 50 --out results/diagnostics/young_v5
+
+    # CHECK 5 (manifest): the fixed (image, person) list from build_manifest.py, one split at a time;
+    # adds the 'pred pose + GT shape' mesh (PVE and panel) and per-category tables (adult/child/hands/neck)
+    python scripts/diagnostics/diag_holdout_trace.py --ckpt ... \
+        --manifest results/diagnostics/manifest.json --manifest_split train --out results/diagnostics/manifest_trace_train_v5
 """
 import argparse
 import csv
@@ -68,18 +73,33 @@ VARIANTS = {
     'V3_demo_relaxhands': dict(amp=True,  K='fov',     mask=True,  relax=True,  thr='demo'),
 }
 VIS_VARIANTS = ('V1_eval_masked', 'V2_demo')
-AGE_BUCKETS = [(0.0, 0.2, '<0.2 (~<11y)'), (0.2, 0.3, '0.2-0.3 (~11-16y)'),
-               (0.3, 0.45, '0.3-0.45 (~16-22y)'), (0.45, 0.6, '0.45-0.6 (adult)'), (0.6, 1.01, '>0.6 (older)')]
+# anny age scale (anchors linspace(-1/3,1,5) -> baby 0, child 1/3 ~ 11 y, young 2/3 ~ 25 y, old 1 ~ 90 y)
+AGE_BUCKETS = [(0.0, 0.2, '<0.2 (baby-~6y)'), (0.2, 0.4, '0.2-0.4 (~6-14y)'),
+               (0.4, 0.6, '0.4-0.6 (~14-22y)'), (0.6, 0.8, '0.6-0.8 (~22-51y)'), (0.8, 1.01, '>0.8 (older)')]
 
 
 def select_indices(args, pkls):
+    """Returns (image indices, description, {idx: [person, ...]} or {}, {(idx, person): [tags]})."""
     n_total = len(pkls)
+    if args.manifest:
+        man = json.load(open(args.manifest))
+        ents = [e for e in man['entries'] if e['split'] == args.manifest_split]
+        if not ents:
+            raise SystemExit(f"[select] manifest has no '{args.manifest_split}' entries")
+        if os.path.abspath(man.get('data_folder', args.data_folder)) != os.path.abspath(args.data_folder):
+            print(f"[select] WARNING: manifest built on {man.get('data_folder')} but --data_folder is {args.data_folder}")
+        idx, sel, tags = [], {}, {}
+        for e in ents:
+            if e['idx'] not in sel:
+                idx.append(e['idx']); sel[e['idx']] = []
+            sel[e['idx']].append(e['person']); tags[(e['idx'], e['person'])] = list(e['tags'])
+        return idx, f"manifest {args.manifest_split} ({len(ents)} people in {len(idx)} images)", sel, tags
     if args.select == 'holdout':
         pool = dc.holdout_indices(n_total)
-        return pool[:args.n], 'HOLDOUT (never trained on)', {}
+        return pool[:args.n], 'HOLDOUT (never trained on)', {}, {}
     if args.select == 'indices':
         idx = [int(s) for s in args.indices.split(',') if s.strip()]
-        return idx, 'explicit indices', {}
+        return idx, 'explicit indices', {}, {}
     if args.select == 'youngest':
         scan = max(0, min(args.scan, n_total - dc.N_HOLDOUT))
         ages = []
@@ -95,14 +115,14 @@ def select_indices(args, pkls):
             raise SystemExit(f"[select] no anny_shape found in the first {scan} annotations")
         ages.sort()
         idx = [i for _, i, _ in ages[:args.n]]
-        sel_person = {i: j for _, i, j in ages[:args.n]}        # only THIS person is evaluated in that image
+        sel_person = {i: [j] for _, i, j in ages[:args.n]}      # only THIS person is evaluated in that image
         if len(idx) < args.n:
             print(f"[select] WARNING: only {len(idx)} samples available (asked {args.n})")
         print(f"[select] youngest {len(idx)} of the first {scan} TRAINING samples "
               f"(min GT age {ages[0][0]:.3f} .. {ages[len(idx) - 1][0]:.3f}). "
               f"These were SEEN in training: this tests representation, not generalisation. "
               f"Only the youngest person of each image is evaluated.")
-        return idx, f'youngest-{len(idx)} people of first {scan} training samples (IN-SAMPLE)', sel_person
+        return idx, f'youngest-{len(idx)} people of first {scan} training samples (IN-SAMPLE)', sel_person, {}
     raise ValueError(args.select)
 
 
@@ -114,6 +134,8 @@ def main():
     ap.add_argument('--select', default='holdout', choices=['holdout', 'youngest', 'indices'])
     ap.add_argument('--scan', type=int, default=20000, help='--select youngest: how many training pkls to scan')
     ap.add_argument('--indices', default='', help='--select indices: comma list of dataset indices')
+    ap.add_argument('--manifest', default='', help='build_manifest.py JSON; overrides --select/--n')
+    ap.add_argument('--manifest_split', default='holdout', choices=['train', 'holdout'])
     ap.add_argument('--out', default='results/diagnostics/holdout_trace')
     ap.add_argument('--n_vis', type=int, default=12)
     ap.add_argument('--variants', default=','.join(VARIANTS.keys()))
@@ -148,7 +170,7 @@ def main():
 
     ds = AnnyOne(data_folder=args.data_folder, img_size=S)
     pkls = ds.pkl_files
-    indices, sel_desc, sel_person = select_indices(args, pkls)
+    indices, sel_desc, sel_person, tagmap = select_indices(args, pkls)
     print(f"[data] {len(pkls)} samples; evaluating {len(indices)} = {sel_desc}")
 
     rows = []                 # one row per (variant, matched person)
@@ -170,20 +192,25 @@ def main():
         shape_gt = y['anny_shape'][0][valid].reshape(nh, -1)[:, :len(phen)].float().to(device)  # [nh,11]
 
         # --- GT through the body model (train.py prepare_gt path) ------------
-        gt_v, gt_j = dc.run_body_model(bm, pose, shape_gt)
+        gt_v, gt_j, gt_bp = dc.run_body_model_full(bm, pose, shape_gt)
         keep = dc.visible_gt_mask(gt_j, K, S, model.patch_size)
         n_gt_total += nh; n_gt_dropped += int((~keep).sum())
         if not keep.any():
             continue
         # --select youngest: the matcher still sees ALL GT people (so other people are not counted as
         # false positives), but metrics are kept only for the selected person.
-        sel_gid = None
+        sel_gids = None
         if idx in sel_person:
-            j = sel_person[idx]
-            if j >= nh or not bool(keep[j]):
-                print(f"  [warn] idx {idx}: selected person {j} invalid or dropped by the visibility filter; skipped"); continue
-            sel_gid = int(keep[:j].sum())            # index after the filter
-        pose, shape_gt, gt_v, gt_j = pose[keep], shape_gt[keep], gt_v[keep], gt_j[keep]
+            sel_gids = []
+            for j in sel_person[idx]:
+                if j >= nh or not bool(keep[j]):
+                    print(f"  [warn] idx {idx}: selected person {j} invalid or dropped by the visibility filter; skipped")
+                else:
+                    sel_gids.append(int(keep[:j].sum()))          # index after the filter
+            if not sel_gids:
+                continue
+        orig_of_gid = torch.nonzero(keep).flatten().tolist()     # filtered index -> annotation person index
+        pose, shape_gt, gt_v, gt_j, gt_bp = pose[keep], shape_gt[keep], gt_v[keep], gt_j[keep], gt_bp[keep]
         nhv = int(keep.sum())
         gt_R = dc.orthonormalize(pose[:, :, :3, :3])
         gt_j2d = dc.project(gt_j, K)
@@ -220,7 +247,7 @@ def main():
                 with torch.cuda.amp.autocast(enabled=cfg['amp']):
                     preds = model(x, is_training=False, K=K_v, det_thresh=thr,
                                   nms_kernel_size=args.nms_kernel_size)
-            det[vname]['gt'] += (1 if sel_gid is not None else nhv)
+            det[vname]['gt'] += (len(sel_gids) if sel_gids is not None else nhv)
             n_raw = len(preds)
             preds = [p for p in preds if torch.isfinite(p['j2d']).all() and torch.isfinite(p['v3d']).all()
                      and torch.isfinite(p['j3d']).all()]
@@ -232,8 +259,8 @@ def main():
             gj2d = gt_j2d.cpu().numpy()
             best, fps, misses = match_2d_greedy(pj2d, gj2d, np.ones_like(gj2d[..., 0]).astype(bool))
             det[vname]['fp'] += len(fps)
-            if sel_gid is not None:
-                best = [(pid, gid) for (pid, gid) in best if gid == sel_gid]
+            if sel_gids is not None:
+                best = [(pid, gid) for (pid, gid) in best if gid in sel_gids]
             det[vname]['matched'] += len(best)
 
             for (pid, gid) in best:
@@ -246,6 +273,23 @@ def main():
                 pa = s * (R.reshape(1, 3, 3) @ vh_ctx.reshape(-1, 3, 1)).reshape(-1, 3) + t
                 pa_pve = ((v_ctx - pa).norm(dim=-1) * 1000).mean().item()
                 mpjpe = (((gt_j[gid] - pelv) - (j_hat - pelv_hat)).norm(dim=-1) * 1000).mean().item()
+                # PLACEMENT (not pelvis-centred): train.py builds the transl/dist/heatmap targets at joint 0
+                # (root) while the model anchors the HEAD joint (person_center) at the detected location.
+                # These numbers show where the predicted body actually lands relative to the GT body.
+                K_match = K if cfg['K'] == 'dataset' else K_fov
+                j2d_hat = dc.project(j_hat.unsqueeze(0), K_match)[0]              # [163,2] in the variant's camera
+                j2d_gt = dc.project(gt_j[gid:gid + 1], K)[0]
+                head_i0 = chain[-1]
+                place = dict(
+                    mpjpe_abs=((gt_j[gid] - j_hat).norm(dim=-1) * 1000).mean().item(),
+                    root_err_mm=((gt_j[gid, 0] - j_hat[0]).norm() * 1000).item(),
+                    head_err_mm=((gt_j[gid, head_i0] - j_hat[head_i0]).norm() * 1000).item(),
+                    root_depth_err_m=float(j_hat[0, 2] - gt_j[gid, 0, 2]),
+                    head_px_err=float((j2d_hat[head_i0] - j2d_gt[head_i0]).norm()),
+                    root_px_err=float((j2d_hat[0] - j2d_gt[0]).norm()),
+                    pred_head_vs_gt_root_px=float((j2d_hat[head_i0] - j2d_gt[0]).norm()),
+                    gt_head_vs_gt_root_px=float((j2d_gt[head_i0] - j2d_gt[0]).norm()),
+                    vertical_shift_px=float(j2d_hat[0, 1] - j2d_gt[0, 1]))   # + = predicted root lower in the image
                 # head+neck surface vertices, selected on the REST-POSE GT mesh (hands cannot intrude): the region PVE hides
                 near_neck = hn_mask_gt[gid]
                 pve_headneck = ((v_ctx - vh_ctx).norm(dim=-1)[near_neck] * 1000).mean().item() if near_neck.any() else float('nan')
@@ -269,8 +313,16 @@ def main():
                 # factorisation: which factor moves the neck length?
                 P_gt = pose[gid:gid + 1]
                 P_hat = dc.rotmat_to_homogeneous(R_hat.unsqueeze(0))
-                _, j_gp_ps = dc.run_body_model(bm, P_gt, sh_hat.unsqueeze(0))      # GT pose + pred shape
-                _, j_pp_gs = dc.run_body_model(bm, P_hat, sh_gt.unsqueeze(0))      # pred pose + GT shape
+                # GLOBAL orientation error of end effectors: the 4-bone neck chain is kinematically redundant,
+                # so per-bone (local) errors can be large while the head still faces the right way.
+                _, _, bp_hat = dc.run_body_model_full(bm, P_hat, sh_hat.unsqueeze(0))
+                glob_err = dc.geodesic_deg(bp_hat[0, :, :3, :3], gt_bp[gid, :, :3, :3]).cpu()   # [163], camera-frame
+                head_i = chain[-1]; wrist_i = [i for i, n in enumerate(names) if n.lower().startswith('wrist')]
+                v_gp_ps, j_gp_ps = dc.run_body_model(bm, P_gt, sh_hat.unsqueeze(0))      # GT pose + pred shape
+                v_pp_gs, j_pp_gs = dc.run_body_model(bm, P_hat, sh_gt.unsqueeze(0))      # pred pose + GT shape
+                # CHECK 5: PVE of the swapped-shape meshes against GT, pelvis-centred (same topology, same vertex order)
+                pve_pp_gs = ((v_ctx - (v_pp_gs[0] - j_pp_gs[0, 0:1])).norm(dim=-1) * 1000).mean().item()
+                pve_gp_ps = ((v_ctx - (v_gp_ps[0] - j_gp_ps[0, 0:1])).norm(dim=-1) * 1000).mean().item()
                 I = dc.identity_pose(1, 163, device)
                 v_rest_gs, j_rest_gs = v_rest_gs_all[gid:gid + 1], j_rest_gs_all[gid:gid + 1]   # rest pose, GT shape
                 v_rest_ps, j_rest_ps = dc.run_body_model(bm, I, sh_hat.unsqueeze(0))            # rest pose, pred shape
@@ -282,8 +334,14 @@ def main():
                 headsz_hat = dc.head_size(v_hat.unsqueeze(0), j_hat.unsqueeze(0), names, hn_mask_pred)[0].item()
                 g_neck, g_height, g_head = gt_neck[gid].item(), gt_height[gid].item(), gt_headsz[gid].item()
 
-                row = dict(variant=vname, idx=idx, gid=gid, score=float(p['scores']),
+                row = dict(variant=vname, idx=idx, gid=gid, person=orig_of_gid[gid], score=float(p['scores']),
+                           tags='|'.join(tagmap.get((idx, orig_of_gid[gid]), [])),
                            pve=pve, pa_pve=pa_pve, mpjpe=mpjpe, pve_headneck=pve_headneck,
+                           pve_predpose_gtshape=pve_pp_gs, pve_gtpose_predshape=pve_gp_ps,
+                           **place,
+                           rot_global_head_deg=float(glob_err[head_i]),
+                           rot_global_wrist_deg=float(glob_err[wrist_i].mean()) if wrist_i else float('nan'),
+                           rot_global_root_deg=float(glob_err[0]),
                            helper_bones_pred_err_deg=helper_pred_err,
                            gt_helper_bones_angle_deg=float(gt_helper_angle[gid]),
                            gt_neck_m=g_neck, pred_neck_m=neck_hat,
@@ -312,6 +370,15 @@ def main():
             if n_done < args.n_vis and vname in VIS_VARIANTS:
                 vis_panels[vname] = ([preds[pid]['v3d'].float().cpu().numpy() for pid, _ in best],
                                      (K if cfg['K'] == 'dataset' else K_fov)[0].cpu().numpy())
+                if vname == 'V1_eval_masked':
+                    # CHECK 5 panel: predicted pose + GT shape, placed at the predicted root
+                    swapped = []
+                    for pid, gid in best:
+                        R_h = roma.rotvec_to_rotmat(preds[pid]['rotvec'].float().reshape(-1, 3)).reshape(1, 163, 3, 3)
+                        v_s, j_s = dc.run_body_model(bm, dc.rotmat_to_homogeneous(R_h), shape_gt[gid:gid + 1])
+                        root_hat = preds[pid]['j3d'].float()[0:1]
+                        swapped.append((v_s[0] - j_s[0, 0:1] + root_hat).cpu().numpy())
+                    vis_panels['V1 pose + GT shape'] = (swapped, K[0].cpu().numpy())
 
         # --- overlay panel -----------------------------------------------------
         if n_done < args.n_vis:
@@ -321,7 +388,7 @@ def main():
             g_ov = dc.render_overlay(img_u8, [v.cpu().numpy() for v in gt_v], faces, Kc)
             panels.append(dc.label(g_ov if g_ov is not None else dc.draw_points(img_u8, gt_j2d.cpu().numpy()),
                                    "GT (dataset pose+shape)"))
-            for vname in VIS_VARIANTS:
+            for vname in list(VIS_VARIANTS) + ['V1 pose + GT shape']:
                 if vname in vis_panels:
                     verts, Kv = vis_panels[vname]
                     ov = dc.render_overlay(img_u8, verts, faces, Kv)        # rendered with the K the variant was placed with
@@ -372,7 +439,7 @@ def main():
     print(f"non-root translation in GT poses: max {c['nonroot_translation_max']:.2e} "
           f"({'OK, factorisation valid' if c['nonroot_translation_max'] < 1e-4 else 'WARNING: factorisation assumption violated'})")
     print(f"GT people: {n_gt_total}, dropped by train.py's visibility filter: {n_gt_dropped}"
-          + ("; --select youngest: metrics/recall count only the selected person per image, FP counts use all people" if sel_person else ""))
+          + ("; selected-person mode: metrics/recall count only the selected people, FP counts use all people" if sel_person else ""))
     nf = {vn: det[vn]['nonfinite'] for vn in variants if det[vn]['nonfinite']}
     if nf:
         print(f"non-finite detections dropped before matching: {nf}")
@@ -391,6 +458,11 @@ def main():
                  helper_bones_pred_err_deg=m(col(vn, 'helper_bones_pred_err_deg')),
                  gt_helper_bones_angle_deg=m(col(vn, 'gt_helper_bones_angle_deg')))
         s['rot_err_deg_by_group'] = {g: m(col(vn, f'rot_{g}')) for g in groups}
+        s['rot_global_deg'] = dict(root=m(col(vn, 'rot_global_root_deg')), head=m(col(vn, 'rot_global_head_deg')),
+                                   wrist=m(col(vn, 'rot_global_wrist_deg')))
+        s['placement'] = {k: m(col(vn, k)) for k in ('mpjpe_abs', 'root_err_mm', 'head_err_mm', 'root_depth_err_m',
+                                                     'head_px_err', 'root_px_err', 'pred_head_vs_gt_root_px',
+                                                     'gt_head_vs_gt_root_px', 'vertical_shift_px')}
         s['shape_abs_err'] = {n: m(np.abs(col(vn, f'pheno_err_{n}'))) for n in phen}
         s['shape_bias'] = {n: m(col(vn, f'pheno_err_{n}')) for n in phen}
         s['neck_factorisation_m'] = dict(
@@ -429,6 +501,23 @@ def main():
               + f"{dc.fmt(s['helper_bones_pred_err_deg']):>9}")
     print(f"  GT helper bones are on average {dc.fmt(summary['variants'][list(variants)[0]]['gt_helper_bones_angle_deg'])} deg "
           f"from identity: the irreducible floor the mask introduces (a dataset property, not a model error).")
+    print("\n=== PLACEMENT (absolute, NOT pelvis-centred) ===")
+    print(f"{'variant':<22}{'MPJPE_abs':>10}{'root mm':>9}{'head mm':>9}{'root dz m':>10}{'head px':>9}{'root px':>9}{'predHead-gtRoot px':>20}{'gtHead-gtRoot px':>18}{'vshift px':>10}")
+    for vn in variants:
+        pl = summary['variants'][vn]['placement']
+        print(f"{vn:<22}{dc.fmt(pl['mpjpe_abs']):>10}{dc.fmt(pl['root_err_mm']):>9}{dc.fmt(pl['head_err_mm']):>9}{dc.fmt(pl['root_depth_err_m'], 2):>10}"
+              f"{dc.fmt(pl['head_px_err']):>9}{dc.fmt(pl['root_px_err']):>9}{dc.fmt(pl['pred_head_vs_gt_root_px']):>20}{dc.fmt(pl['gt_head_vs_gt_root_px']):>18}{dc.fmt(pl['vertical_shift_px']):>10}")
+    print("  read: train.py's transl/dist/heatmap targets are at the ROOT, the model anchors the HEAD (model.py:430,442).")
+    print("        If 'predHead-gtRoot px' is small and 'head px' large, the head is placed where the pelvis is: a")
+    print("        training-target bug (supervision) that pelvis-centred PVE cannot see. If 'head px' is small, the 2D")
+    print("        losses compensate and the bug costs only depth/offset noise; 'vshift' > 0 = predicted body too low.")
+    print("\n=== GLOBAL (camera-frame) ORIENTATION ERROR of end effectors, deg ===")
+    for vn in variants:
+        gd = summary['variants'][vn]['rot_global_deg']
+        print(f"{vn:<22} root {dc.fmt(gd['root']):>6}  head {dc.fmt(gd['head']):>6}  wrist {dc.fmt(gd['wrist']):>6}")
+    print("  read: local neck/head errors far above the GLOBAL head error => the neck chain is redundant (several local")
+    print("        rotations give the same head placement) and the per-bone rotation loss is a weak signal there;")
+    print("        a large GLOBAL head error means the face really points the wrong way.")
 
     print("\n=== SHAPE: bias (pred - GT) / abs error, per phenotype ===")
     print(f"{'variant':<22}" + "".join(f"{n[:9]:>13}" for n in phen))
@@ -454,6 +543,32 @@ def main():
         print(f"{vn:<22} " + "  ".join(f"[{k}] n={v['n']} gt={v['gt_age']:.2f} pred={v['pred_age']:.2f}"
                                         f" h={dc.fmt(v['rest_skel_height_gt_m'], 2)}->{dc.fmt(v['rest_skel_height_pred_m'], 2)}"
                                         for k, v in b.items()))
+
+    # --- per-category tables (manifest runs) ---------------------------------------------------
+    if tagmap:
+        TAGM = ['pve', 'pa_pve', 'pve_headneck', 'neck_ratio', 'pheno_err_age', 'pheno_err_height',
+                'pheno_err_proportions', 'pve_predpose_gtshape', 'pve_gtpose_predshape', 'rot_neck', 'rot_fingers',
+                'rot_global_head_deg']
+        all_tags = sorted({t for ts in tagmap.values() for t in ts})
+        summary['per_tag'] = {}
+        for vn in variants:
+            summary['per_tag'][vn] = {}
+            for t in all_tags:
+                rr = [r for r in rows if r['variant'] == vn and t in r['tags'].split('|')]
+                if rr:
+                    d_ = {k: m([r.get(k, np.nan) for r in rr]) for k in TAGM}
+                    d_['n'] = len(rr)
+                    d_['shape_swap_gain_mm'] = m([r['pve'] - r['pve_predpose_gtshape'] for r in rr])
+                    summary['per_tag'][vn][t] = d_
+        ref_t = 'V1_eval_masked' if 'V1_eval_masked' in variants else list(variants)[0]
+        print(f"\n=== PER CATEGORY ({ref_t}; mm, ratios pred/GT, phenotype errors signed) ===")
+        print(f"{'tag':<8}{'n':>4}" + "".join(f"{k[:12]:>14}" for k in TAGM) + f"{'swap_gain':>11}")
+        for t, d_ in summary['per_tag'][ref_t].items():
+            print(f"{t:<8}{d_['n']:>4}" + "".join(f"{dc.fmt(d_[k], 3 if ('ratio' in k or 'pheno' in k) else 1):>14}" for k in TAGM)
+                  + f"{dc.fmt(d_['shape_swap_gain_mm']):>11}")
+        print("  swap_gain = PVE(pred) - PVE(pred pose + GT shape): how much of the error is the SHAPE head's; for")
+        print("  children a large gain with pheno_err_age > 0 means the shape head makes them adults (supervision/")
+        print("  generalisation cause), a small gain means the pose/decoding path is responsible.")
 
     # --- paired comparison: same (image, GT person) matched under EVERY variant ----------------
     # The per-variant means above are over each variant's own matched cohort; thresholds, K and the
