@@ -22,6 +22,8 @@ job is itself a test; if a job fails, send the `.err` log back.
 | C4 | colour-jitter / flip flags are inert for AnnyOne | confirmed | only `train.py:1340-1344` argparse entries; no reader in `datasets/annyone.py`. |
 | C5 | 3DPW labels have age fixed at 0.55 | confirmed (design choice) | `scripts/data/smpl_to_anny.py:229`, `slurm/data/run_smpl_to_anny_task.sh:48`. |
 | C7 (new) | eval and demo do not run the same model: `train.py evaluate()` never sets `model.mask_helper_joints`, so the 74 mm PVE was measured with the 88 helper bones **unmasked**, while every demo masks them | confirmed | `train.py:859-861` sets only `mask_helper_joints_train`; `model.py:360` condition; `demo.py` default `--mask_helper_joints 1`. |
+| C9 (new) | **training-target mismatch**: `train.py` builds the translation, depth and detection-cell targets at joint 0 (root) while the model anchors and reports the **head** joint (`person_center='head'`), so `reg_transl`/`reg_dist`/BCE pull the head toward the root's position; only the weak 2D terms (`alpha_j2d/v2d` 0.1) oppose it, and every pelvis-centred metric is blind to the result | confirmed in code; effect measured by the trace's PLACEMENT table | `model.py:430,442`, `train.py:214-222,239-245`, `loss.py:99`. |
+| C10 (new) | the HPH 6D pose init `[1,0,0,1,0,0]` is two parallel vectors under `rot6d_to_rotmat`'s layout (identity would be `[1,0,0,0,1,0]`); the heads add a learned residual so trained checkpoints are unaffected, but early training is ill-conditioned | confirmed in code | `model.py:565`, `utils/humans.py:12-22`. |
 | C8 (new) | the dataset K after contain+pad skips the padding offset: the long-axis principal-point coordinate is always right, the short-axis one only for a centred principal point | confirmed; `datasets/threedpw_anny.py:16-19` implements the correct formula and names AnnyOne's omission | `datasets/annyone.py:52-56`. E1 measures `princpt/W`, `princpt/H` on every holdout image; if centred, C8 is harmless for AnnyOne. |
 
 PVE cannot see the neck (C6 in the analysis) is arithmetic, not a code fact: head+neck vertices are a
@@ -130,15 +132,18 @@ Outputs: `summary.json`, `per_person.csv` (phenotype columns are prefixed `pheno
 
 Part A reads 20 000 evenly spaced training annotations (pkl only, no images): per-phenotype
 statistics, an **age histogram**, the fraction of people below age 0.2 / 0.3 / 0.4 / 0.5, and the same
-for the holdout. Anny inherits MakeHuman's age scale (`scripts/data/smpl_to_anny.py:149`): 0.0 ≈ 1 y,
-0.19 ≈ 11 y, 0.3 ≈ 16 y, 0.5 = 25 y, 1.0 = 90 y, so **< 0.2 is "child", 0.2–0.3 "adolescent"**.
+for the holdout. **Age scale:** anny (≥ 0.6) interpolates `age` over anchors −1/3, 0, 1/3, 2/3, 1 for
+newborn / baby / child (11 y) / young (25 y) / old (90 y); the scripts read the anchors from the body model
+at runtime and print the scale. On that scale **< 0.33 is a child**, the dataset mean 0.65 is a 25-year-old,
+and the 3DPW pin `age=0.55` (`scripts/data/smpl_to_anny.py:229`, which assumes MakeHuman's 0.5 = 25 y) is
+~20 y. Both conventions are stated in the output; do not quote one without the other.
 Part B puts Anny in rest pose at the dataset-mean shape and sweeps `age` 0 → 1, printing skeletal
 height, neck/height and head/height.
 
 | observation | meaning |
 |---|---|
-| age < 0.2 is a fraction of a percent | there is almost no child supervision; with an L1 shape loss and a 0.5 prior the network will regress children to adults: **a data cause**; the 3DPW labels (age fixed 0.55, C5) add none |
-| several percent below 0.2 | children exist in training; run E3 |
+| age < 0.33 is a few percent or less | little child supervision; with an L1 shape loss and a 0.5 prior the network regresses children toward adults: **a data cause**; the 3DPW labels (age fixed 0.55, C5) add none |
+| children exist in training (they do: ~2.5 % below 0.3) | run E3 to see whether the model can represent them in-sample |
 | Part B: height drops and head/height rises as age → 0 | Anny can represent a child; the failure is network/data-side, not the body model |
 | Part B: proportions barely move | `age` alone does not make a child in this rig; `height`/`proportions` must move too, which changes what "child supervision" means |
 

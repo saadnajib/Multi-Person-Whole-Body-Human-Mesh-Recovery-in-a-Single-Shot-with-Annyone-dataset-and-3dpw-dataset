@@ -76,10 +76,10 @@ def part_a(args):
     out['age_hist'] = {f'{bins[i]:.1f}-{bins[i + 1]:.1f}': int(hist[i]) for i in range(10)}
     out['age_frac_below'] = {str(t): float((age < t).mean()) for t in (0.2, 0.3, 0.4, 0.5)}
     print("\n=== AGE HISTOGRAM (training sample) ===")
-    print("    MakeHuman convention, inherited by Anny: 0.0 ~ 1 y, 0.19 ~ 11 y, 0.3 ~ 16 y, 0.4 ~ 20 y, 0.5 = 25 y, 1.0 = 90 y")
+    print("    " + dc.age_scale_text(None) + "  (Part B re-reads the anchors from the installed body model)")
     for k, v in out['age_hist'].items():
         print(f"  {k}: {v:7d}  {'#' * int(60 * v / max(hist.max(), 1))}")
-    print("fraction of people with age < 0.2 (~child, <11y) / 0.3 (~<16y) / 0.4 (~<20y) / 0.5: " +
+    print("fraction of people with age < 0.2 / 0.3 / 0.4 / 0.5  (anny default scale: 0.33 ~ 11 y child, 0.67 ~ 25 y): " +
           " / ".join(f"{out['age_frac_below'][str(t)] * 100:.2f}%" for t in (0.2, 0.3, 0.4, 0.5)))
     if len(H):
         ageh = H[:, 1]
@@ -94,8 +94,8 @@ def part_a(args):
     cc = np.corrcoef(P[:, 1], P[:, 4])[0, 1] if len(P) > 2 else float('nan')
     out['corr_age_height_pheno'] = float(cc)
     print(f"corr(age, height phenotype) = {cc:+.3f}")
-    print("\nREAD: Anny age 0.5 = 25 y; children are below ~0.2, adolescents 0.2-0.3 (see Part B for what each value looks like).")
-    print("      If <0.2 is a fraction of a percent, the network has almost no child supervision and an")
+    print("\nREAD: on anny's own scale ~0.33 = 11 y and ~0.67 = 25 y (the dataset mean 0.65 is a young adult); children are")
+    print("      below ~0.33. If that fraction is a few percent or less, the network has little child supervision and an")
     print("      L1 shape loss toward a 0.5 prior will regress every child to an adult: a DATA cause.")
     print("      The 3DPW labels used from v7/v9 on have age FIXED at 0.55 (scripts/data/smpl_to_anny.py),")
     print("      so mixed training adds zero child supervision as well.")
@@ -120,6 +120,7 @@ def part_b(args, mean_shape):
     except Exception as e:  # noqa
         print(f"[probe] skipped: {e} (run inside the multihmr env)"); return None
     print("\n=== BODY-MODEL PROBE: rest pose, dataset-mean shape, age sweep ===")
+    print("    " + dc.age_scale_text(bm))
     bm = anny.create_fullbody_model(remove_unattached_vertices=False, all_phenotypes=True).float()
     bm.set_skinning_method('lbs')
     names = list(bm.bone_labels); phen = list(bm.phenotype_labels)

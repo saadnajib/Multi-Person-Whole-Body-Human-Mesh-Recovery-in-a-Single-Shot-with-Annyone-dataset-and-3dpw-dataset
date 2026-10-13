@@ -57,9 +57,10 @@ import torch  # noqa: E402
 from PIL import Image  # noqa: E402
 
 AGES = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0]
-AGE_CONVENTION = ("MakeHuman age convention, inherited by Anny (see scripts/data/smpl_to_anny.py ~l.140-150): "
-                  "age 0.0 ~ 1 y, 0.1875 ~ 11 y, 0.5 = 25 y, 1.0 = 90 y (piecewise linear in between; "
-                  "so 0.1 ~ 6 y, 0.2 ~ 12 y, 0.3 ~ 16 y, 0.4 ~ 20 y)")
+AGE_CONVENTION = ("age -> years uses the body model's own phenotype anchors when exposed (anny >= 0.6: anchors "
+                  "linspace(-1/3, 1, 5) for newborn/baby/child/young/old = 0/1/11/25/90 y, so 1/3 ~ 11 y, 2/3 ~ 25 y); "
+                  "the MakeHuman slider scale (0.1875 = 11 y, 0.5 = 25 y) that scripts/data/smpl_to_anny.py assumes is "
+                  "DIFFERENT. The printed 'years' are labels; the meshes are what they are.")
 IMG = 672                 # synthetic image, square
 FOCAL = 800.0             # px
 DIST = 3.5                # m, root joint straight ahead of the camera
@@ -79,13 +80,12 @@ _RENDER_OK = True
 # --------------------------------------------------------------------------- #
 # small helpers
 # --------------------------------------------------------------------------- #
+_AGE_ANCHORS = None   # set in main() from the body model
+
+
 def age_to_years(a):
-    a = float(a)
-    if a <= 0.1875:
-        return 1.0 + a / 0.1875 * 10.0
-    if a <= 0.5:
-        return 11.0 + (a - 0.1875) / 0.3125 * 14.0
-    return 25.0 + (a - 0.5) / 0.5 * 65.0
+    y = dc.age_to_years(a, _AGE_ANCHORS)
+    return float('nan') if y is None else y
 
 
 def _np(x):
@@ -159,13 +159,19 @@ def build_body_model(device):
 
 
 def default_pose_parameterization(bm):
-    """Best effort: the default of the pose-parameterization kwarg model.py never passes."""
+    """The parameterization the body model will use for model.py's call (which passes no such kwarg)."""
+    for attr in ('pose_parameterization', 'pose_param'):
+        v = getattr(bm, attr, None)
+        if v is not None:
+            extra = {k: getattr(bm, k) for k in ('bone_orientation', 'root_identity_orientation') if hasattr(bm, k)}
+            return f"bm.{attr}={v!r}" + (f" {extra}" if extra else "")
     try:
         import inspect
         p = inspect.signature(bm.forward).parameters
         for k in ('pose_parameterization', 'pose_param', 'parameterization'):
             if k in p and p[k].default is not inspect.Parameter.empty:
-                return f"{k}={p[k].default!r} (anny default; model.py passes no such kwarg)"
+                return (f"{k} kwarg default is {p[k].default!r}; the effective default is a module attribute this anny "
+                        f"version does not expose, so it is UNKNOWN here (not 'None')")
         return "no pose-parameterization kwarg in bm.forward; arguments: " + ", ".join(p)
     except Exception as e:  # noqa
         return f"unknown ({type(e).__name__}: {e})"
@@ -916,7 +922,17 @@ def main():
     print(f"[camera] model -> OpenCV camera rotation {np.round(Rc, 3).tolist()}; root placed {DIST} m ahead, "
           f"f={FOCAL:.0f}px, {IMG}x{IMG}")
 
+    global _AGE_ANCHORS
+    _AGE_ANCHORS, _age_src = dc.age_anchors(bm)
+    print(f"[age] {dc.age_scale_text(bm)}")
+    if hasattr(bm, 'base_mesh_vertex_indices'):
+        try:
+            print(f"[mesh] V_full={int(v_rest.shape[1])} V_base_skin={len(bm.base_mesh_vertex_indices)} "
+                  f"(remove_unattached_vertices=False keeps helper vertices; mesh heights / vertex counts use V_full)")
+        except Exception:  # noqa
+            pass
     summary = dict(device=str(device), n_bones=nb, n_vertices=int(v_rest.shape[1]), phenotype_labels=phen,
+                   age_anchors=_AGE_ANCHORS, age_anchor_source=_age_src,
                    bone_labels=names, pose_parameterization=pp, shape_source=shape_src, mean_shape=shape_vals,
                    camera=cam_info)
 

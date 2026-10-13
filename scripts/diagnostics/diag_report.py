@@ -219,8 +219,9 @@ def main():
     P("## Data: GT age distribution (E2)\n")
     if S['pheno']:
         fb = S['pheno'].get('age_frac_below', {})
-        P(f"Training people with age < 0.2 (~child): {f(100 * fb.get('0.2', 0), 2)}%, < 0.3: {f(100 * fb.get('0.3', 0), 2)}%, < 0.5: {f(100 * fb.get('0.5', 0), 1)}%. "
-          f"Holdout: {json.dumps(S['pheno'].get('holdout_age_frac_below', {}))}. 3DPW labels have age fixed at 0.55.\n")
+        P(f"Training people with age < 0.2: {f(100 * fb.get('0.2', 0), 2)}%, < 0.3 (~child on anny's scale, 1/3 = 11 y): {f(100 * fb.get('0.3', 0), 2)}%, "
+          f"< 0.4: {f(100 * fb.get('0.4', 0), 2)}%, < 0.5: {f(100 * fb.get('0.5', 0), 1)}%. "
+          f"Holdout: {json.dumps(S['pheno'].get('holdout_age_frac_below', {}))}. 3DPW labels have age fixed at 0.55 (~20 y).\n")
     else:
         P("Not run (`diag_phenotypes.py`).\n")
 
@@ -256,7 +257,7 @@ def main():
     fac = (ref or {}).get('neck_factorisation_m') or {}
     rot = (ref or {}).get('rot_err_deg_by_group') or {}
     bias = (ref or {}).get('shape_bias') or {}
-    child_frac = g(S['pheno'], 'age_frac_below', '0.2')
+    child_frac = g(S['pheno'], 'age_frac_below', '0.3')
     td = (S['overfit'] or {}).get('train_pve_drop_pct')
 
     def origin_line(name, lines):
@@ -301,8 +302,8 @@ def main():
 
     kid = []
     if child_frac is not None:
-        kid.append(f"{f(100 * child_frac, 2)}% of training people have age < 0.2 (~11 y).")
-        if child_frac < 0.01:
+        kid.append(f"{f(100 * child_frac, 2)}% of training people have age < 0.3 (~child on anny's scale).")
+        if child_frac < 0.03:
             kid.append("**supervision**: almost no child labels; with an L1 shape loss toward a 0.5 prior the shape head regresses children to adults. 3DPW labels (age fixed 0.55) add none.")
     if bias.get('age') is not None:
         kid.append(f"age bias on the evaluated set {bias['age']:+.3f} (pred - GT).")

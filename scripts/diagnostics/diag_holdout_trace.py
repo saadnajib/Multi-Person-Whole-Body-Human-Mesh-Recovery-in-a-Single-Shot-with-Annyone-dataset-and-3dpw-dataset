@@ -73,8 +73,9 @@ VARIANTS = {
     'V3_demo_relaxhands': dict(amp=True,  K='fov',     mask=True,  relax=True,  thr='demo'),
 }
 VIS_VARIANTS = ('V1_eval_masked', 'V2_demo')
-AGE_BUCKETS = [(0.0, 0.2, '<0.2 (~<11y)'), (0.2, 0.3, '0.2-0.3 (~11-16y)'),
-               (0.3, 0.45, '0.3-0.45 (~16-22y)'), (0.45, 0.6, '0.45-0.6 (adult)'), (0.6, 1.01, '>0.6 (older)')]
+# anny age scale (anchors linspace(-1/3,1,5) -> baby 0, child 1/3 ~ 11 y, young 2/3 ~ 25 y, old 1 ~ 90 y)
+AGE_BUCKETS = [(0.0, 0.2, '<0.2 (baby-~6y)'), (0.2, 0.4, '0.2-0.4 (~6-14y)'),
+               (0.4, 0.6, '0.4-0.6 (~14-22y)'), (0.6, 0.8, '0.6-0.8 (~22-51y)'), (0.8, 1.01, '>0.8 (older)')]
 
 
 def select_indices(args, pkls):
