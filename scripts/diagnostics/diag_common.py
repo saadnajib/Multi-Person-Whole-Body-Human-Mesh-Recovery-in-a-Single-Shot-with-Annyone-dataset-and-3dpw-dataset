@@ -182,6 +182,16 @@ def run_body_model(bm, pose44, shape11):
     return out['vertices'], out['bone_poses'][:, :, :3, -1]
 
 
+def run_body_model_full(bm, pose44, shape11):
+    """As run_body_model but also returns the GLOBAL bone poses [N, 163, 4, 4]."""
+    labels = list(bm.phenotype_labels)
+    shape11 = torch.clamp(shape11, 0.0, 1.0)
+    kw = {k: shape11[:, i] for i, k in enumerate(labels)}
+    with torch.no_grad():
+        out = bm(pose_parameters=pose44, phenotype_kwargs=kw)
+    return out['vertices'], out['bone_poses'][:, :, :3, -1], out['bone_poses']
+
+
 def bone_groups(names):
     """Name-based bone groups; prints membership so the grouping can be checked."""
     groups = {k: [] for k in ['root', 'spine', 'neck', 'head', 'clavicle_shoulder', 'arm', 'wrist',

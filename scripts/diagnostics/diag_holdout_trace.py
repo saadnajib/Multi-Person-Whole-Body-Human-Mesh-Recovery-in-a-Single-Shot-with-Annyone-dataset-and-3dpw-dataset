@@ -191,7 +191,7 @@ def main():
         shape_gt = y['anny_shape'][0][valid].reshape(nh, -1)[:, :len(phen)].float().to(device)  # [nh,11]
 
         # --- GT through the body model (train.py prepare_gt path) ------------
-        gt_v, gt_j = dc.run_body_model(bm, pose, shape_gt)
+        gt_v, gt_j, gt_bp = dc.run_body_model_full(bm, pose, shape_gt)
         keep = dc.visible_gt_mask(gt_j, K, S, model.patch_size)
         n_gt_total += nh; n_gt_dropped += int((~keep).sum())
         if not keep.any():
@@ -209,7 +209,7 @@ def main():
             if not sel_gids:
                 continue
         orig_of_gid = torch.nonzero(keep).flatten().tolist()     # filtered index -> annotation person index
-        pose, shape_gt, gt_v, gt_j = pose[keep], shape_gt[keep], gt_v[keep], gt_j[keep]
+        pose, shape_gt, gt_v, gt_j, gt_bp = pose[keep], shape_gt[keep], gt_v[keep], gt_j[keep], gt_bp[keep]
         nhv = int(keep.sum())
         gt_R = dc.orthonormalize(pose[:, :, :3, :3])
         gt_j2d = dc.project(gt_j, K)
@@ -295,6 +295,11 @@ def main():
                 # factorisation: which factor moves the neck length?
                 P_gt = pose[gid:gid + 1]
                 P_hat = dc.rotmat_to_homogeneous(R_hat.unsqueeze(0))
+                # GLOBAL orientation error of end effectors: the 4-bone neck chain is kinematically redundant,
+                # so per-bone (local) errors can be large while the head still faces the right way.
+                _, _, bp_hat = dc.run_body_model_full(bm, P_hat, sh_hat.unsqueeze(0))
+                glob_err = dc.geodesic_deg(bp_hat[0, :, :3, :3], gt_bp[gid, :, :3, :3]).cpu()   # [163], camera-frame
+                head_i = chain[-1]; wrist_i = [i for i, n in enumerate(names) if n.lower().startswith('wrist')]
                 v_gp_ps, j_gp_ps = dc.run_body_model(bm, P_gt, sh_hat.unsqueeze(0))      # GT pose + pred shape
                 v_pp_gs, j_pp_gs = dc.run_body_model(bm, P_hat, sh_gt.unsqueeze(0))      # pred pose + GT shape
                 # CHECK 5: PVE of the swapped-shape meshes against GT, pelvis-centred (same topology, same vertex order)
@@ -315,6 +320,9 @@ def main():
                            tags='|'.join(tagmap.get((idx, orig_of_gid[gid]), [])),
                            pve=pve, pa_pve=pa_pve, mpjpe=mpjpe, pve_headneck=pve_headneck,
                            pve_predpose_gtshape=pve_pp_gs, pve_gtpose_predshape=pve_gp_ps,
+                           rot_global_head_deg=float(glob_err[head_i]),
+                           rot_global_wrist_deg=float(glob_err[wrist_i].mean()) if wrist_i else float('nan'),
+                           rot_global_root_deg=float(glob_err[0]),
                            helper_bones_pred_err_deg=helper_pred_err,
                            gt_helper_bones_angle_deg=float(gt_helper_angle[gid]),
                            gt_neck_m=g_neck, pred_neck_m=neck_hat,
@@ -431,6 +439,8 @@ def main():
                  helper_bones_pred_err_deg=m(col(vn, 'helper_bones_pred_err_deg')),
                  gt_helper_bones_angle_deg=m(col(vn, 'gt_helper_bones_angle_deg')))
         s['rot_err_deg_by_group'] = {g: m(col(vn, f'rot_{g}')) for g in groups}
+        s['rot_global_deg'] = dict(root=m(col(vn, 'rot_global_root_deg')), head=m(col(vn, 'rot_global_head_deg')),
+                                   wrist=m(col(vn, 'rot_global_wrist_deg')))
         s['shape_abs_err'] = {n: m(np.abs(col(vn, f'pheno_err_{n}'))) for n in phen}
         s['shape_bias'] = {n: m(col(vn, f'pheno_err_{n}')) for n in phen}
         s['neck_factorisation_m'] = dict(
@@ -469,6 +479,13 @@ def main():
               + f"{dc.fmt(s['helper_bones_pred_err_deg']):>9}")
     print(f"  GT helper bones are on average {dc.fmt(summary['variants'][list(variants)[0]]['gt_helper_bones_angle_deg'])} deg "
           f"from identity: the irreducible floor the mask introduces (a dataset property, not a model error).")
+    print("\n=== GLOBAL (camera-frame) ORIENTATION ERROR of end effectors, deg ===")
+    for vn in variants:
+        gd = summary['variants'][vn]['rot_global_deg']
+        print(f"{vn:<22} root {dc.fmt(gd['root']):>6}  head {dc.fmt(gd['head']):>6}  wrist {dc.fmt(gd['wrist']):>6}")
+    print("  read: local neck/head errors far above the GLOBAL head error => the neck chain is redundant (several local")
+    print("        rotations give the same head placement) and the per-bone rotation loss is a weak signal there;")
+    print("        a large GLOBAL head error means the face really points the wrong way.")
 
     print("\n=== SHAPE: bias (pred - GT) / abs error, per phenotype ===")
     print(f"{'variant':<22}" + "".join(f"{n[:9]:>13}" for n in phen))
@@ -498,7 +515,8 @@ def main():
     # --- per-category tables (manifest runs) ---------------------------------------------------
     if tagmap:
         TAGM = ['pve', 'pa_pve', 'pve_headneck', 'neck_ratio', 'pheno_err_age', 'pheno_err_height',
-                'pheno_err_proportions', 'pve_predpose_gtshape', 'pve_gtpose_predshape', 'rot_neck', 'rot_fingers']
+                'pheno_err_proportions', 'pve_predpose_gtshape', 'pve_gtpose_predshape', 'rot_neck', 'rot_fingers',
+                'rot_global_head_deg']
         all_tags = sorted({t for ts in tagmap.values() for t in ts})
         summary['per_tag'] = {}
         for vn in variants:

@@ -138,7 +138,26 @@ def part_b(args, mean_shape):
         rows.append(dict(age=a, skel_height_m=h, neck_m=n, head_m=hd, neck_over_height=n / h, head_over_height=hd / h))
     print("READ: a real child has a LARGER head/height and a SMALLER height. If the sweep shows that,")
     print("      Anny can represent children and the adult-looking outputs are a prediction (data/loss) problem.")
-    return rows
+
+    # The real-photo demos predict age 0.55-0.65 for everyone but low 'height' and high 'proportions'
+    # (E4 log): what body does that make? Sweep the two phenotypes the shape head actually moves.
+    print("\n=== BODY-MODEL PROBE: 'height' and 'proportions' sweeps at age 0.6 (what the real-photo predictions produce) ===")
+    sweeps = {}
+    for pname, values in (('height', [0.2, 0.3, 0.4, 0.5, 0.6, 0.8]), ('proportions', [0.3, 0.5, 0.7, 0.85, 1.0])):
+        sh = torch.tensor(mean_shape, dtype=torch.float32).reshape(1, 11).repeat(len(values), 1)
+        sh[:, phen.index('age')] = 0.6
+        sh[:, phen.index(pname)] = torch.tensor(values)
+        v2, j2 = dc.run_body_model(bm, dc.identity_pose(len(values), len(names), torch.device('cpu')), sh)
+        h2 = dc.skeletal_height(j2, names); n2 = dc.chain_length(j2, chain)
+        hd2 = dc.head_size(v2, j2, names, dc.head_neck_vertex_mask(v2, j2, names))
+        sweeps[pname] = []
+        print(f"  {pname:<12}{'skel_height_m':>15}{'neck/height':>13}{'head/height':>13}")
+        for val, h, n, hd in zip(values, h2.tolist(), n2.tolist(), hd2.tolist()):
+            print(f"  {val:<12.2f}{h:>15.3f}{n / h:>13.4f}{hd / h:>13.4f}")
+            sweeps[pname].append(dict(value=val, skel_height_m=h, neck_over_height=n / h, head_over_height=hd / h))
+    print("READ: if a LOW height phenotype shrinks the body but keeps (or raises) neck/height, then a network that")
+    print("      explains a small person with 'height' instead of 'age' produces exactly a short adult with a long neck.")
+    return dict(age_sweep=rows, height_proportions_sweeps_at_age_0p6=sweeps)
 
 
 def main():
@@ -151,7 +170,12 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     out, mean_shape = part_a(args)
     if args.probe_body_model:
-        out['body_model_age_sweep'] = part_b(args, mean_shape)
+        probe = part_b(args, mean_shape)
+        if isinstance(probe, dict):
+            out['body_model_age_sweep'] = probe['age_sweep']
+            out['body_model_height_proportions_sweeps'] = probe['height_proportions_sweeps_at_age_0p6']
+        else:
+            out['body_model_age_sweep'] = probe
     with open(os.path.join(args.out, 'summary.json'), 'w') as f:
         json.dump(dc.json_safe(out), f, indent=2, allow_nan=False)
     print(f"\nwrote {args.out}/summary.json")
