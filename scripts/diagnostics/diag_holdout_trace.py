@@ -272,6 +272,23 @@ def main():
                 pa = s * (R.reshape(1, 3, 3) @ vh_ctx.reshape(-1, 3, 1)).reshape(-1, 3) + t
                 pa_pve = ((v_ctx - pa).norm(dim=-1) * 1000).mean().item()
                 mpjpe = (((gt_j[gid] - pelv) - (j_hat - pelv_hat)).norm(dim=-1) * 1000).mean().item()
+                # PLACEMENT (not pelvis-centred): train.py builds the transl/dist/heatmap targets at joint 0
+                # (root) while the model anchors the HEAD joint (person_center) at the detected location.
+                # These numbers show where the predicted body actually lands relative to the GT body.
+                K_match = K if cfg['K'] == 'dataset' else K_fov
+                j2d_hat = dc.project(j_hat.unsqueeze(0), K_match)[0]              # [163,2] in the variant's camera
+                j2d_gt = dc.project(gt_j[gid:gid + 1], K)[0]
+                head_i0 = chain[-1]
+                place = dict(
+                    mpjpe_abs=((gt_j[gid] - j_hat).norm(dim=-1) * 1000).mean().item(),
+                    root_err_mm=((gt_j[gid, 0] - j_hat[0]).norm() * 1000).item(),
+                    head_err_mm=((gt_j[gid, head_i0] - j_hat[head_i0]).norm() * 1000).item(),
+                    root_depth_err_m=float(j_hat[0, 2] - gt_j[gid, 0, 2]),
+                    head_px_err=float((j2d_hat[head_i0] - j2d_gt[head_i0]).norm()),
+                    root_px_err=float((j2d_hat[0] - j2d_gt[0]).norm()),
+                    pred_head_vs_gt_root_px=float((j2d_hat[head_i0] - j2d_gt[0]).norm()),
+                    gt_head_vs_gt_root_px=float((j2d_gt[head_i0] - j2d_gt[0]).norm()),
+                    vertical_shift_px=float(j2d_hat[0, 1] - j2d_gt[0, 1]))   # + = predicted root lower in the image
                 # head+neck surface vertices, selected on the REST-POSE GT mesh (hands cannot intrude): the region PVE hides
                 near_neck = hn_mask_gt[gid]
                 pve_headneck = ((v_ctx - vh_ctx).norm(dim=-1)[near_neck] * 1000).mean().item() if near_neck.any() else float('nan')
@@ -320,6 +337,7 @@ def main():
                            tags='|'.join(tagmap.get((idx, orig_of_gid[gid]), [])),
                            pve=pve, pa_pve=pa_pve, mpjpe=mpjpe, pve_headneck=pve_headneck,
                            pve_predpose_gtshape=pve_pp_gs, pve_gtpose_predshape=pve_gp_ps,
+                           **place,
                            rot_global_head_deg=float(glob_err[head_i]),
                            rot_global_wrist_deg=float(glob_err[wrist_i].mean()) if wrist_i else float('nan'),
                            rot_global_root_deg=float(glob_err[0]),
@@ -441,6 +459,9 @@ def main():
         s['rot_err_deg_by_group'] = {g: m(col(vn, f'rot_{g}')) for g in groups}
         s['rot_global_deg'] = dict(root=m(col(vn, 'rot_global_root_deg')), head=m(col(vn, 'rot_global_head_deg')),
                                    wrist=m(col(vn, 'rot_global_wrist_deg')))
+        s['placement'] = {k: m(col(vn, k)) for k in ('mpjpe_abs', 'root_err_mm', 'head_err_mm', 'root_depth_err_m',
+                                                     'head_px_err', 'root_px_err', 'pred_head_vs_gt_root_px',
+                                                     'gt_head_vs_gt_root_px', 'vertical_shift_px')}
         s['shape_abs_err'] = {n: m(np.abs(col(vn, f'pheno_err_{n}'))) for n in phen}
         s['shape_bias'] = {n: m(col(vn, f'pheno_err_{n}')) for n in phen}
         s['neck_factorisation_m'] = dict(
@@ -479,6 +500,16 @@ def main():
               + f"{dc.fmt(s['helper_bones_pred_err_deg']):>9}")
     print(f"  GT helper bones are on average {dc.fmt(summary['variants'][list(variants)[0]]['gt_helper_bones_angle_deg'])} deg "
           f"from identity: the irreducible floor the mask introduces (a dataset property, not a model error).")
+    print("\n=== PLACEMENT (absolute, NOT pelvis-centred) ===")
+    print(f"{'variant':<22}{'MPJPE_abs':>10}{'root mm':>9}{'head mm':>9}{'root dz m':>10}{'head px':>9}{'root px':>9}{'predHead-gtRoot px':>20}{'gtHead-gtRoot px':>18}{'vshift px':>10}")
+    for vn in variants:
+        pl = summary['variants'][vn]['placement']
+        print(f"{vn:<22}{dc.fmt(pl['mpjpe_abs']):>10}{dc.fmt(pl['root_err_mm']):>9}{dc.fmt(pl['head_err_mm']):>9}{dc.fmt(pl['root_depth_err_m'], 2):>10}"
+              f"{dc.fmt(pl['head_px_err']):>9}{dc.fmt(pl['root_px_err']):>9}{dc.fmt(pl['pred_head_vs_gt_root_px']):>20}{dc.fmt(pl['gt_head_vs_gt_root_px']):>18}{dc.fmt(pl['vertical_shift_px']):>10}")
+    print("  read: train.py's transl/dist/heatmap targets are at the ROOT, the model anchors the HEAD (model.py:430,442).")
+    print("        If 'predHead-gtRoot px' is small and 'head px' large, the head is placed where the pelvis is: a")
+    print("        training-target bug (supervision) that pelvis-centred PVE cannot see. If 'head px' is small, the 2D")
+    print("        losses compensate and the bug costs only depth/offset noise; 'vshift' > 0 = predicted body too low.")
     print("\n=== GLOBAL (camera-frame) ORIENTATION ERROR of end effectors, deg ===")
     for vn in variants:
         gd = summary['variants'][vn]['rot_global_deg']

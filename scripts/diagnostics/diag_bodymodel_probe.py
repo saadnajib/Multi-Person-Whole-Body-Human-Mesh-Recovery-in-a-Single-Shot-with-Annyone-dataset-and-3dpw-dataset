@@ -172,7 +172,7 @@ def default_pose_parameterization(bm):
 
 
 def bone_rotations(bm, pose44, shape):
-    """Same call as dc.run_body_model, returning the rotation part of bone_poses [N,J,3,3] (world bone frames)."""
+    """Fallback for older diag_common without run_body_model_full. Same call as dc.run_body_model, returning the rotation part of bone_poses [N,J,3,3] (world bone frames)."""
     labels = list(bm.phenotype_labels)
     shape = torch.clamp(shape, 0.0, 1.0)
     kw = {k: shape[:, i] for i, k in enumerate(labels)}
@@ -332,9 +332,14 @@ def _render(img, verts_list, faces, K, colors, alpha):
     return out
 
 
-def scatter(img, v, K, c01, step=7):
+def scatter(img, v, K, c01, max_pts=4000):
+    """Fallback when pyrender/EGL is unavailable: on-screen projected vertices, subsampled."""
     col = tuple(int(255 * x) for x in c01)
-    return dc.draw_points(img, project_np(np.asarray(v)[::step], K), color=col, r=1)
+    uv = project_np(v, K)
+    uv = uv[(uv[:, 0] >= 0) & (uv[:, 0] < IMG) & (uv[:, 1] >= 0) & (uv[:, 1] < IMG)]
+    if len(uv) > max_pts:
+        uv = uv[::int(math.ceil(len(uv) / max_pts))]
+    return dc.draw_points(img, uv, color=col, r=1)
 
 
 def add_points(img, K, red=None, green=None):
@@ -460,9 +465,17 @@ def find_targets(names):
         fb = [i for i, n in enumerate(lo) if n.startswith('finger1-1') and i not in used]
         fb.sort(key=lambda i: 0 if side_of(names[i]) == 'L' else 1)
         t['thumb'] = fb[0] if fb else None
-        notes['thumb'] = ("no bone name contains 'thumb'; " +
-                          (f"fallback '{names[fb[0]]}' (MakeHuman's thumb is finger1-*)" if fb
-                           else "and no unused finger1-1 bone either"))
+        if fb:
+            notes['thumb'] = f"no bone name contains 'thumb'; fallback '{names[fb[0]]}' (MakeHuman's thumb is finger1-*)"
+        else:
+            notes['thumb'] = ("no bone name contains 'thumb'; MakeHuman's thumb is finger1-*, already tested "
+                              "as finger_prox.L/R")
+            # finger_prox picked the thumbs: add an index-finger proximal phalanx so a long finger is covered
+            ix = [i for i, n in enumerate(lo) if n.startswith('finger2-1') and i not in used]
+            ix.sort(key=lambda i: 0 if side_of(names[i]) == 'L' else 1)
+            if ix:
+                t['index_prox'] = ix[0]
+                notes['index_prox'] = f"extra target: '{names[ix[0]]}' (finger_prox.* were finger1-1 = thumb)"
     if 'wrist.l' in lo:
         t['wrist.L'] = lo.index('wrist.l')
     else:
@@ -562,8 +575,12 @@ def check_perturbations(bm, names, base_shape, Rc, faces, K, device, args, mask)
     for t, (key, b, ax) in enumerate(tests):
         pose[t + 1, b, :3, :3] = axis_rotation(ax, args.angle, device)
     shp = base_shape.repeat(N, 1)
-    v, j = dc.run_body_model(bm, pose, shp)
-    frames = bone_rotations(bm, pose, shp)
+    if hasattr(dc, 'run_body_model_full'):
+        v, j, bp = dc.run_body_model_full(bm, pose, shp)          # + global bone poses [N,163,4,4]
+        frames = bp[:, :, :3, :3]
+    else:
+        v, j = dc.run_body_model(bm, pose, shp)
+        frames = bone_rotations(bm, pose, shp)
     v0, j0 = v[0], j[0]
     j0n = _np(j0)
     print(f"\n[rig] body model forward: {N} meshes ({len(tests)} perturbations + rest), {v.shape[1]} vertices")
@@ -627,6 +644,8 @@ def check_perturbations(bm, names, base_shape, Rc, faces, K, device, args, mask)
             dot_l = float(axl @ e) if np.isfinite(axl).all() else float('nan')
             if rest_dev < 1.0:
                 interp = 'indistinguishable (bone rest frame ~ identity: local axes = world axes)'
+            elif abs(dot_l) > 0.99 and abs(dot_w) > 0.99:
+                interp = 'both (this axis is shared by the bone rest frame and the world; use the other axis test)'
             elif abs(dot_l) > 0.99 and abs(dot_w) < 0.99:
                 interp = 'bone-local (the 4x4 acts in the bone rest frame)'
             elif abs(dot_w) > 0.99 and abs(dot_l) < 0.99:
