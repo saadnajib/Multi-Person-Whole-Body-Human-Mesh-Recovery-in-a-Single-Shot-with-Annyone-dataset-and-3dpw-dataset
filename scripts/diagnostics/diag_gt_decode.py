@@ -152,7 +152,7 @@ def main():
     for tag, v in summary['per_tag'].items():
         print(f"  {tag:<6} n={v['n']:2d} inside_image {v['inside_image'] * 100:5.1f}%  inside_bbox {dc.fmt((v['inside_bbox'] or 0) * 100):>5}%  "
               f"pixel height {v['pixel_height']:.0f}px")
-    print("READ: >=97% inside the bbox under one interpretation => decoding + camera are consistent with the")
+    print("READ: >=95% inside the bbox under one interpretation => decoding + camera are consistent with the")
     print("      annotation; a GT overlay that still looks wrong is then a RENDERING issue. Low under every")
     print("      interpretation => the dataset K or the pose convention is wrong (decoding/preprocessing cause).")
     with open(os.path.join(args.out, 'summary.json'), 'w') as f:

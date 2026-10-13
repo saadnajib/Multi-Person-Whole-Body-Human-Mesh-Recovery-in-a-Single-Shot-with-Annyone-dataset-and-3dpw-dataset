@@ -98,19 +98,24 @@ def main():
     # ------------------------------------------------------------------ check 1
     P("## Check 1: GT decode without the network\n")
     if S['gt']:
+        bbm = S['gt'].get('joints_inside_bbox_mean')
         P(f"GT joints inside the image: {f(100 * S['gt']['joints_inside_image_mean'])}%; inside the annotation's tight_bbox: "
-          f"{f(100 * (S['gt']['joints_inside_bbox_mean'] or 0))}% (bbox read as {S['gt']['bbox_formats']}). "
-          f"Worst containment: {S['gt']['worst_bbox_containment'][:3]}.")
-        ok = (S['gt']['joints_inside_bbox_mean'] or 0) >= 0.95
-        P(f"\n**Verdict: decoding + camera {'consistent with the annotation' if ok else 'NOT consistent with the annotation -> decoding/preprocessing defect; stop here and fix before trusting anything else'}.** "
-          "Look at `gt_decode/vis/` to confirm the meshes sit on the people.\n")
+          + (f"{f(100 * bbm)}% (bbox read as {S['gt']['bbox_formats']}). Worst containment: {S['gt']['worst_bbox_containment'][:3]}."
+             if bbm is not None else "not measurable (no tight_bbox in the annotations)."))
+        if bbm is None:
+            P("\n**Verdict: bbox containment not available; judge decoding from `gt_decode/vis/` (GT mesh on the person) and the "
+              f"{f(100 * S['gt']['joints_inside_image_mean'])}% in-image rate.**\n")
+        else:
+            ok = bbm >= 0.95
+            P(f"\n**Verdict: decoding + camera {'consistent with the annotation' if ok else 'NOT consistent with the annotation -> decoding/preprocessing defect; stop here and fix before trusting anything else'}.** "
+              "Look at `gt_decode/vis/` to confirm the meshes sit on the people.\n")
     else:
         P("Not run (`diag_gt_decode.py`).\n")
 
     # ------------------------------------------------------------------ check 2 + 3
     P("## Checks 2 and 3: body model (age sweep, single-joint perturbations)\n")
     if S['body']:
-        sweep = g(S['body'], 'age_sweep') or g(S['body'], 'body_model_age_sweep')
+        sweep = g(S['body'], 'age_sweep', 'rows') or g(S['body'], 'body_model_age_sweep')
         if isinstance(sweep, list) and sweep:
             P("| age | skeletal height | neck | head/height |\n|---|---|---|---|")
             for r in sweep:
@@ -121,16 +126,21 @@ def main():
                   f"{'the body model CAN make a child' if h0 < 0.8 * h1 else 'age barely changes the body: child proportions are NOT reachable through age alone'}.")
             except Exception:
                 pass
-        pert = g(S['body'], 'perturbations')
-        if isinstance(pert, dict) and pert:
-            P("\n| bone / axis | affected vertices in expected part | joints that moved |\n|---|---|---|")
-            for k, v in pert.items():
-                P(f"| {k} | {f(100 * (v.get('expected_fraction') or 0), 0)}% | {', '.join((v.get('moved_joints') or [])[:6])} |")
-            bad = [k for k, v in pert.items() if (v.get('expected_fraction') or 0) < 0.8]
+        tests = g(S['body'], 'perturbations', 'tests') or []
+        tests = [t for t in tests if isinstance(t, dict)]
+        if tests:
+            P("\n| bone | axis | affected vertices in expected part | joints that moved |\n|---|---|---|---|")
+            for t in tests:
+                fr = t.get('frac_affected_in_expected')
+                P(f"| {t.get('bone')} | {t.get('axis')} | {f(100 * fr, 0) if fr is not None else '-'}% | {', '.join((t.get('moved_joints') or [])[:6])} |")
+            bad = [f"{t.get('bone')}/{t.get('axis')}" for t in tests
+                   if t.get('frac_affected_in_expected') is not None and t['frac_affected_in_expected'] < 0.8]
             P(f"\n**Verdict: {'every perturbation moved the intended part' if not bad else 'perturbations with <80% of moved vertices in the intended part: ' + ', '.join(bad) + ' -> decoding (rig/skinning) defect'}.**")
-        masked = g(S['body'], 'masked_bones')
-        if masked:
-            P(f"\nMasked helper bones among neck/finger bones: {masked if isinstance(masked, str) else json.dumps(masked)[:400]}")
+        elif g(S['body'], 'perturbations', 'error'):
+            P(f"\nPerturbation check failed: {g(S['body'], 'perturbations', 'error')}")
+        hm = g(S['body'], 'helper_mask')
+        if hm:
+            P(f"\nHelper-bone mask (model.py useful_rotmat) vs neck/hand bones: `{json.dumps(hm)[:500]}`")
         P("")
     else:
         P("Not run (`diag_bodymodel_probe.py`).\n")
@@ -138,9 +148,19 @@ def main():
     # ------------------------------------------------------------------ check 4
     P("## Check 4: gradients and response of the prediction heads\n")
     if S['grad']:
-        P("```\n" + json.dumps({k: v for k, v in S['grad'].items() if k not in ('per_image',)}, indent=1)[:3500] + "\n```")
-        zero_active = g(S['grad'], 'decpose', 'active_bones_with_zero_grad') or g(S['grad'], 'active_bones_zero_grad')
-        P(f"\n**Verdict: {'active bones with zero gradient: ' + str(zero_active) + ' -> optimisation defect' if zero_active else 'no active bone without gradient reported; the 88 masked bones are expected to have none'}.**\n")
+        keep_keys = ('gt_path', 'images_used', 'mask_helper_joints_train', 'loss_epoch', 'two_d_terms_in_total',
+                     'total_grad_norm', 'decshape', 'deccam', 'loss', 'placement', 'warnings', 'problems', 'verdict')
+        P("```\n" + json.dumps({k: S['grad'].get(k) for k in keep_keys if k in S['grad']}, indent=1)[:3500] + "\n```")
+        dp = S['grad'].get('decpose') or {}
+        P(f"\ndecpose: {dp.get('n_zero_grad')} bones with zero gradient; masked set == zero set: {dp.get('zero_set_equals_masked_set')}; "
+          f"active-but-zero: {dp.get('active_but_zero')}; masked-but-nonzero: {dp.get('masked_but_nonzero')}.")
+        resp = g(S['grad'], 'response') or {}
+        if resp.get('shape_summary') or resp.get('pose_summary'):
+            P(f"\nResponse test: shape `{json.dumps(resp.get('shape_summary'))[:600]}`; pose `{json.dumps(resp.get('pose_summary'))[:600]}`")
+        zero_active = dp.get('unexpected_zero') or dp.get('active_but_zero')
+        P(f"\n**Verdict ({S['grad'].get('verdict', 'script verdict missing')}): "
+          f"{'active bones with zero gradient: ' + str(zero_active) + ' -> optimisation defect' if zero_active else 'every active bone receives gradient; the masked bones have none by construction'}.** "
+          f"Problems flagged by the script: {S['grad'].get('problems') or 'none'}.\n")
     else:
         P("Not run (`diag_gradients.py`).\n")
 
@@ -167,6 +187,16 @@ def main():
         rot = v.get('rot_err_deg_by_group') or {}
         if rot:
             P("Rotation error (deg, active bones): " + ", ".join(f"{k} {f(x)}" for k, x in rot.items() if x is not None) + ".")
+        gl = v.get('rot_global_deg') or {}
+        if gl:
+            P(f"Global orientation error: root {f(gl.get('root'))}, head {f(gl.get('head'))}, wrist {f(gl.get('wrist'))} deg "
+              f"(local neck/head errors far above the global head error => redundant chain, weak rotation loss there).")
+        pl = v.get('placement') or {}
+        if pl:
+            P(f"Placement (absolute): head {f(pl.get('head_px_err'))} px / {f(pl.get('head_err_mm'))} mm off, root {f(pl.get('root_px_err'))} px, "
+              f"predicted head vs GT root {f(pl.get('pred_head_vs_gt_root_px'))} px (GT head-root distance {f(pl.get('gt_head_vs_gt_root_px'))} px), "
+              f"vertical shift {f(pl.get('vertical_shift_px'))} px, root depth error {f(pl.get('root_depth_err_m'), 2)} m. "
+              f"train.py supervises transl/dist/heatmap at the ROOT while the model anchors the HEAD (model.py:430,442; train.py:214-222).")
         bias = v.get('shape_bias') or {}
         if bias:
             P("Shape bias (pred-GT): " + ", ".join(f"{k} {bias[k]:+.3f}" for k in ('age', 'height', 'proportions') if bias.get(k) is not None) + ".")
@@ -218,10 +248,10 @@ def main():
 
     # ------------------------------------------------------------------ verdicts
     P("## Where each failure originates\n")
-    gt_ok = S['gt'] is None or (S['gt']['joints_inside_bbox_mean'] or 0) >= 0.95
-    body_ok = True
-    if S['body'] and isinstance(g(S['body'], 'perturbations'), dict):
-        body_ok = all((v.get('expected_fraction') or 0) >= 0.8 for v in S['body']['perturbations'].values())
+    _bbm = (S['gt'] or {}).get('joints_inside_bbox_mean')
+    gt_ok = _bbm is None or _bbm >= 0.95           # None = not measurable, not a defect
+    _tests = [t for t in (g(S['body'], 'perturbations', 'tests') or []) if isinstance(t, dict)]
+    body_ok = all(t.get('frac_affected_in_expected') is None or t['frac_affected_in_expected'] >= 0.8 for t in _tests)
     ref = variant(S['mt_hold'] or S['e1'] or S['mt_train'] or {})
     fac = (ref or {}).get('neck_factorisation_m') or {}
     rot = (ref or {}).get('rot_err_deg_by_group') or {}
@@ -262,10 +292,9 @@ def main():
         fing.append(f"finger rotation error {f(rot['fingers'])} deg vs {f(float(np.mean(others)) if others else None)} deg for other groups.")
         if others and rot['fingers'] > 1.5 * float(np.mean(others)):
             fing.append("**supervision/optimisation**: fingers are undertrained (few pixels at 672 px, 38 bones); `--relax_hands 1` in the demos hides this by rendering rest hands.")
-    if S['body'] and isinstance(g(S['body'], 'perturbations'), dict):
-        fp = {k: v for k, v in S['body']['perturbations'].items() if 'finger' in k.lower() or 'thumb' in k.lower()}
-        if fp and all((v.get('expected_fraction') or 0) >= 0.8 for v in fp.values()):
-            fing.append("decoding is fine: perturbing a finger bone moves only that finger (check 3).")
+    fp = [t for t in _tests if 'finger' in str(t.get('bone', '')).lower() or 'thumb' in str(t.get('bone', '')).lower()]
+    if fp and all(t.get('frac_affected_in_expected') is not None and t['frac_affected_in_expected'] >= 0.8 for t in fp):
+        fing.append("decoding is fine: perturbing a finger bone moves only that finger (check 3).")
     if not fing:
         fing.append("insufficient evidence: run the manifest trace and check 3.")
     origin_line("Fingers", fing)
@@ -310,7 +339,7 @@ def main():
                        (os.path.join(R, f'manifest_trace_holdout_{tag}', 'vis', '*.jpg'), 2),
                        (os.path.join(R, 'bodymodel', 'vis', 'age_sweep*.jpg'), 1),
                        (os.path.join(R, 'bodymodel', 'vis', 'perturb_neck*.jpg'), 1),
-                       (os.path.join(R, 'bodymodel', 'vis', 'perturb_finger*.jpg'), 1),
+                       (os.path.join(R, 'bodymodel', 'vis', 'perturb_*finger*.jpg'), 1),
                        (os.path.join(R, f'crop_camera_{tag}', 'vis', '*.jpg'), 1)):
             picks += sorted(glob.glob(pat))[:n]
         if picks:

@@ -28,7 +28,7 @@ else
 fi
 BACKBONE="${BACKBONE:-dinov2_vitl14}"   # dinov2_vits14 + HEAD_DIM=1024 for the distilled students
 HEAD_DIM="${HEAD_DIM:-0}"
-MAX_ITER="${MAX_ITER:-400}"             # 40 epochs x 10 iters at batch 4 ~ 10 passes over 40 images
+MAX_ITER="${MAX_ITER:-400}"             # 40 epochs x 10 iters x batch 4 = 1600 samples ~ 40 passes over 40 images
 LR="${LR:-1e-4}"
 OUT="results/diagnostics/overfit_${TAG}"
 
@@ -39,8 +39,9 @@ source /netscratch/najib/multi-hmr/slurm/env.sh
 [ -f results/diagnostics/manifest.json ] || { echo "ERROR: run build_manifest.py first (slurm/diagnostics/diag_manifest.sh)"; exit 1; }
 [ -d data/diag_manifest/train ] && [ -d data/diag_manifest/holdout ] || { echo "ERROR: data/diag_manifest/{train,holdout} missing"; exit 1; }
 mkdir -p "${OUT}"
-N_TRAIN=\$(ls data/diag_manifest/train/*.pkl | wc -l)
-N_HOLD=\$(ls data/diag_manifest/holdout/*.pkl | wc -l)
+N_TRAIN=\$(ls data/diag_manifest/train/*.pkl 2>/dev/null | wc -l || true)
+N_HOLD=\$(ls data/diag_manifest/holdout/*.pkl 2>/dev/null | wc -l || true)
+[ "\${N_TRAIN}" -gt 0 ] && [ "\${N_HOLD}" -gt 0 ] || { echo "ERROR: empty manifest subset (train \${N_TRAIN}, holdout \${N_HOLD})"; exit 1; }
 echo "manifest subsets: train \${N_TRAIN} images, holdout \${N_HOLD} images"
 
 # shared eval flags: the eval_only path; helper bones UNMASKED at inference exactly like train.py evaluate()
@@ -72,7 +73,7 @@ python train.py --train_data AnnyOne --anny_data_folder data/diag_manifest/train
     || { echo "ERROR: training failed; tail of ${OUT}/train.log:"; tail -n 40 "${OUT}/train.log"; exit 1; }
 grep -E "loss|ERROR|Error|nan" "${OUT}/train.log" | tail -n 40 || true
 
-LAST=\$(ls "${OUT}/train/checkpoints/"*.pt 2>/dev/null | sort | tail -n 1)
+LAST=\$(ls "${OUT}/train/checkpoints/"*.pt 2>/dev/null | sort | tail -n 1 || true)
 [ -n "\${LAST}" ] || { echo "ERROR: training produced no checkpoint; see ${OUT}/train.log"; exit 1; }
 echo "last checkpoint: \${LAST}"
 

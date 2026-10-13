@@ -59,6 +59,7 @@ import argparse
 import json
 import math
 import os
+import re
 import sys
 import time
 import traceback
@@ -645,8 +646,10 @@ def main():
     ap.add_argument('--n_images', type=int, default=4)
     ap.add_argument('--out', default='results/diagnostics/gradients')
     ap.add_argument('--mask_helper_joints_train', type=int, default=1, choices=[0, 1])
-    ap.add_argument('--loss_epoch', type=int, default=0,
-                    help='epoch passed to Loss.forward; j2d/v2d enter the total only if >= start_2d_epoch')
+    ap.add_argument('--loss_epoch', type=int, default=-1,
+                    help='epoch passed to Loss.forward; j2d/v2d enter the total only if >= start_2d_epoch. '
+                         '-1 (default) = the checkpoint\'s own epoch (parsed from <epoch>.pt, else start_2d_epoch), '
+                         'so the replayed gradient step uses the loss the checkpoint was actually training with')
     ap.add_argument('--replicate_freeze', type=int, default=1, choices=[0, 1],
                     help="apply the checkpoint's --freeze_backbone / --unfreeze_last_n_blocks like train.py main()")
     ap.add_argument('--gt_path', default='auto', choices=['auto', 'trainer', 'fallback'],
@@ -697,6 +700,11 @@ def main():
     loss_fn = Loss(targs)
     if float(getattr(targs, 'boost_neck_weight', 1.0)) != 1.0 or float(getattr(targs, 'boost_hand_weight', 1.0)) != 1.0:
         loss_fn.configure_joint_weights(names)                                   # train.py:900-902
+    if args.loss_epoch < 0:
+        _m = re.search(r'(\d+)\.pt$', os.path.basename(ckpt_path))
+        args.loss_epoch = int(_m.group(1)) if _m else int(targs.start_2d_epoch)
+        print(f"[args] loss epoch taken from the checkpoint: {args.loss_epoch} "
+              f"({'parsed from the file name' if _m else 'fallback: start_2d_epoch'})")
     two_d_in_total = args.loss_epoch >= int(targs.start_2d_epoch)
     print("[args] overrides (ckpt value -> used): "
           + ', '.join(f"{k}: {overridden[k]} -> {getattr(targs, k)}" for k in overridden))

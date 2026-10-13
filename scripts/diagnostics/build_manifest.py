@@ -139,10 +139,11 @@ def main():
             pose = torch.from_numpy(np.stack([np.asarray(h['anny_pose'], dtype=np.float32)[:163] for h in hum])).to(device)
             shape = torch.from_numpy(np.stack([np.asarray(h['anny_shape'], dtype=np.float32).reshape(-1)[:11] for h in hum])).to(device)
             K = np.eye(3, dtype=np.float32)
-            focal = np.asarray(raw['focal'], dtype=np.float32).reshape(-1)[0]
             pp = np.asarray(raw['princpt'], dtype=np.float32).reshape(-1)[:2]
             K[0, 2], K[1, 2] = 672 * pp[0] / W, 672 * pp[1] / H           # datasets/annyone.py convention
-            K[0, 0] = K[1, 1] = focal / (max(W, H) / 672)
+            f2 = np.asarray(raw['focal'], dtype=np.float32).reshape(-1)
+            f2 = f2 if f2.size > 1 else np.repeat(f2, 2)
+            K[0, 0], K[1, 1] = f2[0] / (max(W, H) / 672), f2[1] / (max(W, H) / 672)
             Kt = torch.from_numpy(K).unsqueeze(0).to(device)
             with torch.no_grad():
                 f = person_features(bm, names, pose, shape, Kt, 672, hands, chain)
@@ -198,20 +199,29 @@ def main():
     train_entries = pick(people(F_train), args.n_train, 'train')
     hold_entries = pick(people(F_hold), args.n_holdout, 'holdout')
     hold_ages = [r['age'] for r in people(F_hold)]
-    if not any(a < args.child_age for a in hold_ages):
+    if hold_ages and not any(a < args.child_age for a in hold_ages):
         print(f"[select] NOTE: the holdout has NO person with age < {args.child_age} "
               f"(min {min(hold_ages):.3f}); child results exist only in-sample (train split).")
 
     # ---- 4. symlinked subsets for train.py --anny_data_folder ---------------------------------
+    linked = {}
     for split, entries in (('train', train_entries), ('holdout', hold_entries)):
         d = os.path.join(args.link_root, split)
         os.makedirs(d, exist_ok=True)
+        # the folder must contain EXACTLY this manifest's images: remove links left by an earlier build
+        # (train.py globs *.pkl, so stale links would silently enlarge the subset and could overlap the other split)
+        n_old = 0
+        for fn in os.listdir(d):
+            fp_ = os.path.join(d, fn)
+            if os.path.islink(fp_):
+                os.unlink(fp_); n_old += 1
+            elif os.path.isfile(fp_):
+                raise SystemExit(f"[links] {fp_} is a real file, not a symlink; refusing to touch {d}")
         for e in entries:
             for src in (e['pkl'], e['image']):
-                dst = os.path.join(d, os.path.basename(src))
-                if not os.path.lexists(dst):
-                    os.symlink(os.path.abspath(src), dst)
-        print(f"[links] {split}: {len(set(e['idx'] for e in entries))} images linked under {d}")
+                os.symlink(os.path.abspath(src), os.path.join(d, os.path.basename(src)))
+        linked[split] = sorted(os.path.basename(e['pkl']) for e in entries)
+        print(f"[links] {split}: {len(set(e['idx'] for e in entries))} images linked under {d} ({n_old} stale links removed)")
 
     manifest = dict(seed=args.seed, data_folder=args.data_folder, n_total=n_total,
                     criteria=dict(adult='0.45<=age<=0.65 and neck<20deg', child=f'age<{args.child_age}',
@@ -219,7 +229,7 @@ def main():
                                   neck='neck01..head GT angle from identity >= 30 deg (top)'),
                     counts={s: {t: sum(1 for e in E if t in e['tags']) for t in ('adult', 'child', 'hands', 'neck')}
                             for s, E in (('train', train_entries), ('holdout', hold_entries))},
-                    link_root=args.link_root, entries=train_entries + hold_entries)
+                    link_root=args.link_root, linked_pkls=linked, entries=train_entries + hold_entries)
     with open(args.out, 'w') as f:
         json.dump(dc.json_safe(manifest), f, indent=2)
     print(f"\n[manifest] {len(train_entries)} train + {len(hold_entries)} holdout entries -> {args.out}")
