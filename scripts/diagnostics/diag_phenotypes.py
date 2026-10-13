@@ -81,6 +81,15 @@ def part_a(args):
         print(f"  {k}: {v:7d}  {'#' * int(60 * v / max(hist.max(), 1))}")
     print("fraction of people with age < 0.2 (~child, <11y) / 0.3 (~<16y) / 0.4 (~<20y) / 0.5: " +
           " / ".join(f"{out['age_frac_below'][str(t)] * 100:.2f}%" for t in (0.2, 0.3, 0.4, 0.5)))
+    if len(H):
+        ageh = H[:, 1]
+        histh, _ = np.histogram(ageh, bins=bins)
+        out['holdout_age_hist'] = {f'{bins[i]:.1f}-{bins[i + 1]:.1f}': int(histh[i]) for i in range(10)}
+        out['holdout_age_frac_below'] = {str(t): float((ageh < t).mean()) for t in (0.2, 0.3, 0.4, 0.5)}
+        print(f"holdout ({len(ageh)} people): age min {ageh.min():.3f}, " +
+              "fraction < 0.2 / 0.3 / 0.4 / 0.5: " +
+              " / ".join(f"{out['holdout_age_frac_below'][str(t)] * 100:.1f}%" for t in (0.2, 0.3, 0.4, 0.5)))
+        print("  (E1 age buckets are only informative if the holdout has people below 0.3; otherwise use E3)")
     # correlation age <-> height phenotype: in Anny 'height' is a separate control
     cc = np.corrcoef(P[:, 1], P[:, 4])[0, 1] if len(P) > 2 else float('nan')
     out['corr_age_height_pheno'] = float(cc)

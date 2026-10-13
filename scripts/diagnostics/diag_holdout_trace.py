@@ -76,10 +76,10 @@ def select_indices(args, pkls):
     n_total = len(pkls)
     if args.select == 'holdout':
         pool = dc.holdout_indices(n_total)
-        return pool[:args.n], 'HOLDOUT (never trained on)'
+        return pool[:args.n], 'HOLDOUT (never trained on)', {}
     if args.select == 'indices':
         idx = [int(s) for s in args.indices.split(',') if s.strip()]
-        return idx, 'explicit indices'
+        return idx, 'explicit indices', {}
     if args.select == 'youngest':
         scan = max(0, min(args.scan, n_total - dc.N_HOLDOUT))
         ages = []
@@ -88,19 +88,21 @@ def select_indices(args, pkls):
             s = dc.shapes_from_pkl(dc.load_pkl(pkls[i]))
             if s is None or len(s) == 0:
                 continue
-            ages.append((float(s[:, 1].min()), i))
+            ages.append((float(s[:, 1].min()), i, int(np.argmin(s[:, 1]))))   # (age, image idx, person idx)
             if i % 5000 == 0 and i:
                 print(f"  scanned {i}/{scan} ({time.time() - t0:.0f}s)", flush=True)
         if not ages:
             raise SystemExit(f"[select] no anny_shape found in the first {scan} annotations")
         ages.sort()
-        idx = [i for _, i in ages[:args.n]]
+        idx = [i for _, i, _ in ages[:args.n]]
+        sel_person = {i: j for _, i, j in ages[:args.n]}        # only THIS person is evaluated in that image
         if len(idx) < args.n:
             print(f"[select] WARNING: only {len(idx)} samples available (asked {args.n})")
         print(f"[select] youngest {len(idx)} of the first {scan} TRAINING samples "
               f"(min GT age {ages[0][0]:.3f} .. {ages[len(idx) - 1][0]:.3f}). "
-              f"These were SEEN in training: this tests representation, not generalisation.")
-        return idx, f'youngest-{len(idx)} of first {scan} training samples (IN-SAMPLE)'
+              f"These were SEEN in training: this tests representation, not generalisation. "
+              f"Only the youngest person of each image is evaluated.")
+        return idx, f'youngest-{len(idx)} people of first {scan} training samples (IN-SAMPLE)', sel_person
     raise ValueError(args.select)
 
 
@@ -146,7 +148,7 @@ def main():
 
     ds = AnnyOne(data_folder=args.data_folder, img_size=S)
     pkls = ds.pkl_files
-    indices, sel_desc = select_indices(args, pkls)
+    indices, sel_desc, sel_person = select_indices(args, pkls)
     print(f"[data] {len(pkls)} samples; evaluating {len(indices)} = {sel_desc}")
 
     rows = []                 # one row per (variant, matched person)
@@ -166,6 +168,11 @@ def main():
             continue
         pose = y['anny_pose'][0][valid][:, :163].float().to(device)                    # [nh,163,4,4]
         shape_gt = y['anny_shape'][0][valid].reshape(nh, -1)[:, :len(phen)].float().to(device)  # [nh,11]
+        if idx in sel_person:                       # --select youngest: evaluate only the selected person
+            j = sel_person[idx]
+            if j >= nh:
+                print(f"  [warn] idx {idx}: selected person {j} not among {nh} valid humans; skipped"); continue
+            pose, shape_gt, nh = pose[j:j + 1], shape_gt[j:j + 1], 1
 
         # --- GT through the body model (train.py prepare_gt path) ------------
         gt_v, gt_j = dc.run_body_model(bm, pose, shape_gt)
@@ -436,6 +443,35 @@ def main():
         print(f"{vn:<22} " + "  ".join(f"[{k}] n={v['n']} gt={v['gt_age']:.2f} pred={v['pred_age']:.2f}"
                                         f" h={dc.fmt(v['rest_skel_height_gt_m'], 2)}->{dc.fmt(v['rest_skel_height_pred_m'], 2)}"
                                         for k, v in b.items()))
+
+    # --- paired comparison: same (image, GT person) matched under EVERY variant ----------------
+    # The per-variant means above are over each variant's own matched cohort; thresholds, K and the
+    # mask can change who gets matched, so differences between variants are only attributable to the
+    # toggle on the intersection.
+    PAIRED = ['pve', 'pa_pve', 'mpjpe', 'pve_headneck', 'neck_ratio', 'neck_over_height_ratio',
+              'head_over_height_ratio', 'rot_neck', 'rot_fingers', 'pheno_err_age', 'pheno_err_height',
+              'pheno_err_proportions']
+    by = {vn: {(r['idx'], r['gid']): r for r in rows if r['variant'] == vn} for vn in variants}
+    common = sorted(set.intersection(*[set(d) for d in by.values()])) if by else []
+    ref = 'V1_eval_masked' if 'V1_eval_masked' in by else list(variants)[0]
+    paired = dict(n_common=len(common), reference=ref, per_variant={}, delta_vs_reference={})
+    if common:
+        for vn in variants:
+            paired['per_variant'][vn] = {k: m([by[vn][c].get(k, np.nan) for c in common]) for k in PAIRED}
+            paired['delta_vs_reference'][vn] = {
+                k: m([by[vn][c].get(k, np.nan) - by[ref][c].get(k, np.nan) for c in common]) for k in PAIRED}
+    summary['paired'] = paired
+    print(f"\n=== PAIRED COMPARISON on the {len(common)} (image, person) pairs matched under ALL variants; delta vs {ref} ===")
+    if common:
+        print(f"{'variant':<22}" + "".join(f"{k[:11]:>13}" for k in PAIRED))
+        for vn in variants:
+            print(f"{vn:<22}" + "".join(f"{dc.fmt(paired['per_variant'][vn][k], 3 if 'ratio' in k or 'pheno' in k else 1):>13}" for k in PAIRED))
+        for vn in variants:
+            if vn != ref:
+                print(f"{'  d(' + vn[:15] + ')':<22}" + "".join(f"{dc.fmt(paired['delta_vs_reference'][vn][k], 3 if 'ratio' in k or 'pheno' in k else 1):>+13}" for k in PAIRED))
+        print("  read: attribute an effect to a toggle (mask, fp16/K, relax_hands) from THESE rows, not from the per-variant table.")
+    else:
+        print("  no (image, person) pair was matched under every variant; variant differences are not attributable.")
 
     with open(os.path.join(args.out, 'summary.json'), 'w') as f:
         json.dump(dc.json_safe(summary), f, indent=2, allow_nan=False)
