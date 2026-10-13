@@ -11,7 +11,7 @@ For every selected image this script:
      with the dataset K, so a GT overlay that does not sit on the person means
      the camera/pose convention is wrong BEFORE any network is involved;
   3. runs the checkpoint under several inference variants on the SAME tensor:
-       V0  eval-faithful : fp32, dataset K, helper bones UNMASKED  (train.py evaluate())
+       V0  eval-faithful : fp32 (TF32 matmul, as train.py), dataset K, helper bones UNMASKED  (train.py evaluate())
        V1  V0 + helper-bone mask                                    (what every demo renders)
        V2  demo network call: fp16 autocast, fov-derived K, mask    (demo.py in-domain path,
                                                                      WITHOUT filter_humans)
@@ -152,7 +152,7 @@ def main():
     print(f"[data] {len(pkls)} samples; evaluating {len(indices)} = {sel_desc}")
 
     rows = []                 # one row per (variant, matched person)
-    det = {k: dict(gt=0, matched=0, fp=0, img_nodet=0) for k in variants}
+    det = {k: dict(gt=0, matched=0, fp=0, img_nodet=0, nonfinite=0) for k in variants}
     cam_stats = []            # per-image camera / annotation checks
     n_gt_total = n_gt_dropped = 0
     t0 = time.time()
@@ -168,11 +168,6 @@ def main():
             continue
         pose = y['anny_pose'][0][valid][:, :163].float().to(device)                    # [nh,163,4,4]
         shape_gt = y['anny_shape'][0][valid].reshape(nh, -1)[:, :len(phen)].float().to(device)  # [nh,11]
-        if idx in sel_person:                       # --select youngest: evaluate only the selected person
-            j = sel_person[idx]
-            if j >= nh:
-                print(f"  [warn] idx {idx}: selected person {j} not among {nh} valid humans; skipped"); continue
-            pose, shape_gt, nh = pose[j:j + 1], shape_gt[j:j + 1], 1
 
         # --- GT through the body model (train.py prepare_gt path) ------------
         gt_v, gt_j = dc.run_body_model(bm, pose, shape_gt)
@@ -180,6 +175,14 @@ def main():
         n_gt_total += nh; n_gt_dropped += int((~keep).sum())
         if not keep.any():
             continue
+        # --select youngest: the matcher still sees ALL GT people (so other people are not counted as
+        # false positives), but metrics are kept only for the selected person.
+        sel_gid = None
+        if idx in sel_person:
+            j = sel_person[idx]
+            if j >= nh or not bool(keep[j]):
+                print(f"  [warn] idx {idx}: selected person {j} invalid or dropped by the visibility filter; skipped"); continue
+            sel_gid = int(keep[:j].sum())            # index after the filter
         pose, shape_gt, gt_v, gt_j = pose[keep], shape_gt[keep], gt_v[keep], gt_j[keep]
         nhv = int(keep.sum())
         gt_R = dc.orthonormalize(pose[:, :, :3, :3])
@@ -187,7 +190,10 @@ def main():
         inside = ((gt_j2d >= 0) & (gt_j2d <= S)).all(-1).float().mean().item()
         gt_neck = dc.chain_length(gt_j, chain)
         gt_height = dc.skeletal_height(gt_j, names)
-        gt_headsz = dc.head_size(gt_v, gt_j, names)
+        I_all = dc.identity_pose(nhv, 163, device)
+        v_rest_gs_all, j_rest_gs_all = dc.run_body_model(bm, I_all, shape_gt)          # rest pose, GT shapes
+        hn_mask_gt = dc.head_neck_vertex_mask(v_rest_gs_all, j_rest_gs_all, names)     # [nhv,V] head+neck vertices
+        gt_headsz = dc.head_size(gt_v, gt_j, names, hn_mask_gt)
         gt_helper_angle = dc.geodesic_deg(torch.eye(3, device=device).expand(nhv, int((~useful).sum()), 3, 3),
                                           gt_R[:, ~useful.to(device)]).mean(1)       # how far GT helper bones are from identity
         nonroot_t = float(pose[:, 1:, :3, 3].abs().max())        # factorisation assumes 0
@@ -214,7 +220,11 @@ def main():
                 with torch.cuda.amp.autocast(enabled=cfg['amp']):
                     preds = model(x, is_training=False, K=K_v, det_thresh=thr,
                                   nms_kernel_size=args.nms_kernel_size)
-            det[vname]['gt'] += nhv
+            det[vname]['gt'] += (1 if sel_gid is not None else nhv)
+            n_raw = len(preds)
+            preds = [p for p in preds if torch.isfinite(p['j2d']).all() and torch.isfinite(p['v3d']).all()
+                     and torch.isfinite(p['j3d']).all()]
+            det[vname]['nonfinite'] += n_raw - len(preds)
             if len(preds) == 0:
                 det[vname]['img_nodet'] += 1
                 continue
@@ -222,14 +232,13 @@ def main():
             gj2d = gt_j2d.cpu().numpy()
             best, fps, misses = match_2d_greedy(pj2d, gj2d, np.ones_like(gj2d[..., 0]).astype(bool))
             det[vname]['fp'] += len(fps)
+            if sel_gid is not None:
+                best = [(pid, gid) for (pid, gid) in best if gid == sel_gid]
             det[vname]['matched'] += len(best)
 
             for (pid, gid) in best:
                 p = preds[pid]
                 v_hat = p['v3d'].float(); j_hat = p['j3d'].float()
-                if not (torch.isfinite(v_hat).all() and torch.isfinite(j_hat).all()):
-                    print(f"  [warn] non-finite prediction idx={idx} {vname} person {pid}; skipped")
-                    continue
                 pelv = gt_j[gid, 0:1]; pelv_hat = j_hat[0:1]
                 v_ctx, vh_ctx = gt_v[gid] - pelv, v_hat - pelv_hat
                 pve = ((v_ctx - vh_ctx).norm(dim=-1) * 1000).mean().item()
@@ -237,11 +246,8 @@ def main():
                 pa = s * (R.reshape(1, 3, 3) @ vh_ctx.reshape(-1, 3, 1)).reshape(-1, 3) + t
                 pa_pve = ((v_ctx - pa).norm(dim=-1) * 1000).mean().item()
                 mpjpe = (((gt_j[gid] - pelv) - (j_hat - pelv_hat)).norm(dim=-1) * 1000).mean().item()
-                # vertices between neck01 and the crown (along the GT neck axis): the region PVE hides
-                u = gt_j[gid, chain[-1]] - gt_j[gid, chain[0]]
-                u = u / torch.clamp(u.norm(), min=1e-6)
-                h_along = ((gt_v[gid] - gt_j[gid, chain[0]]) * u).sum(-1)
-                near_neck = (h_along > -0.02) & ((gt_v[gid] - gt_j[gid, chain[-1]]).norm(dim=-1) < 0.40)
+                # head+neck surface vertices, selected on the REST-POSE GT mesh (hands cannot intrude): the region PVE hides
+                near_neck = hn_mask_gt[gid]
                 pve_headneck = ((v_ctx - vh_ctx).norm(dim=-1)[near_neck] * 1000).mean().item() if near_neck.any() else float('nan')
 
                 # rotations
@@ -260,20 +266,21 @@ def main():
                 sh_gt = shape_gt[gid]
                 sh_err = (sh_hat - sh_gt).cpu().numpy()
 
-                # neck / skeletal height / head size (GT and prediction under the SAME definitions)
-                neck_hat = dc.chain_length(j_hat.unsqueeze(0), chain)[0].item()
-                height_hat = dc.skeletal_height(j_hat.unsqueeze(0), names)[0].item()
-                headsz_hat = dc.head_size(v_hat.unsqueeze(0), j_hat.unsqueeze(0), names)[0].item()
-                g_neck, g_height, g_head = gt_neck[gid].item(), gt_height[gid].item(), gt_headsz[gid].item()
-
                 # factorisation: which factor moves the neck length?
                 P_gt = pose[gid:gid + 1]
                 P_hat = dc.rotmat_to_homogeneous(R_hat.unsqueeze(0))
                 _, j_gp_ps = dc.run_body_model(bm, P_gt, sh_hat.unsqueeze(0))      # GT pose + pred shape
                 _, j_pp_gs = dc.run_body_model(bm, P_hat, sh_gt.unsqueeze(0))      # pred pose + GT shape
                 I = dc.identity_pose(1, 163, device)
-                v_rest_gs, j_rest_gs = dc.run_body_model(bm, I, sh_gt.unsqueeze(0))   # rest pose, GT shape
-                v_rest_ps, j_rest_ps = dc.run_body_model(bm, I, sh_hat.unsqueeze(0))  # rest pose, pred shape
+                v_rest_gs, j_rest_gs = v_rest_gs_all[gid:gid + 1], j_rest_gs_all[gid:gid + 1]   # rest pose, GT shape
+                v_rest_ps, j_rest_ps = dc.run_body_model(bm, I, sh_hat.unsqueeze(0))            # rest pose, pred shape
+                hn_mask_pred = dc.head_neck_vertex_mask(v_rest_ps, j_rest_ps, names)
+
+                # neck / skeletal height / head size (GT and prediction under the SAME definitions)
+                neck_hat = dc.chain_length(j_hat.unsqueeze(0), chain)[0].item()
+                height_hat = dc.skeletal_height(j_hat.unsqueeze(0), names)[0].item()
+                headsz_hat = dc.head_size(v_hat.unsqueeze(0), j_hat.unsqueeze(0), names, hn_mask_pred)[0].item()
+                g_neck, g_height, g_head = gt_neck[gid].item(), gt_height[gid].item(), gt_headsz[gid].item()
 
                 row = dict(variant=vname, idx=idx, gid=gid, score=float(p['scores']),
                            pve=pve, pa_pve=pa_pve, mpjpe=mpjpe, pve_headneck=pve_headneck,
@@ -292,8 +299,8 @@ def main():
                            neck_rest_predshape_m=dc.chain_length(j_rest_ps, chain)[0].item(),
                            skel_height_rest_gtshape_m=dc.skeletal_height(j_rest_gs, names)[0].item(),
                            skel_height_rest_predshape_m=dc.skeletal_height(j_rest_ps, names)[0].item(),
-                           head_rest_gtshape_m=dc.head_size(v_rest_gs, j_rest_gs, names)[0].item(),
-                           head_rest_predshape_m=dc.head_size(v_rest_ps, j_rest_ps, names)[0].item(),
+                           head_rest_gtshape_m=dc.head_size(v_rest_gs, j_rest_gs, names, hn_mask_gt[gid:gid + 1])[0].item(),
+                           head_rest_predshape_m=dc.head_size(v_rest_ps, j_rest_ps, names, hn_mask_pred)[0].item(),
                            gt_depth_m=float(gt_j[gid, 0, 2]), pred_depth_m=float(j_hat[0, 2]),
                            k_fov_vs_dataset_px=k_diff, nonroot_translation=nonroot_t)
                 for g, e in grp_err.items():
@@ -364,14 +371,18 @@ def main():
           f"(<95% with people in frame => K or pose convention is wrong)")
     print(f"non-root translation in GT poses: max {c['nonroot_translation_max']:.2e} "
           f"({'OK, factorisation valid' if c['nonroot_translation_max'] < 1e-4 else 'WARNING: factorisation assumption violated'})")
-    print(f"GT people: {n_gt_total}, dropped by train.py's visibility filter: {n_gt_dropped}")
+    print(f"GT people: {n_gt_total}, dropped by train.py's visibility filter: {n_gt_dropped}"
+          + ("; --select youngest: metrics/recall count only the selected person per image, FP counts use all people" if sel_person else ""))
+    nf = {vn: det[vn]['nonfinite'] for vn in variants if det[vn]['nonfinite']}
+    if nf:
+        print(f"non-finite detections dropped before matching: {nf}")
 
     print("\n=== PER-VARIANT METRICS (matched people, pelvis-centred, mm; ratios pred/GT in %) ===")
     print(f"{'variant':<22}{'recall':>8}{'FP':>5}{'PVE':>8}{'PA-PVE':>8}{'MPJPE':>8}{'PVE_hn':>8}{'neck%':>7}{'nk/ht%':>8}{'hd/ht%':>8}")
     for vn in variants:
         d = det[vn]
         rec = 100.0 * d['matched'] / max(d['gt'], 1)
-        s = dict(recall=rec, fp=d['fp'], images_without_detection=d['img_nodet'],
+        s = dict(recall=rec, fp=d['fp'], images_without_detection=d['img_nodet'], nonfinite_detections_dropped=d['nonfinite'],
                  pve=m(col(vn, 'pve')), pa_pve=m(col(vn, 'pa_pve')), mpjpe=m(col(vn, 'mpjpe')),
                  pve_headneck=m(col(vn, 'pve_headneck')),
                  neck_len_pred_over_gt_pct=(m(col(vn, 'neck_ratio')) or float('nan')) * 100,
@@ -468,7 +479,7 @@ def main():
             print(f"{vn:<22}" + "".join(f"{dc.fmt(paired['per_variant'][vn][k], 3 if 'ratio' in k or 'pheno' in k else 1):>13}" for k in PAIRED))
         for vn in variants:
             if vn != ref:
-                print(f"{'  d(' + vn[:15] + ')':<22}" + "".join(f"{dc.fmt(paired['delta_vs_reference'][vn][k], 3 if 'ratio' in k or 'pheno' in k else 1):>+13}" for k in PAIRED))
+                print(f"{'  d(' + vn[:15] + ')':<22}" + "".join(f"{dc.fmt(paired['delta_vs_reference'][vn][k], 3 if 'ratio' in k or 'pheno' in k else 1, sign=True):>13}" for k in PAIRED))
         print("  read: attribute an effect to a toggle (mask, fp16/K, relax_hands) from THESE rows, not from the per-variant table.")
     else:
         print("  no (image, person) pair was matched under every variant; variant differences are not attributable.")

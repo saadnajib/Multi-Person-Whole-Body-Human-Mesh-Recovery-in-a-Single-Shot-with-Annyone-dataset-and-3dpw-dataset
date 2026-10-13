@@ -48,9 +48,12 @@ def resolve_ckpt(spec):
     raise FileNotFoundError(f"checkpoint not found: {spec} (tried {cand})")
 
 
-def load_model(ckpt_path, device):
-    """Same construction as demo.load_model(), for model.py's Model only."""
+def load_model(ckpt_path, device, tf32=True):
+    """Same construction as demo.load_model(), for model.py's Model only.
+    tf32=True mirrors train.py (--tf32 default 1): evaluate()'s 'fp32' numbers used TF32 matmuls."""
     from model import Model
+    torch.backends.cuda.matmul.allow_tf32 = bool(tf32)
+    torch.backends.cudnn.allow_tf32 = bool(tf32)
     ckpt = torch.load(ckpt_path, map_location=device)
     kwargs = dict(vars(ckpt['args']))
     kwargs.setdefault('simple_depth_encoding', 1)
@@ -253,25 +256,44 @@ def skeletal_height(j3d, names):
 body_height = skeletal_height   # backwards-compatible alias
 
 
-def head_size(v3d, j3d, names):
-    """
-    Head height: distance from the head-bone origin to the crown, measured
-    along the neck axis (neck01 -> head), over vertices within 40 cm of the
-    head joint. [N]. (A plain 'vertices within r of the head joint' measure
-    saturates at r for every body because the torso surface is continuous.)
-    """
+def _neck_axis(j3d, names):
+    """Unit vector neck01 -> head, [N,3], and the head joint position [N,3]."""
     head = [i for i, n in enumerate(names) if n.lower() == 'head']
     chain = neck_chain(names)
-    if not head:
-        return torch.full((v3d.shape[0],), float('nan'), device=v3d.device)
-    hj = j3d[:, head[0]]                                           # [N,3]
-    base = j3d[:, chain[0]] if len(chain) >= 2 else j3d[:, 0]     # neck01 (or root)
+    hj = j3d[:, head[0]] if head else j3d[:, 0]
+    base = j3d[:, chain[0]] if len(chain) >= 2 else j3d[:, 0]
     u = hj - base
-    u = u / torch.clamp(u.norm(dim=-1, keepdim=True), min=1e-6)   # [N,3] up-axis of the head
+    return u / torch.clamp(u.norm(dim=-1, keepdim=True), min=1e-6), hj
+
+
+def head_neck_vertex_mask(v_rest, j_rest, names, radius=0.40, below=0.02):
+    """
+    Bool [N,V]: vertices of the head+neck SURFACE, selected on a REST-POSE mesh
+    (A-pose, hands at the thighs), where a sphere around the head joint cannot
+    contain hands or forearms. Mesh topology is fixed, so the same vertex
+    indices address the head/neck on the posed mesh of the same shape.
+    Rule: signed height above neck01 along the neck axis > -below, and within
+    `radius` of the head joint.
+    """
+    chain = neck_chain(names)
+    u, hj = _neck_axis(j_rest, names)
+    base = j_rest[:, chain[0]] if len(chain) >= 2 else j_rest[:, 0]
+    h_along = ((v_rest - base.unsqueeze(1)) * u.unsqueeze(1)).sum(-1)
+    return (h_along > -below) & ((v_rest - hj.unsqueeze(1)).norm(dim=-1) < radius)
+
+
+def head_size(v3d, j3d, names, vmask=None):
+    """
+    Head height: head-bone origin -> crown along the (posed) neck axis, over
+    the head/neck vertices given by `vmask` [N,V] (from head_neck_vertex_mask on
+    a rest-pose mesh). Without a mask the 40 cm sphere on the posed mesh is used,
+    which a hand raised to the head can contaminate. [N]
+    """
+    u, hj = _neck_axis(j3d, names)
     rel = v3d - hj.unsqueeze(1)                                   # [N,V,3]
     p = (rel * u.unsqueeze(1)).sum(-1)                            # signed height above head origin
-    near = rel.norm(dim=-1) < 0.40                                # exclude raised hands etc.
-    p = torch.where(near, p, torch.full_like(p, -1.0))
+    sel = vmask if vmask is not None else (rel.norm(dim=-1) < 0.40)
+    p = torch.where(sel, p, torch.full_like(p, -1.0))
     return torch.clamp(p.max(1).values, min=0.0)
 
 
@@ -436,10 +458,10 @@ def hstack(imgs, pad=4):
     return np.concatenate(out[:-1], 1)
 
 
-def fmt(x, nd=1):
+def fmt(x, nd=1, sign=False):
     try:
         if x is None or (isinstance(x, float) and not math.isfinite(x)):
             return '   -'
-        return f"{x:.{nd}f}"
+        return f"{x:+.{nd}f}" if sign else f"{x:.{nd}f}"
     except Exception:  # noqa
         return str(x)

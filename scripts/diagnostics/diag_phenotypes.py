@@ -128,7 +128,8 @@ def part_b(args, mean_shape):
     base = torch.tensor(mean_shape, dtype=torch.float32).reshape(1, 11).repeat(len(ages), 1)
     base[:, phen.index('age')] = torch.tensor(ages)
     v, j = dc.run_body_model(bm, dc.identity_pose(len(ages), len(names), torch.device('cpu')), base)
-    height = dc.skeletal_height(j, names); neck = dc.chain_length(j, chain); head = dc.head_size(v, j, names)
+    height = dc.skeletal_height(j, names); neck = dc.chain_length(j, chain)
+    head = dc.head_size(v, j, names, dc.head_neck_vertex_mask(v, j, names))
     rows = []
     print("    (skeletal height = head joint -> mean ankle, ~25 cm short of stature; head = head-joint -> crown along the neck axis)")
     print(f"{'age':>5}{'skel_height_m':>15}{'neck_m':>9}{'head_m':>9}{'neck/height':>13}{'head/height':>13}")

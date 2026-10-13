@@ -135,9 +135,13 @@ def main():
                 best = min(humans, key=lambda h: float(((h['loc'][0] - ctr) ** 2 + (h['loc'][1] - ctr) ** 2)))
                 j = best['j3d'].float().unsqueeze(0); v = best['v3d'].float().unsqueeze(0)
                 sh = best['shape'].float().reshape(-1)
-                height = dc.body_height(j, names)[0].item(); neck = dc.chain_length(j, chain)[0].item()
+                if not (torch.isfinite(v).all() and torch.isfinite(j).all()):
+                    res[kname] = None; continue
+                height = dc.skeletal_height(j, names)[0].item(); neck = dc.chain_length(j, chain)[0].item()
+                v_rest, j_rest = dc.run_body_model(bm, dc.identity_pose(1, len(names), device), sh.unsqueeze(0))
+                hn_mask = dc.head_neck_vertex_mask(v_rest, j_rest, names)     # head/neck vertices chosen on the rest mesh
                 res[kname] = dict(depth=float(j[0, 0, 2]), skel_height_m=height, neck_over_height=neck / max(height, 1e-6),
-                                  head_over_height=dc.head_size(v, j, names)[0].item() / max(height, 1e-6),
+                                  head_over_height=dc.head_size(v, j, names, hn_mask)[0].item() / max(height, 1e-6),
                                   shape={n: float(sh[i]) for i, n in enumerate(phen)}, v3d=v[0].cpu().numpy())
             if res.get('demo') is None or res.get('fixed') is None:
                 print(f"  person {bi}: no detection under {'demo' if res.get('demo') is None else 'fixed'} K; skipped")

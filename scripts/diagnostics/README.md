@@ -28,8 +28,10 @@ PVE cannot see the neck (C6 in the analysis) is arithmetic, not a code fact: hea
 few percent of 19k, so E1 also reports `PVE_hn` (vertices from the neck01 joint up to the crown).
 
 Definitions used everywhere below: **skeletal height** = head joint (skull base) → mean ankle joint,
-about 25 cm short of stature; **head size** = head joint → crown along the neck axis. Both are
-compared GT-vs-prediction under the same definition; neither is a stature in metres.
+about 25 cm short of stature; **head size** = head joint → crown along the neck axis, over the head+neck
+surface vertices; **head+neck vertices** (also the `PVE_hn` region) are selected once on the rest-pose
+(A-pose) mesh of the same shape, so a hand raised to the head on the posed mesh cannot enter the
+measurement. All are compared GT-vs-prediction under the same definition; none is a stature in metres.
 
 ---
 
@@ -73,7 +75,7 @@ For each of the 100 held-out images (indices 579860..579959, never trained on):
 
 | variant | precision | K | helper bones | hands | mirrors |
 |---|---|---|---|---|---|
-| `V0_eval_unmasked` | fp32 | dataset | unmasked | predicted | `train.py evaluate()` (the 74 mm number) |
+| `V0_eval_unmasked` | fp32 (TF32 matmul, as `train.py --tf32 1`) | dataset | unmasked | predicted | `train.py evaluate()` (the 74 mm number) |
 | `V1_eval_masked` | fp32 | dataset | masked | predicted | eval numbers with the demo's masking |
 | `V2_demo` | fp16 | fov-derived | masked | predicted | the `demo.py` **network call** of the in-domain path (`run_demo_syn.sh`); not its `filter_humans` / `max_persons` post-processing |
 | `V3_demo_relaxhands` | fp16 | fov-derived | masked | identity (phalanges) | V2 + the `--relax_hands` flag of `run_demo.sh`; not the detector-crop path (that is E4) |
@@ -98,6 +100,11 @@ says on how many images that holds (it requires a centred principal point and fx
 Also reported once per run: whether any non-root bone in the GT poses carries a translation
 (`camera.nonroot_translation_max`; the factorisation assumes none), and how far the GT helper bones
 are from identity (`gt_helper_bones_angle_deg`: the irreducible floor the mask introduces, a dataset property).
+
+**Paired comparison.** Variants match different detections, so the per-variant means are not directly
+comparable. `summary.json → paired` (and the `PAIRED COMPARISON` table) report every metric on the
+(image, person) pairs matched under *all* variants, with deltas vs `V1_eval_masked`. Attribute an effect
+to a toggle from those rows only.
 
 Outputs: `summary.json`, `per_person.csv` (phenotype columns are prefixed `pheno_`), `vis/<idx>.jpg` = `[image | GT | V1 | V2]`.
 
@@ -139,9 +146,10 @@ height, neck/height and head/height.
 
 ## E3: youngest in-sample people (`diag_holdout_trace.py --select youngest`)
 
-Scans the first 20 000 training annotations for the lowest GT age and runs E1 on the 50 youngest.
-These were **seen in training**, so this tests whether the network can *represent* a child at all,
-not whether it generalises.
+Scans the first 20 000 training annotations for the lowest GT age and runs E1 on the 50 youngest
+**people** (one per image; the other people in those images are still given to the matcher so they
+are not counted as false positives, but their metrics are not reported). These were **seen in
+training**, so this tests whether the network can *represent* a child at all, not whether it generalises.
 
 | observation | meaning |
 |---|---|
