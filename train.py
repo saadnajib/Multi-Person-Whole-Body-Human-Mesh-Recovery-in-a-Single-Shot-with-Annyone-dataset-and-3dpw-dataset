@@ -997,7 +997,7 @@ def main(args):
         # value or the test set will overlap data the model trained on.
         if args.train_data == 'AnnyOne' and args.test_anny_n > 0:
             from torch.utils.data import Subset
-            test_dataset = AnnyOne(data_folder='/netscratch/najib/anydataset/',
+            test_dataset = AnnyOne(data_folder=args.anny_data_folder,
                                    img_size=args.img_size)
             n_total = len(test_dataset)
             start = max(0, n_total - args.test_anny_n)
@@ -1082,7 +1082,7 @@ def main(args):
         if args.train_data == 'AnnyOne':
             try:
                 train_dataset = AnnyOne(
-                    data_folder='/netscratch/najib/anydataset/',
+                    data_folder=args.anny_data_folder,
                     img_size=args.img_size,
                 )
                 print(f"AnnyOne dataset size: {len(train_dataset)}", flush=True)
@@ -1223,6 +1223,9 @@ if __name__ == "__main__":
     parser.add_argument('--train_data', type=str, default='BEDLAM')
     parser.add_argument('--train_split', type=str, default='training')
     parser.add_argument('--train_n', type=int, default=0)
+    parser.add_argument('--anny_data_folder', type=str, default='/netscratch/najib/anydataset/',
+                        help='AnnyOne root (*.pkl + images). Default = the production dataset; '
+                             'scripts/diagnostics point it at a symlinked subset for the overfit check.')
     parser.add_argument('--val_data', type=str, nargs='+', default=[])
     parser.add_argument('--val_split', type=str, nargs='+', default=[])
     parser.add_argument('--val_n', type=int, nargs='+', default=[])

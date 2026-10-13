@@ -176,6 +176,49 @@ out of its camera distribution; E4 says whether K matters, not which K is right.
 
 ---
 
+## Suite v2: fixed manifest, six checks, one report
+
+Builds on E1–E4 with a **fixed sample manifest** and the checks a reviewer would ask for before any
+architecture change. Everything is read-only except check 6, which trains a throw-away copy for a few
+minutes on 40 images (its checkpoints live under `results/diagnostics/overfit_*/`, never under
+`logs/anny_model/`). The only edit to existing code is a default-preserving `--anny_data_folder` flag in
+`train.py`, so the overfit run can point at the symlinked subset.
+
+| step | job | script(s) | check |
+|---|---|---|---|
+| 0 | `slurm/diagnostics/diag_phenotypes.sh` | `diag_phenotypes.py` | E2 (needed by the age sweep's mean shape; optional) |
+| 1 | `slurm/diagnostics/diag_manifest.sh` | `build_manifest.py` → `diag_gt_decode.py` → `diag_holdout_trace.py --manifest` (train, holdout) | **manifest**, **1** GT decode + overlay with the supplied camera, **5** GT-shape substitution with predicted pose, per-category tables |
+| 2 | `slurm/diagnostics/diag_bodymodel.sh` | `diag_bodymodel_probe.py` | **2** canonical pose + age sweep, **3** single-joint perturbations (neck, fingers) |
+| 3 | `slurm/diagnostics/diag_gradients.sh` | `diag_gradients.py` | **4** gradients into the heads, mesh response to head outputs |
+| 4 | `slurm/diagnostics/diag_overfit.sh` | `train.py` (capped) | **6** overfit the manifest train subset; before/after PVE on train and holdout subsets |
+| 5 | login node: `python scripts/diagnostics/diag_report.py --tag <run>_<epoch>` | `diag_report.py` | `REPORT.md` + `comparison_panel.jpg`, each failure assigned to decoding / preprocessing / supervision / optimization / generalization |
+
+```bash
+cd /netscratch/najib/multi-hmr && git pull
+sbatch slurm/diagnostics/diag_phenotypes.sh
+sbatch slurm/diagnostics/diag_manifest.sh      # builds the manifest on first run; REBUILD=1 to redo (changes the fixed set!)
+sbatch slurm/diagnostics/diag_bodymodel.sh
+sbatch slurm/diagnostics/diag_gradients.sh
+sbatch slurm/diagnostics/diag_overfit.sh       # after diag_manifest.sh has finished (needs data/diag_manifest/)
+# when all have finished:
+python scripts/diagnostics/diag_report.py --tag anny_s2_shape_v5_00099
+```
+
+**The manifest** (`results/diagnostics/manifest.json`, `build_manifest.py`): one (image, person) per entry, tags
+`adult` (age 0.45–0.65, quiet neck), `child` (lowest GT age, Anny/MakeHuman scale: 0.19 ≈ 11 y), `hands`
+(both hands projected inside the image, large pixel span, in front of the torso), `neck` (largest GT
+neck+head rotation). 10 per tag from the training pool, 5 per tag from the 100-image holdout; the
+selection is seeded. `data/diag_manifest/{train,holdout}/` hold symlinks to the chosen pkl+jpg pairs.
+If the holdout has no children the manifest says so, and every child number is in-sample.
+
+**Reading the report.** `REPORT.md` quotes the numbers each verdict rests on and marks missing inputs;
+`comparison_panel.jpg` stacks GT-decode, prediction-vs-GT (train and holdout), age sweep, perturbation and
+crop-camera panels. Two rules it enforces: tiny-subset overfit success is an optimisation check, never a
+validation result; and vertex errors are only ever computed between Anny meshes of the same topology and
+vertex order (GT and predictions share one body model).
+
+---
+
 ## Ranked causes (to revise after E1–E4)
 
 **Confirmed from code**
