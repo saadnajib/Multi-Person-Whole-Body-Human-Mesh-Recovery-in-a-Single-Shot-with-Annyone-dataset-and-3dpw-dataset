@@ -289,6 +289,7 @@ def main():
                     root_px_err=float((j2d_hat[0] - j2d_gt[0]).norm()),
                     pred_head_vs_gt_root_px=float((j2d_hat[head_i0] - j2d_gt[0]).norm()),
                     gt_head_vs_gt_root_px=float((j2d_gt[head_i0] - j2d_gt[0]).norm()),
+                    pred_head_vs_pred_root_px=float((j2d_hat[head_i0] - j2d_hat[0]).norm()),
                     vertical_shift_px=float(j2d_hat[0, 1] - j2d_gt[0, 1]))   # + = predicted root lower in the image
                 # head+neck surface vertices, selected on the REST-POSE GT mesh (hands cannot intrude): the region PVE hides
                 near_neck = hn_mask_gt[gid]
@@ -413,6 +414,24 @@ def main():
         a = a[np.isfinite(a).all(1)] if len(a) else a.reshape(0, 2)
         return a[:, 0], a[:, 1]
 
+    def depth_fit(vn):
+        # pred root depth = slope * GT + intercept over the matched people, plus the median pred/GT depth
+        # ratio and the median projected-size ratio (pred / GT head-to-root pixel distance). A learned depth
+        # gives slope ~1, intercept ~0 and ratios ~1; pelvis-centred PVE cannot see any of this.
+        out = dict(depth_fit_slope=None, depth_fit_intercept_m=None, depth_ratio_median=None,
+                   size_ratio_median_px=None, depth_fit_n=0)
+        gd, pd_ = pairs(vn, 'gt_depth_m', 'pred_depth_m')
+        out['depth_fit_n'] = int(len(gd))
+        if len(gd) >= 3 and bool((gd > 0).all()) and float(np.std(gd)) > 1e-6:
+            slope, intercept = np.polyfit(gd, pd_, 1)
+            out.update(depth_fit_slope=float(slope), depth_fit_intercept_m=float(intercept),
+                       depth_ratio_median=float(np.median(pd_ / gd)))
+        gpx, ppx = pairs(vn, 'gt_head_vs_gt_root_px', 'pred_head_vs_pred_root_px')
+        ok = gpx > 1e-6
+        if int(ok.sum()) >= 3:
+            out['size_ratio_median_px'] = float(np.median(ppx[ok] / gpx[ok]))
+        return out
+
     m = dc.mean_or_none
     summary = dict(ckpt=ckpt_path, selection=sel_desc, n_images=len(indices), variants={})
     pp = np.asarray([[d['cx_over_W'], d['cy_over_H']] for d in cam_stats])
@@ -462,7 +481,9 @@ def main():
                                    wrist=m(col(vn, 'rot_global_wrist_deg')))
         s['placement'] = {k: m(col(vn, k)) for k in ('mpjpe_abs', 'root_err_mm', 'head_err_mm', 'root_depth_err_m',
                                                      'head_px_err', 'root_px_err', 'pred_head_vs_gt_root_px',
-                                                     'gt_head_vs_gt_root_px', 'vertical_shift_px')}
+                                                     'gt_head_vs_gt_root_px', 'pred_head_vs_pred_root_px',
+                                                     'vertical_shift_px')}
+        s['placement'].update(depth_fit(vn))
         s['shape_abs_err'] = {n: m(np.abs(col(vn, f'pheno_err_{n}'))) for n in phen}
         s['shape_bias'] = {n: m(col(vn, f'pheno_err_{n}')) for n in phen}
         s['neck_factorisation_m'] = dict(
@@ -511,6 +532,14 @@ def main():
     print("        If 'predHead-gtRoot px' is small and 'head px' large, the head is placed where the pelvis is: a")
     print("        training-target bug (supervision) that pelvis-centred PVE cannot see. If 'head px' is small, the 2D")
     print("        losses compensate and the bug costs only depth/offset noise; 'vshift' > 0 = predicted body too low.")
+    print(f"{'variant':<22}{'depth slope':>12}{'intercept m':>12}{'depth ratio':>12}{'size ratio':>11}{'n':>5}")
+    for vn in variants:
+        pl = summary['variants'][vn]['placement']
+        print(f"{vn:<22}{dc.fmt(pl['depth_fit_slope'], 2):>12}{dc.fmt(pl['depth_fit_intercept_m'], 2):>12}"
+              f"{dc.fmt(pl['depth_ratio_median'], 2):>12}{dc.fmt(pl['size_ratio_median_px'], 2):>11}{pl['depth_fit_n']:>5}")
+    print("  read: pred root depth = slope*GT + intercept over matched people (needs >= 3); depth ratio = median pred/GT")
+    print("        root depth; size ratio = median pred/GT head-to-root pixel distance. Learned depth: slope ~1, intercept ~0,")
+    print("        ratios ~1. The baseline checkpoint anny_s2_shape_v5/00099 sits at slope 0.33, intercept 2.36 m, size 0.67.")
     print("\n=== GLOBAL (camera-frame) ORIENTATION ERROR of end effectors, deg ===")
     for vn in variants:
         gd = summary['variants'][vn]['rot_global_deg']

@@ -211,15 +211,22 @@ class Trainer(object):
         v2d = perspective_projection(verts, K)
 
         # Translation of the primary keypoint
+        dist_joint_idx = 0
         if 'anny_pose' in y:
             root_joint_idx = 0
+            # The model attaches the mesh to the detected pixel by its person_center joint (the
+            # head) and reports that joint as transl, so unless the targets describe the same
+            # joint the heatmap cell, offset, transl and dist pull against the 2D terms
+            # (docs/diagnostics_findings.md, depth defect). 'root' keeps the production targets.
+            if getattr(self.args, 'gt_center_joint', 'root') == 'person_center':
+                root_joint_idx = dist_joint_idx = self.model.person_center_idx
         else:
             root_joint_idx = JOINT_NAMES.index(self.args.person_center)
             
         target['transl'] = jts[:, root_joint_idx]
         target['transl_pelvis'] = jts[:, 0]
         # ✅ FIX: Clamp distance to prevent log(0) NaNs
-        target['dist'] = torch.clamp(jts[:, 0, -1], min=0.1)
+        target['dist'] = torch.clamp(jts[:, dist_joint_idx, -1], min=0.1)
 
         # We may predict dist in log space, or normalized values.
         if self.model.nearness:
@@ -310,6 +317,32 @@ class Trainer(object):
 
         return _target
 
+    @torch.no_grad()
+    def print_anchor_debug(self, pred, gt):
+        """--debug_anchor: one line per GT human with the predicted anchor (offset_y, loc_y, dist)
+        next to the GT anchor and the GT head / root pixel rows. If the target anchor and the joint
+        the model attaches to the detected pixel disagree, the predicted offset leaves [-0.5, 0.5]
+        or the predicted dist drifts above the GT dist for near people."""
+        pc = self.model.person_center_idx
+        K_h = gt['K'][gt['idx'][0]]
+        head_row = perspective_projection(gt['j3d'][:, [pc]], K_h)[:, 0, 1].tolist()
+        root_row = perspective_projection(gt['j3d'][:, [0]], K_h)[:, 0, 1].tolist()
+        off_y = pred['offset'].reshape(-1, 2)[:, 1].float().tolist()
+        loc_y = pred['loc'].reshape(-1, 2)[:, 1].float().tolist()
+        dist_hat = pred['dist'].reshape(-1).float().tolist()
+        gt_loc_y = gt['loc'][:, 1].tolist()
+        gt_off_y = gt['offset'][:, 1].tolist()
+        gt_dist = gt['dist'].reshape(-1).tolist()
+        print(f"[debug_anchor] iter {self.current_iter}: gt_center_joint="
+              f"{getattr(self.args, 'gt_center_joint', 'root')}, model anchor joint="
+              f"{getattr(self.model, 'person_center_name', pc)} (offset in patches, rows in px of the "
+              f"{self.args.img_size}px input, dist in m; a consistent offset lies in [-0.5, 0.5])", flush=True)
+        for h in range(len(off_y)):
+            print(f"[debug_anchor]   h{h}: pred offset_y {off_y[h]:+.2f} loc_y {loc_y[h]:7.1f} | "
+                  f"gt anchor loc_y {gt_loc_y[h]:7.1f} offset_y {gt_off_y[h]:+.2f} "
+                  f"head row {head_row[h]:7.1f} root row {root_row[h]:7.1f} | "
+                  f"dist pred {dist_hat[h]:.2f} gt {gt_dist[h]:.2f}", flush=True)
+
     def fit(self, data_train, l_data_val):
 
         start_epoch = 0
@@ -317,8 +350,14 @@ class Trainer(object):
             
             # Training
             timer_end = time.time()
+            iter_start = self.current_iter
             self.train_n_iters(data_train)
             train_n_iters_time = time.time() - timer_end
+            # Optimiser steps only: skipped batches cost wall time but show the model no image.
+            n_steps = self.current_iter - iter_start
+            print(f"[throughput] epoch {self.current_epoch}: {n_steps} iters x batch {self.args.batch_size} "
+                  f"in {train_n_iters_time:.0f}s = {n_steps / max(train_n_iters_time, 1e-9):.2f} it/s, "
+                  f"{n_steps * self.args.batch_size / max(train_n_iters_time, 1e-9):.2f} images/s", flush=True)
 
             # Decay LR once per epoch. A constant LR that was right for training
             # fresh heads from random init becomes too aggressive once resumed
@@ -449,6 +488,8 @@ class Trainer(object):
                 pred = self.model(x, is_training=True, idx=gt['idx'], K=gt['K'])
                 pred['transl_pelvis'] = pred['transl_pelvis'].reshape(-1, 3)
                 pred['transl'] = pred['transl'].reshape(-1, 3)
+                if self.current_iter < int(getattr(self.args, 'debug_anchor', 0)):
+                    self.print_anchor_debug(pred, gt)
                 loss, dict_loss = self.loss(pred, gt, epoch=self.current_epoch, img_size=self.args.img_size)
 
                 # --- KNOWLEDGE DISTILLATION ---
@@ -1330,6 +1371,18 @@ if __name__ == "__main__":
                              '(the test split). Keep >= --val_anny_n used in training, '
                              'or the test set overlaps training data.')
     parser.add_argument('--person_center', type=str, default='head', choices=['pelvis', 'head', 'nose'])
+    parser.add_argument('--gt_center_joint', type=str, default='root', choices=['root', 'person_center'],
+                        help="AnnyOne batches only: the joint the GT transl / dist / heatmap cell / offset "
+                             "describe. 'root' = joint 0, what every production checkpoint was trained on; "
+                             "'person_center' = the joint the model anchors and reports (--person_center, the "
+                             "head), so target and prediction describe the same point (depth defect in "
+                             "docs/diagnostics_findings.md). prepare_gt's visibility filter and cell-occupancy "
+                             "test move with it, in training and in evaluate(); SMPL-X / 3DPW batches are "
+                             "unaffected.")
+    parser.add_argument('--debug_anchor', type=int, default=0,
+                        help='print, for the first N training iterations, the predicted anchor (offset_y, '
+                             'loc_y, dist) next to the GT anchor and the GT head / root pixel rows of every '
+                             'human in the batch. 0 = off.')
     parser.add_argument('--visu_to_save', type=int, default=0)
     parser.add_argument('--extension', type=str, default='png', choices=['png', 'jpg'])
     parser.add_argument('--res', type=int, default=None, choices=[None, 512, 1280])
