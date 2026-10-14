@@ -1,13 +1,12 @@
 #!/bin/bash
 # =============================================================================
-# FINAL TEST-SET EVALUATION: one checkpoint on Anny-One holdout + 3DPW-TEST
+# FINAL TEST-SET EVALUATION: every final model on Anny-One holdout + 3DPW-TEST
 # =============================================================================
-# usage:
-#   sbatch run_eval_3dpw_test.sh <checkpoint.pt> <head_dim> <backbone> <label>
-# e.g.
-#   sbatch run_eval_3dpw_test.sh models/multiHMR/anny_distill_vits_v7_mixed_00130.pt 1024 dinov2_vits14 student_v7_ep130
-#   sbatch run_eval_3dpw_test.sh models/multiHMR/anny_distill_vits_v6c_00149.pt   1024 dinov2_vits14 student_v6c_ep149
-#   sbatch run_eval_3dpw_test.sh logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt 0 dinov2_vitl14 teacher_v5
+# One Slurm ARRAY task per model (list below), identical settings, one log
+# each:  logs/eval-test3dpw-<jobid>_<task>.out
+#
+#   sbatch run_eval_3dpw_test.sh              # all models
+#   sbatch --array=3 run_eval_3dpw_test.sh    # just one of them (0-based index)
 #
 # 3DPW-test (all 9,722 converted images, every third frame of the 24 test
 # sequences) is used ONLY here, after every training decision was taken on
@@ -19,20 +18,44 @@
 #SBATCH --nodes=1
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=8
-#SBATCH --time=04:00:00
-#SBATCH --output=/netscratch/najib/multi-hmr/logs/eval-test3dpw-%j.out
-#SBATCH --error=/netscratch/najib/multi-hmr/logs/eval-test3dpw-%j.err
+#SBATCH --time=00:20:00
+#SBATCH --output=/netscratch/najib/multi-hmr/logs/eval-test3dpw-%A_%a.out
+#SBATCH --error=/netscratch/najib/multi-hmr/logs/eval-test3dpw-%A_%a.err
+#SBATCH --array=0-4%2
 
 set -euo pipefail
 mkdir -p /netscratch/najib/multi-hmr/logs
 
-# >>> WHICH CHECKPOINT TO EVALUATE <<<
-CKPT_ARG="${1:?checkpoint path}"
-HEAD_DIM="${2:?head_dim (1024 students v6+, 0 teacher)}"
-BACKBONE="${3:?backbone (dinov2_vits14 / dinov2_vitl14)}"
-LABEL="${4:-eval}"
+P="/netscratch/najib/multi-hmr"
+# >>> THE MODELS: "checkpoint|head_dim|backbone|label"  (array index = line number, from 0)
+#     head_dim 1024 for projector-fed students (v6+), 0 for the teacher-class models.
+#     A checkpoint given with a * is resolved to the newest matching file (saved copies
+#     in models/multiHMR/ first, then the run's own checkpoints/ folder).
+MODELS=(
+  "$P/logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt|0|dinov2_vitl14|teacher_v5_synthetic"
+  "$P/models/multiHMR/anny_teacher_v9_mixed_00062.pt|0|dinov2_vitl14|teacher_v9_mixed_ep62"
+  "$P/models/multiHMR/anny_distill_vits_v6c_00149.pt|1024|dinov2_vits14|student_v6c_synthetic"
+  "$P/models/multiHMR/anny_distill_vits_v7_mixed_00130.pt|1024|dinov2_vits14|student_v7_mixed"
+  "$P/models/multiHMR/anny_distill_vits_v8_final_*.pt|1024|dinov2_vits14|student_v8_final"
+  "$P/models/multiHMR/anny_v10_scratch_mixed_00299.pt|0|dinov2_vitl14|model_v10_scratch_mixed"
+)
+# add more lines above and widen --array accordingly, e.g. teacher v10:
+#   "$P/models/multiHMR/anny_v10_scratch_mixed_*.pt|0|dinov2_vitl14|model_v10_scratch_mixed"
+
+TASK="${SLURM_ARRAY_TASK_ID:-0}"
+ENTRY="${MODELS[$TASK]:-}"
+[ -n "$ENTRY" ] || { echo "ERROR: no model at array index $TASK (${#MODELS[@]} entries)"; exit 1; }
+IFS='|' read -r CKPT_PAT HEAD_DIM BACKBONE LABEL <<< "$ENTRY"
+
+# resolve wildcards: newest saved copy, else newest checkpoint in the run folder
+CKPT_ARG=$(ls -1 $CKPT_PAT 2>/dev/null | sort | tail -1 || true)
+if [ -z "$CKPT_ARG" ]; then
+  RUN=$(basename "$CKPT_PAT" | sed 's/_[0-9*]*\.pt$//; s/_\*\.pt$//')
+  CKPT_ARG=$(ls -1 "$P/logs/anny_model/$RUN/checkpoints/"*.pt 2>/dev/null | sort | tail -1 || true)
+fi
+[ -n "$CKPT_ARG" ] || { echo "ERROR: no checkpoint matches $CKPT_PAT (copy it to models/multiHMR/ first)"; exit 1; }
+echo "task $TASK: $LABEL  ->  $CKPT_ARG  (head_dim $HEAD_DIM, $BACKBONE)"
 RUN_NAME="$LABEL"
-EPOCH="test"
 # >>> HOW MANY TEST SAMPLES (100 = exactly the untrained holdout) <<<
 TEST_N=100
 LABELS="/netscratch/najib/multi-hmr/threedpw_anny_full/labels"
@@ -45,11 +68,7 @@ set -euo pipefail
 source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 
 CKPT="${CKPT_ARG}"
-if [ ! -f "\$CKPT" ]; then
-  echo "ERROR: checkpoint not found: \$CKPT"
-  echo "Check: ls -lt /netscratch/najib/multi-hmr/logs/anny_model/${RUN_NAME}/checkpoints/"
-  exit 1
-fi
+[ -f "\$CKPT" ] || { echo "ERROR: checkpoint not found: \$CKPT"; exit 1; }
 echo "Evaluating \$CKPT on the last ${TEST_N} AnnyOne samples and ${VAL_3DPW_N} 3DPW-${VAL_3DPW_SPLIT} images"
 [ -f "${LABELS}/index_${VAL_3DPW_SPLIT}.txt" ] || { echo "ERROR: no 3DPW labels at ${LABELS}"; exit 1; }
 grep -q "mix_3dpw_labels" train.py || { echo "ERROR: train.py lacks apply_mixed_data_fix.py"; exit 1; }

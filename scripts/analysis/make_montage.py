@@ -27,8 +27,28 @@ EXTS = ('.jpg', '.jpeg', '.png')
 
 
 def list_images(folder):
-    return {f for f in os.listdir(folder)
-            if f.lower().endswith(EXTS) and not f.startswith('._')}
+    """{key: filename}. demo.py names its outputs '<input image>_<model_name>.png',
+    so the model-name suffix is stripped to get a key that is the same in every
+    folder. The model name is the folder name without 'demo_out_' (and, for
+    run_demo_compare.sh's per-image-set folders, without the trailing _<set>)."""
+    rest = os.path.basename(folder.rstrip('/'))
+    if rest.startswith('demo_out_'):
+        rest = rest[len('demo_out_'):]
+    cands = [rest]
+    if '_' in rest:
+        cands.append(rest.rsplit('_', 1)[0])
+    out = {}
+    for f in os.listdir(folder):
+        if not f.lower().endswith(EXTS) or f.startswith('._'):
+            continue
+        stem = os.path.splitext(f)[0]
+        key = stem
+        for c in cands:
+            if stem.endswith('_' + c):
+                key = stem[:-(len(c) + 1)]
+                break
+        out[key] = f
+    return out
 
 
 def main():
@@ -47,14 +67,14 @@ def main():
         if not os.path.isdir(f):
             print(f"ERROR: folder not found: {f}"); sys.exit(1)
 
-    sets = [list_images(f) for f in args.folders]
-    common = sorted(set.intersection(*sets))
+    maps = [list_images(f) for f in args.folders]
+    common = sorted(set.intersection(*[set(m) for m in maps]))
     if args.only:
         common = [c for c in common if c in set(args.only)]
     if not common:
         print("No image name is present in all folders. What each folder contains:")
-        for f, s in zip(args.folders, sets):
-            print(f"  {f}: {sorted(s)[:8]}{' ...' if len(s) > 8 else ''}")
+        for f, m in zip(args.folders, maps):
+            print(f"  {f}: {sorted(m)[:8]}{' ...' if len(m) > 8 else ''}")
         sys.exit(1)
 
     os.makedirs(args.out, exist_ok=True)
@@ -65,8 +85,8 @@ def main():
     band = 44
     for name in common:
         panels = []
-        for f in args.folders:
-            im = Image.open(os.path.join(f, name)).convert('RGB')
+        for f, m in zip(args.folders, maps):
+            im = Image.open(os.path.join(f, m[name])).convert('RGB')
             if im.height != args.max_height:
                 w = int(round(im.width * args.max_height / im.height))
                 im = im.resize((w, args.max_height), Image.LANCZOS)
@@ -79,7 +99,8 @@ def main():
             canvas.paste(p, (x, band))
             draw.text((x + 12, 6), lab, fill=(0, 0, 0), font=font)
             x += p.width
-        out = os.path.join(args.out, os.path.splitext(name)[0] + '_montage.jpg')
+        safe = os.path.splitext(name)[0].replace(' ', '_')
+        out = os.path.join(args.out, safe + '_montage.jpg')
         canvas.save(out, quality=92)
         print(f"  {out}  ({len(panels)} panels, {canvas.width}x{canvas.height})")
     print(f"\n{len(common)} montage(s) -> {args.out}")
