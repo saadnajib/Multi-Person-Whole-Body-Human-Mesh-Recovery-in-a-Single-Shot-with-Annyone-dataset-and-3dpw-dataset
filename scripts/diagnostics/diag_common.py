@@ -56,6 +56,7 @@ def load_model(ckpt_path, device, tf32=True):
     torch.backends.cudnn.allow_tf32 = bool(tf32)
     ckpt = torch.load(ckpt_path, map_location=device)
     kwargs = dict(vars(ckpt['args']))
+    raw_args = dict(kwargs)               # as saved, before the defaults below (H3: pose_param of old checkpoints)
     kwargs.setdefault('simple_depth_encoding', 1)
     kwargs.setdefault('pose_param', 'local-bone')
     kwargs['person_center'] = 'head'      # demo.py does the same override
@@ -75,12 +76,25 @@ def load_model(ckpt_path, device, tf32=True):
         missing = [k for k in msd if k not in sd][:8]
         raise RuntimeError(f"only {pct:.1f}% of the model initialised; missing e.g. {missing}")
     model.eval()
+    model.ckpt_raw_args = raw_args        # the saved args, unmodified (diag_holdout_trace --dump_bones meta)
+    rp = raw_args.get('pose_param', None)
     print(f"[load_model] img_size={model.img_size} backbone_dim={model.backbone_dim} "
           f"feat_proj={'yes' if getattr(model, 'feat_proj', None) is not None else 'no'} "
           f"ckpt_args: backbone={kwargs.get('backbone')} head_dim={kwargs.get('head_dim')} "
           f"mask_helper_joints_train={kwargs.get('mask_helper_joints_train')} "
-          f"use_anny_shape={kwargs.get('use_anny_shape')} alpha_shape={kwargs.get('alpha_shape')}")
+          f"use_anny_shape={kwargs.get('use_anny_shape')} alpha_shape={kwargs.get('alpha_shape')} "
+          f"pose_param={'absent(local-bone assumed)' if rp is None else rp} "
+          + " ".join(f"{k}={raw_args.get(k)}" for k in CKPT_ARGS_REPORTED))
+    if rp is not None and rp != 'local-bone':
+        print(f"[load_model] WARNING: checkpoint trained with pose_param='{rp}', but model.py evaluates every "
+              f"checkpoint as local-bone (demo.py refuses this case): its rotations are read in the wrong space")
     return model, kwargs
+
+
+# saved training args printed by load_model and stored in the --dump_bones meta (the H3 check of the neck audit:
+# docs/experiments_plan.md, "Neck root cause"); None = the checkpoint predates the flag
+CKPT_ARGS_REPORTED = ('boost_neck_weight', 'boost_hand_weight', 'alpha_rotmat', 'rotmat_loss', 'rotmat_region_norm',
+                      'alpha_global_rot', 'mix_3dpw_labels', 'pretrained', 'load_only_backbone')
 
 
 def set_inference_toggles(model, mask_helper_joints, relax_hands=False, rest_pose=False):
@@ -164,6 +178,107 @@ def rotmat_to_homogeneous(R):
 
 def identity_pose(n, n_bones, device):
     return torch.eye(4, device=device).reshape(1, 1, 4, 4).repeat(n, n_bones, 1, 1)
+
+
+def swing_twist_deg(R, axis):
+    """
+    Swing-twist split of rotations R [..., 3, 3] about unit axes [..., 3] given in the same frame as R:
+    R = R_swing @ R_twist, R_twist a rotation about `axis`, R_swing about an axis perpendicular to it.
+    Returns (swing [...] in [0, 180], twist [...] signed in [-180, 180], right-hand rule about +axis), degrees.
+    Closed form without a quaternion branch: with c = cos(angle) = (tr R - 1) / 2, the unit quaternion (w, v) of R
+    has w^2 = (1 + tr R) / 4 and (v . axis)^2 = (axis . R axis - c) / 2, so |twist| = 2 atan2(|v . axis|, |w|), with
+    the sign of axis . vee(R - R^T); swing = angle between axis and R axis (the twist leaves the axis fixed).
+    A pure 180-deg swing (R axis = -axis) has no defined twist and returns twist 0.
+    """
+    a = axis / torch.clamp(axis.norm(dim=-1, keepdim=True), min=1e-12)
+    tr = R[..., 0, 0] + R[..., 1, 1] + R[..., 2, 2]
+    Ra = (R @ a.unsqueeze(-1)).squeeze(-1)                                     # R axis
+    a_Ra = (a * Ra).sum(-1)
+    w2 = torch.clamp((1.0 + tr) / 4.0, min=0.0)
+    vd2 = torch.clamp((a_Ra - (tr - 1.0) / 2.0) / 2.0, min=0.0)
+    twist = 2.0 * torch.atan2(torch.sqrt(vd2), torch.sqrt(w2))
+    vee = torch.stack([R[..., 2, 1] - R[..., 1, 2], R[..., 0, 2] - R[..., 2, 0], R[..., 1, 0] - R[..., 0, 1]], -1)
+    sgn = torch.where((a * vee).sum(-1) < 0, -torch.ones_like(twist), torch.ones_like(twist))
+    swing = torch.acos(torch.clamp(a_Ra, -1.0, 1.0))
+    return torch.rad2deg(swing), torch.rad2deg(twist) * sgn
+
+
+def chordal_mean(R):
+    """Chordal L2 mean of rotations [P, 3, 3] -> [3, 3]: the SO(3) projection of the entry-wise mean."""
+    return orthonormalize(R.mean(0, keepdim=True))[0]
+
+
+def rotation_spread_deg(R):
+    """Mean geodesic distance (deg) of rotations [P, 3, 3] to their chordal mean: 0 = the same rotation for all P."""
+    if R.shape[0] == 0:
+        return float('nan')
+    return float(geodesic_deg(R, chordal_mean(R).expand_as(R)).mean())
+
+
+def axis_angle_deg(R):
+    """Axis (unit [3]) and angle (deg) of one rotation [3, 3]. Above ~175 deg the axis comes from the symmetric part
+    (R + I) / 2 = k k^T, whose sign is arbitrary; at 0 deg the axis is returned as zeros."""
+    R = R.double()
+    ang = float(geodesic_deg(torch.eye(3, dtype=R.dtype, device=R.device), R))
+    vee = torch.stack([R[2, 1] - R[1, 2], R[0, 2] - R[2, 0], R[1, 0] - R[0, 1]])
+    if ang < 1e-6:
+        return torch.zeros(3, dtype=torch.float32), 0.0
+    if ang < 175.0:
+        k = vee / vee.norm()
+    else:
+        S = (R + torch.eye(3, dtype=R.dtype, device=R.device)) / 2.0
+        j = int(torch.argmax(torch.diagonal(S)))
+        k = S[:, j] / torch.clamp(S[:, j].norm(), min=1e-12)
+        if float((k * vee).sum()) < 0:                                        # keep the right-hand sign when defined
+            k = -k
+    return k.float().cpu(), ang
+
+
+def pick_twist_children(bp_rest, parents, bone_idx, min_cos=0.95):
+    """
+    Twist-axis convention of the per-bone dump (diag_holdout_trace.py --dump_bones). bp_rest [B, 4, 4] are the
+    GLOBAL bone poses at the identity local-bone pose (the reference frames the local rotations are expressed in;
+    anny's local-bone FK is pose_b = T_parent @ rest_b @ delta_b, so delta_b acts in bone b's own rest frame).
+    For each bone b the axis is the rest child-offset direction R_rest_b^T (head_c - head_b) / |.| to its CONNECTED
+    child c: the direct child whose offset is most aligned with the bone's local +Y, accepted when that cosine is
+    >= min_cos (anny rigs follow Blender: +Y runs from a bone's head to its tail, and a connected child's head is
+    that tail, e.g. neck01 -> neck02 -> neck03 -> head, spine01 -> neck01, clavicle -> shoulder01). Without a
+    connected child (head: crown tail; jaw: chin tail; wrist) the axis is local +Y itself.
+    Returns (child index or -1 per bone, cosine of the best child offset with +Y or nan per bone).
+    """
+    parents = [int(p) for p in parents]
+    kids_of = {}
+    for c, p in enumerate(parents):
+        kids_of.setdefault(p, []).append(c)
+    R, t = bp_rest[:, :3, :3], bp_rest[:, :3, 3]
+    children, cosy = [], []
+    for b in bone_idx:
+        best, best_cos = -1, float('nan')
+        for c in kids_of.get(int(b), []):
+            off = R[b].transpose(0, 1) @ (t[c] - t[b])
+            n = float(off.norm())
+            if n < 1e-4:
+                continue
+            cy = float(off[1]) / n
+            if not math.isfinite(best_cos) or cy > best_cos:
+                best, best_cos = c, cy
+        children.append(best if (best >= 0 and best_cos >= min_cos) else -1)
+        cosy.append(best_cos)
+    return children, cosy
+
+
+def twist_axes(bp_rest, bone_idx, children):
+    """Per-person twist axes [N, len(bone_idx), 3] in each bone's own rest frame (see pick_twist_children):
+    the child-offset direction on that person's rest skeleton, or local +Y where children[k] == -1."""
+    N = bp_rest.shape[0]
+    out = torch.zeros(N, len(bone_idx), 3, device=bp_rest.device, dtype=bp_rest.dtype)
+    for k, (b, c) in enumerate(zip(bone_idx, children)):
+        if c < 0:
+            out[:, k, 1] = 1.0
+            continue
+        off = (bp_rest[:, b, :3, :3].transpose(-1, -2) @ (bp_rest[:, c, :3, 3] - bp_rest[:, b, :3, 3]).unsqueeze(-1)).squeeze(-1)
+        out[:, k] = off / torch.clamp(off.norm(dim=-1, keepdim=True), min=1e-12)
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -290,6 +405,37 @@ def head_neck_vertex_mask(v_rest, j_rest, names, radius=0.40, below=0.02):
     base = j_rest[:, chain[0]] if len(chain) >= 2 else j_rest[:, 0]
     h_along = ((v_rest - base.unsqueeze(1)) * u.unsqueeze(1)).sum(-1)
     return (h_along > -below) & ((v_rest - hj.unsqueeze(1)).norm(dim=-1) < radius)
+
+
+def neck_skin_vertex_mask(bm, names, min_weight=0.5):
+    """
+    Bool [V]: mesh-surface vertices (referenced by a face; anny keeps unattached helper geometry when built with
+    remove_unattached_vertices=False) whose summed LBS weight on the neck bones neck01..neckNN is >= min_weight.
+    The head and its subtree are excluded, so unlike head_neck_vertex_mask (~91% head vertices) this set sees only
+    the neck skin, where a compensated local twist between adjacent neck bones shows (candy-wrapper thinning).
+    Returns None when the body model exposes no vertex_bone_weights / vertex_bone_indices.
+    """
+    w = getattr(bm, 'vertex_bone_weights', None)
+    ix = getattr(bm, 'vertex_bone_indices', None)
+    if w is None or ix is None:
+        return None
+    necks = [i for i in neck_chain(names) if names[i].lower().startswith('neck')]
+    sel = torch.zeros(len(names), dtype=torch.bool, device=w.device)
+    sel[necks] = True
+    wn = (w * sel[ix.long()].to(w.dtype)).sum(-1)                              # [V]
+    on_face = torch.zeros(w.shape[0], dtype=torch.bool, device=w.device)
+    on_face[bm.faces.reshape(-1).long().to(w.device)] = True
+    return (wn >= min_weight) & on_face
+
+
+def neck_girth(v3d, j3d, chain, vmask):
+    """Mean distance (m) of the vmask vertices [V] from the line through the chain[0] (neck01) and chain[-1] (head)
+    joints, [N]: the neck's radius. pred/GT < 1 = a thinner neck skin than GT."""
+    a, b = j3d[:, chain[0]], j3d[:, chain[-1]]
+    u = (b - a) / torch.clamp((b - a).norm(dim=-1, keepdim=True), min=1e-9)
+    rel = v3d[:, vmask] - a.unsqueeze(1)                                       # [N, M, 3]
+    radial = rel - (rel * u.unsqueeze(1)).sum(-1, keepdim=True) * u.unsqueeze(1)
+    return radial.norm(dim=-1).mean(-1)
 
 
 def head_size(v3d, j3d, names, vmask=None):

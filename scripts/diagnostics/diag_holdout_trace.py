@@ -49,6 +49,26 @@ USAGE (repo root, multihmr env, GPU node):
 
     # exp4_fingers: does magnification alone fix the fingers? adds V4 and a V4-vs-V1 paired block
     python scripts/diagnostics/diag_holdout_trace.py --ckpt ... --person_crop 1 --out results/experiments/exp4_fingers/...
+
+    # neck root cause (slurm/diagnostics/diag_neck_bones.sh): per-bone dump of the neck/head chain + controls
+    python scripts/diagnostics/diag_holdout_trace.py --ckpt ... --dump_bones 1 --out results/diagnostics/neck_bones/<tag>
+    --dump_bones 1 adds <out>/bones.npz, <out>/bones_summary.json and a NECK/HEAD BONE DUMP block; with 0 (default)
+    every output is unchanged. Per matched person, variant and bone (parent spine bone, neck01..neck03, head, jaw,
+    clavicles, shoulder01s, wrists, + --dump_bone_names): local geodesic error, angle of pred and GT from identity,
+    camera-frame (global) error, swing/twist split of E = R_gt^T R_pred about the bone's rest axis, bone-head joint
+    error, raw local and global rotmats; per person a neck-skin PVE over the vertices skinned >= 50% to neck01-03.
+    Also the determinant and singular values of the RAW dataset blocks of those bones (H4: are they proper rotations,
+    or does the SVD-projected rotmat target disagree with the mesh built from the raw blocks?) and the checkpoint's
+    saved pose_param / loss args (H3). Verdict per bone: FLIP_TWIST (error > 150 deg in >= half the people, the
+    bone's own axis moves < 30 deg, i.e. a half-turn about an axis within ~15 deg of the bone), FLIP_SWING (such a
+    flip that tilts the bone axis >= 30 deg; near 180 deg the twist angle reads ~180 for any axis not perpendicular
+    to the bone, so the swing decides), PARTIAL_FLIP (> 150 deg in 10-50% of the people), OK (median < 15 deg),
+    FIXED_OUTPUT, CONST_OFFSET, SPREAD (see bone_dump_verdict).
+    Twist axis convention: the rest child-offset direction in the bone's own rest frame (the frame anny applies the
+    local-bone rotation in), to the connected child (neck01->neck02->neck03->head, spine01->neck01, clavicle->
+    shoulder01); local +Y (Blender head->tail) for bones without one (head, jaw, wrists). Positive twist = right-hand
+    rule about that axis; E is the error expressed in the bone frame, so a twist of E is the prediction turned about
+    its own long axis relative to GT.
 """
 import argparse
 import csv
@@ -89,6 +109,246 @@ CROP_CFG = dict(amp=False, K='crop', mask=True, relax=False, thr='eval')
 # anny age scale (anchors linspace(-1/3,1,5) -> baby 0, child 1/3 ~ 11 y, young 2/3 ~ 25 y, old 1 ~ 90 y)
 AGE_BUCKETS = [(0.0, 0.2, '<0.2 (baby-~6y)'), (0.2, 0.4, '0.2-0.4 (~6-14y)'),
                (0.4, 0.6, '0.4-0.6 (~14-22y)'), (0.6, 0.8, '0.6-0.8 (~22-51y)'), (0.8, 1.01, '>0.8 (older)')]
+# --dump_bones: control bones dumped next to the neck chain (names as in anny's default rig; missing ones are skipped)
+DUMP_CONTROL_BONES = ('clavicle.L', 'clavicle.R', 'shoulder01.L', 'shoulder01.R', 'wrist.L', 'wrist.R')
+# verdict thresholds (deg) of the per-bone table; see bone_dump_verdict
+DUMP_OK_DEG, DUMP_FLIP_DEG, DUMP_FLIP_FRAC, DUMP_FIXED_RATIO, DUMP_CONST_REL_DEG = 15.0, 150.0, 0.5, 0.25, 10.0
+DUMP_PARTIAL_FRAC = 0.1        # PARTIAL_FLIP: > DUMP_FLIP_DEG in at least this share (and < DUMP_FLIP_FRAC) of the people
+DUMP_TWIST_MAX_SWING = 30.0    # FLIP_TWIST needs the bone axis to move < this (a 180-deg turn about an axis a deg off
+                               # the bone axis swings it by 2a: flip axis within ~15 deg of the bone)
+DUMP_RAW_TOL = 1e-3            # H4: raw dataset blocks count as proper rotations when det > 0 and |s - 1| <= this
+
+
+def bone_dump_setup(bm, names, chain, useful, extra, device):
+    """--dump_bones: the bones to dump, their twist-axis children (dc.pick_twist_children on the neutral-shape rest
+    skeleton) and the neck-skin vertex mask. Order: parent of neck01, neck01..head, jaw, DUMP_CONTROL_BONES, extra."""
+    parents = [int(p) for p in bm.bone_parents]
+    lower = {n.lower(): i for i, n in enumerate(names)}
+    bones = ([parents[chain[0]]] if chain and parents[chain[0]] >= 0 else []) + list(chain)
+    bones += [lower[n.lower()] for n in ('jaw',) + DUMP_CONTROL_BONES if n.lower() in lower]
+    for n in [s.strip() for s in extra.split(',') if s.strip()]:
+        if n.lower() not in lower:
+            raise SystemExit(f"--dump_bone_names: unknown bone '{n}' (examples: upperarm01.L, metacarpal1.L, clavicle.R)")
+        bones.append(lower[n.lower()])
+    bones = list(dict.fromkeys(bones))                                        # unique, order kept
+    I1 = dc.identity_pose(1, len(names), device)
+    _, _, bp_t = dc.run_body_model_full(bm, I1, torch.full((1, len(list(bm.phenotype_labels))), 0.5, device=device))
+    children, cos_y = dc.pick_twist_children(bp_t[0], parents, bones)
+    skin = dc.neck_skin_vertex_mask(bm, names)
+    d = dict(bones=bones, names=[names[b] for b in bones], children=children, cos_y=cos_y,
+             axis_src=[(f"child:{names[c]}" if c >= 0 else 'local+Y') for c in children],
+             active=[bool(useful[b]) for b in bones], skin=skin, chain=list(chain))
+    print(f"[dump_bones] {len(bones)} bones; twist axis per bone (cos of the connected-child offset with local +Y): "
+          + ", ".join(f"{n}={s} ({dc.fmt(c, 3)})" for n, s, c in zip(d['names'], d['axis_src'], cos_y)))
+    if any(not a for a in d['active']):
+        print(f"[dump_bones] WARNING: masked (helper) bones in the list, identity under V1-V3: "
+              f"{[n for n, a in zip(d['names'], d['active']) if not a]}")
+    print("[dump_bones] neck-skin vertices (surface, summed neck01-03 LBS weight >= 0.5): "
+          + (f"{int(skin.sum())}" if skin is not None else "UNAVAILABLE (no vertex_bone_weights on this anny)"))
+    return d
+
+
+def bone_dump_person(dump, vname, idx, gid, R_hat, R_gt, bp_hat, bp_gt, ang, glob_err, j_hat, j_gt, v_hat, v_gt, axes,
+                     R_gt_raw=None):
+    """One record per (variant, matched person): every array is [n_dump_bones, ...] except the neck-skin scalars.
+    R_hat/R_gt [163,3,3] local (pred after the variant's masks, GT orthonormalised), bp_* [163,4,4] global FK poses,
+    ang/glob_err [163] (trace values), j_* [163,3], v_* [V,3] camera frame, axes [n_dump_bones,3] (dc.twist_axes),
+    R_gt_raw [163,3,3] the dataset's anny_pose blocks before the SVD projection (None: H4 columns are nan)."""
+    b = torch.tensor(dump['bones'], dtype=torch.long)
+    bd = b.to(R_hat.device)
+    Rp, Rg = R_hat[bd].float().cpu(), R_gt[bd].float().cpu()
+    eye = torch.eye(3).expand_as(Rp)
+    E = Rg.transpose(-1, -2) @ Rp                                              # error in the bone's own rest frame
+    swing, twist = dc.swing_twist_deg(E, axes.float().cpu())
+    jp = (j_hat[bd] - j_hat[0:1]).float().cpu(); jg = (j_gt[bd] - j_gt[0:1]).float().cpu()
+    rec = dict(variant=vname, idx=int(idx), gid=int(gid),
+               R_pred_local=Rp.numpy(), R_gt_local=Rg.numpy(),
+               R_pred_global=bp_hat[bd, :3, :3].float().cpu().numpy(), R_gt_global=bp_gt[bd, :3, :3].float().cpu().numpy(),
+               err_deg=ang[b].float().numpy(), global_err_deg=glob_err[b].float().numpy(),
+               pred_angle_deg=dc.geodesic_deg(eye, Rp).numpy(), gt_angle_deg=dc.geodesic_deg(eye, Rg).numpy(),
+               swing_deg=swing.numpy(), twist_deg=twist.numpy(), twist_axis=axes.float().cpu().numpy(),
+               joint_err_mm=((jp - jg).norm(dim=-1) * 1000).numpy(),
+               gt_raw_det=np.full(len(dump['bones']), np.nan), gt_raw_sv_min=np.full(len(dump['bones']), np.nan),
+               gt_raw_sv_max=np.full(len(dump['bones']), np.nan),
+               pve_neckskin_mm=float('nan'), pve_neckskin_local_mm=float('nan'), neck_girth_ratio=float('nan'))
+    if R_gt_raw is not None:      # H4: the raw blocks feed the GT mesh/joints, their SVD projection the rotmat target
+        Rr = R_gt_raw[bd].double().cpu()
+        sv = torch.linalg.svdvals(Rr)                                          # [n_dump, 3], descending
+        rec.update(gt_raw_det=torch.linalg.det(Rr).numpy(), gt_raw_sv_min=sv[:, -1].numpy(), gt_raw_sv_max=sv[:, 0].numpy())
+    sk = dump['skin']
+    if sk is not None and bool(sk.any()):
+        sk = sk.to(v_hat.device)
+        c = dump['chain']
+        # pelvis-centred like PVE_hn, and centred at each mesh's own neck01 joint (removes the torso/spine placement)
+        e_pc = ((v_gt - j_gt[0:1]) - (v_hat - j_hat[0:1])).norm(dim=-1)[sk]
+        e_nc = ((v_gt - j_gt[c[0]:c[0] + 1]) - (v_hat - j_hat[c[0]:c[0] + 1])).norm(dim=-1)[sk]
+        g_hat = dc.neck_girth(v_hat.unsqueeze(0), j_hat.unsqueeze(0), c, sk)[0]
+        g_gt = dc.neck_girth(v_gt.unsqueeze(0), j_gt.unsqueeze(0), c, sk)[0]
+        rec.update(pve_neckskin_mm=float(e_pc.mean() * 1000), pve_neckskin_local_mm=float(e_nc.mean() * 1000),
+                   neck_girth_ratio=float(g_hat / torch.clamp(g_gt, min=1e-9)))
+    return rec
+
+
+def bone_dump_verdict(s):
+    """One label per (bone, variant) summary s; thresholds DUMP_* above. Order matters: a flip is also a constant offset,
+    and a minority of flipped people must not hide behind an OK median.
+    FLIP_TWIST vs FLIP_SWING is decided by the swing alone: for an error near 180 deg the twist angle about the bone axis
+    reads ~180 for ANY rotation axis not perpendicular to the bone (a 180-deg turn about an axis 75 deg off the bone still
+    gives |twist| ~176), so |twist| cannot separate the two. The swing is the angle the bone's own axis moves (2x the
+    flip axis's offset from the bone), so FLIP_TWIST = the bone axis moves < DUMP_TWIST_MAX_SWING (the child joint stays,
+    as a compensated twist flip needs)."""
+    med = s['err_median']
+    if med is None or not math.isfinite(med):
+        return '-'
+    frac = s['frac_err_gt150']
+    if frac >= DUMP_FLIP_FRAC:
+        return 'FLIP_TWIST' if s['swing_median'] < DUMP_TWIST_MAX_SWING else 'FLIP_SWING'
+    if frac >= DUMP_PARTIAL_FRAC:
+        return 'PARTIAL_FLIP'
+    if med < DUMP_OK_DEG:
+        return 'OK'
+    if s['gt_spread_deg'] > 5.0 and s['pred_spread_deg'] < DUMP_FIXED_RATIO * s['gt_spread_deg']:
+        return 'FIXED_OUTPUT'
+    if s['rel_spread_deg'] < DUMP_CONST_REL_DEG:
+        return 'CONST_OFFSET'
+    return 'SPREAD'
+
+
+def gt_raw_check(S):
+    """H4 over the per-bone summaries S of one variant: are the RAW dataset blocks proper rotations?"""
+    M = {n: b for n, b in S.items() if b.get('gt_raw_det_min') is not None}
+    if not M:
+        return dict(det_min=None, det_max=None, sv_min=None, sv_max=None, bones_det_neg=[], bones_sv_off=[],
+                    verdict='not measured')
+    neg = [n for n, b in M.items() if b['gt_raw_frac_det_neg'] > 0]
+    off = [n for n, b in M.items() if max(abs(b['gt_raw_sv_min'] - 1), abs(b['gt_raw_sv_max'] - 1)) > DUMP_RAW_TOL]
+    ok = not neg and not off
+    return dict(det_min=min(b['gt_raw_det_min'] for b in M.values()), det_max=max(b['gt_raw_det_max'] for b in M.values()),
+                sv_min=min(b['gt_raw_sv_min'] for b in M.values()), sv_max=max(b['gt_raw_sv_max'] for b in M.values()),
+                bones_det_neg=neg, bones_sv_off=off,
+                verdict=('proper rotations (det > 0, |s - 1| <= %g): H4 refuted for these bones' % DUMP_RAW_TOL if ok else
+                         'NOT proper rotations (det < 0: %s; |s - 1| > %g: %s): H4 open, the rotmat target and the GT mesh '
+                         'disagree for these bones' % (neg or '-', DUMP_RAW_TOL, off or '-')))
+
+
+def bone_dump_report(recs, variants, dump, out, meta):
+    """Stack the records into <out>/bones.npz, summarise per (variant, bone) into <out>/bones_summary.json, print."""
+    if not recs:
+        print("\n=== NECK/HEAD BONE DUMP: no matched people; nothing written ===")
+        return None
+    A = {k: np.stack([np.asarray(r[k]) for r in recs]) for k in (
+        'idx', 'gid', 'R_pred_local', 'R_gt_local', 'R_pred_global', 'R_gt_global', 'err_deg', 'global_err_deg',
+        'pred_angle_deg', 'gt_angle_deg', 'swing_deg', 'twist_deg', 'twist_axis', 'joint_err_mm',
+        'gt_raw_det', 'gt_raw_sv_min', 'gt_raw_sv_max', 'pve_neckskin_mm', 'pve_neckskin_local_mm', 'neck_girth_ratio')}
+    vn_all = np.asarray([r['variant'] for r in recs])
+    np.savez_compressed(
+        os.path.join(out, 'bones.npz'), variant=vn_all,
+        bone_names=np.asarray(dump['names']), bone_index=np.asarray(dump['bones']),
+        twist_child=np.asarray(dump['children']), twist_axis_src=np.asarray(dump['axis_src']),
+        twist_axis_cos_y=np.asarray(dump['cos_y'], dtype=np.float64),
+        neck_skin_vertices=(np.nonzero(dump['skin'].cpu().numpy())[0] if dump['skin'] is not None else np.zeros(0, int)),
+        **A)
+    m = dc.mean_or_none
+    med = lambda a: float(np.median(a)) if len(a) else None                    # noqa: E731
+    summ = dict(meta, convention=dict(
+        local_error='geodesic angle of R_pred^T R_gt, both local (parent-relative, anny local-bone) rotations; R_pred '
+                    'after the variant\'s masks, R_gt = SVD-orthonormalised dataset anny_pose (train.py prepare_gt)',
+        error_frame='E = R_gt^T R_pred, the error in the bone\'s own rest frame (anny applies local-bone rotations there)',
+        twist_axis='rest child-offset direction in the bone\'s rest frame to the connected child; local +Y (Blender '
+                   'head->tail) without one; per person on the GT-shape rest skeleton',
+        swing_twist='E = E_swing @ E_twist; twist signed by the right-hand rule about the axis, swing = angle(axis, E axis); '
+                    'near 180 deg |twist| is ~180 for any E axis not perpendicular to the bone, so FLIP_TWIST/FLIP_SWING '
+                    'is decided by the swing (FLIP_TWIST: swing median < twist_max_swing_deg)',
+        gt_raw='H4: det and singular values of the RAW dataset anny_pose blocks (train.py builds the GT mesh/joints from '
+               'these and the rotmat target from their SVD projection); proper rotations have det +1 and s = 1',
+        spread='mean geodesic distance of each rotation to the chordal (SVD-projected entry-wise) mean over people',
+        rel='chordal mean of E over people: one fixed rotation C with R_pred ~ R_gt C when rel_spread is small',
+        neck_skin='vertices on a face with summed LBS weight on neck01..neck03 >= 0.5 (head excluded); PVE pelvis-centred '
+                  'like PVE_hn, and centred at each mesh\'s own neck01 joint; girth = mean distance of those vertices from '
+                  'the neck01-head line, pred/GT'),
+        thresholds=dict(ok_deg=DUMP_OK_DEG, flip_deg=DUMP_FLIP_DEG, flip_frac=DUMP_FLIP_FRAC,
+                        partial_flip_frac=DUMP_PARTIAL_FRAC, twist_max_swing_deg=DUMP_TWIST_MAX_SWING,
+                        fixed_output_ratio=DUMP_FIXED_RATIO, const_rel_spread_deg=DUMP_CONST_REL_DEG,
+                        gt_raw_tol=DUMP_RAW_TOL),
+        bones=[dict(name=n, index=int(b), twist_axis_src=s, twist_axis_cos_y=c, active=a) for n, b, s, c, a in
+               zip(dump['names'], dump['bones'], dump['axis_src'], dump['cos_y'], dump['active'])],
+        neck_skin_n_vertices=(int(dump['skin'].sum()) if dump['skin'] is not None else None), variants={})
+    for vn in variants:
+        sel = np.nonzero(vn_all == vn)[0]
+        if len(sel) == 0:
+            continue
+        S = {}
+        for k, name in enumerate(dump['names']):
+            e = A['err_deg'][sel, k]
+            Rp = torch.from_numpy(A['R_pred_local'][sel, k]).double()
+            Rg = torch.from_numpy(A['R_gt_local'][sel, k]).double()
+            E = Rg.transpose(-1, -2) @ Rp
+            Cm = dc.chordal_mean(E)
+            ax, ang_c = dc.axis_angle_deg(Cm)
+            tax = A['twist_axis'][sel, k].mean(0)
+            tax = tax / max(float(np.linalg.norm(tax)), 1e-12)
+            s = dict(n=int(len(sel)), err_mean=m(e), err_median=med(e), err_p90=float(np.percentile(e, 90)),
+                     frac_err_gt150=float((e > DUMP_FLIP_DEG).mean()),
+                     abs_twist_median=med(np.abs(A['twist_deg'][sel, k])), swing_median=med(A['swing_deg'][sel, k]),
+                     twist_signed_mean=m(A['twist_deg'][sel, k]),
+                     global_err_mean=m(A['global_err_deg'][sel, k]), global_err_median=med(A['global_err_deg'][sel, k]),
+                     joint_err_mm_mean=m(A['joint_err_mm'][sel, k]),
+                     pred_angle_mean=m(A['pred_angle_deg'][sel, k]), gt_angle_mean=m(A['gt_angle_deg'][sel, k]),
+                     pred_spread_deg=dc.rotation_spread_deg(Rp), gt_spread_deg=dc.rotation_spread_deg(Rg),
+                     rel_spread_deg=dc.rotation_spread_deg(E), rel_mean_angle_deg=ang_c,
+                     rel_mean_axis=[float(x) for x in ax.tolist()],
+                     rel_mean_axis_dot_twist_axis=float(abs(np.dot(ax.numpy(), tax))) if ang_c > 0 else None)
+            det, svn, svx = A['gt_raw_det'][sel, k], A['gt_raw_sv_min'][sel, k], A['gt_raw_sv_max'][sel, k]
+            fin = np.isfinite(det)
+            s.update(gt_raw_det_min=(float(det[fin].min()) if fin.any() else None),
+                     gt_raw_det_max=(float(det[fin].max()) if fin.any() else None),
+                     gt_raw_frac_det_neg=(float((det[fin] < 0).mean()) if fin.any() else None),
+                     gt_raw_sv_min=(float(svn[fin].min()) if fin.any() else None),
+                     gt_raw_sv_max=(float(svx[fin].max()) if fin.any() else None))
+            s['verdict'] = bone_dump_verdict(s)
+            S[name] = s
+        sk = dict(pve_neckskin_mm=m(A['pve_neckskin_mm'][sel]), pve_neckskin_local_mm=m(A['pve_neckskin_local_mm'][sel]),
+                  neck_girth_ratio_mean=m(A['neck_girth_ratio'][sel]),
+                  neck_girth_ratio_p10=(float(np.nanpercentile(A['neck_girth_ratio'][sel], 10))
+                                        if np.isfinite(A['neck_girth_ratio'][sel]).any() else None))
+        summ['variants'][vn] = dict(n=int(len(sel)), bones=S, neck_skin=sk, gt_raw=gt_raw_check(S))
+    with open(os.path.join(out, 'bones_summary.json'), 'w') as f:
+        json.dump(dc.json_safe(summ), f, indent=2, allow_nan=False)
+
+    ref = 'V1_eval_masked' if 'V1_eval_masked' in summ['variants'] else next(iter(summ['variants']))
+    R = summ['variants'][ref]
+    print(f"\n=== NECK/HEAD BONE DUMP ({ref}, {R['n']} matched people; local = parent-relative, deg; joint = bone-head mm) ===")
+    print(f"{'bone':<14}{'axis':<16}{'verdict':<13}{'med':>6}{'mean':>6}{'p90':>6}{'>150%':>6}{'|tw|':>6}{'swing':>6}"
+          f"{'glob':>6}{'joint':>6}{'prdSpr':>7}{'gtSpr':>6}{'relSpr':>7}{'relAng':>7}{'|prd|':>6}{'|gt|':>6}")
+    for name, src in zip(dump['names'], dump['axis_src']):
+        s = R['bones'][name]
+        print(f"{name:<14}{src[:15]:<16}{s['verdict']:<13}{dc.fmt(s['err_median']):>6}{dc.fmt(s['err_mean']):>6}"
+              f"{dc.fmt(s['err_p90']):>6}"
+              f"{dc.fmt(s['frac_err_gt150'] * 100, 0):>6}{dc.fmt(s['abs_twist_median']):>6}{dc.fmt(s['swing_median']):>6}"
+              f"{dc.fmt(s['global_err_mean']):>6}{dc.fmt(s['joint_err_mm_mean']):>6}{dc.fmt(s['pred_spread_deg']):>7}"
+              f"{dc.fmt(s['gt_spread_deg']):>6}{dc.fmt(s['rel_spread_deg']):>7}{dc.fmt(s['rel_mean_angle_deg']):>7}"
+              f"{dc.fmt(s['pred_angle_mean']):>6}{dc.fmt(s['gt_angle_mean']):>6}")
+    vns = list(summ['variants'])
+    print("median local error by variant: " + f"{'bone':<14}" + "".join(f"{v[:12]:>13}" for v in vns))
+    for name in dump['names']:
+        print(" " * 31 + f"{name:<14}" + "".join(f"{dc.fmt(summ['variants'][v]['bones'][name]['err_median']):>13}" for v in vns))
+    for v in vns:
+        sk = summ['variants'][v]['neck_skin']
+        print(f"neck skin {v:<22} PVE_neck {dc.fmt(sk['pve_neckskin_mm'])} mm (pelvis-centred) | "
+              f"{dc.fmt(sk['pve_neckskin_local_mm'])} mm (neck01-centred) | girth pred/GT {dc.fmt(sk['neck_girth_ratio_mean'], 3)}"
+              f" (p10 {dc.fmt(sk['neck_girth_ratio_p10'], 3)}) over {summ['neck_skin_n_vertices']} vertices")
+    g = R['gt_raw']
+    print(f"raw GT blocks of these bones (H4, {ref}): det in [{dc.fmt(g['det_min'], 4)}, {dc.fmt(g['det_max'], 4)}], "
+          f"singular values in [{dc.fmt(g['sv_min'], 4)}, {dc.fmt(g['sv_max'], 4)}] -> {g['verdict']}")
+    ca = meta.get('ckpt_args') or {}
+    print("checkpoint args as saved (H3; None = flag absent): " + " ".join(f"{k}={v}" for k, v in ca.items()))
+    print("  read: FLIP_TWIST = error > 150 deg in >= half the people and the bone axis moves < 30 deg (half-turn about an axis")
+    print("        within ~15 deg of the bone; the child joint stays); FLIP_SWING = such a flip that tilts the bone axis >= 30 deg;")
+    print("        PARTIAL_FLIP = > 150 deg in 10-50% of the people (mean >> median); FIXED_OUTPUT = pred spread < 1/4 of GT spread;")
+    print("        CONST_OFFSET = R_pred ~ R_gt C with one C (relSpr < 10); SPREAD = large input-dependent error. A label says what")
+    print("        the rotations are, not why (L1 trap: exp5 vs its control; origin: lineage traces; visible thinning: girth + render).")
+    print(f"wrote {out}/bones.npz and bones_summary.json")
+    return summ
 
 
 def select_indices(args, pkls):
@@ -161,6 +421,14 @@ def main():
                          'block. 0 = the four variants above, outputs unchanged.')
     ap.add_argument('--crop_factor', type=float, default=1.3,
                     help='--person_crop: crop side = factor x the long side of the GT joint bbox, kept inside the image')
+    ap.add_argument('--dump_bones', type=int, default=0, choices=[0, 1],
+                    help='1: per-bone dump of the neck/head chain (parent spine bone, neck01..head, jaw) and control bones '
+                         '(clavicles, shoulder01s, wrists) per matched person and variant -> <out>/bones.npz, '
+                         '<out>/bones_summary.json and a NECK/HEAD BONE DUMP block (see the module docstring). '
+                         '0 = every output unchanged.')
+    ap.add_argument('--dump_bone_names', default='',
+                    help='--dump_bones: extra comma-separated bone names to dump, e.g. the bones another checkpoint gets '
+                         'wrong (upperarm01.L,lowerarm01.L,metacarpal1.L)')
     ap.add_argument('--device', default='cuda')
     args = ap.parse_args()
 
@@ -188,6 +456,8 @@ def main():
         print(f"[rig] group {g:<18s} {len(idx):3d} bones ({act} active) e.g. {[names[i] for i in idx[:4]]}")
     if phen != dc.PHENOTYPES:
         print(f"[WARN] body model phenotype order {phen} != assumed dataset order {dc.PHENOTYPES}")
+    dump = bone_dump_setup(bm, names, chain, useful, args.dump_bone_names, device) if args.dump_bones else None
+    bone_recs = []            # --dump_bones: one record per (variant, matched person)
 
     ds = AnnyOne(data_folder=args.data_folder, img_size=S)
     pkls = ds.pkl_files
@@ -239,7 +509,11 @@ def main():
         gt_neck = dc.chain_length(gt_j, chain)
         gt_height = dc.skeletal_height(gt_j, names)
         I_all = dc.identity_pose(nhv, 163, device)
-        v_rest_gs_all, j_rest_gs_all = dc.run_body_model(bm, I_all, shape_gt)          # rest pose, GT shapes
+        if dump is not None:      # same body-model call; the rest bone poses give each person's twist axes
+            v_rest_gs_all, j_rest_gs_all, bp_rest_gs_all = dc.run_body_model_full(bm, I_all, shape_gt)
+            dump_axes = dc.twist_axes(bp_rest_gs_all, dump['bones'], dump['children'])   # [nhv, n_dump, 3]
+        else:
+            v_rest_gs_all, j_rest_gs_all = dc.run_body_model(bm, I_all, shape_gt)      # rest pose, GT shapes
         hn_mask_gt = dc.head_neck_vertex_mask(v_rest_gs_all, j_rest_gs_all, names)     # [nhv,V] head+neck vertices
         gt_headsz = dc.head_size(gt_v, gt_j, names, hn_mask_gt)
         gt_helper_angle = dc.geodesic_deg(torch.eye(3, device=device).expand(nhv, int((~useful).sum()), 3, 3),
@@ -371,6 +645,10 @@ def main():
                 row[f'rot_{g}'] = e
             for i, nme in enumerate(phen):     # phenotype columns are namespaced: 'height' is also a metric word
                 row[f'pheno_gt_{nme}'] = float(sh_gt[i]); row[f'pheno_pred_{nme}'] = float(sh_hat[i]); row[f'pheno_err_{nme}'] = float(sh_err[i])
+            if dump is not None:          # --dump_bones: kept out of the per-person CSV, which stays unchanged
+                bone_recs.append(bone_dump_person(dump, vname, idx, gid, R_hat, gt_R[gid], bp_hat[0], gt_bp[gid], ang,
+                                                  glob_err, j_hat, gt_j[gid], v_hat, gt_v[gid], dump_axes[gid],
+                                                  R_gt_raw=pose[gid, :, :3, :3]))
             return row
 
         vis_panels = {}
@@ -789,6 +1067,14 @@ def main():
         print("        with PVE / PA-PVE / PVE_hn not worse => resolution is the bottleneck and a crop-based second pass is the")
         print("        cheapest next step. Neutral or worse at every magnification => supervision is (docs/diagnostics_findings.md,")
         print("        Fingers: |grad| 4.7, 6D conditioning 0.25-0.30), and the training-side experiment decides.")
+
+    if dump is not None:
+        raw_args = getattr(model, 'ckpt_raw_args', {}) or {}
+        bone_dump_report(bone_recs, variants, dump, args.out, dict(
+            ckpt=ckpt_path, selection=sel_desc,
+            ckpt_args={k: (raw_args.get(k) if isinstance(raw_args.get(k), (int, float, str, bool, type(None)))
+                           else str(raw_args.get(k))) for k in ('pose_param', 'mask_helper_joints_train')
+                       + dc.CKPT_ARGS_REPORTED}))
 
     with open(os.path.join(args.out, 'summary.json'), 'w') as f:
         json.dump(dc.json_safe(summary), f, indent=2, allow_nan=False)

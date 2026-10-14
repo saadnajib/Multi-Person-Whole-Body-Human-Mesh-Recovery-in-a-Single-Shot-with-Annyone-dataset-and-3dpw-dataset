@@ -39,6 +39,21 @@ def _neg_loss(pred, gt):
     loss = loss - (pos_loss + neg_loss) / num_pos
   return loss
 
+def geodesic_rad(R_hat, R, eps=1e-6):
+  '''
+  Per-matrix rotation angle (radians) between R_hat and R, [..., 3, 3] -> [...], computed in float32.
+  With M = R_hat^T R: 2 sin(theta) = |vee(M - M^T)| and 2 cos(theta) = tr(M) - 1, so theta = atan2(|vee|, tr - 1).
+  Unlike acos of the trace (infinite slope at 0 and 180 deg), the gradient stays finite everywhere: eps smooths the
+  norm at vee = 0, which makes theta = eps/2 rad at identical inputs and the gradient O(eps), i.e. ~0, at theta = 0
+  and at theta = 180 deg (a maximum; any real deviation from it descends). Along a twist the angle falls monotonically
+  from 180 to 0 deg: no spurious minimum, unlike the L1 over matrix entries (4.83 at 135 deg vs 4.00 at 180 deg).
+  '''
+  M = R_hat.float().transpose(-1, -2) @ R.float()
+  vee = torch.stack([M[..., 2, 1] - M[..., 1, 2], M[..., 0, 2] - M[..., 2, 0], M[..., 1, 0] - M[..., 0, 1]], -1)
+  s = torch.sqrt((vee * vee).sum(-1) + eps * eps)
+  c = M[..., 0, 0] + M[..., 1, 1] + M[..., 2, 2] - 1.0
+  return torch.atan2(s, c)
+
 class Loss(torch.nn.Module):
     def __init__(self, parser_args, *args, **kwargs):
         super().__init__()
@@ -59,6 +74,18 @@ class Loss(torch.nn.Module):
         # --shape_weights: per-phenotype multipliers on the L1 shape error [1, 11].
         # None (default, or all ones) = the original unweighted sum, byte-for-byte.
         self.shape_weights = None
+        # --rotmat_loss: per-bone distance of the rotmat (and global_rot) terms. 'l1' = the sum of |entry| residuals
+        # over the 9 matrix entries (original code path, untouched); 'geodesic' = the rotation angle in radians.
+        self.rotmat_loss = str(getattr(parser_args, 'rotmat_loss', 'l1') or 'l1')
+        if self.rotmat_loss not in ('l1', 'geodesic'):
+            raise ValueError(f"--rotmat_loss must be l1 or geodesic, got '{self.rotmat_loss}'")
+        if self.rotmat_loss == 'geodesic':
+            print("[loss] rotmat_loss geodesic: per-bone rotation angle (radians, atan2 form) replaces the L1 over the 9 "
+                  "matrix entries in the rotmat term (and in global_rot when alpha_global_rot > 0); same masks, weights, "
+                  "sum over bones and mean over people; also in train.py's output-level distillation rotation term "
+                  "(--lambda_kd_out). At small errors the 9-entry L1 is ~3.3x the angle, so --alpha_rotmat 0.33 keeps "
+                  "the small-angle weight of the default 0.1. --alpha_global_rot is NOT rescaled: multiply it by ~3.5 "
+                  "(arbitrary GT orientations) to keep its L1-era weight", flush=True)
         sw = str(getattr(parser_args, 'shape_weights', '') or '').strip()
         if sw:
             vals = [float(v) for v in sw.split(',')]
@@ -72,6 +99,15 @@ class Loss(torch.nn.Module):
                 self.shape_weights = torch.tensor(vals, dtype=torch.float32).reshape(1, 11)
                 print(f"[loss] shape weights {vals} (sum {sum(vals):.1f} vs 11 unweighted: alpha_shape still "
                       f"multiplies the total, so the shape share of the loss grows by that ratio)", flush=True)
+
+    def rotation_distill_term(self, R_student, R_teacher):
+        """train.py output-level distillation (--lambda_kd_out): rotation distance between student and teacher
+        rotmats [N, B, 3, 3], summed over bones, mean over people, under the same per-bone distance as the rotmat
+        term. 'l1' is the original expression (sum of |entry| residuals), so l1 runs are unchanged bit for bit;
+        'geodesic' keeps alpha_rotmat's small-angle meaning and has no L1 barrier."""
+        if self.rotmat_loss == 'geodesic':
+            return geodesic_rad(R_student, R_teacher).sum(1).mean()
+        return (R_student - R_teacher).abs().sum([1, 2, 3]).mean()
 
     def configure_joint_weights(self, bone_labels):
         """Build per-joint weights from bone NAMES (robust to index changes).
@@ -135,6 +171,11 @@ class Loss(torch.nn.Module):
         print(f"[loss] global_rot: alpha {float(self.parser_args.alpha_global_rot)} on {len(idx)} bones {names} "
               f"(indices {idx}); mean over these bones and people of the per-bone L1 over the 9 entries of the "
               f"camera-frame rotation (the rotmat term sums the same error over all bones)", flush=True)
+        if self.rotmat_loss == 'geodesic':
+            print(f"[loss] global_rot under --rotmat_loss geodesic: the per-bone distance is the angle in radians, "
+                  f"~3.5x smaller than the 9-entry L1 at small errors, so alpha {float(self.parser_args.alpha_global_rot)} "
+                  f"weighs like alpha {float(self.parser_args.alpha_global_rot) / 3.5:.3g} under l1; pass ~3.5x the "
+                  f"L1-era alpha to keep its weight", flush=True)
 
     def configure_region_norm(self, bone_labels, hand_mask, active_mask=None):
         """--rotmat_region_norm: weights w_b = n_active / (3 |region(b)|), so the rotmat term becomes
@@ -201,7 +242,11 @@ class Loss(torch.nn.Module):
 
         # SMPL-X params
         # Per-joint weighting (mean-1 normalized; None = original equal weights).
-        res_rotmat = (y_hat['rotmat'] - y['rotmat']).abs()
+        if self.rotmat_loss == 'geodesic':
+            # [N, 163, 1, 1]: one angle per bone, broadcast through the same hand mask, weights and reduction below
+            res_rotmat = geodesic_rad(y_hat['rotmat'], y['rotmat']).unsqueeze(-1).unsqueeze(-1)
+        else:
+            res_rotmat = (y_hat['rotmat'] - y['rotmat']).abs()
         hand_keep = None
         if self.hand_label_mask is not None and 'has_hand_labels' in y:
             hand_keep = self._hand_label_keep(y, res_rotmat)
@@ -228,7 +273,10 @@ class Loss(torch.nn.Module):
         reg_grot = None
         if self.global_rot_idx is not None and 'global_rotmat' in y:
             sel = self.global_rot_idx.to(y_hat['global_rotmat'].device)
-            err_grot = (y_hat['global_rotmat'][:, sel] - y['global_rotmat'][:, sel]).abs().sum([2, 3])   # [N, n_sel]
+            if self.rotmat_loss == 'geodesic':
+                err_grot = geodesic_rad(y_hat['global_rotmat'][:, sel], y['global_rotmat'][:, sel])          # [N, n_sel]
+            else:
+                err_grot = (y_hat['global_rotmat'][:, sel] - y['global_rotmat'][:, sel]).abs().sum([2, 3])   # [N, n_sel]
             if hand_keep is not None:
                 # mean over the (person, bone) entries that are labels; unselected hand bones stay untouched
                 keep = hand_keep[:, sel, 0, 0]
@@ -358,6 +406,20 @@ class Loss(torch.nn.Module):
                                  'metacarpal bones of people tagged 0 are left out of the rotmat and global_rot terms '
                                  '(their 3DPW rotations are the identity the SMPL->Anny converter never fits). 0 = '
                                  'unchanged: 3DPW identity fingers are supervised as ground truth in mixed runs.')
+        # Per-bone rotation distance of the rotmat / global_rot terms (see geodesic_rad).
+        parser.add_argument('--rotmat_loss', type=str, default='l1', choices=['l1', 'geodesic'],
+                            help="per-bone distance in the rotmat term (and the global_rot term): 'l1' = sum of the "
+                                 "absolute residuals over the 9 rotation-matrix entries (original, unchanged); "
+                                 "'geodesic' = rotation angle in radians (atan2 form, finite gradient at 0 and 180 deg), "
+                                 "under the same hand mask, joint/region weights, sum over bones and mean over people. "
+                                 "The L1 has a barrier along a 180-deg twist (4.83 at 135 deg vs 4.00 at 180 deg) that can "
+                                 "trap a flipped bone; the angle has none. Small errors: L1 ~ 3.3x angle (3.27 for GT near "
+                                 "identity, 3.50 for arbitrary GT), so pair geodesic with --alpha_rotmat 0.33 to keep the "
+                                 "small-angle weight of the default 0.1. --alpha_global_rot is not rescaled: under "
+                                 "geodesic pass ~3.5x the L1-era value (e.g. 17.5 for exp3's 5) to keep its weight. "
+                                 "train.py's output-level distillation rotation term (--lambda_kd_out) follows this flag "
+                                 "and alpha_rotmat; it still pulls the student toward the teacher's rotations, flips "
+                                 "included, whatever the distance.")
         # Per-phenotype weighting of the L1 shape term. Not renormalised: '1,3,1,1,2,1,1,1,1,1,1'
         # triples the age error and doubles the height error (sum 14 vs 11).
         parser.add_argument('--shape_weights', type=str, default='',

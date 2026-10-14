@@ -525,7 +525,9 @@ class Trainer(object):
                     lko = float(getattr(self.args, 'lambda_kd_out', 0.0))
                     if lko > 0 and pred['rotmat'].shape == t_out['rotmat'].shape:
                         a = self.args
-                        kd_rot = (pred['rotmat'] - t_out['rotmat'].detach()).abs().sum([1, 2, 3]).mean()
+                        # --rotmat_loss: the same per-bone distance as the task term (l1 = the original
+                        # expression, unchanged); alpha_rotmat below then keeps its meaning in both modes
+                        kd_rot = self.loss.rotation_distill_term(pred['rotmat'], t_out['rotmat'].detach())
                         kd_shp = (pred['shape'] - t_out['shape'].detach()).abs().sum(-1).mean()
                         kd_dst = (pred['dist_postprocessed'].reshape(-1)
                                   - t_out['dist_postprocessed'].detach().reshape(-1)).abs().mean()

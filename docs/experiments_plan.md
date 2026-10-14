@@ -24,6 +24,7 @@ defaults, the only observable change in train.py is one `[throughput]` line per 
 | exp4a | fingers worse than the rest pose (17.3° vs 15.1°): resolution? | inference-only measurement | trace `--person_crop 1` (0), `--crop_factor 1.3`; `measure_hand_px.py` | `3d51a7d` | no training; ~40 min | paired V4 `rot_fingers` below the paired V3 relaxed floor (15.1), with Δpve, Δpa_pve, Δpve_hn ≤ +1 mm |
 | exp4b | fingers: supervision? (a control, not a finger boost) | supervision | `--rotmat_region_norm 1` (0) | `3d51a7d` | 20 min train + ~10 min eval + traces; job ~1.5 h | V1 `rot_fingers` vs 17.3 and vs its own V3 floor; head 89.5° local / 12.0° global; PVE/recall guards |
 | exp4c | 3DPW identity fingers supervised as GT (mixed runs only) | confirmed bug fix, not in the production lineage | `--mask_3dpw_hands 1` (0) | `3d51a7d` | no script, not scheduled | n/a this week |
+| exp5 | neck: local neck/head error 62.7° / 89.5°, constant over the v5 lineage (global head 12.0°) | diagnostic first, then supervision (loss form) | trace `--dump_bones 1` (0); `--rotmat_loss geodesic` (default `l1`) | not committed | dump ~20 min for 4 checkpoints; pilot ~20 min train, job ~1 h | dump: verdict per bone plus the H3/H4 bookkeeping lines; pilot: flagged bones' mean local error −3° beyond the l1 control arm; guards vs the control arm: PVE +8 mm, recall −2, global head +3° |
 
 Every baseline the scripts print (recall 90.2, PA-PVE 53.3, holdout age bias −0.015, PVE_hn 52.3, global wrist
 22.7°, head px error 64.5 mean / 46 median, ...) is now listed in `docs/diagnostics_findings.md`, "Baseline numbers
@@ -224,6 +225,157 @@ is unknown. For a 300-px person the 1.3 crop is ×3.4 vs the 672 input but only 
 normalisation lowers the hand share (40% → 33%), so a null finger result says nothing about upweighting. Neither
 arm tests the 6D-init defect (3h). exp4c is not exercised (the production lineage is pure AnnyOne).
 
+### Neck root cause: per-bone dump, then exp5_neck_fix (`--rotmat_loss`, not committed)
+
+**What is known.** [Certain] Local (parent-relative) error neck01-03 62.7°, head+jaw 89.5° on v5 00099, the same on
+v9 00062 / 00149 and in all six v5 pilot and control arms (neck 62.5-62.8°, head 89.1-90.1°); per person 62.7 ± 1.6 and
+89.5 ± 1.5 (222 holdout people); V0 (unmasked) = V1. Global head error 12.0° (v5) vs 12.9° (v10). v10, which had its own
+fresh heads, gets 5.0° / 4.1° on the neck and head but ~50° on clavicle/shoulder and 36.3° on the arms. These are group
+means: the per-bone split has never been measured.
+
+**Bookkeeping: what is refuted and what is not.** The code audit refuted the mask, weight, eval and 3DPW causes:
+`useful_rotmat` is 1 on bones 100-104, the boost raises neck01-03/head to ×2.41 (jaw ×0.60), all five bones get
+non-zero decpose gradients, training and trace use the same GT tensor and SVD projection, and the v5 lineage never saw
+3DPW. Two bookkeeping hypotheses are **untested** [Guessing]:
+- H3: an ancestor of the inherited heads was trained in another `pose_param` (archive/train_v1.py had world /
+  world-orient), which model.py ignores.
+- H4: the raw AnnyOne neck/head blocks are not proper rotations, so the SVD-projected rotmat target disagrees with the
+  GT mesh and joints, which train.py builds from the raw blocks.
+
+The dump below now checks both. It records the determinant and singular values of the raw blocks (H4), and the
+checkpoint's saved `pose_param` and loss args (H3; `diag_common.load_model` also prints them). For H3 the ancestors have
+to be traced too, since v5's args describe only v5's own run. Read these lines first.
+
+**Leading hypothesis** [Likely]: a compensated 180° flip, an optimisation problem. One neck bone is turned half a turn
+about its own axis and the head turns back, so joints and head orientation stay correct. The flip would be seeded by the
+singular 6D init (3h) in the lineage's only fresh-head phase (`anny_s2_frozen_bb`, inherited by v3, v4, v5, v9 and every
+pilot). The L1 over matrix entries would hold it in place, since it has a barrier along a twist (4.83 at 135° vs 4.00 at
+180°).
+
+**Diagnostic: `diag_holdout_trace.py --dump_bones 1`.** The bones dumped are the parent spine bone, neck01-03, head
+and jaw, plus the clavicles, shoulder01s and wrists. `slurm/diagnostics/diag_neck_bones.sh` also adds the arm and
+metacarpal bones. For each matched person, variant and bone it records:
+- the local error, and the angle of pred and of GT from identity;
+- the global error;
+- the swing/twist split of E = R_gtᵀ R_pred about the bone's rest axis;
+- the bone-head joint error;
+- the raw local and global rotations;
+- det and singular values of the raw dataset block (H4).
+
+The rest axis is the child-offset direction in the bone's own rest frame (neck01→neck02→neck03→head, spine01→neck01,
+clavicle→shoulder01). Head, jaw and the wrists have no connected child and use local +Y (Blender head→tail). The script
+prints the cosine of each child offset with +Y.
+
+Per bone and variant it summarises:
+- mean / median / p90 error and the fraction of people above 150°;
+- the across-person spread of pred, of GT and of E, each measured as the mean geodesic distance to the chordal mean
+  (this is the constancy test);
+- the raw-GT check: det range, share of det < 0, singular-value range, and a verdict (proper rotations if det > 0 and
+  |s − 1| ≤ 1e-3);
+- a neck-skin PVE over the surface vertices skinned ≥ 50% to neck01-03 (head excluded). It is reported pelvis-centred,
+  like PVE_hn, and also centred at each mesh's own neck01 joint, with a girth ratio pred/GT.
+
+**Verdict per bone** (in this order):
+
+| label | rule |
+|---|---|
+| `FLIP_TWIST` | error > 150° in ≥ half the people, and the bone's own axis moves < 30° (median swing). That is a half-turn about an axis within ~15° of the bone, so the child joint stays put |
+| `FLIP_SWING` | the same flip, but the bone axis moves ≥ 30°: the child joint moves |
+| `PARTIAL_FLIP` | > 150° in 10-50% of the people; the mean is far above the median |
+| `OK` | median < 15° |
+| `FIXED_OUTPUT` | pred spread < ¼ of GT spread |
+| `CONST_OFFSET` | R_pred ≈ R_gt C with one C (spread of E < 10°) |
+| `SPREAD` | none of the above |
+
+The swing decides between the two flip labels. Near 180° the twist angle about the bone axis reads ~180 for any rotation
+axis not perpendicular to the bone: a 180° turn about an axis 75° off the bone still gives |twist| ≈ 176°.
+
+Outputs: `<out>/bones.npz`, `<out>/bones_summary.json` and a printed table with a legend. With the default 0, every output
+is unchanged.
+```
+sbatch slurm/diagnostics/diag_neck_bones.sh     # v5 00099, v9 00149, v10 00290, exp1 long_pc_dist5 00009
+CKPTS="models/multiHMR/anny_s2_frozen_bb_v2_00299.pt logs/anny_model/anny_s2_partialft_v3/checkpoints/00054.pt logs/anny_model/anny_s2_boosted_v4/checkpoints/00299.pt" \
+    sbatch slurm/diagnostics/diag_neck_bones.sh # lineage: where the offset first appears; also H3 for the ancestors
+```
+**Runtime.** One job, no training. The existing holdout trace runs its 100-image loop in 65-105 s per checkpoint
+(progress lines of the diag_holdout_35* logs), plus start-up. That makes ~3-5 min per checkpoint and ~20 min for the
+four defaults; the job limit is 1 h. Output goes to `results/diagnostics/neck_bones/<tag>/` and `<tag>.log`. The job log
+ends with a cross-checkpoint table: verdict and median/mean per bone, girth, neck-skin PVE, raw-GT check, `pose_param`.
+
+**How to read it (V1 rows of `bones_summary.json`).** A label says what the rotations are, not why. Each mechanism
+has its own deciding test:
+
+| what is claimed | decided by |
+|---|---|
+| a compensated flip is present | the dump (this job) |
+| the L1 holds it | exp5 against its l1 control arm |
+| where it came from (seeded at init, or created when the helper mask was switched on) | the lineage traces |
+| it is the visible thinning | girth, plus a render of the decpose-surgery checkpoint |
+| bookkeeping H3 / H4 | the `checkpoint args` and `raw GT blocks` lines (H3 for the ancestors: the lineage traces) |
+
+| dump outcome | consistent with | next step |
+|---|---|---|
+| `raw GT blocks ... NOT proper rotations` | H4: the rotmat target and the GT mesh disagree for those bones | build the GT mesh/joints from the projected rotations in prepare_gt and the trace (candidate flag, not implemented) before anything else |
+| `pose_param` other than `local-bone` / None | H3: rotations read in the wrong space | honour pose_param or refuse the checkpoint before anything else |
+| exactly one of neck01/02/03 `FLIP_TWIST`, head `FLIP_*` with one axis, jaw `OK`, bone-head joint error small; v9 identical to v5 | a compensated flip (H1) | zero-training decpose surgery on that bone; exp5 vs control tests the L1 trap; lineage traces test the origin |
+| v10's neck `OK` with its flips on arm/metacarpal bones | a per-init random draw, **or** a recipe-dependent cause (v10 differs in helper-mask timing, boost, 3DPW from step 0, unfrozen blocks, LR) | does not decide between them; the lineage traces and the other fresh-head runs (anny_partial_freeze = v8, anny_v7_scratch) do |
+| the flipped bone is neck01 or neck02 and girth pred/GT < ~0.8 | a flip that thins the neck skin (the 0.8 comes from an LBS simulation; PVE_hn is equal for v5 and v10) | render the surgery checkpoint before calling it the long-neck look |
+| the flipped bone is neck03 and girth ≥ ~0.9 | a flip that is nearly invisible in the mesh; the long-neck look has another cause (skeleton length is 99.3% of GT) | look at shape / rendering |
+| `FLIP_SWING` | a flip that tilts the bone and moves its child joint, not the H1 twist | inspect joint error and global error of that bone |
+| `PARTIAL_FLIP` | per-image flips in a minority of people | read mean vs median; per-person rows in bones.npz |
+| neck01-03 all `CONST_OFFSET` with one shared axis (relAng ~62.7°) | a convention or frame offset (bookkeeping) | check H3 / H4 lines, then the mapping |
+| `FIXED_OUTPUT` (pred spread < ¼ of GT spread) | the head emits one rotation whatever the image | inspect the decpose rows of those bones |
+| `SPREAD` with large medians | ordinary input-dependent error, no constant offset | supervision (exp3) |
+
+**Fix flag: `--rotmat_loss {l1,geodesic}`** (loss.py, default `l1`). With `l1`, the original code path runs
+unchanged; the default loss equals HEAD bit for bit on random inputs in four configurations (plain, boost 4/4, region
+norm, hand mask + global_rot). With `geodesic`, the per-bone angle replaces the 9-entry L1 in the rotmat term, in
+global_rot and in train.py's output-level distillation rotation term (`--lambda_kd_out`). The angle is computed as
+atan2(|vee(M−Mᵀ)|, tr M − 1), which keeps the gradient finite at 0° and 180°. The hand mask, joint/region weights, sum
+over bones and mean over people are the same. Use `--alpha_rotmat 0.33`: at a 2° error the 9-entry L1 is 3.27× (GT near
+identity) to 3.50× (arbitrary GT) the angle in radians. `--alpha_global_rot` is **not** rescaled, so pass ~3.5× the
+L1-era value under geodesic (17.5 for exp3's 5). Distilling from a flipped teacher (v9) still pulls toward its flip, under
+either distance. Synthetic check: 16 bones started 175° off by twist, 600 Adam steps on the 6D vector. L1 ends at a
+median 164° (16/16 still above 90°); geodesic ends at 0.1° (0/16).
+```
+C=$(ROTMAT_LOSS=l1 sbatch --parsable slurm/experiments/exp5_neck_fix.sh)   # control arm (alpha 0.1)
+CONTROL_RUN=results/experiments/exp5_neck_fix/pilot_l1_a0.1_anny_s2_shape_v5_00099 \
+    sbatch --dependency=afterok:$C slurm/experiments/exp5_neck_fix.sh   # geodesic, alpha 0.33; summary includes the control
+# or submit both without CONTROL_RUN, then, once both finished (seconds, no GPU):
+SUMMARY_ONLY=1 CONTROL_RUN=results/experiments/exp5_neck_fix/pilot_l1_a0.1_anny_s2_shape_v5_00099 \
+    bash slurm/experiments/exp5_neck_fix.sh
+MAX_ITER=10000 RUN=long_geo sbatch --time=05:00:00 slurm/experiments/exp5_neck_fix.sh
+```
+Run `diag_neck_bones.sh` first: its v5 dump is the baseline. Without it, the job traces CKPT itself (+~5 min). A
+`CONTROL_RUN` whose `holdout_trace/` is not finished aborts the job before training, and makes the summary exit 2. The
+job never silently falls back to a baseline-only comparison. The comparison lives in
+`scripts/experiments/exp5_neck_summary.py` (stdlib only).
+**Runtime:** ~20 min of training, plus in-training evaluation and 1-2 dump traces; ~45-60 min in total, job limit 2.5 h.
+
+**Success criterion (V1, holdout).** Three reads, printed side by side; a guard miss is reported next to the neck read,
+not instead of it.
+- Neck. FIXED: neck and head group means < 15° and girth ≥ 0.9. MOVING: every bone the baseline dump labels `FLIP_*`,
+  `PARTIAL_FLIP` or `CONST_OFFSET` drops its mean local error by ≥ 3°, and by ≥ 3° more than in the control arm. The mean
+  is used so a `PARTIAL_FLIP` bone counts, and because the 3° floor comes from group means.
+- Guards: PVE ≤ ref + 8 mm, recall ≥ ref − 2 points, global head ≤ ref + 3°. ref is the control arm, or the v5 numbers
+  70.5 / 90.2 / 12.0 without one.
+- Control: whether the control arm was compared. Without it, MOVING cannot be told from fine-tuning drift.
+
+**Measured noise floor** (the six 2-epoch v5-recipe arms, exp2-exp4 pilots and controls, holdout V1):
+- PVE 68.7-76.3 mm (7.6 mm spread);
+- recall 88.6-90.2 (1.6 points);
+- global head 11.3-13.7°;
+- local group means 62.5-62.8° (neck) and 89.1-90.1° (head).
+
+The two identical-recipe control arms (exp3, exp4) differ by 7.6 mm PVE, 0.8 recall points and 1.9° global head. The
+earlier guard (PVE ≤ 71.5, recall ≥ 89.2) failed all six arms, controls included. The new tolerances cover this spread.
+
+**Would / would not prove.** A drop beyond the control arm shows that the loss form reaches the flagged bone. A null
+pilot does not refute the flip. v5's decpose 6D columns have norms of 120-341 (neck02) and 61-182 (head); Adam moves
+each weight by about lr per step, and undoing a flip means reversing such a column, which 2,000 steps at 1e-5 may not
+do [Guessing]. The decisive zero-training test is the decpose surgery on the bone the dump names (not implemented
+here: it needs that bone). The 6D-init defect (3h) only matters for new fresh-head runs.
+
 ## 3. Verified in code
 
 Readers' facts. Line numbers refer to `89db760`, whose `.py` files are identical to `0d8ef72`. The experiment
@@ -311,7 +463,7 @@ commits shift lines in train.py, loss.py, model.py and the trace.
 |---|---|---|---|
 | Head anchor vs root targets | `train.py:213-222, 239-245` | yes (depth) | exp1 |
 | 3DPW identity fingers as GT | see 3e | no (mixed runs) | exp4c flag, not scheduled |
-| 6D "identity" init `[1,0,0,1,0,0]` is singular under `rot6d_to_rotmat` (columns x[0:3], x[3:6]) | `model.py:565`; `utils/humans.py:20-21` | yes (fingers' 0.25-0.30 conditioning is \|sin\| of this angle) [Likely link] | **not implemented**. Candidate exp5: after load, set the init to `[1,0,0,0,1,0]` and shift `decpose.bias` by `(0,0,0,+1,-1,0)` per bone (output-neutral), then reset the 30 phalanx rows to exact identity; the buffer is restored from the checkpoint, so a constant change alone is overwritten |
+| 6D "identity" init `[1,0,0,1,0,0]` is singular under `rot6d_to_rotmat` (columns x[0:3], x[3:6]) | `model.py:565`; `utils/humans.py:20-21` | yes (fingers' 0.25-0.30 conditioning is \|sin\| of this angle) [Likely link] | **not implemented** (it seeds the neck flip hypothesis, section 2 "Neck root cause"; distinct from exp5_neck_fix). Candidate: after load, set the init to `[1,0,0,0,1,0]` and shift `decpose.bias` by `(0,0,0,+1,-1,0)` per bone (output-neutral), then reset the 30 phalanx rows to exact identity; the buffer is restored from the checkpoint, so a constant change alone is overwritten |
 | Boost renormalised over 163 bones: "×4" is ×2.41, rest ×0.60 | `loss.py:76`, help `loss.py:188-193` | interpretation of v4/v5 | not fixed (proposed `--boost_renorm 0`) |
 | `prepare_gt` reads global `args.img_size`; `train_n_iters`/`evaluate` read global `args.amp` | `train.py:239, 448, 570` | no | not fixed |
 | `--use_anny_shape` default 0 → GT phenotypes 0 (newborn) | `train.py:148-159, 1337` | no (v5 passes 1) | not fixed |
