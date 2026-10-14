@@ -47,6 +47,22 @@ class Loss(torch.nn.Module):
         # configure_joint_weights() once the model (and its bone names) exist.
         # None = original behavior, every joint weighted equally.
         self.joint_weights = None
+        # --shape_weights: per-phenotype multipliers on the L1 shape error [1, 11].
+        # None (default, or all ones) = the original unweighted sum, byte-for-byte.
+        self.shape_weights = None
+        sw = str(getattr(parser_args, 'shape_weights', '') or '').strip()
+        if sw:
+            vals = [float(v) for v in sw.split(',')]
+            if len(vals) != 11:
+                raise ValueError(f"--shape_weights expects 11 comma-separated floats (Anny phenotypes: gender, age, "
+                                 f"muscle, weight, height, proportions, cupsize, firmness, african, asian, caucasian), "
+                                 f"got {len(vals)}")
+            if any(v < 0 for v in vals):
+                raise ValueError("--shape_weights must be >= 0")
+            if any(v != 1.0 for v in vals):
+                self.shape_weights = torch.tensor(vals, dtype=torch.float32).reshape(1, 11)
+                print(f"[loss] shape weights {vals} (sum {sum(vals):.1f} vs 11 unweighted: alpha_shape still "
+                      f"multiplies the total, so the shape share of the loss grows by that ratio)", flush=True)
 
     def configure_joint_weights(self, bone_labels):
         """Build per-joint weights from bone NAMES (robust to index changes).
@@ -94,7 +110,10 @@ class Loss(torch.nn.Module):
         else:
             reg_rotmat = (y_hat['rotmat'] - y['rotmat']).abs().sum([1,2,3]).mean(0) # root/body/hands/jaw
         shape_dim = min([y_hat['shape'].shape[1], y['shape'].shape[1]])
-        reg_shape = (y_hat['shape'][:,:shape_dim] - y['shape'][:,:shape_dim]).abs().sum(-1).mean(0)
+        shape_err = (y_hat['shape'][:,:shape_dim] - y['shape'][:,:shape_dim]).abs()
+        if self.shape_weights is not None:
+            shape_err = shape_err * self.shape_weights[:, :shape_dim].to(shape_err.device).to(shape_err.dtype)
+        reg_shape = shape_err.sum(-1).mean(0)
         reg_dist = (y_hat['dist_postprocessed'].squeeze() - y['dist_postprocessed']).abs().mean(0)
         reg_transl = (y_hat['transl'] - y['transl']).abs().sum(-1).mean(0)
         # TODO expression???
@@ -191,6 +210,13 @@ class Loss(torch.nn.Module):
         parser.add_argument('--boost_hand_weight', type=float, default=1.0,
                             help='loss weight multiplier for finger/thumb/wrist bones '
                                  '(rotmat and j3d terms); renormalized to mean 1')
+        # Per-phenotype weighting of the L1 shape term. Not renormalised: '1,3,1,1,2,1,1,1,1,1,1'
+        # triples the age error and doubles the height error (sum 14 vs 11).
+        parser.add_argument('--shape_weights', type=str, default='',
+                            help='11 comma-separated multipliers on the per-phenotype L1 shape error, in '
+                                 'phenotype order (gender, age, muscle, weight, height, proportions, cupsize, '
+                                 'firmness, african, asian, caucasian), applied before the sum over phenotypes. '
+                                 "Empty or all ones = unchanged loss. Example: '1,3,1,1,2,1,1,1,1,1,1'.")
 
         
     

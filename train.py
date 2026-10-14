@@ -755,7 +755,110 @@ class Trainer(object):
         self.writer.flush() # https://github.com/pytorch/pytorch/issues/24234
         sys.stdout.flush()
         return meters['pve'].avg
-    
+
+
+# --------------------------------------------------------------------------- #
+# --age_balance / --exclude_indices_file: weighted draw over the AnnyOne subset
+# --------------------------------------------------------------------------- #
+def age_balance_weights(min_age, indices, child_frac, child_age, exclude_indices=()):
+    """Per-image weights for a WeightedRandomSampler over the training positions `indices`
+    (AnnyOne sorted-pkl indices). Images whose youngest person has GT age < child_age share
+    child_frac of the draws, the remaining images share 1 - child_frac, uniformly within each
+    group; images in exclude_indices get weight 0. An image without people (min_age NaN) is
+    treated as an adult image. Pure numpy, so the arithmetic can be checked without a GPU.
+    Returns (weights float64 [len(indices)], info dict)."""
+    idx = np.asarray(indices, dtype=np.int64)
+    a = np.asarray(min_age, dtype=np.float64)[idx]
+    excluded = (np.isin(idx, np.asarray(list(exclude_indices), dtype=np.int64)) if len(exclude_indices)
+                else np.zeros(len(idx), dtype=bool))
+    is_child = np.isfinite(a) & (a < float(child_age))
+    child = is_child & ~excluded
+    adult = ~is_child & ~excluded
+    n_c, n_a = int(child.sum()), int(adult.sum())
+    w = np.ones(len(idx), dtype=np.float64)
+    w_child = 1.0
+    if 0.0 < float(child_frac) < 1.0 and n_c > 0 and n_a > 0:
+        # expected child share of the draws = w_c*n_c / (w_c*n_c + n_a) == child_frac
+        w_child = float(child_frac) / (1.0 - float(child_frac)) * n_a / n_c
+        w[child] = w_child
+    w[excluded] = 0.0
+    tot = float(w.sum())
+    info = dict(n_images=int(len(idx)), n_child_images=n_c, n_adult_images=n_a,
+                n_excluded=int(excluded.sum()), n_excluded_child=int((excluded & is_child).sum()),
+                child_age=float(child_age), child_weight=float(w_child),
+                natural_child_image_frac=float(n_c / max(n_c + n_a, 1)),
+                expected_child_image_frac=float(w[child].sum() / tot) if tot > 0 else 0.0)
+    return w, info
+
+
+def read_exclude_indices(path):
+    """One AnnyOne index per line (commas/spaces allowed, # comments)."""
+    out = []
+    with open(path) as f:
+        for line in f:
+            out.extend(int(t) for t in line.split('#')[0].replace(',', ' ').split())
+    return out
+
+
+def build_age_balance_sampler(args, train_dataset, full_dataset):
+    """WeightedRandomSampler over the AnnyOne training subset, or None when neither --age_balance
+    nor --exclude_indices_file is set (the DataLoader then shuffles exactly as before).
+    With --age_balance the per-image minimum GT age comes from --age_balance_index, written by
+    scripts/experiments/build_age_index.py in AnnyOne's sorted-pkl order; the basenames stored
+    there are checked against the dataset so a stale index cannot silently mis-weight."""
+    from torch.utils.data import Subset, WeightedRandomSampler
+    balance = bool(int(getattr(args, 'age_balance', 0) or 0))
+    excl_file = getattr(args, 'exclude_indices_file', '') or ''
+    if not balance and not excl_file:
+        return None
+    indices = list(train_dataset.indices) if isinstance(train_dataset, Subset) else list(range(len(train_dataset)))
+    exclude = read_exclude_indices(excl_file) if excl_file else []
+    pkls = full_dataset.pkl_files
+    n_below = n_people = thresholds = None
+    if balance:
+        path = args.age_balance_index
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"--age_balance 1 needs the per-image age index {path}; build it with "
+                                    f"python scripts/experiments/build_age_index.py --out {path}")
+        index = np.load(path, allow_pickle=False)
+        min_age = np.asarray(index['min_age'], dtype=np.float64)
+        names = np.asarray(index['basename']).astype(str)
+        if len(min_age) < len(pkls) or not np.array_equal(names[:len(pkls)],
+                                                           np.asarray([os.path.basename(q) for q in pkls])):
+            raise RuntimeError(f"age index {path} ({len(min_age)} entries) does not match the {len(pkls)} AnnyOne "
+                               f"pkls in sorted order; rebuild it with scripts/experiments/build_age_index.py")
+        child_frac, child_age = float(args.age_balance_child_frac), float(args.age_balance_child_age)
+        if 'n_below' in index.files:
+            n_below, n_people, thresholds = index['n_below'], index['n_people'], index['thresholds']
+    else:
+        min_age = np.full(len(pkls), np.nan)        # exclusion only: uniform weights, zeros on the excluded
+        child_frac, child_age = 0.0, 0.0
+    w, info = age_balance_weights(min_age, indices, child_frac, child_age, exclude)
+    if float(w.sum()) <= 0:
+        raise RuntimeError("age-balance sampler: every training image has weight 0")
+    if balance:
+        print(f"[age_balance] sampler over {info['n_images']} AnnyOne images: {info['n_child_images']} with min GT age "
+              f"< {child_age} ({100 * info['natural_child_image_frac']:.2f}% of images) get weight "
+              f"{info['child_weight']:.2f} -> expected {100 * info['expected_child_image_frac']:.1f}% of drawn images "
+              f"contain a child; {info['n_excluded']} images excluded ({info['n_excluded_child']} of them with a child); "
+              f"draws WITH replacement (shuffle off)", flush=True)
+    else:
+        print(f"[age_balance] exclusion-only sampler over {info['n_images']} AnnyOne images: {info['n_excluded']} excluded "
+              f"({excl_file}), uniform weights, draws WITH replacement (shuffle off)", flush=True)
+    if n_below is not None:
+        # share of PEOPLE below each threshold among the drawn images, before prepare_gt's visibility filter;
+        # scripts/experiments/measure_batch_ages.py measures the realised number after the filter
+        idx = np.asarray(indices)
+        npp = np.asarray(n_people, dtype=np.float64)[idx]
+        for c, t in enumerate(np.asarray(thresholds).reshape(-1)):
+            nb = np.asarray(n_below, dtype=np.float64)[idx, c]
+            nat = nb.sum() / max(npp.sum(), 1.0)
+            exp_ = (w * nb).sum() / max((w * npp).sum(), 1e-9)
+            print(f"[age_balance]   people with age < {float(t):.1f}: natural {100 * nat:.2f}% -> expected "
+                  f"{100 * exp_:.2f}% of sampled people (before the visibility filter)", flush=True)
+    return WeightedRandomSampler(torch.as_tensor(w, dtype=torch.double), num_samples=len(indices), replacement=True)
+
+
 def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # --- matmul precision (apply_speed_fix.py) -------------------------------
@@ -1151,6 +1254,10 @@ def main(args):
 
             # --- mixed synthetic + real training (apply_mixed_data_fix.py) ----
             sampler = None
+            # --age_balance / --exclude_indices_file (None when both are off: shuffle as before)
+            age_sampler = build_age_balance_sampler(args, train_dataset, full_anny_dataset)
+            if age_sampler is not None:
+                sampler = age_sampler
             if getattr(args, 'mix_3dpw_labels', ''):
                 from torch.utils.data import ConcatDataset, WeightedRandomSampler
                 from datasets.threedpw_anny import ThreeDPWAnny
@@ -1162,8 +1269,12 @@ def main(args):
                 if n_real == 0:
                     raise RuntimeError(f"no 3DPW labels found under {args.mix_3dpw_labels}/{args.mix_3dpw_split}")
                 r = float(args.mix_3dpw_ratio)
-                weights = torch.cat([torch.full((n_syn,), (1.0 - r) / n_syn),
-                                     torch.full((n_real,), r / n_real)])
+                syn_weights = torch.full((n_syn,), (1.0 - r) / n_syn)
+                if age_sampler is not None:
+                    # keep the synthetic share at 1 - r, distributed by the age weights
+                    aw = torch.as_tensor(age_sampler.weights, dtype=torch.float32)
+                    syn_weights = (1.0 - r) * aw / aw.sum()
+                weights = torch.cat([syn_weights, torch.full((n_real,), r / n_real)])
                 train_dataset = ConcatDataset([train_dataset, real_dataset])
                 sampler = WeightedRandomSampler(weights, num_samples=n_syn + n_real, replacement=True)
                 print(f"[mixed] training on {n_syn} AnnyOne + {n_real} 3DPW-{args.mix_3dpw_split} images; "
@@ -1389,6 +1500,24 @@ if __name__ == "__main__":
     parser.add_argument('--num_betas', type=int, default=11, choices=[10, 11])
     parser.add_argument('--use_anny_shape', type=int, default=0, choices=[0,1], help='use anny_shape from the dataset as GT phenotypes instead of zeros')
     parser.add_argument('--val_anny_n', type=int, default=0, help='number of held-out AnnyOne samples for validation (0=disabled); taken from indices after --train_n')
+    parser.add_argument('--age_balance', type=int, default=0, choices=[0, 1],
+                        help='AnnyOne training: draw images with a WeightedRandomSampler (with replacement) so that '
+                             'images whose youngest person has GT age < --age_balance_child_age make up '
+                             '--age_balance_child_frac of the draws; 2.5%% of training people are children and ~4 in 5 '
+                             'production batches contain none (docs/diagnostics_findings.md). Needs the index written '
+                             'by scripts/experiments/build_age_index.py. 0 = the previous shuffled loader, unchanged.')
+    parser.add_argument('--age_balance_index', type=str, default='results/experiments/exp2_children/age_index.npz',
+                        help='per-image min GT age in AnnyOne sorted-pkl order (build_age_index.py)')
+    parser.add_argument('--age_balance_child_frac', type=float, default=0.25,
+                        help='target fraction of sampled images whose min GT age < --age_balance_child_age '
+                             '(natural: ~5%% of images); <= 0 or >= 1 = no reweighting')
+    parser.add_argument('--age_balance_child_age', type=float, default=0.3,
+                        help="'child' threshold on the Anny age phenotype (1/3 ~ 11 y, 2/3 ~ 25 y)")
+    parser.add_argument('--exclude_indices_file', type=str, default='',
+                        help='text file of AnnyOne indices (sorted-pkl order; one per line, # comments) that get '
+                             'sampling weight 0, e.g. the diag manifest images so an in-sample evaluation set stays '
+                             'out of a fine-tune. Works with or without --age_balance (without: uniform weights, '
+                             'with replacement). Empty = off.')
     parser.add_argument('--eval_freq', type=int, default=1, help='run evaluation every N epochs')
     parser.add_argument('--det_thresh', type=float, default=0.2)
     parser.add_argument('--nms_kernel_size', type=int, default=3)
