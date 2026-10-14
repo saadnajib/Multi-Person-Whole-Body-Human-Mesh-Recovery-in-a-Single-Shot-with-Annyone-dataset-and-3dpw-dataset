@@ -76,7 +76,7 @@ It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** 
 │   ├── anny_fit_check/      # fit diagnostics (error histograms, overlays, phenotypes)
 │   └── 3dpw_to_anny_renders/{v2,v21}/   # Anny fits rendered over 3DPW frames (two converter versions)
 │
-├── docs/                    # investigation notes: 3DPW adapter check, Anny shape report, cluster commands
+├── docs/                    # investigation notes: diagnostics findings, 3DPW adapter check, Anny shape report, cluster commands
 ├── archive/                 # superseded code kept for reference (train_v1–v3.py, demo_original.py)
 ├── assets/                  # README gifs
 ├── requirements.txt / conda.yaml
