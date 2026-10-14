@@ -106,6 +106,7 @@ export EGL_DEVICE_ID=0
 #                             in-domain the detection head should be confident.
 #   --fov                   : check the value printed by export_annyone_images.py
 #                             above and set it to match the dataset's true FOV.
+#   --relax_hands 1         : finger predictions are currently worse than the rest pose (17.3 vs 15.1 deg rotation error, AnnyOne holdout), so they are zeroed on purpose
 python3.9 demo.py \
   --model_name "$CKPT_NAME" \
   --img_folder "$IMG_DIR" \
@@ -121,7 +122,7 @@ python3.9 demo.py \
   --save_rotating_video 0 \
   --save_mesh 1 \
   --mask_helper_joints 1 \
-  --relax_hands 0 \
+  --relax_hands 1 \
   --rest_pose 0
 
 echo "======================================================"

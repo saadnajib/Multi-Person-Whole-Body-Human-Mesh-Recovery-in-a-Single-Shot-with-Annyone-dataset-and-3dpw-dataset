@@ -74,7 +74,7 @@ move the mesh, so decoded meshes respond to the heads.
 | people predicted farther than GT | | 100% |
 | corr(GT depth, depth error) | | −0.76 |
 | skeletal height | 1.409 m | 1.405 m (r = 0.89) |
-| head-to-root pixel distance (median) | 127 px | 82 px (ratio 0.67) |
+| head-to-root pixel distance (median) | 127 px | 82 px (ratio of medians 0.65; median of per-person ratios 0.67) |
 | root pixel error / head pixel error (median) | | 14 px / 46 px |
 
 The same slope (0.18–0.33) and offset (2.4–2.8 m) appear on the manifest train split, the manifest holdout
@@ -233,6 +233,27 @@ Origin: **generalisation rooted in sparse supervision**; representation is fine.
 | C2 crop K from full-image fov | placement only, shape unchanged |
 | C3 `--relax_hands` | fingers 17.3° → 15.1° (better without prediction) |
 | C7 eval unmasked vs masked | +3.8 mm PVE: the thesis's 74 mm is really 70.5 mm |
+
+## Baseline numbers used by the experiment scripts
+
+Checkpoint `anny_s2_shape_v5/00099`, V1 settings (helper bones masked), 100-image holdout unless stated. These are
+the `baseline(findings)` values the `slurm/experiments/` scripts print. Source: the diagnostic runs compiled in
+`results/diagnostics/REPORT.md` on the cluster.
+
+| quantity | value | set |
+|---|---|---|
+| PVE / PA-PVE | 70.5 / 53.3 mm | holdout |
+| recall | 90.2% | holdout |
+| PVE head+neck (PVE_hn) | 52.3 mm | holdout |
+| shape bias (pred − GT) | age −0.015, height −0.019 | holdout |
+| global orientation error | root 7.6°, head 12.0°, wrist 22.7° | holdout |
+| finger rotation error | 17.3° (15.1° relaxed, `--relax_hands`) | holdout |
+| placement (means) | head px err 64.5 (median 46), root px err 23.4 (median 14), root depth error 1.08 m | holdout |
+| depth fit | slope 0.33, intercept 2.36 m | holdout |
+| PVE; global head error; neck-tag PVE | 56.7 mm; 8.6°; 76.3 mm | manifest holdout split |
+| PVE; global head error; neck-tag PVE | 78.3 mm; 19.9°; 93.7 mm | manifest train split |
+| child tag (n=10) | PVE 47.8 mm, age bias +0.078, shape-swap gain 6.2 mm | manifest train split (in-sample) |
+| predicted age | 0.10 vs GT 0.015 | youngest-50 (in-sample) |
 
 ## Caveats
 

@@ -31,3 +31,9 @@ threedpw_anny_full/*
 
 # generated reports
 shape_report.txt
+
+# experiment outputs: keep only the summaries (*.json) and notes (*.md); logs, images, checkpoints, npz stay local
+results/experiments/**
+!results/experiments/**/
+!results/experiments/**/*.json
+!results/experiments/**/*.md

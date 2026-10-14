@@ -439,6 +439,10 @@ class Model(nn.Module):
         out['j3d'] = j3d
         out['j2d'] = j2d
         out['v2d'] = v2d              # ← ADD THIS
+        # Camera-frame orientation of every bone after FK (--alpha_global_rot): the 4-bone neck chain can
+        # realise one head pose many ways, so per-bone rotmat errors say little about where the head
+        # points (docs/diagnostics_findings.md, Neck). A view of bone_poses; step 5 above only translates.
+        out['global_rotmat'] = anny_output['bone_poses'][:, :, :3, :3]   # [N, 163, 3, 3]
         out['transl'] = j3d[:, self.person_center_idx]         # [N, 3]
         out['transl_pelvis'] = j3d[:, 0]                       # [N, 3]
 

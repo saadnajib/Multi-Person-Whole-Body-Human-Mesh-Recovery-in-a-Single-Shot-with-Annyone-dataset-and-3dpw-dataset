@@ -172,6 +172,11 @@ class Trainer(object):
             
             # ✅ FIX: Extract the actual posed 3D joint translations from the homogeneous matrices
             jts = anny_out['bone_poses'][:, :, :3, -1]  # [nhv, 163, 3]
+            # Global orientations from the same FK pass, for --alpha_global_rot (loss.py). Like verts/jts
+            # they come from the FULL unmasked pose; the bones that term may select are checked at startup
+            # to have no helper ancestor, so --mask_helper_joints_train leaves their targets unchanged.
+            if float(getattr(self.args, 'alpha_global_rot', 0.0)) > 0:
+                target['global_rotmat'] = anny_out['bone_poses'][:, :, :3, :3]  # [nhv, 163, 3, 3]
             
             # GT supervision signals use the 3x3 rotmats
             anny_rotmats_flat = anny_rotmats.reshape(-1, 3, 3)
@@ -203,6 +208,10 @@ class Trainer(object):
                 gt_rotmats_final.reshape(-1, 3, 3)
             ).reshape(nhv, 163, 3)
             target['shape'] = shape_vec  # ✅ real phenotype GT (zeros if --use_anny_shape 0)
+            # --mask_3dpw_hands: per-person flag (1 AnnyOne, 0 3DPW-Anny) added by the HandLabelFlag dataset
+            # wrapper; sliced by idx_vis below like every other target and read by loss.py.
+            if 'has_hand_labels' in y:
+                target['has_hand_labels'] = y['has_hand_labels'][idx_h[0], idx_h[1]].reshape(nhv).to(self.device)
             has_smplx_params = 0
         else:
             return None
@@ -211,15 +220,22 @@ class Trainer(object):
         v2d = perspective_projection(verts, K)
 
         # Translation of the primary keypoint
+        dist_joint_idx = 0
         if 'anny_pose' in y:
             root_joint_idx = 0
+            # The model attaches the mesh to the detected pixel by its person_center joint (the
+            # head) and reports that joint as transl, so unless the targets describe the same
+            # joint the heatmap cell, offset, transl and dist pull against the 2D terms
+            # (docs/diagnostics_findings.md, depth defect). 'root' keeps the production targets.
+            if getattr(self.args, 'gt_center_joint', 'root') == 'person_center':
+                root_joint_idx = dist_joint_idx = self.model.person_center_idx
         else:
             root_joint_idx = JOINT_NAMES.index(self.args.person_center)
             
         target['transl'] = jts[:, root_joint_idx]
         target['transl_pelvis'] = jts[:, 0]
         # ✅ FIX: Clamp distance to prevent log(0) NaNs
-        target['dist'] = torch.clamp(jts[:, 0, -1], min=0.1)
+        target['dist'] = torch.clamp(jts[:, dist_joint_idx, -1], min=0.1)
 
         # We may predict dist in log space, or normalized values.
         if self.model.nearness:
@@ -310,6 +326,32 @@ class Trainer(object):
 
         return _target
 
+    @torch.no_grad()
+    def print_anchor_debug(self, pred, gt):
+        """--debug_anchor: one line per GT human with the predicted anchor (offset_y, loc_y, dist)
+        next to the GT anchor and the GT head / root pixel rows. If the target anchor and the joint
+        the model attaches to the detected pixel disagree, the predicted offset leaves [-0.5, 0.5]
+        or the predicted dist drifts above the GT dist for near people."""
+        pc = self.model.person_center_idx
+        K_h = gt['K'][gt['idx'][0]]
+        head_row = perspective_projection(gt['j3d'][:, [pc]], K_h)[:, 0, 1].tolist()
+        root_row = perspective_projection(gt['j3d'][:, [0]], K_h)[:, 0, 1].tolist()
+        off_y = pred['offset'].reshape(-1, 2)[:, 1].float().tolist()
+        loc_y = pred['loc'].reshape(-1, 2)[:, 1].float().tolist()
+        dist_hat = pred['dist'].reshape(-1).float().tolist()
+        gt_loc_y = gt['loc'][:, 1].tolist()
+        gt_off_y = gt['offset'][:, 1].tolist()
+        gt_dist = gt['dist'].reshape(-1).tolist()
+        print(f"[debug_anchor] iter {self.current_iter}: gt_center_joint="
+              f"{getattr(self.args, 'gt_center_joint', 'root')}, model anchor joint="
+              f"{getattr(self.model, 'person_center_name', pc)} (offset in patches, rows in px of the "
+              f"{self.args.img_size}px input, dist in m; a consistent offset lies in [-0.5, 0.5])", flush=True)
+        for h in range(len(off_y)):
+            print(f"[debug_anchor]   h{h}: pred offset_y {off_y[h]:+.2f} loc_y {loc_y[h]:7.1f} | "
+                  f"gt anchor loc_y {gt_loc_y[h]:7.1f} offset_y {gt_off_y[h]:+.2f} "
+                  f"head row {head_row[h]:7.1f} root row {root_row[h]:7.1f} | "
+                  f"dist pred {dist_hat[h]:.2f} gt {gt_dist[h]:.2f}", flush=True)
+
     def fit(self, data_train, l_data_val):
 
         start_epoch = 0
@@ -317,8 +359,14 @@ class Trainer(object):
             
             # Training
             timer_end = time.time()
+            iter_start = self.current_iter
             self.train_n_iters(data_train)
             train_n_iters_time = time.time() - timer_end
+            # Optimiser steps only: skipped batches cost wall time but show the model no image.
+            n_steps = self.current_iter - iter_start
+            print(f"[throughput] epoch {self.current_epoch}: {n_steps} iters x batch {self.args.batch_size} "
+                  f"in {train_n_iters_time:.0f}s = {n_steps / max(train_n_iters_time, 1e-9):.2f} it/s, "
+                  f"{n_steps * self.args.batch_size / max(train_n_iters_time, 1e-9):.2f} images/s", flush=True)
 
             # Decay LR once per epoch. A constant LR that was right for training
             # fresh heads from random init becomes too aggressive once resumed
@@ -449,6 +497,8 @@ class Trainer(object):
                 pred = self.model(x, is_training=True, idx=gt['idx'], K=gt['K'])
                 pred['transl_pelvis'] = pred['transl_pelvis'].reshape(-1, 3)
                 pred['transl'] = pred['transl'].reshape(-1, 3)
+                if self.current_iter < int(getattr(self.args, 'debug_anchor', 0)):
+                    self.print_anchor_debug(pred, gt)
                 loss, dict_loss = self.loss(pred, gt, epoch=self.current_epoch, img_size=self.args.img_size)
 
                 # --- KNOWLEDGE DISTILLATION ---
@@ -714,7 +764,135 @@ class Trainer(object):
         self.writer.flush() # https://github.com/pytorch/pytorch/issues/24234
         sys.stdout.flush()
         return meters['pve'].avg
-    
+
+
+# --------------------------------------------------------------------------- #
+# --age_balance / --exclude_indices_file: weighted draw over the AnnyOne subset
+# --------------------------------------------------------------------------- #
+def age_balance_weights(min_age, indices, child_frac, child_age, exclude_indices=()):
+    """Per-image weights for a WeightedRandomSampler over the training positions `indices`
+    (AnnyOne sorted-pkl indices). Images whose youngest person has GT age < child_age share
+    child_frac of the draws, the remaining images share 1 - child_frac, uniformly within each
+    group; images in exclude_indices get weight 0. An image without people (min_age NaN) is
+    treated as an adult image. Pure numpy, so the arithmetic can be checked without a GPU.
+    Returns (weights float64 [len(indices)], info dict)."""
+    idx = np.asarray(indices, dtype=np.int64)
+    a = np.asarray(min_age, dtype=np.float64)[idx]
+    excluded = (np.isin(idx, np.asarray(list(exclude_indices), dtype=np.int64)) if len(exclude_indices)
+                else np.zeros(len(idx), dtype=bool))
+    is_child = np.isfinite(a) & (a < float(child_age))
+    child = is_child & ~excluded
+    adult = ~is_child & ~excluded
+    n_c, n_a = int(child.sum()), int(adult.sum())
+    w = np.ones(len(idx), dtype=np.float64)
+    w_child = 1.0
+    if 0.0 < float(child_frac) < 1.0 and n_c > 0 and n_a > 0:
+        # expected child share of the draws = w_c*n_c / (w_c*n_c + n_a) == child_frac
+        w_child = float(child_frac) / (1.0 - float(child_frac)) * n_a / n_c
+        w[child] = w_child
+    w[excluded] = 0.0
+    tot = float(w.sum())
+    info = dict(n_images=int(len(idx)), n_child_images=n_c, n_adult_images=n_a,
+                n_excluded=int(excluded.sum()), n_excluded_child=int((excluded & is_child).sum()),
+                child_age=float(child_age), child_weight=float(w_child),
+                natural_child_image_frac=float(n_c / max(n_c + n_a, 1)),
+                expected_child_image_frac=float(w[child].sum() / tot) if tot > 0 else 0.0)
+    return w, info
+
+
+def read_exclude_indices(path):
+    """One AnnyOne index per line (commas/spaces allowed, # comments)."""
+    out = []
+    with open(path) as f:
+        for line in f:
+            out.extend(int(t) for t in line.split('#')[0].replace(',', ' ').split())
+    return out
+
+
+def build_age_balance_sampler(args, train_dataset, full_dataset):
+    """WeightedRandomSampler over the AnnyOne training subset, or None when neither --age_balance
+    nor --exclude_indices_file is set (the DataLoader then shuffles exactly as before).
+    With --age_balance the per-image minimum GT age comes from --age_balance_index, written by
+    scripts/experiments/build_age_index.py in AnnyOne's sorted-pkl order; the basenames stored
+    there are checked against the dataset so a stale index cannot silently mis-weight."""
+    from torch.utils.data import Subset, WeightedRandomSampler
+    balance = bool(int(getattr(args, 'age_balance', 0) or 0))
+    excl_file = getattr(args, 'exclude_indices_file', '') or ''
+    if not balance and not excl_file:
+        return None
+    indices = list(train_dataset.indices) if isinstance(train_dataset, Subset) else list(range(len(train_dataset)))
+    exclude = read_exclude_indices(excl_file) if excl_file else []
+    pkls = full_dataset.pkl_files
+    n_below = n_people = thresholds = None
+    if balance:
+        path = args.age_balance_index
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"--age_balance 1 needs the per-image age index {path}; build it with "
+                                    f"python scripts/experiments/build_age_index.py --out {path}")
+        index = np.load(path, allow_pickle=False)
+        min_age = np.asarray(index['min_age'], dtype=np.float64)
+        names = np.asarray(index['basename']).astype(str)
+        if len(min_age) < len(pkls) or not np.array_equal(names[:len(pkls)],
+                                                           np.asarray([os.path.basename(q) for q in pkls])):
+            raise RuntimeError(f"age index {path} ({len(min_age)} entries) does not match the {len(pkls)} AnnyOne "
+                               f"pkls in sorted order; rebuild it with scripts/experiments/build_age_index.py")
+        child_frac, child_age = float(args.age_balance_child_frac), float(args.age_balance_child_age)
+        if 'n_below' in index.files:
+            n_below, n_people, thresholds = index['n_below'], index['n_people'], index['thresholds']
+    else:
+        min_age = np.full(len(pkls), np.nan)        # exclusion only: uniform weights, zeros on the excluded
+        child_frac, child_age = 0.0, 0.0
+    w, info = age_balance_weights(min_age, indices, child_frac, child_age, exclude)
+    if float(w.sum()) <= 0:
+        raise RuntimeError("age-balance sampler: every training image has weight 0")
+    if balance:
+        print(f"[age_balance] sampler over {info['n_images']} AnnyOne images: {info['n_child_images']} with min GT age "
+              f"< {child_age} ({100 * info['natural_child_image_frac']:.2f}% of images) get weight "
+              f"{info['child_weight']:.2f} -> expected {100 * info['expected_child_image_frac']:.1f}% of drawn images "
+              f"contain a child; {info['n_excluded']} images excluded ({info['n_excluded_child']} of them with a child); "
+              f"draws WITH replacement (shuffle off)", flush=True)
+    else:
+        print(f"[age_balance] exclusion-only sampler over {info['n_images']} AnnyOne images: {info['n_excluded']} excluded "
+              f"({excl_file}), uniform weights, draws WITH replacement (shuffle off)", flush=True)
+    if n_below is not None:
+        # share of PEOPLE below each threshold among the drawn images, before prepare_gt's visibility filter;
+        # scripts/experiments/measure_batch_ages.py measures the realised number after the filter
+        idx = np.asarray(indices)
+        npp = np.asarray(n_people, dtype=np.float64)[idx]
+        for c, t in enumerate(np.asarray(thresholds).reshape(-1)):
+            nb = np.asarray(n_below, dtype=np.float64)[idx, c]
+            nat = nb.sum() / max(npp.sum(), 1.0)
+            exp_ = (w * nb).sum() / max((w * npp).sum(), 1e-9)
+            print(f"[age_balance]   people with age < {float(t):.1f}: natural {100 * nat:.2f}% -> expected "
+                  f"{100 * exp_:.2f}% of sampled people (before the visibility filter)", flush=True)
+    return WeightedRandomSampler(torch.as_tensor(w, dtype=torch.double), num_samples=len(indices), replacement=True)
+
+
+class HandLabelFlag(torch.utils.data.Dataset):
+    """--mask_3dpw_hands: tags every human of the wrapped dataset with has_hand_labels (1 = AnnyOne, whose pkls
+    carry fitted finger rotations; 0 = 3DPW-Anny, whose converter left every phalanx and metacarpal at identity).
+    The collate stacks any ndarray human key, so the flag reaches prepare_gt without a collate change; the
+    wrapped dataset's attributes (pkl_files, name, split) stay reachable for the samplers and evaluate()."""
+
+    def __init__(self, dataset, value):
+        self.dataset = dataset
+        self.value = float(value)
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, i):
+        img, annot = self.dataset[i]
+        for h in annot['humans']:
+            h['has_hand_labels'] = np.full((1,), self.value, dtype=np.float32)
+        return img, annot
+
+    def __getattr__(self, name):
+        if name.startswith('__') or 'dataset' not in self.__dict__:   # unpickling in a worker has no dataset yet
+            raise AttributeError(name)
+        return getattr(self.dataset, name)
+
+
 def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # --- matmul precision (apply_speed_fix.py) -------------------------------
@@ -900,6 +1078,26 @@ def main(args):
     if hasattr(loss, 'configure_joint_weights') and hasattr(model, 'body_model'):
         if getattr(args, 'boost_neck_weight', 1.0) != 1.0 or getattr(args, 'boost_hand_weight', 1.0) != 1.0:
             loss.configure_joint_weights(list(model.body_model.bone_labels))
+    # --alpha_global_rot: resolve --global_rot_bones once, so an unknown or helper-masked name aborts
+    # here instead of in the first training step.
+    if float(getattr(args, 'alpha_global_rot', 0.0)) > 0:
+        active = None
+        if getattr(args, 'mask_helper_joints_train', 0) and hasattr(model, 'useful_rotmat'):
+            active = model.useful_rotmat.reshape(-1).bool().tolist()
+        parents = getattr(model.body_model, 'bone_parents', None)
+        loss.configure_global_rot(list(model.body_model.bone_labels),
+                                  bone_parents=None if parents is None else [int(p) for p in parents],
+                                  active_mask=active)
+    # --rotmat_region_norm: region weights from the bone names, the model's finger mask and (under
+    # --mask_helper_joints_train) the active set. --mask_3dpw_hands: the bones whose 3DPW labels are placeholders.
+    if int(getattr(args, 'rotmat_region_norm', 0)):
+        active = None
+        if getattr(args, 'mask_helper_joints_train', 0) and hasattr(model, 'useful_rotmat'):
+            active = model.useful_rotmat.reshape(-1).bool().tolist()
+        loss.configure_region_norm(list(model.body_model.bone_labels),
+                                   model.hand_bone_mask.reshape(-1).tolist(), active_mask=active)
+    if int(getattr(args, 'mask_3dpw_hands', 0)):
+        loss.configure_hand_label_mask(list(model.body_model.bone_labels))
 
     # ---------------- KNOWLEDGE DISTILLATION SETUP ----------------
     # --distill_teacher_ckpt turns this run into student training: `model` above
@@ -1094,6 +1292,9 @@ def main(args):
                 traceback.print_exc()
                 raise
 
+            if int(getattr(args, 'mask_3dpw_hands', 0)):
+                train_dataset = HandLabelFlag(train_dataset, 1.0)   # AnnyOne pkls carry real finger rotations
+
             # Subset the dataset if --train_n is set
             full_anny_dataset = train_dataset  # keep the full dataset for the val slice
             if args.train_n > 0:
@@ -1110,6 +1311,10 @@ def main(args):
 
             # --- mixed synthetic + real training (apply_mixed_data_fix.py) ----
             sampler = None
+            # --age_balance / --exclude_indices_file (None when both are off: shuffle as before)
+            age_sampler = build_age_balance_sampler(args, train_dataset, full_anny_dataset)
+            if age_sampler is not None:
+                sampler = age_sampler
             if getattr(args, 'mix_3dpw_labels', ''):
                 from torch.utils.data import ConcatDataset, WeightedRandomSampler
                 from datasets.threedpw_anny import ThreeDPWAnny
@@ -1117,12 +1322,18 @@ def main(args):
                     raise ValueError("--mix_3dpw_split test: never train on the 3DPW test split")
                 real_dataset = ThreeDPWAnny(args.mix_3dpw_labels, split=args.mix_3dpw_split,
                                             img_size=args.img_size)
+                if int(getattr(args, 'mask_3dpw_hands', 0)):
+                    real_dataset = HandLabelFlag(real_dataset, 0.0)   # converter identity fingers are not labels
                 n_syn, n_real = len(train_dataset), len(real_dataset)
                 if n_real == 0:
                     raise RuntimeError(f"no 3DPW labels found under {args.mix_3dpw_labels}/{args.mix_3dpw_split}")
                 r = float(args.mix_3dpw_ratio)
-                weights = torch.cat([torch.full((n_syn,), (1.0 - r) / n_syn),
-                                     torch.full((n_real,), r / n_real)])
+                syn_weights = torch.full((n_syn,), (1.0 - r) / n_syn)
+                if age_sampler is not None:
+                    # keep the synthetic share at 1 - r, distributed by the age weights
+                    aw = torch.as_tensor(age_sampler.weights, dtype=torch.float32)
+                    syn_weights = (1.0 - r) * aw / aw.sum()
+                weights = torch.cat([syn_weights, torch.full((n_real,), r / n_real)])
                 train_dataset = ConcatDataset([train_dataset, real_dataset])
                 sampler = WeightedRandomSampler(weights, num_samples=n_syn + n_real, replacement=True)
                 print(f"[mixed] training on {n_syn} AnnyOne + {n_real} 3DPW-{args.mix_3dpw_split} images; "
@@ -1330,12 +1541,42 @@ if __name__ == "__main__":
                              '(the test split). Keep >= --val_anny_n used in training, '
                              'or the test set overlaps training data.')
     parser.add_argument('--person_center', type=str, default='head', choices=['pelvis', 'head', 'nose'])
+    parser.add_argument('--gt_center_joint', type=str, default='root', choices=['root', 'person_center'],
+                        help="AnnyOne batches only: the joint the GT transl / dist / heatmap cell / offset "
+                             "describe. 'root' = joint 0, what every production checkpoint was trained on; "
+                             "'person_center' = the joint the model anchors and reports (--person_center, the "
+                             "head), so target and prediction describe the same point (depth defect in "
+                             "docs/diagnostics_findings.md). prepare_gt's visibility filter and cell-occupancy "
+                             "test move with it, in training and in evaluate(); SMPL-X / 3DPW batches are "
+                             "unaffected.")
+    parser.add_argument('--debug_anchor', type=int, default=0,
+                        help='print, for the first N training iterations, the predicted anchor (offset_y, '
+                             'loc_y, dist) next to the GT anchor and the GT head / root pixel rows of every '
+                             'human in the batch. 0 = off.')
     parser.add_argument('--visu_to_save', type=int, default=0)
     parser.add_argument('--extension', type=str, default='png', choices=['png', 'jpg'])
     parser.add_argument('--res', type=int, default=None, choices=[None, 512, 1280])
     parser.add_argument('--num_betas', type=int, default=11, choices=[10, 11])
     parser.add_argument('--use_anny_shape', type=int, default=0, choices=[0,1], help='use anny_shape from the dataset as GT phenotypes instead of zeros')
     parser.add_argument('--val_anny_n', type=int, default=0, help='number of held-out AnnyOne samples for validation (0=disabled); taken from indices after --train_n')
+    parser.add_argument('--age_balance', type=int, default=0, choices=[0, 1],
+                        help='AnnyOne training: draw images with a WeightedRandomSampler (with replacement) so that '
+                             'images whose youngest person has GT age < --age_balance_child_age make up '
+                             '--age_balance_child_frac of the draws; 2.5%% of training people are children and ~4 in 5 '
+                             'production batches contain none (docs/diagnostics_findings.md). Needs the index written '
+                             'by scripts/experiments/build_age_index.py. 0 = the previous shuffled loader, unchanged.')
+    parser.add_argument('--age_balance_index', type=str, default='results/experiments/exp2_children/age_index.npz',
+                        help='per-image min GT age in AnnyOne sorted-pkl order (build_age_index.py)')
+    parser.add_argument('--age_balance_child_frac', type=float, default=0.25,
+                        help='target fraction of sampled images whose min GT age < --age_balance_child_age '
+                             '(natural: ~5%% of images); <= 0 or >= 1 = no reweighting')
+    parser.add_argument('--age_balance_child_age', type=float, default=0.3,
+                        help="'child' threshold on the Anny age phenotype (1/3 ~ 11 y, 2/3 ~ 25 y)")
+    parser.add_argument('--exclude_indices_file', type=str, default='',
+                        help='text file of AnnyOne indices (sorted-pkl order; one per line, # comments) that get '
+                             'sampling weight 0, e.g. the diag manifest images so an in-sample evaluation set stays '
+                             'out of a fine-tune. Works with or without --age_balance (without: uniform weights, '
+                             'with replacement). Empty = off.')
     parser.add_argument('--eval_freq', type=int, default=1, help='run evaluation every N epochs')
     parser.add_argument('--det_thresh', type=float, default=0.2)
     parser.add_argument('--nms_kernel_size', type=int, default=3)
