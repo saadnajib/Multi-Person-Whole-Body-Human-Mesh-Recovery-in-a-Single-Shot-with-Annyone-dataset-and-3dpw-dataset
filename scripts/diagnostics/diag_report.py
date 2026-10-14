@@ -106,8 +106,12 @@ def main():
             P("\n**Verdict: bbox containment not available; judge decoding from `gt_decode/vis/` (GT mesh on the person) and the "
               f"{f(100 * S['gt']['joints_inside_image_mean'])}% in-image rate.**\n")
         else:
-            ok = bbm >= 0.95
-            P(f"\n**Verdict: decoding + camera {'consistent with the annotation' if ok else 'NOT consistent with the annotation -> decoding/preprocessing defect; stop here and fix before trusting anything else'}.** "
+            img = S['gt']['joints_inside_image_mean']
+            # Frame-filling people lose joints to the image border, not to a decoding error: the bbox is judged
+            # against what the image contains, not against 100%.
+            ok = bbm >= 0.95 or bbm >= img - 0.03
+            P(f"\n**Verdict: decoding + camera {'consistent with the annotation' if ok else 'NOT consistent with the annotation -> decoding/preprocessing defect; stop here and fix before trusting anything else'}"
+              f"{' (the bbox contains what the image contains; the rest is truncation at the image border)' if ok and bbm < 0.95 else ''}.** "
               "Look at `gt_decode/vis/` to confirm the meshes sit on the people.\n")
     else:
         P("Not run (`diag_gt_decode.py`).\n")
@@ -250,7 +254,8 @@ def main():
     # ------------------------------------------------------------------ verdicts
     P("## Where each failure originates\n")
     _bbm = (S['gt'] or {}).get('joints_inside_bbox_mean')
-    gt_ok = _bbm is None or _bbm >= 0.95           # None = not measurable, not a defect
+    _img = (S['gt'] or {}).get('joints_inside_image_mean') or 0.0
+    gt_ok = _bbm is None or _bbm >= 0.95 or _bbm >= _img - 0.03   # None = not measurable; truncation is not a defect
     _tests = [t for t in (g(S['body'], 'perturbations', 'tests') or []) if isinstance(t, dict)]
     body_ok = all(t.get('frac_affected_in_expected') is None or t['frac_affected_in_expected'] >= 0.8 for t in _tests)
     ref = variant(S['mt_hold'] or S['e1'] or S['mt_train'] or {})
