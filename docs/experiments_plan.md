@@ -2,7 +2,8 @@
 
 Production checkpoint: `anny_s2_shape_v5/checkpoints/00099.pt` (`slurm/history/train_s2_shape_v5.sh`). Evidence:
 `docs/diagnostics_findings.md`. Experiment commits on top of `899d3b4`: `b696006` (exp1), `cd44b1f` (exp2),
-`e719a82` (exp3), `0f64537` (exp4). No review-fix commits were made; review findings left open are in section 4.
+`e719a82` (exp3), `0f64537` (exp4). One review-fix commit follows them; the review findings, fixed and open, are in
+section 4.
 
 > **Nothing in this plan has been run.** Every number is a measurement of the production checkpoint quoted
 > from `docs/diagnostics_findings.md`, a value read from code, or arithmetic. No improvement is claimed.
@@ -18,14 +19,15 @@ defaults, the only observable change in train.py is one `[throughput]` line per 
 | exp | failure addressed | type | flag(s), default = previous behaviour | commit | pilot runtime (est.) | decision metric (baseline 00099, V1) |
 |---|---|---|---|---|---|---|
 | exp1 | depth: pred = 0.33·GT + 2.36 m, body drawn ~35% too small | confirmed bug fix | `--gt_center_joint person_center` (default `root`); `--debug_anchor N` (0) | `b696006` | 20 min train + ~10 min eval; job ~1 h | `depth_fit_slope` 0.33 → 1 and `depth_fit_intercept_m` 2.36 → 0; guards: PVE ≤ 71.5 (70.5), recall ≥ 89.2 (90.2) |
-| exp2 | children come out as short adults | sampling (+ shape-loss weighting) | `--age_balance 1` (0), `--age_balance_child_frac 0.25`, `--age_balance_child_age 0.3`, `--age_balance_index`, `--exclude_indices_file` (''), `--shape_weights` ('') | `cd44b1f` | index scan (unmeasured) + 2×200-batch measurement + 20 min train + ~10 min eval + 2 traces; limit 4 h | in-sample: manifest child PVE < 47.8, \|age bias\| < 0.078, youngest-50 pred age 0.10 → GT 0.015; adult guards: PVE ≤ 71.5, recall ≥ 89.2, \|age bias\| ≤ 0.03 (−0.015) |
+| exp2 | children come out as short adults | sampling (+ shape-loss weighting) | `--age_balance 1` (0), `--age_balance_child_frac 0.25`, `--age_balance_child_age 0.3`, `--age_balance_index`, `--exclude_indices_file` (''), `--shape_weights` ('') | `cd44b1f` | index scan (unmeasured) + 2×200-batch measurement + 20 min train + ~10 min eval + 2 traces; limit 4 h | manifest child tag (n=10, excluded from the fine-tune): PVE < 47.8, \|age bias\| < 0.078; no holdout regression: PVE ≤ 71.5, recall ≥ 89.2, \|age bias\| ≤ 0.03 (−0.015); youngest-50 is a secondary in-sample read only |
 | exp3 | neck: global head orientation off by 12.0° / 19.9° | supervision | `--alpha_global_rot 5` (0.0), `--global_rot_bones head,neck03,wrist.L,wrist.R` | `e719a82` | 20 min train + ~10 min eval + 2 manifest traces; script budgets ~2.5 h | `rot_global_deg.head` < 12.0 (holdout) and < 19.9 (manifest train); same PVE/recall guards; fingers 17.3° not worse by > 1° |
 | exp4a | fingers worse than the rest pose (17.3° vs 15.1°): resolution? | inference-only measurement | trace `--person_crop 1` (0), `--crop_factor 1.3`; `measure_hand_px.py` | `0f64537` | no training; ~40 min | paired V4 `rot_fingers` below the paired V3 relaxed floor (15.1), with Δpve, Δpa_pve, Δpve_hn ≤ +1 mm |
 | exp4b | fingers: supervision? (a control, not a finger boost) | supervision | `--rotmat_region_norm 1` (0) | `0f64537` | 20 min train + ~10 min eval + traces; job ~1.5 h | V1 `rot_fingers` vs 17.3 and vs its own V3 floor; head 89.5° local / 12.0° global; PVE/recall guards |
 | exp4c | 3DPW identity fingers supervised as GT (mixed runs only) | confirmed bug fix, not in the production lineage | `--mask_3dpw_hands 1` (0) | `0f64537` | no script, not scheduled | n/a this week |
 
-Baselines not in `docs/diagnostics_findings.md`: recall 90.2, PA-PVE 53.3, holdout age bias −0.015, PVE_hn 52.3,
-global wrist 22.7°, head px error 64.5 (mean). They are constants in the scripts or in the README. Confirm them
+Every baseline the scripts print (recall 90.2, PA-PVE 53.3, holdout age bias −0.015, PVE_hn 52.3, global wrist
+22.7°, head px error 64.5 mean / 46 median, ...) is now listed in `docs/diagnostics_findings.md`, "Baseline numbers
+used by the experiment scripts", with its source (`results/diagnostics/REPORT.md` on the cluster). Confirm them
 with the Day-1 baseline re-trace (section 4) before comparing anything against them.
 
 ## 2. Experiments
@@ -73,7 +75,9 @@ offset_y/loc_y/dist next to the GT anchor and the GT head/root rows for N iterat
 gains `depth_fit_slope`, `depth_fit_intercept_m`, `depth_ratio_median`, `size_ratio_median_px`, `depth_fit_n`.
 
 **Configuration and env overrides.** `GT_CENTER` (person_center; `root` = control arm), `ALPHA_DIST` and
-`ALPHA_TRANSL` (1; variant 5), `DEBUG_ANCHOR` (2), `BASELINE_TRACE` (0), `LR`, `N_ITERS`, `MAX_ITER`, `RUN`.
+`ALPHA_TRANSL` (1; variant 5), `DEBUG_ANCHOR` (2), `BASELINE_TRACE` (0), `CONTROL_RUN` (empty; a finished
+`GT_CENTER=root` run directory whose slope/intercept/PVE/recall are printed side by side), `LR`, `N_ITERS`,
+`MAX_ITER`, `RUN`.
 Evaluation: holdout trace and manifest-holdout trace on the last checkpoint.
 ```
 sbatch slurm/experiments/exp1_depth_anchor.sh                                # the fix
@@ -126,9 +130,11 @@ MAX_ITER=10000 RUN=long_balanced sbatch --time=05:00:00 slurm/experiments/exp2_c
 **Runtime.** Index scan I/O bound, unmeasured (30-90 min single process, minutes with 16; it prints seconds per
 10k files); measurements a few minutes; training 20 min + 2 evaluations; three traces 20-30 min. Limit 4 h.
 
-**Success.** Adults (holdout): PVE ≤ 71.5, recall ≥ 89.2, |age bias| ≤ 0.03. Children, in-sample: manifest
-child PVE < 47.8, |age bias| < 0.078, shape-swap gain < 6.2 mm; youngest-50 predicted age closer to 0.015 than
-0.10. Measurement: childless-batch fraction, baseline loader vs balanced loader.
+**Decision rule.** The manifest child tag (n=10, in the diag manifest and excluded from the fine-tune): PVE < 47.8
+and |age bias| < 0.078 (also read the shape-swap gain vs 6.2 mm), plus no regression on the 100-image holdout:
+PVE ≤ 71.5, recall ≥ 89.2, |age bias| ≤ 0.03. The youngest-50 trace (predicted age vs GT 0.015, baseline 0.10)
+is kept as a secondary, in-sample read and does not enter the rule: those are training people, oversampled by
+the balanced loader. Measurement: childless-batch fraction, baseline loader vs balanced loader.
 
 **Would / would not prove.** No held-out child exists, so every child number is in-sample: the manifest
 children were seen by the base model for 100 epochs (only excluded from this fine-tune) and the youngest-50 come
@@ -193,6 +199,9 @@ K = [f·r, (cx−left)·r; (cy−top)·r], r = 672/side; a paired V4-vs-V1 block
 bins; V0-V3 outputs unchanged. `--rotmat_region_norm 1`: rotmat L1 averaged within body (41 bones), hands (30),
 head-neck (4) and across regions, × 75 (×0.61 / ×0.83 / ×6.25), replacing the boosts in this term only.
 `--mask_3dpw_hands 1`: drops the 38 finger/thumb/metacarpal bones of 3DPW people from rotmat and global_rot.
+Combined with `--rotmat_region_norm 1`, the masked person's hand residuals are zeroed before the per-bone region
+weights, so that person's hands region contributes zero rather than being excluded from the mean (a dilution by
+the 3DPW share; irrelevant to AnnyOne-only pilots).
 
 **Configuration and env overrides.** `CROP_FACTOR` (1.3), `PILOT` (1; 0 = inference only), `REGION_NORM`
 (1; 0 = control arm), `ALPHA_GROT` (0), `MANIFEST_TRAIN` (1), `EXCLUDE_MANIFEST` (1), `LR`, `N_ITERS`,
@@ -316,9 +325,10 @@ commits shift lines in train.py, loss.py, model.py and the trace.
 `prepare_gt` keeps. exp2-4 pilots start from 00099 with root targets and read against their own control arms,
 so they stay independent.
 
-Stacking any of exp2-4 onto an exp1 checkpoint needs `--gt_center_joint person_center` in that script's train.py
-line. None of the three scripts passes it today. With `CKPT=<exp1 checkpoint>` they would silently train on root
-targets again.
+Stacking any of exp2-4 onto an exp1 checkpoint needs `--gt_center_joint person_center` on its train.py line. Each
+of the three scripts passes `GT_CENTER` through as `--gt_center_joint` (default `root` = today's behaviour), so
+stack with `CKPT=<exp1 checkpoint> GT_CENTER=person_center`. With `CKPT=<exp1 checkpoint>` alone they would
+silently train on root targets again.
 
 **Never combine flags until each pilot has been read.**
 
@@ -341,16 +351,25 @@ TAG=anny_s2_shape_v5_00099_rerun sbatch slurm/diagnostics/diag_manifest.sh
 Always pass `TAG`. Without it, every pilot derives `train_00001` and overwrites the previous one, and the baseline
 would overwrite `results/diagnostics/{holdout,manifest_trace_*}_anny_s2_shape_v5_00099`, the evidence behind the
 findings.
-`results/experiments/` is not git-ignored, apart from `*.pt` and `*.npz`.
+`results/experiments/` is git-ignored except `*.json` and `*.md`: pilot logs, images, checkpoints and npz stay
+untracked, the summaries can be committed.
 
-**Known issues from review (not fixed).**
+**Known issues from review.**
+
+The review-fix commit addressed three of these: the batch-age guard (exp2: a batch without any person is now counted
+as skipped, as `prepare_gt` returns None for it), the EPOCH parsing (exp3's alpha check, and exp4's first/last-line
+grep, now match `EPOCH=` anywhere on the line and trim) and the baseline provenance (exp1 labels `head_px_err`
+64.5 as the mean and prints the 46.0 median, the trace's size line names the ratio of medians, and the baseline
+table is in `docs/diagnostics_findings.md`). The lr row stays open; exp1 can now print its control arm side by
+side (`CONTROL_RUN`). The `[throughput]` line per epoch is the one accepted deviation from a byte-identical
+default train.log.
 
 | exp | issue | what to do |
 |---|---|---|
-| exp1 | The printed "baseline(findings)" `head_px_err` 64.5 is in no committed document (the findings quote a 46 px median). The size-ratio baseline 0.67 is a ratio of medians, while the column is a median of ratios. | Compare with the Day-1 re-trace or `BASELINE_TRACE=1` |
+| exp1 | The printed "baseline(findings)" `head_px_err` 64.5 is in no committed document (the findings quote a 46 px median). The size-ratio baseline 0.67 is a ratio of medians, while the column is a median of ratios. | Partly fixed: `head_px_err` is labelled as the mean with the median beside it, and the baselines are tabled. exp1's size-ratio baseline is still the findings' 0.67 (82/127 px = 0.65 as a ratio of medians): compare that row with the Day-1 re-trace or `BASELINE_TRACE=1` |
 | all | lr 1e-5 is 8× v5's last lr, with fresh Adam state; each script's VERDICT compares one arm with the 00099 baseline only | Always read against the control arm; `LR=1.25e-6` is an option |
-| exp2 | `measure_batch_ages.py` raises `KeyError('anny_shape')` on a batch where no image has a person | Resubmit (batches are random), or `SKIP_MEASURE=1` to reach the pilot |
-| exp3 | The alpha check keeps only lines that start with `EPOCH=`. tqdm shares those lines, so it likely prints "no EPOCH= lines" | Read manually: `grep -o 'EPOCH=.*' <OUT>/train.log \| sed -n '1p;$p'` |
+| exp2 | `measure_batch_ages.py` raises `KeyError('anny_shape')` on a batch where no image has a person | Fixed: counted as skipped |
+| exp3 | The alpha check keeps only lines that start with `EPOCH=`. tqdm shares those lines, so it likely prints "no EPOCH= lines" | Fixed: substring match, trimmed (exp4's grep too) |
 
 ## 5. Statement
 

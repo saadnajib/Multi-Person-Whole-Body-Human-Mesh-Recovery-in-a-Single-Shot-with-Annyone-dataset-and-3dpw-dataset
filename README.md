@@ -123,7 +123,9 @@ The depth fix (build the targets at the joint the model anchors, then fine-tune 
 - The "hands" category of the diagnostic manifest is confounded by truncation. Its people fill the frame (63% of joints inside the image), so its PVE (156.8 mm) measures truncation and depth, not hands.
 - The 51.8 mm PVE from the capped overfit run is an optimisation check on 40 memorised training images. It is not a validation number. In the same run, the holdout PVE rose from 87.6 to 127.2 mm.
 
-**Future work (not measured).** A global head-orientation loss for the neck chain, and upweighting the finger bones in the rotation loss.
+**Future work (not measured).** A global head-orientation loss for the neck chain (`--alpha_global_rot`), and a region-normalised rotation loss for the fingers. The implemented change is `--rotmat_region_norm`: it gives the hands region one third of the rotation loss, down from its ~40% bone share, so it is not an upweighting of the finger bones and a null result there says nothing about upweighting.
+
+The flag-gated experiments for the four defects are described in [`docs/experiments_plan.md`](docs/experiments_plan.md) and implemented in [`slurm/experiments/`](slurm/experiments/). Nothing from them has been measured yet.
 
 ---
 

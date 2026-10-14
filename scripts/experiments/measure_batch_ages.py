@@ -163,6 +163,7 @@ def main():
     ages_before, ages_after, img_min_ages = [], [], []
     per_batch = []                                                 # (n_before, n_after, n_child_after)
     n_skipped = 0
+    n_no_person = 0                                                # batches without any person (per-human keys absent)
     t_load = 0.0
     t0 = time.time()
     it = iter(loader)
@@ -177,6 +178,9 @@ def main():
             n_skipped += 1
             continue
         _, y = batch
+        if 'anny_shape' not in y:                                  # no image in the batch has a person: the collate
+            n_no_person += 1                                       # omits the per-human keys and train.py prepare_gt
+            continue                                               # returns None for it (no supervision)
         valid = y['valid_humans'].bool()
         a_before = y['anny_shape'][valid][:, AGE_COL].tolist()
         for i in range(valid.shape[0]):
@@ -202,6 +206,7 @@ def main():
     hist_after, _ = np.histogram(aa, bins=bins)
     mode = 'balanced' if int(args.age_balance) else 'baseline'
     res = dict(mode=mode, n_batches=n_b, n_images=n_img, batch_size=args.batch_size, skipped_batches=n_skipped,
+               skipped_no_person_batches=n_no_person,
                loader_images_per_s=n_img / max(t_load, 1e-9), wall_s=wall, filter=args.filter,
                anchor_joint=args.anchor_joint, child_age=args.child_age,
                people_per_batch_before=float(pb[:, 0].mean()), people_per_batch_after=float(pb[:, 1].mean()),
@@ -217,7 +222,8 @@ def main():
                                 child_age=args.age_balance_child_age, exclude_indices_file=args.exclude_indices_file),
                seed=args.seed)
 
-    print(f"\n[batch_ages] mode={mode} batches={n_b} images={n_img} (skipped {n_skipped}); "
+    print(f"\n[batch_ages] mode={mode} batches={n_b} images={n_img} (skipped {n_skipped + n_no_person}: {n_skipped} collate None, "
+          f"{n_no_person} with no person); "
           f"loader {res['loader_images_per_s']:.1f} images/s (loader wait only), wall {wall:.0f}s incl. body model")
     print(f"[batch_ages] people/batch before filter {res['people_per_batch_before']:.2f}, after {res['people_per_batch_after']:.2f} "
           f"(kept {100 * res['kept_frac']:.1f}%)")

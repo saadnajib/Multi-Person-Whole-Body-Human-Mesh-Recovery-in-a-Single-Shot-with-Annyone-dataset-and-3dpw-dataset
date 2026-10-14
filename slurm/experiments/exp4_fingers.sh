@@ -115,6 +115,7 @@ PILOT="${PILOT:-1}"                                 # 0 = inference-only experim
 REGION_NORM="${REGION_NORM:-1}"                     # 0 = pilot control arm (same schedule, the sum over bones)
 ALPHA_GROT="${ALPHA_GROT:-0}"                       # exp3's global orientation term, off unless combined on purpose
 GROT_BONES="${GROT_BONES:-head,neck03,wrist.L,wrist.R}"
+GT_CENTER="${GT_CENTER:-root}"                     # train.py --gt_center_joint: lets a pilot stack on an exp1 checkpoint; root = today's behaviour
 LR="${LR:-1e-5}"
 N_ITERS="${N_ITERS:-1000}"
 MAX_ITER="${MAX_ITER:-2000}"                        # 2 epochs
@@ -135,7 +136,7 @@ source /netscratch/najib/multi-hmr/slurm/egl.sh
 mkdir -p "${OUT}"
 echo "=== exp4_fingers run ${RUN}"
 echo "    checkpoint: ${CKPT}"
-echo "    crop_factor=${CROP_FACTOR} pilot=${PILOT} rotmat_region_norm=${REGION_NORM} alpha_global_rot=${ALPHA_GROT} lr=${LR}"
+echo "    crop_factor=${CROP_FACTOR} pilot=${PILOT} rotmat_region_norm=${REGION_NORM} alpha_global_rot=${ALPHA_GROT} gt_center_joint=${GT_CENTER} lr=${LR}"
 echo "    pilot schedule: ${N_ITERS} iters/epoch x ${N_EPOCHS} epochs, batch 4 = $(( MAX_ITER * 4 )) images, ~${EXPECTED_TRAIN_MIN} min at 6.7 images/s"
 HAVE_MANIFEST=0; [ -f "${MANIFEST}" ] && HAVE_MANIFEST=1
 [ "\${HAVE_MANIFEST}" = "1" ] || echo "NOTE: ${MANIFEST} is missing; manifest steps are skipped (slurm/diagnostics/diag_manifest.sh builds it; never rebuild an existing one)"
@@ -206,6 +207,7 @@ PY
       --freeze_backbone 1 --unfreeze_last_n_blocks 4 --mask_helper_joints_train 1 --use_anny_shape 1 \\
       --alpha_shape 20 --alpha_j2d 0.1 --alpha_v2d 0.1 --boost_neck_weight 4 --boost_hand_weight 4 \\
       --rotmat_region_norm ${REGION_NORM} \${GROT_ARGS} --start_2d_epoch 0 \\
+      --gt_center_joint "${GT_CENTER}" \\
       \${EXCL_ARG} \\
       --batch_size 4 --num_workers 8 --n_iters_per_epoch ${N_ITERS} --max_iter ${MAX_ITER} \\
       --learning_rate ${LR} --lr_decay_every 30 --lr_decay_gamma 0.5 --amp 0 --tf32 1 \\
@@ -216,7 +218,7 @@ PY
   echo "--- loss configuration, throughput (images/s) and in-training V0 evaluation (helper bones UNMASKED, not the V1 read)"
   grep -E "\[loss\] (rotmat_region_norm|joint weights|global_rot)|\[throughput\]|EVAL METRICS| - (pve|pa_pve|mpjpe|recall|precision): |NaN|WARNING|Error" "${OUT}/train.log" || true
   echo "--- rotmat term on the first and last logged lines (region norm keeps the scale: n_active x the per-bone mean)"
-  grep -E "^EPOCH=" "${OUT}/train.log" | sed -n '1p;\$p' || true
+  grep -o 'EPOCH=.*' "${OUT}/train.log" | sed -n '1p;\$p' || true   # EPOCH= shares lines with tqdm's bar: match anywhere
   LAST=\$(ls "${OUT}/train/checkpoints/"*.pt 2>/dev/null | sort | tail -n 1 || true)
   [ -n "\${LAST}" ] || { echo "ERROR: training produced no checkpoint; see ${OUT}/train.log"; exit 1; }
   echo "last checkpoint: \${LAST}"

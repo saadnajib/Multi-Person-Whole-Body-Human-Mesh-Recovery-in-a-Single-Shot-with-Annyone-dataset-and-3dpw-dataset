@@ -23,7 +23,8 @@
 #      --nb_max_ckpt highest epoch numbers of a directory and would delete a pilot's 00000.pt there).
 #   4. scripts/diagnostics/diag_holdout_trace.py on the LAST checkpoint, V1 settings, on exactly three fixed sets:
 #        --select holdout (100 images; adults only: the regression check), the manifest TRAIN split (its 10 children
-#        are in-sample for the base model and excluded from this fine-tune), --select youngest (50 in-sample babies).
+#        are in-sample for the base model and excluded from this fine-tune), --select youngest (50 in-sample babies;
+#        secondary, in-sample read: training people the balanced loader oversamples, not part of the decision rule).
 #   5. a summary next to the anny_s2_shape_v5/00099 baseline numbers, and the caveats.
 #
 # USAGE (repo root on the cluster):
@@ -39,10 +40,13 @@
 #   "[throughput] epoch 1: ... images/s" line: hours = MAX_ITER * 4 / images_per_s / 3600.
 #   MAX_ITER=10000 RUN=long_balanced sbatch --time=05:00:00 slurm/experiments/exp2_children.sh
 #
-# SUCCESS CRITERION (printed at the end; baselines from docs/diagnostics_findings.md, V1 settings):
-#   adults (100-image holdout): PVE <= 70.5 + 1 mm, recall >= 90.2 - 1, age bias within +/-0.03 (baseline -0.015);
-#   children, IN-SAMPLE ONLY: manifest child PVE < 47.8, age bias toward 0 from +0.078, shape-swap gain < 6.2 mm;
-#   youngest-50 predicted age closer to the GT 0.015 than the baseline 0.10.
+# DECISION RULE (printed at the end; baselines from docs/diagnostics_findings.md, V1 settings):
+#   adults, no regression on the 100-image holdout: PVE <= 70.5 + 1 mm, recall >= 90.2 - 1, age bias within +/-0.03
+#     (baseline -0.015);
+#   children: the manifest child tag (n=10, in the diag manifest and excluded from this fine-tune; seen by the base
+#     model): PVE < 47.8 and |age bias| < 0.078 (also read the shape-swap gain vs 6.2 mm).
+#   The youngest-50 trace (predicted age vs GT 0.015, baseline 0.10) is a secondary, in-sample read and does NOT enter
+#   the rule: those are training people, oversampled by the balanced loader.
 #   No held-out child exists: meeting this justifies the longer run and the real-photo read (E4), nothing more.
 #SBATCH --job-name=exp2-children
 #SBATCH --partition=A100-40GB,A100-80GB,L40S-AV,A100-RP,A100-PCI,RTXA6000
@@ -68,6 +72,7 @@ AGE_BALANCE="${AGE_BALANCE:-1}"           # 0 = control arm (same exclusion and 
 CHILD_FRAC="${CHILD_FRAC:-0.25}"          # target fraction of sampled IMAGES whose youngest person is a child
 CHILD_AGE="${CHILD_AGE:-0.3}"             # child threshold on the Anny age phenotype (1/3 ~ 11 y)
 SHAPE_WEIGHTS="${SHAPE_WEIGHTS-1,3,1,1,2,1,1,1,1,1,1}"   # gender,AGE x3,muscle,weight,HEIGHT x2,...; '' = unweighted
+GT_CENTER="${GT_CENTER:-root}"            # train.py --gt_center_joint: lets a pilot stack on an exp1 checkpoint; root = today's behaviour
 LR="${LR:-1e-5}"
 N_ITERS="${N_ITERS:-1000}"
 MAX_ITER="${MAX_ITER:-2000}"              # 2 epochs
@@ -96,7 +101,7 @@ source /netscratch/najib/multi-hmr/slurm/egl.sh
 mkdir -p "${OUT}"
 echo "=== exp2_children run ${RUN}"
 echo "    start: ${CKPT}"
-echo "    age_balance=${AGE_BALANCE} child_frac=${CHILD_FRAC} child_age=${CHILD_AGE} shape_weights='${SHAPE_WEIGHTS}' lr=${LR}"
+echo "    age_balance=${AGE_BALANCE} child_frac=${CHILD_FRAC} child_age=${CHILD_AGE} shape_weights='${SHAPE_WEIGHTS}' gt_center_joint=${GT_CENTER} lr=${LR}"
 echo "    ${N_ITERS} iters/epoch x ${N_EPOCHS} epochs, batch 4 = $(( MAX_ITER * 4 )) images"
 echo "    expected training time at the measured 6.7 images/s: ~${EXPECTED_TRAIN_MIN} min (+ one 100-image V0 evaluation per epoch)"
 
@@ -163,7 +168,7 @@ python train.py \\
     --alpha_shape 20 --alpha_j2d 0.1 --alpha_v2d 0.1 --boost_neck_weight 4 --boost_hand_weight 4 --start_2d_epoch 0 \\
     --age_balance ${AGE_BALANCE} --age_balance_index "${INDEX}" \\
     --age_balance_child_frac ${CHILD_FRAC} --age_balance_child_age ${CHILD_AGE} \\
-    --exclude_indices_file "\${EXCL_ARG}" --shape_weights "${SHAPE_WEIGHTS}" \\
+    --exclude_indices_file "\${EXCL_ARG}" --shape_weights "${SHAPE_WEIGHTS}" --gt_center_joint "${GT_CENTER}" \\
     --batch_size 4 --num_workers 8 --n_iters_per_epoch ${N_ITERS} --max_iter ${MAX_ITER} \\
     --learning_rate ${LR} --lr_decay_every 30 --lr_decay_gamma 0.5 --amp 0 --tf32 1 \\
     --eval_freq 1 --nb_max_ckpt 2 --log_freq 50 \\
@@ -194,7 +199,7 @@ if [ -f "${MANIFEST}" ]; then
 else
   echo "=== 4b. manifest trace SKIPPED: ${MANIFEST} is missing"
 fi
-echo "=== 4c. YOUNGEST-${YOUNG_N} TRACE (--select youngest over the first ${YOUNG_SCAN} training pkls; IN-SAMPLE) on \${LAST}"
+echo "=== 4c. YOUNGEST-${YOUNG_N} TRACE (secondary, in-sample read: --select youngest over the first ${YOUNG_SCAN} training pkls; not in the decision rule) on \${LAST}"
 trace "\${LAST}" "${OUT}/young_trace" --select youngest --scan ${YOUNG_SCAN} --n ${YOUNG_N}
 if [ "${BASELINE_TRACE}" = "1" ]; then
   echo "=== 4d. BASELINE TRACES on ${CKPT} with the same code and selections"
@@ -208,7 +213,8 @@ import json, os
 out = os.environ['OUT_DIR']
 V = 'V1_eval_masked'
 # anny_s2_shape_v5/00099, V1 settings (docs/diagnostics_findings.md): holdout = 100 images / 222 people; manifest child
-# n=10 (in-sample); youngest-50 = GT age 0.015 babies (in-sample).
+# n=10 (in-sample for the base model, excluded from the fine-tune; the decision rule's child read); youngest-50 = GT age
+# 0.015 babies (in-sample training people, oversampled by the balanced loader: secondary read, not in the rule).
 BASE = dict(holdout=dict(pve=70.5, recall=90.2, age_bias=-0.015),
             child=dict(pve=47.8, age_bias=0.078, swap_gain=6.2, n=10),
             young=dict(pred_age=0.10, gt_age=0.015, pve=48.8))
@@ -274,10 +280,10 @@ print('--- ADULT REGRESSION CHECK: 100-image holdout (no children in it)')
 print(format('metric', '<24') + format('baseline(findings)', '>20') + format('baseline(rerun)', '>17') + format('this run', '>12'))
 for k, nd in (('pve', 1), ('recall', 1), ('age_bias', 3), ('age_abs', 3), ('height_bias', 3), ('depth_slope', 2)):
     print(format(k, '<24') + format(f(BASE['holdout'].get(k), nd), '>20') + format(f(Hb.get(k), nd), '>17') + format(f(H.get(k), nd), '>12'))
-print('--- CHILDREN, IN-SAMPLE: manifest train split, tag child (excluded from this fine-tune, seen by the base model)')
+print('--- CHILDREN (decision rule): manifest train split, tag child (n=10, excluded from this fine-tune, seen by the base model)')
 for k, nd in (('n', 0), ('pve', 1), ('age_bias', 3), ('swap_gain', 1)):
     print(format(k, '<24') + format(f(BASE['child'].get(k), nd), '>20') + format(f(Cb.get(k), nd), '>17') + format(f(C.get(k), nd), '>12'))
-print('--- CHILDREN, IN-SAMPLE: youngest-50 babies (seen in training, resampled by the balanced loader)')
+print('--- CHILDREN, secondary, in-sample read (not in the decision rule): youngest-50 babies (training people, oversampled by the balanced loader)')
 for k, nd in (('n', 0), ('gt_age', 3), ('pred_age', 3), ('age_bias', 3), ('pve', 1), ('rest_h_gt', 2), ('rest_h_pred', 2)):
     print(format(k, '<24') + format(f(BASE['young'].get(k), nd), '>20') + format(f(Yb.get(k), nd), '>17') + format(f(Y.get(k), nd), '>12'))
 ok_adult = ok_child = None
@@ -285,21 +291,19 @@ if None not in (H.get('pve'), H.get('recall'), H.get('age_bias')):
     ok_adult = (H['pve'] <= BASE['holdout']['pve'] + 1.0 and H['recall'] >= BASE['holdout']['recall'] - 1.0
                 and abs(H['age_bias']) <= 0.03)
     print('adults kept (PVE <= 71.5, recall >= 89.2, |age bias| <= 0.03): ' + ('yes' if ok_adult else 'NO'))
-if None not in (C.get('pve'), C.get('age_bias')) or Y.get('pred_age') is not None:
-    parts = []
-    if C.get('pve') is not None:
-        parts.append(C['pve'] < BASE['child']['pve'] and abs(C['age_bias']) < abs(BASE['child']['age_bias']))
-        print('manifest children improved (PVE < 47.8 and |age bias| < 0.078): ' + ('yes' if parts[-1] else 'NO'))
-    if Y.get('pred_age') is not None:
-        parts.append(abs(Y['pred_age'] - (Y.get('gt_age') or BASE['young']['gt_age'])) < abs(BASE['young']['pred_age'] - BASE['young']['gt_age']))
-        print('youngest-50 predicted age closer to GT than the baseline 0.10: ' + ('yes' if parts[-1] else 'NO'))
-    ok_child = all(parts) if parts else None
+if None not in (C.get('pve'), C.get('age_bias')):
+    ok_child = bool(C['pve'] < BASE['child']['pve'] and abs(C['age_bias']) < abs(BASE['child']['age_bias']))
+    print('manifest children improved (PVE < 47.8 and |age bias| < 0.078): ' + ('yes' if ok_child else 'NO'))
+if Y.get('pred_age') is not None:
+    y_closer = abs(Y['pred_age'] - (Y.get('gt_age') or BASE['young']['gt_age'])) < abs(BASE['young']['pred_age'] - BASE['young']['gt_age'])
+    print('secondary, in-sample read (not in the rule): youngest-50 predicted age closer to GT than the baseline 0.10: '
+          + ('yes' if y_closer else 'no'))
 if ok_adult is None or ok_child is None:
     verdict = 'INCOMPLETE (missing numbers; see the trace logs)'
 elif ok_adult and ok_child:
-    verdict = 'PILOT MEETS THE CRITERION (in-sample children, adults kept) -> worth the 10-epoch run and the E4 real-photo read'
+    verdict = 'PILOT MEETS THE DECISION RULE (manifest children improved, adults kept) -> worth the 10-epoch run and the E4 real-photo read'
 elif ok_adult:
-    verdict = 'adults kept but no in-sample child improvement -> raise CHILD_FRAC / shape weights or run longer before judging'
+    verdict = 'adults kept but no manifest-child improvement -> raise CHILD_FRAC / shape weights or run longer before judging'
 else:
     verdict = 'ADULT REGRESSION -> lower CHILD_FRAC or the shape weights; do not run longer'
 print('VERDICT: ' + verdict)
@@ -309,9 +313,13 @@ json.dump(dict(baseline_findings=BASE, measurement_baseline=M0, measurement_bala
           open(out + '/summary.json', 'w'), indent=2)
 print('wrote ' + out + '/summary.json')
 PY
+echo "DECISION RULE: the manifest child tag (n=10, in the diag manifest, excluded from this fine-tune) must improve (PVE < 47.8,"
+echo "         |age bias| < 0.078) with no regression on the 100-image holdout (PVE <= 71.5, recall >= 89.2, |age bias| <= 0.03)."
+echo "         The youngest-50 rows are a secondary, in-sample read (training people the balanced loader oversamples) and do"
+echo "         not enter the rule."
 echo "CAVEATS: no held-out child exists in AnnyOne's last 100 images, so the holdout numbers only show whether the adults"
-echo "         survived; every child number above is IN-SAMPLE (manifest children were seen by the base model for 100 epochs"
-echo "         and only kept out of this fine-tune; the youngest-50 were resampled by the balanced loader). The informative"
+echo "         survived; every child number above is IN-SAMPLE for the base model (manifest children were seen by it for 100"
+echo "         epochs and only kept out of this fine-tune). The informative"
 echo "         reads are the manifest-child rows and REAL PHOTOS: CKPT=\${LAST} sbatch slurm/diagnostics/diag_crop_camera.sh"
 echo "         (E4; baseline predicts age 0.56-0.66 for small people), both with that in-sample caveat. This is a 2-epoch"
 echo "         pilot (8,000 images, fresh Adam state, no seed control): compare with AGE_BALANCE=0 before attributing a"

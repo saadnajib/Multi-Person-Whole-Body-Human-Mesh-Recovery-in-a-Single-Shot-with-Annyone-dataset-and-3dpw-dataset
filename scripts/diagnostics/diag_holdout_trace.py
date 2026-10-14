@@ -641,7 +641,8 @@ def main():
               f"{dc.fmt(pl['depth_ratio_median'], 2):>12}{dc.fmt(pl['size_ratio_median_px'], 2):>11}{pl['depth_fit_n']:>5}")
     print("  read: pred root depth = slope*GT + intercept over matched people (needs >= 3); depth ratio = median pred/GT")
     print("        root depth; size ratio = median pred/GT head-to-root pixel distance. Learned depth: slope ~1, intercept ~0,")
-    print("        ratios ~1. The baseline checkpoint anny_s2_shape_v5/00099 sits at slope 0.33, intercept 2.36 m, size 0.67.")
+    print("        ratios ~1. The baseline checkpoint anny_s2_shape_v5/00099 sits at slope 0.33, intercept 2.36 m; its size")
+    print("        figure is a baseline ratio of medians 82/127 px = 0.65, a different statistic from this column.")
     if CROP_VARIANT in summary['variants']:
         cr = summary['variants'][CROP_VARIANT]['crop']
         print(f"  {CROP_VARIANT}: {cr['people']} crops (factor {cr['crop_factor']}, {cr['crops_without_detection']} without a detection), "

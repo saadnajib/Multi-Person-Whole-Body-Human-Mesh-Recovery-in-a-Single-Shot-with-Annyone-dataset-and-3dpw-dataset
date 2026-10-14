@@ -82,6 +82,7 @@ else
 fi
 ALPHA_GROT="${ALPHA_GROT:-5}"                       # 0 = control arm (term off, same schedule)
 GROT_BONES="${GROT_BONES:-head,neck03,wrist.L,wrist.R}"
+GT_CENTER="${GT_CENTER:-root}"                     # train.py --gt_center_joint: lets a pilot stack on an exp1 checkpoint; root = today's behaviour
 LR="${LR:-1e-5}"
 N_ITERS="${N_ITERS:-1000}"
 MAX_ITER="${MAX_ITER:-2000}"                        # 2 epochs
@@ -104,7 +105,7 @@ source /netscratch/najib/multi-hmr/slurm/egl.sh
 mkdir -p "${OUT}"
 echo "=== exp3_neck_global_rot run ${RUN}"
 echo "    start: ${CKPT}"
-echo "    alpha_global_rot=${ALPHA_GROT} global_rot_bones=${GROT_BONES} lr=${LR} exclude_manifest=${EXCLUDE_MANIFEST}"
+echo "    alpha_global_rot=${ALPHA_GROT} global_rot_bones=${GROT_BONES} gt_center_joint=${GT_CENTER} lr=${LR} exclude_manifest=${EXCLUDE_MANIFEST}"
 echo "    ${N_ITERS} iters/epoch x ${N_EPOCHS} epochs, batch 4 = $(( MAX_ITER * 4 )) images"
 echo "    expected training time at the measured 6.7 images/s: ~${EXPECTED_TRAIN_MIN} min (+ one 100-image V0 evaluation per epoch)"
 
@@ -136,6 +137,7 @@ python train.py \\
     --freeze_backbone 1 --unfreeze_last_n_blocks 4 --mask_helper_joints_train 1 --use_anny_shape 1 \\
     --alpha_shape 20 --alpha_j2d 0.1 --alpha_v2d 0.1 --boost_neck_weight 4 --boost_hand_weight 4 \\
     --alpha_global_rot ${ALPHA_GROT} --global_rot_bones "${GROT_BONES}" --start_2d_epoch 0 \\
+    --gt_center_joint "${GT_CENTER}" \\
     \${EXCL_ARG} \\
     --batch_size 4 --num_workers 8 --n_iters_per_epoch ${N_ITERS} --max_iter ${MAX_ITER} \\
     --learning_rate ${LR} --lr_decay_every 30 --lr_decay_gamma 0.5 --amp 0 --tf32 1 \\
@@ -149,7 +151,8 @@ echo "--- magnitude check: alpha*global_rot vs 0.1*rotmat on the first and last 
 python - <<'PY'
 import os, re
 alpha = float(os.environ['ALPHA_GROT_VAL'])
-lines = [l for l in open(os.environ['OUT_DIR'] + '/train.log') if l.startswith('EPOCH=')]
+# EPOCH= prints share physical lines with tqdm's '\r'-separated bar (stderr merged), so match anywhere and trim
+lines = [l[l.index('EPOCH='):] for l in open(os.environ['OUT_DIR'] + '/train.log') if 'EPOCH=' in l]
 def val(l, k):
     m = re.search(k + r': ([0-9.eE+-]+)', l)
     return float(m.group(1)) if m else None

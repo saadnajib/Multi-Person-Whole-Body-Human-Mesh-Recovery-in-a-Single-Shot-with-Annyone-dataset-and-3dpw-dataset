@@ -16,6 +16,10 @@
 #        --eval_freq 1 --nb_max_ckpt 2 --debug_anchor ${DEBUG_ANCHOR} --alpha_dist/--alpha_transl ${ALPHA_*}
 #      Checkpoints go to ${OUT}/train/checkpoints/0000N.pt, never next to the production run: train.py keeps
 #      the --nb_max_ckpt highest epoch numbers in a directory and would delete a pilot's 00000.pt there.
+#      LR: 1e-5 is the v5 recipe's starting value, but 8x the LR the checkpoint ended at (StepLR every 30 epochs,
+#      x0.5: 1.25e-6 at epochs 90-99), and the optimizer starts with fresh Adam moments. The restart alone can move
+#      every number, so the control arm (GT_CENTER=root, same LR and schedule) must be run and read side by side
+#      (CONTROL_RUN below).
 #   2. scripts/diagnostics/diag_holdout_trace.py on the LAST checkpoint: the fixed 100-image holdout
 #      (--select holdout, V1 = helper bones masked) and the manifest holdout split. Nothing else is evaluated.
 #   3. a summary printing the new numbers next to the baseline anny_s2_shape_v5/00099 (same holdout, V1).
@@ -25,6 +29,8 @@
 #   GT_CENTER=root sbatch slurm/experiments/exp1_depth_anchor.sh                 # control arm: same schedule, old targets
 #   ALPHA_DIST=5 ALPHA_TRANSL=5 sbatch slurm/experiments/exp1_depth_anchor.sh    # variant: direct depth terms x5
 #   BASELINE_TRACE=1 sbatch slurm/experiments/exp1_depth_anchor.sh               # also trace CKPT itself (+5-10 min)
+#   CONTROL_RUN=results/experiments/exp1_depth_anchor/pilot_root_dist1_transl1_anny_s2_shape_v5_00099 \
+#       sbatch slurm/experiments/exp1_depth_anchor.sh                            # also print the control arm side by side
 #
 # LONGER RUN (only after a pilot that meets the criterion below):
 #   10 epochs = MAX_ITER=10000 = 40,000 images. At the measured 6.7 images/s: 40000 / 6.7 = 5970 s ~ 1.7 h of
@@ -65,6 +71,7 @@ N_ITERS="${N_ITERS:-1000}"
 MAX_ITER="${MAX_ITER:-2000}"              # 2 epochs
 DEBUG_ANCHOR="${DEBUG_ANCHOR:-2}"         # anchor print on the first N batches
 BASELINE_TRACE="${BASELINE_TRACE:-0}"     # 1 = also trace CKPT with the same code (apples-to-apples read)
+CONTROL_RUN="${CONTROL_RUN:-}"            # a finished control-arm run dir (its summary.json); empty = no side-by-side
 RUN="${RUN:-pilot_${GT_CENTER}_dist${ALPHA_DIST}_transl${ALPHA_TRANSL}_${TAG}}"
 OUT="results/experiments/exp1_depth_anchor/${RUN}"
 N_EPOCHS=$(( MAX_ITER / N_ITERS ))
@@ -135,11 +142,12 @@ import json, os
 out = os.environ['OUT_DIR']
 # anny_s2_shape_v5/00099 on the same 100-image holdout, V1 (docs/diagnostics_findings.md). The size ratio there
 # is a ratio of medians (82 / 127 px); the depth ratio was not reported (means 3.00 / 1.92 m); head_px_err is
-# the summary.json placement MEAN (the findings table quotes the 46 px median; the root median is 14 px).
+# the summary.json placement MEAN 64.5 px (the findings table quotes the 46.0 px median; the root median is 14 px).
 BASE = dict(depth_fit_slope=0.33, depth_fit_intercept_m=2.36, depth_ratio_median=None, size_ratio_median_px=0.67,
             pve=70.5, recall=90.2, head_px_err=64.5, root_px_err=None)
 KEYS = ['depth_fit_slope', 'depth_fit_intercept_m', 'depth_ratio_median', 'size_ratio_median_px',
         'pve', 'recall', 'head_px_err', 'root_px_err']
+LABEL = dict(head_px_err='head_px_err (mean)', root_px_err='root_px_err (mean)')   # placement rows are means
 
 def pick(path):
     if not os.path.isfile(path):
@@ -165,8 +173,23 @@ print('=== exp1_depth_anchor SUMMARY: 100-image holdout, V1 (helper bones masked
 print(format('metric', '<24') + format('baseline(findings)', '>20') + format('baseline(rerun)', '>17')
       + format('this run', '>12') + format('manifest holdout', '>18'))
 for k in KEYS:
-    print(format(k, '<24') + format(f(BASE.get(k)), '>20') + format(f(rerun.get(k)), '>17')
+    print(format(LABEL.get(k, k), '<24') + format(f(BASE.get(k)), '>20') + format(f(rerun.get(k)), '>17')
           + format(f(new.get(k)), '>12') + format(f(man.get(k)), '>18'))
+print('head_px_err baseline: mean 64.50 px (the row above, same statistic as the trace); median 46.00 px is the figure')
+print('in docs/diagnostics_findings.md. The trace reports means only.')
+ctrl_dir = os.environ.get('CONTROL_RUN', '')
+ctrl = {}
+if ctrl_dir:
+    try:
+        ctrl = json.load(open(os.path.join(ctrl_dir, 'summary.json'))).get('this_run') or {}
+    except Exception as e:
+        print('  could not read the control run', ctrl_dir, e)
+    print('--- arms side by side: this run vs control (CONTROL_RUN=' + ctrl_dir + ')')
+    print(format('metric', '<24') + format('this run', '>12') + format('control', '>12') + format('this - control', '>16'))
+    for k in ('depth_fit_slope', 'depth_fit_intercept_m', 'pve', 'recall'):
+        a, c = new.get(k), ctrl.get(k)
+        print(format(k, '<24') + format(f(a), '>12') + format(f(c), '>12')
+              + format(f(None if None in (a, c) else a - c), '>16'))
 s, b, pve, rec = (new.get(k) for k in ('depth_fit_slope', 'depth_fit_intercept_m', 'pve', 'recall'))
 ok = None
 if None not in (s, b, pve, rec):
@@ -185,8 +208,8 @@ else:
 print('VERDICT: ' + verdict)
 print('This is a 2-epoch pilot read (8,000 images, fresh Adam state, no seed control): it justifies or vetoes the')
 print('longer run and nothing more. Compare with GT_CENTER=root (control arm) before attributing a change to the flag.')
-json.dump(dict(baseline_findings=BASE, baseline_rerun=rerun, this_run=new, manifest_holdout=man, meets_criterion=ok),
-          open(out + '/summary.json', 'w'), indent=2)
+json.dump(dict(baseline_findings=BASE, baseline_rerun=rerun, this_run=new, manifest_holdout=man, meets_criterion=ok,
+               control_run=ctrl_dir, control=ctrl), open(out + '/summary.json', 'w'), indent=2)
 print('wrote ' + out + '/summary.json')
 PY
 echo "SUCCESS CRITERION: depth_fit_slope toward 1 (baseline 0.33), depth_fit_intercept_m toward 0 (baseline 2.36 m),"
@@ -197,4 +220,4 @@ srun -K --gpus=1 \
   --container-image=/netscratch/najib/ContainerImages/ubuntu+20.04_v4.sqsh \
   --container-mounts=/fscratch:/fscratch,/netscratch:/netscratch,/home/najib:/home/najib,/dev/shm:/dev/shm${DRI_MOUNT} \
   --container-workdir="/netscratch/najib/multi-hmr" \
-  bash -c "export OUT_DIR='${OUT}'; $COMMAND"
+  bash -c "export OUT_DIR='${OUT}' CONTROL_RUN='${CONTROL_RUN}'; $COMMAND"
