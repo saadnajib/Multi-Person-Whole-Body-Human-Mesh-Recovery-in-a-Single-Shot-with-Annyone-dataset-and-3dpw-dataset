@@ -47,6 +47,9 @@ class Loss(torch.nn.Module):
         # configure_joint_weights() once the model (and its bone names) exist.
         # None = original behavior, every joint weighted equally.
         self.joint_weights = None
+        # --alpha_global_rot: L1 on the GLOBAL (post-FK) orientation of a few named bones, indices
+        # resolved once by configure_global_rot(). None = term not computed, total loss unchanged.
+        self.global_rot_idx = None
         # --shape_weights: per-phenotype multipliers on the L1 shape error [1, 11].
         # None (default, or all ones) = the original unweighted sum, byte-for-byte.
         self.shape_weights = None
@@ -96,6 +99,37 @@ class Loss(torch.nn.Module):
               f"{n_hand} hand bones x{hb}, renormalized to mean 1 "
               f"(max/min weight ratio = {eff_boost:.2f})", flush=True)
 
+    def configure_global_rot(self, bone_labels, bone_parents=None, active_mask=None):
+        """Resolve --global_rot_bones to bone indices.
+
+        A bone that is masked, or descends from a masked bone, is refused when active_mask is given
+        (--mask_helper_joints_train): the prediction's FK would carry an identity helper rotation that
+        the GT FK (built from the full pose) does not, an irreducible floor the term could never close.
+        """
+        labels = list(bone_labels)
+        names = [s.strip() for s in str(self.parser_args.global_rot_bones).split(',') if s.strip()]
+        if not names:
+            raise ValueError("--global_rot_bones is empty while --alpha_global_rot > 0")
+        if len(set(names)) != len(names):
+            raise ValueError(f"--global_rot_bones lists a bone twice: {names}")
+        idx = []
+        for nm in names:
+            if nm not in labels:
+                raise ValueError(f"--global_rot_bones: unknown bone '{nm}' (examples: head, neck03, wrist.L; "
+                                 f"{len(labels)} bone names in model.body_model.bone_labels)")
+            i = labels.index(nm)
+            j = i
+            while active_mask is not None and j is not None and j >= 0:
+                if not active_mask[j]:
+                    raise ValueError(f"--global_rot_bones: '{nm}' is, or descends from, the helper bone "
+                                     f"'{labels[j]}' masked by --mask_helper_joints_train")
+                j = bone_parents[j] if bone_parents is not None else -1
+            idx.append(i)
+        self.global_rot_idx = torch.tensor(idx, dtype=torch.long)
+        print(f"[loss] global_rot: alpha {float(self.parser_args.alpha_global_rot)} on {len(idx)} bones {names} "
+              f"(indices {idx}); mean over these bones and people of the per-bone L1 over the 9 entries of the "
+              f"camera-frame rotation (the rotmat term sums the same error over all bones)", flush=True)
+
     def forward(self, y_hat, y, epoch=None, img_size=None):
         
         # Detection
@@ -116,6 +150,15 @@ class Loss(torch.nn.Module):
         reg_shape = shape_err.sum(-1).mean(0)
         reg_dist = (y_hat['dist_postprocessed'].squeeze() - y['dist_postprocessed']).abs().mean(0)
         reg_transl = (y_hat['transl'] - y['transl']).abs().sum(-1).mean(0)
+        # Global orientation of the selected bones (--alpha_global_rot): the rotmat term's per-bone L1,
+        # applied to the post-FK camera-frame rotations and averaged over bones and people. Not computed
+        # when off, so the default total is numerically the previous one; only Anny batches carry the
+        # target (prepare_gt builds it from the Anny FK), so SMPL-X batches of a mixed run skip it.
+        reg_grot = None
+        if self.global_rot_idx is not None and 'global_rotmat' in y:
+            sel = self.global_rot_idx.to(y_hat['global_rotmat'].device)
+            reg_grot = (y_hat['global_rotmat'][:, sel] - y['global_rotmat'][:, sel]).abs().sum([2, 3]).mean([0, 1])
+            reg_grot = torch.nan_to_num(reg_grot, nan=0.0, posinf=0.0, neginf=0.0)
         # TODO expression???
 
         # 3D points
@@ -162,6 +205,8 @@ class Loss(torch.nn.Module):
         if epoch >= self.parser_args.start_2d_epoch:
             total_loss += self.parser_args.alpha_j2d * reg_j2d +\
                           self.parser_args.alpha_v2d * reg_v2d
+        if reg_grot is not None:
+            total_loss = total_loss + self.parser_args.alpha_global_rot * reg_grot
 
         # dict for tensorboard
         dict_loss = {
@@ -177,6 +222,8 @@ class Loss(torch.nn.Module):
             'j2d': reg_j2d,
             'v2d': reg_v2d,
         }
+        if reg_grot is not None:
+            dict_loss['global_rot'] = reg_grot
 
         return total_loss, dict_loss
     
@@ -210,6 +257,17 @@ class Loss(torch.nn.Module):
         parser.add_argument('--boost_hand_weight', type=float, default=1.0,
                             help='loss weight multiplier for finger/thumb/wrist bones '
                                  '(rotmat and j3d terms); renormalized to mean 1')
+        # Global (post-FK) orientation supervision of a few named bones (see configure_global_rot).
+        parser.add_argument('--alpha_global_rot', type=float, default=0.0,
+                            help='weight of the L1 between predicted and GT GLOBAL (camera-frame, after forward '
+                                 'kinematics) 3x3 orientations of --global_rot_bones, averaged over those bones and '
+                                 'people. 0 = off: the term is not computed and the total loss is unchanged. The '
+                                 'per-bone rotmat term cannot see where the head points, since the 4-bone neck '
+                                 'chain can realise one head pose many ways (docs/diagnostics_findings.md, Neck).')
+        parser.add_argument('--global_rot_bones', type=str, default='head,neck03,wrist.L,wrist.R',
+                            help='comma-separated Anny bone names supervised by --alpha_global_rot. Unknown names, '
+                                 'and bones masked (or below a masked bone) by --mask_helper_joints_train, abort '
+                                 'at startup.')
         # Per-phenotype weighting of the L1 shape term. Not renormalised: '1,3,1,1,2,1,1,1,1,1,1'
         # triples the age error and doubles the height error (sum 14 vs 11).
         parser.add_argument('--shape_weights', type=str, default='',

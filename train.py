@@ -172,6 +172,11 @@ class Trainer(object):
             
             # ✅ FIX: Extract the actual posed 3D joint translations from the homogeneous matrices
             jts = anny_out['bone_poses'][:, :, :3, -1]  # [nhv, 163, 3]
+            # Global orientations from the same FK pass, for --alpha_global_rot (loss.py). Like verts/jts
+            # they come from the FULL unmasked pose; the bones that term may select are checked at startup
+            # to have no helper ancestor, so --mask_helper_joints_train leaves their targets unchanged.
+            if float(getattr(self.args, 'alpha_global_rot', 0.0)) > 0:
+                target['global_rotmat'] = anny_out['bone_poses'][:, :, :3, :3]  # [nhv, 163, 3, 3]
             
             # GT supervision signals use the 3x3 rotmats
             anny_rotmats_flat = anny_rotmats.reshape(-1, 3, 3)
@@ -1044,6 +1049,16 @@ def main(args):
     if hasattr(loss, 'configure_joint_weights') and hasattr(model, 'body_model'):
         if getattr(args, 'boost_neck_weight', 1.0) != 1.0 or getattr(args, 'boost_hand_weight', 1.0) != 1.0:
             loss.configure_joint_weights(list(model.body_model.bone_labels))
+    # --alpha_global_rot: resolve --global_rot_bones once, so an unknown or helper-masked name aborts
+    # here instead of in the first training step.
+    if float(getattr(args, 'alpha_global_rot', 0.0)) > 0:
+        active = None
+        if getattr(args, 'mask_helper_joints_train', 0) and hasattr(model, 'useful_rotmat'):
+            active = model.useful_rotmat.reshape(-1).bool().tolist()
+        parents = getattr(model.body_model, 'bone_parents', None)
+        loss.configure_global_rot(list(model.body_model.bone_labels),
+                                  bone_parents=None if parents is None else [int(p) for p in parents],
+                                  active_mask=active)
 
     # ---------------- KNOWLEDGE DISTILLATION SETUP ----------------
     # --distill_teacher_ckpt turns this run into student training: `model` above
