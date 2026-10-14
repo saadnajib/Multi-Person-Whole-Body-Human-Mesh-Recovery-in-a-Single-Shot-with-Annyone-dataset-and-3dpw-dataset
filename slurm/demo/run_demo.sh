@@ -81,7 +81,7 @@ export EGL_DEVICE_ID=0
 # STANDARD FIXES (verified with pixel-level A/B/C crop-diff testing, see project
 # history): keep these on for real-photo demos going forward.
 #   --mask_helper_joints 1        : chest/neck deform-bone fix (confirmed working)
-#   --relax_hands 1               : clean hands instead of claw-like fingers
+#   --relax_hands 1               : finger predictions are currently worse than the rest pose (17.3 vs 15.1 deg rotation error, AnnyOne holdout), so they are zeroed on purpose
 #                                    (confirmed: 6.5% of mesh pixels changed on a
 #                                    hands-visible photo, ~0 on a hands-hidden one -
 #                                    correctly pose-dependent, not a no-op)

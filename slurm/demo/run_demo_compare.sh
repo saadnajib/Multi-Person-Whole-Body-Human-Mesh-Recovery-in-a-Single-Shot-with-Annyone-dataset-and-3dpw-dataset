@@ -106,6 +106,7 @@ for entry in "${MODELS[@]}"; do
   name=$(resolve_ckpt "$run" "$ep")
   if [ -z "$name" ]; then echo "SKIPPED: no checkpoint for ${run} in models/multiHMR or logs"; FAILED+=("$run (no checkpoint)"); continue; fi
   echo "using model_name: $name"
+  # --relax_hands 1: finger predictions are currently worse than the rest pose (17.3 vs 15.1 deg rotation error, AnnyOne holdout), so they are zeroed on purpose.
   if python3.9 demo.py \
       --model_name "$name" \
       --img_folder "$IMG_FOLDER" \

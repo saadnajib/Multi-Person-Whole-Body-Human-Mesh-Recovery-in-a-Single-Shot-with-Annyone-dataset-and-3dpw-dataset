@@ -82,6 +82,7 @@ export PYOPENGL_PLATFORM=egl
 export EGL_DEVICE_ID=0
 
 # Run on the base imageFiles directory (demo.py recursively finds images inside sequence folders)
+# --relax_hands 1: finger predictions are currently worse than the rest pose (17.3 vs 15.1 deg rotation error, AnnyOne holdout), so they are zeroed on purpose.
 python3.9 demo.py \
   --model_name "$CKPT_NAME" \
   --img_folder "$IMG_DIR/imageFiles" \

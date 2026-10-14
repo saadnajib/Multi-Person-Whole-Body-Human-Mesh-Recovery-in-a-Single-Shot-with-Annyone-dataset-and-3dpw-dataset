@@ -3,7 +3,7 @@
 This repository builds on **[Multi-HMR](https://github.com/naver/multi-hmr)** (Baradel et al., ECCV'24).
 It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** parametric body model and adds:
 
-1. **Anny training on AnnyOne.** A ViT-L *teacher* is trained on the synthetic AnnyOne dataset (~580k images), with fixes for neck/chest helper bones, hands and body-shape (phenotype) bias.
+1. **Anny training on AnnyOne.** A ViT-L *teacher* is trained on the synthetic AnnyOne dataset (~580k images), with the 88 helper bones masked and a stronger body-shape (phenotype) loss. Neck, finger and child reconstruction are still open, and the training targets carry a depth defect: see [Known defects](#known-defects).
 2. **3DPW → Anny conversion.** 3DPW's SMPL ground truth is fitted to Anny so that real images can be used for training and evaluation in Anny space.
 3. **Knowledge distillation.** A ViT-S *student* is distilled from the ViT-L teacher using a feature-level KL loss on backbone tokens, with teacher-initialised heads, and is trained on mixed synthetic and real data.
 
@@ -17,6 +17,7 @@ It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** 
 ## Contents
 - [Repository layout](#repository-layout)
 - [Status and known gaps](#status-and-known-gaps)
+  - [Known defects](#known-defects)
 - [Installation](#installation)
 - [Quick start: demo](#quick-start-demo)
 - [Pipeline 1: converting 3DPW to Anny](#pipeline-1-converting-3dpw-to-anny)
@@ -99,6 +100,31 @@ Read this before trying to reproduce anything.
 | **Checkpoints are not versioned** (`*.pt` is git-ignored). | Final teacher/student weights must be obtained separately. | Expected location: `models/multiHMR/<name>.pt`. |
 | `scripts/patches/apply_*.py` are historical. | All six patches are already applied to `train.py` / `model.py`. The guard checks in the training scripts pass. | Do not re-run them. They refuse to patch twice anyway. |
 
+### Known defects
+
+Measured on the production teacher `anny_s2_shape_v5` (epoch 99) with the diagnostic suite in `scripts/diagnostics/`.
+The evidence, the scripts and the confidence of each statement are in [`docs/diagnostics_findings.md`](docs/diagnostics_findings.md); the numbers below are copied from it.
+
+**What is not the cause.** Ground-truth parameters decode onto the people in the images. All 16 single-joint perturbations of the body model move the intended part (pose parameters act in the bone's rest frame, forward kinematics is exact). Every active pose bone receives gradient (the 88 zero-gradient bones are exactly the masked helper bones).
+No joint-mapping, rotation-convention or decoding error was demonstrated, so none of the failures below is attributed to the rig or to decoding.
+The first compiled diagnostics `REPORT.md` printed "decoding defect" for check 1. That verdict came from a fixed 95% threshold that misread truncation at the image border; the rule is now truncation-aware.
+
+| Defect | Measured | Diagnosed origin |
+|---|---|---|
+| **Depth** (the largest error) | On the 100-image holdout, predicted root depth = 0.33·GT + 2.36 m (≈ 0.3·GT + 2.4 m): mean 3.00 m vs 1.92 m GT, and 100% of people are placed too far. Skeletal height is right (1.405 vs 1.409 m), so the body is drawn about 35% too small (head-to-root 82 px vs 127 px). The same slope appears on training images. | Target mismatch in the code. The model anchors and reports the **head** joint (`--person_center head`, `model.py`), while `train.py prepare_gt` builds the `transl`, `dist`, heatmap-cell and offset targets at joint 0, the **root**. Pelvis-centred PVE, PA-PVE and MPJPE cannot see this (corr(PVE, depth error) = −0.03). That is why the numbers in the results table look normal while the overlays look wrong. |
+| **Neck** | In-domain neck length is 99.3% of GT. Local rotation error is 62.7° (neck) and 89.5° (head), but the global head orientation error is 12.0° on the holdout and 19.9° on the hard neck poses. | Weak per-bone rotation supervision on a redundant 4-bone chain. Many decompositions give the same head pose, so the per-bone loss carries little consistent signal, which would also explain why the v4 ×4 neck boost had no measurable effect. The long-neck look in the overlays is likely the depth defect (body drawn too small, head placed where the root target pulls it) plus normal skinning. |
+| **Fingers** | Finger rotation error is 17.3° as predicted and 15.1° with the fingers set to the rest pose. | Under-trained: the predictions are worse than the rest pose. Fingers get the smallest gradients of any bone group (4.7 vs 598 at the root) and the worst 6D conditioning. Perturbing a finger bone moves only that finger. The demos therefore ship with `--relax_hands 1`. |
+| **Children** | The 50 youngest training people (GT age 0.015) are predicted at age 0.10 with head/height at 101% of GT. On real photos, small people come out as small adults (age 0.56–0.66, size carried by the `height` phenotype). | Representation works in-sample; generalisation fails. Only 2.53% of training people have age < 0.3 (about 11 years on Anny's scale), and the 3DPW labels pin age at 0.55 (about 20 years), so mixing in 3DPW adds no child signal. The detector-crop camera bug in `demo.py` changes placement only. |
+
+The depth fix (build the targets at the joint the model anchors, then fine-tune briefly from epoch 99) is a separate experiment. No improvement is claimed until its holdout trace has been re-run.
+
+**Caveats.**
+- Child numbers are in-sample. The holdout contains no children, so these numbers test representation, not generalisation.
+- The "hands" category of the diagnostic manifest is confounded by truncation. Its people fill the frame (63% of joints inside the image), so its PVE (156.8 mm) measures truncation and depth, not hands.
+- The 51.8 mm PVE from the capped overfit run is an optimisation check on 40 memorised training images. It is not a validation number. In the same run, the holdout PVE rose from 87.6 to 127.2 mm.
+
+**Future work (not measured).** A global head-orientation loss for the neck chain, and upweighting the finger bones in the rotation loss.
+
 ---
 
 ## Installation
@@ -148,8 +174,12 @@ Recommended flags depend on the input domain (see `slurm/demo/run_demo.sh` for t
 | `--use_person_detector` | `1` (Faster R-CNN-guided crops, `--detector_thresh 0.8 --crop_margin 0.35 --anchor_to_box 1`) | `0` |
 | `--det_thresh` | `0.15` | `0.3` |
 | `--fov` / `--fov_json` | `--fov 55` | `--fov_json demo_images/annyone_fov.json` (per-image FOV) |
-| `--mask_helper_joints 1` | ✔ fixes chest/neck deformation bones | ✔ |
-| `--relax_hands 1` | ✔ removes claw-like fingers | optional |
+| `--mask_helper_joints 1` | ✔ forces the 88 untrained helper bones to identity (the V1 evaluation setting) | ✔ |
+| `--relax_hands 1` | ✔ sets the finger poses to the rest pose (see below) | ✔ |
+
+**Finger poses in the demo renders are the rest pose, not predictions.**
+Every `slurm/demo/run_demo*.sh` passes `--relax_hands 1`, which sets the finger and thumb phalanges to identity.
+This is deliberate: the predicted fingers are worse than the rest pose (rotation error 17.3° vs 15.1° on the AnnyOne holdout; see [Known defects](#known-defects)).
 
 Do **not** use `--neutral_phenotypes`.
 Measured against AnnyOne ground truth, forcing phenotypes to 0.5 moved them *away* from the truth and made necks worse (see `docs/anny_shape_report.txt` and the comments in `run_demo.sh`).
@@ -249,6 +279,7 @@ Student: `dinov2_vits14` (384-d). Teacher: frozen ViT-L (1024-d).
 | **v8 (final)** | `train_distill_vits_v8_final.sh` | v6c weights + v7 mixed data at batch 16, teacher v9 | 3DPW-test is evaluated once at the end |
 
 Numbers are PVE / PA-PVE in mm, copied from the script headers.
+They come from `train.py evaluate()`, which does not mask the helper bones (V0, see [Results recorded so far](#results-recorded-so-far)).
 
 The student flags (`--init_heads_from_teacher`, `--freeze_heads_epochs`, `--head_dim`, `--teacher_bf16`, `--mix_3dpw_*`) came from the patches in `scripts/patches/`.
 Those patches are already applied, so the flags exist in `train.py`.
@@ -278,16 +309,24 @@ The AnnyOne holdout (`--val_anny_n`) and 3DPW (`--val_3dpw_split`, `--val_3dpw_n
 
 | Model | Backbone | AnnyOne holdout PVE / PA-PVE | 3DPW-val PVE / PA-PVE |
 |---|---|---|---|
-| Teacher anny_s2_shape_v5 (epoch 99) | ViT-L | 73.6–74.3 / – | 127.1 / – |
+| **Teacher anny_s2_shape_v5 (epoch 99), V1: helper bones masked, as in the demos** | ViT-L | **70.5 / 53.3** (recall 90.2%) | – |
+| Teacher anny_s2_shape_v5 (epoch 99), V0: `train.py evaluate()`, helper bones unmasked (the 74 mm quoted in the thesis) | ViT-L | 73.6–74.3 / – | 127.1 / – |
 | Student v6c | ViT-S | 114.5 / 84.6 | – |
 | Student v7 (mixed) | ViT-S | 120.1 / 89.4 | 107.0 / 77.1 |
 | Teacher v9 (mixed), student v8 final | ViT-L / ViT-S | *not yet recorded* | *not yet recorded* |
 
+**V1 is the headline.**
+`train.py evaluate()` reports 74.3 mm because it does not mask the 88 helper bones, while every demo masks them: on the people matched under both settings, unmasked vs masked is +3.8 mm PVE (paired).
+The thesis's 74 mm is therefore 70.5 mm under the settings the demos use.
+V1 comes from `scripts/diagnostics/diag_holdout_trace.py` on the 100 holdout images that `--val_anny_n 100` reserves (indices 579860–579959), the images `train.py` evaluates on during training.
+The student rows and the 3DPW column were also measured with `train.py evaluate()`, so they are unmasked: compare them with the V0 row, not with the V1 headline.
+All of these metrics are pelvis-centred and do not see the depth defect described in [Known defects](#known-defects).
+
 Qualitative ablations on real photos are in `results/demos/`:
 - `A_base`: baseline.
-- `B_neckshape`: neck/shape fix.
-- `C_hands`: hand relaxation.
-- `v4_restpose`: rest-pose check.
+- `B_neckshape`: neck/shape flags tried at the time (historical; the neck is not fixed, see [Known defects](#known-defects)).
+- `C_hands`: hand relaxation (`--relax_hands 1`).
+- `v4_restpose`: rest-pose check. A long neck that persisted in these renders was read as a body-model property; the diagnostics do not support that reading (in-domain neck length is within 1% of GT, and the body-model probe passes).
 
 ---
 
