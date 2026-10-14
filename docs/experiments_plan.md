@@ -366,7 +366,7 @@ default train.log.
 
 | exp | issue | what to do |
 |---|---|---|
-| exp1 | The printed "baseline(findings)" `head_px_err` 64.5 is in no committed document (the findings quote a 46 px median). The size-ratio baseline 0.67 is a ratio of medians, while the column is a median of ratios. | Partly fixed: `head_px_err` is labelled as the mean with the median beside it, and the baselines are tabled. exp1's size-ratio baseline is still the findings' 0.67 (82/127 px = 0.65 as a ratio of medians): compare that row with the Day-1 re-trace or `BASELINE_TRACE=1` |
+| exp1 | The printed "baseline(findings)" `head_px_err` 64.5 is in no committed document (the findings quote a 46 px median). The size-ratio baseline 0.67 is a ratio of medians, while the column is a median of ratios. | Fixed: `head_px_err` is labelled as the mean with the median beside it, the baselines are tabled, and 0.67 is confirmed as the median of per-person ratios (the column's statistic; 82/127 px = 0.65 is the ratio of medians). Still compare with the Day-1 re-trace or `BASELINE_TRACE=1` |
 | all | lr 1e-5 is 8× v5's last lr, with fresh Adam state; each script's VERDICT compares one arm with the 00099 baseline only | Always read against the control arm; `LR=1.25e-6` is an option |
 | exp2 | `measure_batch_ages.py` raises `KeyError('anny_shape')` on a batch where no image has a person | Fixed: counted as skipped |
 | exp3 | The alpha check keeps only lines that start with `EPOCH=`. tqdm shares those lines, so it likely prints "no EPOCH= lines" | Fixed: substring match, trimmed (exp4's grep too) |

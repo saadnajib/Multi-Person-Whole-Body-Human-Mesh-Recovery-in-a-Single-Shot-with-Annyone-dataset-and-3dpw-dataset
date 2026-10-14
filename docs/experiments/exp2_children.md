@@ -88,8 +88,8 @@ youngest-50 selection. Baselines are `anny_s2_shape_v5/00099` from `docs/diagnos
 2. **Children, in-sample reads only (no held-out child exists):**
    manifest train split, tag `child` (n=10; excluded from the fine-tune by `--exclude_indices_file`, but seen by
    the base model for 100 epochs): PVE 47.8, age bias +0.078, shape-swap gain 6.2 mm should all move toward 0;
-   youngest-50 (`--select youngest`, in-sample, resampled by the balanced loader): predicted age 0.10 for GT 0.015
-   should move toward the GT.
+   Secondary, in-sample read that does not decide the experiment: youngest-50 (`--select youngest`, training
+   people resampled by the balanced loader): predicted age 0.10 for GT 0.015 should move toward the GT.
 3. **The only out-of-domain read is real photos:** `slurm/diagnostics/diag_crop_camera.sh` (E4) with
    `CKPT=<pilot checkpoint>`: predicted age 0.56-0.66 for small people in the baseline.
 

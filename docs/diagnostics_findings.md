@@ -74,7 +74,7 @@ move the mesh, so decoded meshes respond to the heads.
 | people predicted farther than GT | | 100% |
 | corr(GT depth, depth error) | | −0.76 |
 | skeletal height | 1.409 m | 1.405 m (r = 0.89) |
-| head-to-root pixel distance (median) | 127 px | 82 px (ratio 0.67) |
+| head-to-root pixel distance (median) | 127 px | 82 px (ratio of medians 0.65; median of per-person ratios 0.67) |
 | root pixel error / head pixel error (median) | | 14 px / 46 px |
 
 The same slope (0.18–0.33) and offset (2.4–2.8 m) appear on the manifest train split, the manifest holdout
