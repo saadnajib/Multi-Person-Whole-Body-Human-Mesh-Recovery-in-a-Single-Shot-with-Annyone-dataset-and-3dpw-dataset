@@ -1,8 +1,8 @@
 # Experiment plan for the week
 
 Production checkpoint: `anny_s2_shape_v5/checkpoints/00099.pt` (`slurm/history/train_s2_shape_v5.sh`). Evidence:
-`docs/diagnostics_findings.md`. Experiment commits on top of `899d3b4`: `b696006` (exp1), `cd44b1f` (exp2),
-`e719a82` (exp3), `0f64537` (exp4). One review-fix commit follows them; the review findings, fixed and open, are in
+`docs/diagnostics_findings.md`. Experiment commits on top of `0d8ef72`: `6b0a305` (exp1), `6976688` (exp2),
+`9ad20bc` (exp3), `3d51a7d` (exp4). One review-fix commit follows them; the review findings, fixed and open, are in
 section 4.
 
 > **Nothing in this plan has been run.** Every number is a measurement of the production checkpoint quoted
@@ -18,12 +18,12 @@ defaults, the only observable change in train.py is one `[throughput]` line per 
 
 | exp | failure addressed | type | flag(s), default = previous behaviour | commit | pilot runtime (est.) | decision metric (baseline 00099, V1) |
 |---|---|---|---|---|---|---|
-| exp1 | depth: pred = 0.33·GT + 2.36 m, body drawn ~35% too small | confirmed bug fix | `--gt_center_joint person_center` (default `root`); `--debug_anchor N` (0) | `b696006` | 20 min train + ~10 min eval; job ~1 h | `depth_fit_slope` 0.33 → 1 and `depth_fit_intercept_m` 2.36 → 0; guards: PVE ≤ 71.5 (70.5), recall ≥ 89.2 (90.2) |
-| exp2 | children come out as short adults | sampling (+ shape-loss weighting) | `--age_balance 1` (0), `--age_balance_child_frac 0.25`, `--age_balance_child_age 0.3`, `--age_balance_index`, `--exclude_indices_file` (''), `--shape_weights` ('') | `cd44b1f` | index scan (unmeasured) + 2×200-batch measurement + 20 min train + ~10 min eval + 2 traces; limit 4 h | manifest child tag (n=10, excluded from the fine-tune): PVE < 47.8, \|age bias\| < 0.078; no holdout regression: PVE ≤ 71.5, recall ≥ 89.2, \|age bias\| ≤ 0.03 (−0.015); youngest-50 is a secondary in-sample read only |
-| exp3 | neck: global head orientation off by 12.0° / 19.9° | supervision | `--alpha_global_rot 5` (0.0), `--global_rot_bones head,neck03,wrist.L,wrist.R` | `e719a82` | 20 min train + ~10 min eval + 2 manifest traces; script budgets ~2.5 h | `rot_global_deg.head` < 12.0 (holdout) and < 19.9 (manifest train); same PVE/recall guards; fingers 17.3° not worse by > 1° |
-| exp4a | fingers worse than the rest pose (17.3° vs 15.1°): resolution? | inference-only measurement | trace `--person_crop 1` (0), `--crop_factor 1.3`; `measure_hand_px.py` | `0f64537` | no training; ~40 min | paired V4 `rot_fingers` below the paired V3 relaxed floor (15.1), with Δpve, Δpa_pve, Δpve_hn ≤ +1 mm |
-| exp4b | fingers: supervision? (a control, not a finger boost) | supervision | `--rotmat_region_norm 1` (0) | `0f64537` | 20 min train + ~10 min eval + traces; job ~1.5 h | V1 `rot_fingers` vs 17.3 and vs its own V3 floor; head 89.5° local / 12.0° global; PVE/recall guards |
-| exp4c | 3DPW identity fingers supervised as GT (mixed runs only) | confirmed bug fix, not in the production lineage | `--mask_3dpw_hands 1` (0) | `0f64537` | no script, not scheduled | n/a this week |
+| exp1 | depth: pred = 0.33·GT + 2.36 m, body drawn ~35% too small | confirmed bug fix | `--gt_center_joint person_center` (default `root`); `--debug_anchor N` (0) | `6b0a305` | 20 min train + ~10 min eval; job ~1 h | `depth_fit_slope` 0.33 → 1 and `depth_fit_intercept_m` 2.36 → 0; guards: PVE ≤ 71.5 (70.5), recall ≥ 89.2 (90.2) |
+| exp2 | children come out as short adults | sampling (+ shape-loss weighting) | `--age_balance 1` (0), `--age_balance_child_frac 0.25`, `--age_balance_child_age 0.3`, `--age_balance_index`, `--exclude_indices_file` (''), `--shape_weights` ('') | `6976688` | index scan (unmeasured) + 2×200-batch measurement + 20 min train + ~10 min eval + 2 traces; limit 4 h | manifest child tag (n=10, excluded from the fine-tune): PVE < 47.8, \|age bias\| < 0.078; no holdout regression: PVE ≤ 71.5, recall ≥ 89.2, \|age bias\| ≤ 0.03 (−0.015); youngest-50 is a secondary in-sample read only |
+| exp3 | neck: global head orientation off by 12.0° / 19.9° | supervision | `--alpha_global_rot 5` (0.0), `--global_rot_bones head,neck03,wrist.L,wrist.R` | `9ad20bc` | 20 min train + ~10 min eval + 2 manifest traces; script budgets ~2.5 h | `rot_global_deg.head` < 12.0 (holdout) and < 19.9 (manifest train); same PVE/recall guards; fingers 17.3° not worse by > 1° |
+| exp4a | fingers worse than the rest pose (17.3° vs 15.1°): resolution? | inference-only measurement | trace `--person_crop 1` (0), `--crop_factor 1.3`; `measure_hand_px.py` | `3d51a7d` | no training; ~40 min | paired V4 `rot_fingers` below the paired V3 relaxed floor (15.1), with Δpve, Δpa_pve, Δpve_hn ≤ +1 mm |
+| exp4b | fingers: supervision? (a control, not a finger boost) | supervision | `--rotmat_region_norm 1` (0) | `3d51a7d` | 20 min train + ~10 min eval + traces; job ~1.5 h | V1 `rot_fingers` vs 17.3 and vs its own V3 floor; head 89.5° local / 12.0° global; PVE/recall guards |
+| exp4c | 3DPW identity fingers supervised as GT (mixed runs only) | confirmed bug fix, not in the production lineage | `--mask_3dpw_hands 1` (0) | `3d51a7d` | no script, not scheduled | n/a this week |
 
 Every baseline the scripts print (recall 90.2, PA-PVE 53.3, holdout age bias −0.015, PVE_hn 52.3, global wrist
 22.7°, head px error 64.5 mean / 46 median, ...) is now listed in `docs/diagnostics_findings.md`, "Baseline numbers
@@ -55,7 +55,7 @@ The 6.7 images/s comes from a 40-image overfit pilot. Rescale from the pilot's o
 `[throughput] epoch 1: ... images/s` (epoch 0 includes worker spin-up): `hours = MAX_ITER × 4 / images_per_s / 3600`,
 and raise `--time` to match.
 
-### exp1_depth_anchor: confirmed bug fix (`b696006`)
+### exp1_depth_anchor: confirmed bug fix (`6b0a305`)
 
 **Hypothesis.** The model attaches the mesh to the detected pixel by its HEAD and reports the head as transl
 (`model.py:121, 430-432, 442`), while `prepare_gt` builds transl, dist, heatmap cell and offset at joint 0, the
@@ -97,7 +97,7 @@ target drives depth. It would not show that depth generalises to real photos, wh
 in-training V0 numbers use a cohort that moves with the anchor, so compare them only within an arm. The trace
 keeps its own root-based cohort (`diag_common.visible_gt_mask`).
 
-### exp2_children: sampling (`cd44b1f`; details in `docs/experiments/exp2_children.md`)
+### exp2_children: sampling (`6976688`; details in `docs/experiments/exp2_children.md`)
 
 **Hypothesis.** The adult bias is a data prior, not a bug: every link of the shape path checks out (section 3a).
 With 2.53% child people, roughly 79% of batch-4 batches contain no child. That figure is arithmetic
@@ -143,7 +143,7 @@ of them and the adults did not break; it does not show generalisation to real ch
 read is qualitative: `CKPT=<pilot ckpt> sbatch slurm/diagnostics/diag_crop_camera.sh` (E4, 20 people, no GT
 age). The threshold 0.3 ≈ 11 y assumes the default Anny age anchors.
 
-### exp3_neck_global_rot: supervision (`e719a82`)
+### exp3_neck_global_rot: supervision (`9ad20bc`)
 
 **Hypothesis.** A 4-bone neck chain can realise one head pose in many ways. The per-bone local rotmat L1
 penalises every decomposition except the annotator's, so the global head pose gets a noisy signal. An L1 on the
@@ -182,7 +182,7 @@ orientation. It does not make the local neck bones match GT, and that is not exp
 is not unique. The term also back-propagates into the shape head through the shape-dependent rest frames. The
 wrists are the parents of the fingers, so the fingers may move in either direction.
 
-### exp4_fingers: measurement first, then a supervision control (`0f64537`)
+### exp4_fingers: measurement first, then a supervision control (`3d51a7d`)
 
 **Hypotheses.** Resolution: at the median holdout scale an adult hand is ~36×16 px (~3 tokens), a finger ~1 token
 long and 0.24 token wide [Likely]. Supervision: the rotmat sum already gives the 30 phalanges 40% of the active
@@ -226,7 +226,7 @@ arm tests the 6D-init defect (3h). exp4c is not exercised (the production lineag
 
 ## 3. Verified in code
 
-Readers' facts. Line numbers refer to `89db760`, whose `.py` files are identical to `899d3b4`. The experiment
+Readers' facts. Line numbers refer to `89db760`, whose `.py` files are identical to `0d8ef72`. The experiment
 commits shift lines in train.py, loss.py, model.py and the trace.
 
 **3a. Shape outputs reach the body model and are supervised.**
