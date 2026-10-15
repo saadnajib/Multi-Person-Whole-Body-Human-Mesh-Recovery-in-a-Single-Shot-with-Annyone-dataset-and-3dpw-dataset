@@ -4,7 +4,8 @@
 #     bones.npz, bones_summary.json (+ the usual summary.json, per_person.csv, vis/), full log in <tag>.log
 # For each bone (spine01, neck01, neck02, neck03, head, jaw, clavicles, shoulder01s, wrists + EXTRA_BONES), per matched
 # person and variant: local error, pred/GT angle from identity, global error, swing/twist about the bone's rest axis,
-# across-person spread of pred / GT / error rotation, bone-head joint error; neck-skin PVE and girth ratio.
+# across-person spread of pred / GT / error rotation, joint error at the bone's own head ('joint': moved only by the bones
+# above it) and at its child's head ('child': the first joint its own rotation moves); neck-skin PVE and girth ratio.
 # The group means 62.7 (neck01-03) / 89.5 (head+jaw) of v5 have never been split by bone; this does it, without training.
 # The same job runs the two open bookkeeping checks: H4 (det / singular values of the RAW dataset blocks of the dumped
 # bones: proper rotations?) and H3 (the checkpoint's saved pose_param and loss args; for the inherited heads, trace the
@@ -28,10 +29,23 @@
 # A label says WHAT the rotations are; each mechanism needs its own test (docs/experiments_plan.md "Neck root cause").
 #   FIRST the bookkeeping lines of each block: "raw GT blocks ... NOT proper rotations" -> H4 open (the rotmat target
 #     disagrees with the GT mesh); "checkpoint args ... pose_param=" anything but local-bone/None -> H3 (wrong space).
-#   FLIP_TWIST (> 150 deg in >= half the people, bone axis moves < 30 deg) on exactly one of neck01/02/03 + head FLIP_*
-#     with one axis + jaw OK + small bone-head joint error -> a compensated half-turn flip is PRESENT (consistent with H1).
+#   'joint' is the error at a bone's OWN head, which its own rotation never moves (anny FK), so it only reflects the bones
+#     above it; read 'child' (its child's head) for what the bone itself does: child well above joint = its GLOBAL
+#     orientation is off (= its local error only when the parent chain is right).
+#   FLIP_TWIST (> 150 deg in >= half the people, bone axis moves < 30 deg) on exactly one of neck01/02/03, with 'child'
+#     ~ 'joint' on that bone + head FLIP_* (FLIP_SWING expected, see below) with one axis, small 'glob' and 'child' ~
+#     'joint' + jaw OK -> a compensated half-turn flip is PRESENT (consistent with H1).
 #     Whether the L1 holds it: exp5 vs its l1 control. Where it came from: the lineage traces (CKPTS line 2).
-#   FLIP_SWING -> a flip that tilts the bone axis (>= 30 deg) and moves its child joint: not the H1 twist.
+#   WHERE the flip sits, from 'joint' (compare each bone with the one above; errors add as vectors). Exact only for neck03:
+#     neck03 flipped -> neck03/head 'joint' no higher than neck02's. neck02 -> head 'joint' up ~9-21 mm at rest, ~12-30 mm
+#     (mean) with 10-20 deg GT neck bends. neck01 -> neck03 up 0-11 mm (14-31 bent), head up 3-10 mm (19-59 bent; anny
+#     default rig, docs table "flip | neck02 joint | ..."). Such a rise fits H1; read it with '|gt|' (GT angle).
+#   FLIP_SWING -> the local error tilts the bone axis (>= 30 deg) relative to the GT-POSED parent frame, so it moves the
+#     child joint only when the parent chain is right. Under H1 the compensating head is expected to read FLIP_SWING (its
+#     error is a half-turn about the flipped neck bone's axis, 19-30 deg off the head axis on the default rig at rest, so
+#     its swing is ~2x that angle in the GT pose, ~38-61 deg at rest) while its 'glob' stays small and 'child' ~ 'joint'.
+#     A FLIP_SWING bone with large 'glob' and 'child' well above 'joint' is a tilt flip that does move its child: not
+#     part of the H1 pattern.
 #   PARTIAL_FLIP (> 150 deg in 10-50% of the people) -> per-image flips; read mean vs median.
 #   all three neck bones CONST_OFFSET with one shared axis (relAng ~62.7) -> consistent with a convention/frame offset
 #   FIXED_OUTPUT (pred spread << GT spread) -> the head emits one rotation regardless of the image
@@ -88,12 +102,15 @@ for CK in ${CKPTS}; do
   if python scripts/diagnostics/diag_holdout_trace.py --ckpt "\${CK}" --n ${N} --n_vis ${N_VIS} \\
         --dump_bones 1 --dump_bone_names "${EXTRA_BONES}" --out "\${OD}" > "\${OD}.log" 2>&1; then
     echo "    done in \$(( \$(date +%s) - T0 )) s"
-    grep -E "^\[load_model\] .*ckpt_args|^\[dump_bones\]" "\${OD}.log" || true
+    grep -E "^\[load_model\] .*(ckpt_args|WARNING)|^\[dump_bones\]" "\${OD}.log" || true
     grep -A 3 "=== ROTATION ERROR BY BONE GROUP" "\${OD}.log" | grep -E "^variant|^V1_eval_masked" || true
     sed -n '/=== NECK\/HEAD BONE DUMP/,/^wrote .*bones.npz/p' "\${OD}.log"
     TAGS="\${TAGS} \${TAG}"
   else
-    echo "WARNING: trace failed for \${CK}; tail of \${OD}.log:"; tail -n 30 "\${OD}.log"
+    echo "WARNING: trace failed for \${CK}; its saved args (H3; load_model prints them before building the model):"
+    grep -E "^\[load_model\] .*(saved ckpt_args|WARNING)" "\${OD}.log" || echo "    none: torch.load itself failed"
+    echo "tail of \${OD}.log:"; tail -n 30 "\${OD}.log"
+    TAGS="\${TAGS} \${TAG}"                                           # the table still shows its pose_param
   fi
 done
 
@@ -112,7 +129,15 @@ print(format('checkpoint', '<36') + ''.join(format(b, '>24') for b in BONES) + f
 for t in tags:
     p = os.path.join(root, t, 'bones_summary.json')
     if not os.path.isfile(p):
-        print(format(t, '<36') + '  no bones_summary.json'); continue
+        pp = 'not printed (torch.load failed)'
+        lg = os.path.join(root, t + '.log')
+        for ln in (open(lg, errors='replace').read().splitlines() if os.path.isfile(lg) else []):
+            if ln.startswith('[load_model]') and 'saved ckpt_args' in ln and 'pose_param=' in ln:
+                toks = ln.split('pose_param=', 1)[1].split(' ')     # value up to the next key=value token
+                n = next((i for i, x in enumerate(toks[1:], 1) if '=' in x), len(toks))
+                pp = ' '.join(toks[:n])
+        print(format(t[:35], '<36') + format('trace FAILED, no bones_summary.json (see ' + t + '.log)', '<142')
+              + '  ' + pp); continue
     js = json.load(open(p))
     s = js['variants']
     v = s.get('V1_eval_masked') or next(iter(s.values()))

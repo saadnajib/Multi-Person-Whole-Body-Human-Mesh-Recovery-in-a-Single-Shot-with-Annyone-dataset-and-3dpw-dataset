@@ -2,6 +2,7 @@
 # Copyright (c) 2024-present NAVER Corp.
 # CC BY-NC-SA 4.0 license
 
+import contextlib
 import torch
 from argparse import ArgumentParser
 
@@ -47,12 +48,21 @@ def geodesic_rad(R_hat, R, eps=1e-6):
   norm at vee = 0, which makes theta = eps/2 rad at identical inputs and the gradient O(eps), i.e. ~0, at theta = 0
   and at theta = 180 deg (a maximum; any real deviation from it descends). Along a twist the angle falls monotonically
   from 180 to 0 deg: no spurious minimum, unlike the L1 over matrix entries (4.83 at 135 deg vs 4.00 at 180 deg).
+  Autocast is switched off inside, so float32 holds under --amp 1 too (train.py computes the loss inside
+  torch.cuda.amp.autocast, where the matmul would otherwise run in fp16). Tested under CPU fp16 autocast only; the GPU
+  path (torch.cuda.amp + GradScaler) is not tested yet. In fp16, wherever pred == GT exactly
+  (vee = 0: e.g. the helper bones --mask_helper_joints_train forces to identity in both pred and GT), the backward
+  through sqrt is 0.5 / eps = 5e5 > 65504, the fp16 maximum: inf * vee(0) = NaN, which the mask's zero weight cannot
+  remove (0 * NaN = NaN), and train.py's gradient guard would then skip every optimizer step.
   '''
-  M = R_hat.float().transpose(-1, -2) @ R.float()
-  vee = torch.stack([M[..., 2, 1] - M[..., 1, 2], M[..., 0, 2] - M[..., 2, 0], M[..., 1, 0] - M[..., 0, 1]], -1)
-  s = torch.sqrt((vee * vee).sum(-1) + eps * eps)
-  c = M[..., 0, 0] + M[..., 1, 1] + M[..., 2, 2] - 1.0
-  return torch.atan2(s, c)
+  dev = R_hat.device.type
+  no_amp = torch.autocast(device_type=dev, enabled=False) if dev in ('cuda', 'cpu') else contextlib.nullcontext()
+  with no_amp:
+    M = R_hat.float().transpose(-1, -2) @ R.float()
+    vee = torch.stack([M[..., 2, 1] - M[..., 1, 2], M[..., 0, 2] - M[..., 2, 0], M[..., 1, 0] - M[..., 0, 1]], -1)
+    s = torch.sqrt((vee * vee).sum(-1) + eps * eps)
+    c = M[..., 0, 0] + M[..., 1, 1] + M[..., 2, 2] - 1.0
+    return torch.atan2(s, c)
 
 class Loss(torch.nn.Module):
     def __init__(self, parser_args, *args, **kwargs):

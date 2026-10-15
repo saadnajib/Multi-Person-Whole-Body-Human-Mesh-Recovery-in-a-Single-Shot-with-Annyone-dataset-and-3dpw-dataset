@@ -55,18 +55,24 @@ USAGE (repo root, multihmr env, GPU node):
     --dump_bones 1 adds <out>/bones.npz, <out>/bones_summary.json and a NECK/HEAD BONE DUMP block; with 0 (default)
     every output is unchanged. Per matched person, variant and bone (parent spine bone, neck01..neck03, head, jaw,
     clavicles, shoulder01s, wrists, + --dump_bone_names): local geodesic error, angle of pred and GT from identity,
-    camera-frame (global) error, swing/twist split of E = R_gt^T R_pred about the bone's rest axis, bone-head joint
-    error, raw local and global rotmats; per person a neck-skin PVE over the vertices skinned >= 50% to neck01-03.
+    camera-frame (global) error, swing/twist split of E = R_gt^T R_pred about the bone's rest axis, joint error at the
+    bone's own head (moved only by the bones above it, never by its own rotation) and at its twist-axis child's head
+    (the first joint its own rotation moves), raw local and global rotmats; per person a neck-skin PVE over the
+    vertices skinned >= 50% to neck01-03.
     Also the determinant and singular values of the RAW dataset blocks of those bones (H4: are they proper rotations,
     or does the SVD-projected rotmat target disagree with the mesh built from the raw blocks?) and the checkpoint's
     saved pose_param / loss args (H3). Verdict per bone: FLIP_TWIST (error > 150 deg in >= half the people, the
     bone's own axis moves < 30 deg, i.e. a half-turn about an axis within ~15 deg of the bone), FLIP_SWING (such a
-    flip that tilts the bone axis >= 30 deg; near 180 deg the twist angle reads ~180 for any axis not perpendicular
-    to the bone, so the swing decides), PARTIAL_FLIP (> 150 deg in 10-50% of the people), OK (median < 15 deg),
-    FIXED_OUTPUT, CONST_OFFSET, SPREAD (see bone_dump_verdict).
+    flip that tilts the bone axis >= 30 deg relative to the GT-posed parent frame, so it moves the child joint only
+    if the parent chain is right: a head compensating an upstream neck flip reads FLIP_SWING with a small global
+    error; near 180 deg the twist angle reads ~180 for any axis not perpendicular to the bone, so the swing
+    decides), PARTIAL_FLIP (> 150 deg in 10-50% of the people), OK (median < 15 deg), FIXED_OUTPUT, CONST_OFFSET,
+    SPREAD (see bone_dump_verdict).
     Twist axis convention: the rest child-offset direction in the bone's own rest frame (the frame anny applies the
-    local-bone rotation in), to the connected child (neck01->neck02->neck03->head, spine01->neck01, clavicle->
-    shoulder01); local +Y (Blender head->tail) for bones without one (head, jaw, wrists). Positive twist = right-hand
+    local-bone rotation in), to the connected child, i.e. the direct child whose head is at the bone's tail
+    (neck01->neck02->neck03->head, spine01->neck01, clavicle->shoulder01; on anny's default rig head, jaw and the
+    wrists use helper or hand children at their tail: special06.L, special04, metacarpal1.L/R, cos 1.000 with +Y,
+    so their axis is local +Y); local +Y (Blender head->tail) for a bone without such a child. Positive twist = right-hand
     rule about that axis; E is the error expressed in the bone frame, so a twist of E is the prediction turned about
     its own long axis relative to GT.
 """
@@ -153,7 +159,11 @@ def bone_dump_person(dump, vname, idx, gid, R_hat, R_gt, bp_hat, bp_gt, ang, glo
     """One record per (variant, matched person): every array is [n_dump_bones, ...] except the neck-skin scalars.
     R_hat/R_gt [163,3,3] local (pred after the variant's masks, GT orthonormalised), bp_* [163,4,4] global FK poses,
     ang/glob_err [163] (trace values), j_* [163,3], v_* [V,3] camera frame, axes [n_dump_bones,3] (dc.twist_axes),
-    R_gt_raw [163,3,3] the dataset's anny_pose blocks before the SVD projection (None: H4 columns are nan)."""
+    R_gt_raw [163,3,3] the dataset's anny_pose blocks before the SVD projection (None: H4 columns are nan).
+    joint_err_mm is the error at the bone's OWN head, which its own rotation cannot move (anny FK: pose_b =
+    pose_parent rest_parent^-1 rest_b delta_b, delta_b without translation), so it reflects only the bones above it.
+    child_joint_err_mm is the error at the head of its twist-axis child dump['children'][k] (nan without one): the
+    first joint the bone's own rotation moves. Both pelvis-relative."""
     b = torch.tensor(dump['bones'], dtype=torch.long)
     bd = b.to(R_hat.device)
     Rp, Rg = R_hat[bd].float().cpu(), R_gt[bd].float().cpu()
@@ -161,13 +171,17 @@ def bone_dump_person(dump, vname, idx, gid, R_hat, R_gt, bp_hat, bp_gt, ang, glo
     E = Rg.transpose(-1, -2) @ Rp                                              # error in the bone's own rest frame
     swing, twist = dc.swing_twist_deg(E, axes.float().cpu())
     jp = (j_hat[bd] - j_hat[0:1]).float().cpu(); jg = (j_gt[bd] - j_gt[0:1]).float().cpu()
+    ch = np.asarray(dump['children'], dtype=np.int64)
+    cd = torch.as_tensor(np.where(ch >= 0, ch, 0), dtype=torch.long, device=j_hat.device)
+    cerr = (((j_hat[cd] - j_hat[0:1]) - (j_gt[cd] - j_gt[0:1])).norm(dim=-1) * 1000).double().cpu().numpy()
+    cerr[ch < 0] = np.nan
     rec = dict(variant=vname, idx=int(idx), gid=int(gid),
                R_pred_local=Rp.numpy(), R_gt_local=Rg.numpy(),
                R_pred_global=bp_hat[bd, :3, :3].float().cpu().numpy(), R_gt_global=bp_gt[bd, :3, :3].float().cpu().numpy(),
                err_deg=ang[b].float().numpy(), global_err_deg=glob_err[b].float().numpy(),
                pred_angle_deg=dc.geodesic_deg(eye, Rp).numpy(), gt_angle_deg=dc.geodesic_deg(eye, Rg).numpy(),
                swing_deg=swing.numpy(), twist_deg=twist.numpy(), twist_axis=axes.float().cpu().numpy(),
-               joint_err_mm=((jp - jg).norm(dim=-1) * 1000).numpy(),
+               joint_err_mm=((jp - jg).norm(dim=-1) * 1000).numpy(), child_joint_err_mm=cerr,
                gt_raw_det=np.full(len(dump['bones']), np.nan), gt_raw_sv_min=np.full(len(dump['bones']), np.nan),
                gt_raw_sv_max=np.full(len(dump['bones']), np.nan),
                pve_neckskin_mm=float('nan'), pve_neckskin_local_mm=float('nan'), neck_girth_ratio=float('nan'))
@@ -195,8 +209,10 @@ def bone_dump_verdict(s):
     FLIP_TWIST vs FLIP_SWING is decided by the swing alone: for an error near 180 deg the twist angle about the bone axis
     reads ~180 for ANY rotation axis not perpendicular to the bone (a 180-deg turn about an axis 75 deg off the bone still
     gives |twist| ~176), so |twist| cannot separate the two. The swing is the angle the bone's own axis moves (2x the
-    flip axis's offset from the bone), so FLIP_TWIST = the bone axis moves < DUMP_TWIST_MAX_SWING (the child joint stays,
-    as a compensated twist flip needs)."""
+    flip axis's offset from the bone), so FLIP_TWIST = the bone axis moves < DUMP_TWIST_MAX_SWING (relative to the
+    GT-posed parent frame the child joint stays within 0.52 bone lengths, as a compensated twist flip needs). FLIP_SWING
+    moves the child only when the parent chain is right: a bone that compensates an upstream flip (the head under H1)
+    is FLIP_SWING with a small global error; the global and child-joint columns separate the two."""
     med = s['err_median']
     if med is None or not math.isfinite(med):
         return '-'
@@ -238,7 +254,7 @@ def bone_dump_report(recs, variants, dump, out, meta):
         return None
     A = {k: np.stack([np.asarray(r[k]) for r in recs]) for k in (
         'idx', 'gid', 'R_pred_local', 'R_gt_local', 'R_pred_global', 'R_gt_global', 'err_deg', 'global_err_deg',
-        'pred_angle_deg', 'gt_angle_deg', 'swing_deg', 'twist_deg', 'twist_axis', 'joint_err_mm',
+        'pred_angle_deg', 'gt_angle_deg', 'swing_deg', 'twist_deg', 'twist_axis', 'joint_err_mm', 'child_joint_err_mm',
         'gt_raw_det', 'gt_raw_sv_min', 'gt_raw_sv_max', 'pve_neckskin_mm', 'pve_neckskin_local_mm', 'neck_girth_ratio')}
     vn_all = np.asarray([r['variant'] for r in recs])
     np.savez_compressed(
@@ -254,11 +270,22 @@ def bone_dump_report(recs, variants, dump, out, meta):
         local_error='geodesic angle of R_pred^T R_gt, both local (parent-relative, anny local-bone) rotations; R_pred '
                     'after the variant\'s masks, R_gt = SVD-orthonormalised dataset anny_pose (train.py prepare_gt)',
         error_frame='E = R_gt^T R_pred, the error in the bone\'s own rest frame (anny applies local-bone rotations there)',
-        twist_axis='rest child-offset direction in the bone\'s rest frame to the connected child; local +Y (Blender '
-                   'head->tail) without one; per person on the GT-shape rest skeleton',
+        twist_axis='rest child-offset direction in the bone\'s rest frame to the connected child (the direct child '
+                   'whose head is at the bone\'s tail, helper bones included: head -> special06.L, jaw -> special04, '
+                   'wrist -> metacarpal1 on the default rig, i.e. local +Y); local +Y (Blender head->tail) without one; '
+                   'per person on the GT-shape rest skeleton',
+        joints='pelvis-relative joint errors, mm. joint_err = at the bone\'s own head, which its own rotation cannot move '
+               '(anny FK: pose_b = pose_parent rest_parent^-1 rest_b delta_b), so it reflects only the bones above it; '
+               'child_joint_err = at the head of the twist-axis child, the first joint the bone\'s rotation moves (None '
+               'without a child). child well above joint = the bone\'s GLOBAL orientation is off; that equals its local '
+               'error only when the parent chain is right',
         swing_twist='E = E_swing @ E_twist; twist signed by the right-hand rule about the axis, swing = angle(axis, E axis); '
                     'near 180 deg |twist| is ~180 for any E axis not perpendicular to the bone, so FLIP_TWIST/FLIP_SWING '
-                    'is decided by the swing (FLIP_TWIST: swing median < twist_max_swing_deg)',
+                    'is decided by the swing (FLIP_TWIST: swing median < twist_max_swing_deg). The twist is undefined '
+                    '(NaN in bones.npz, counted in frac_twist_undefined, left out of the twist summaries) when the swing is '
+                    'above ~178 deg (float32 round-off decides it there). Its sign is noise for |twist| near 180, so twist_circular_mean is the circular '
+                    'mean atan2(mean sin, mean cos) (a half-turn reads ~+-180 whatever the per-person signs) and '
+                    'twist_circular_r its mean resultant length (1 = one twist for everyone, ~0 = no common twist)',
         gt_raw='H4: det and singular values of the RAW dataset anny_pose blocks (train.py builds the GT mesh/joints from '
                'these and the rotmat target from their SVD projection); proper rotations have det +1 and s = 1',
         spread='mean geodesic distance of each rotation to the chordal (SVD-projected entry-wise) mean over people',
@@ -287,12 +314,16 @@ def bone_dump_report(recs, variants, dump, out, meta):
             ax, ang_c = dc.axis_angle_deg(Cm)
             tax = A['twist_axis'][sel, k].mean(0)
             tax = tax / max(float(np.linalg.norm(tax)), 1e-12)
+            tw = A['twist_deg'][sel, k]
+            tw_def = tw[np.isfinite(tw)]                                       # NaN = swing ~180, twist undefined
+            tw_cm, tw_r = dc.circular_mean_deg(tw_def)
             s = dict(n=int(len(sel)), err_mean=m(e), err_median=med(e), err_p90=float(np.percentile(e, 90)),
                      frac_err_gt150=float((e > DUMP_FLIP_DEG).mean()),
-                     abs_twist_median=med(np.abs(A['twist_deg'][sel, k])), swing_median=med(A['swing_deg'][sel, k]),
-                     twist_signed_mean=m(A['twist_deg'][sel, k]),
+                     abs_twist_median=med(np.abs(tw_def)), swing_median=med(A['swing_deg'][sel, k]),
+                     twist_circular_mean=tw_cm, twist_circular_r=tw_r, frac_twist_undefined=float(1 - len(tw_def) / len(tw)),
                      global_err_mean=m(A['global_err_deg'][sel, k]), global_err_median=med(A['global_err_deg'][sel, k]),
                      joint_err_mm_mean=m(A['joint_err_mm'][sel, k]),
+                     child_joint_err_mm_mean=m(A['child_joint_err_mm'][sel, k]),
                      pred_angle_mean=m(A['pred_angle_deg'][sel, k]), gt_angle_mean=m(A['gt_angle_deg'][sel, k]),
                      pred_spread_deg=dc.rotation_spread_deg(Rp), gt_spread_deg=dc.rotation_spread_deg(Rg),
                      rel_spread_deg=dc.rotation_spread_deg(E), rel_mean_angle_deg=ang_c,
@@ -317,15 +348,17 @@ def bone_dump_report(recs, variants, dump, out, meta):
 
     ref = 'V1_eval_masked' if 'V1_eval_masked' in summ['variants'] else next(iter(summ['variants']))
     R = summ['variants'][ref]
-    print(f"\n=== NECK/HEAD BONE DUMP ({ref}, {R['n']} matched people; local = parent-relative, deg; joint = bone-head mm) ===")
+    print(f"\n=== NECK/HEAD BONE DUMP ({ref}, {R['n']} matched people; local = parent-relative, deg; joint = own head, "
+          f"child = child's head, mm) ===")
     print(f"{'bone':<14}{'axis':<16}{'verdict':<13}{'med':>6}{'mean':>6}{'p90':>6}{'>150%':>6}{'|tw|':>6}{'swing':>6}"
-          f"{'glob':>6}{'joint':>6}{'prdSpr':>7}{'gtSpr':>6}{'relSpr':>7}{'relAng':>7}{'|prd|':>6}{'|gt|':>6}")
+          f"{'glob':>6}{'joint':>6}{'child':>6}{'prdSpr':>7}{'gtSpr':>6}{'relSpr':>7}{'relAng':>7}{'|prd|':>6}{'|gt|':>6}")
     for name, src in zip(dump['names'], dump['axis_src']):
         s = R['bones'][name]
         print(f"{name:<14}{src[:15]:<16}{s['verdict']:<13}{dc.fmt(s['err_median']):>6}{dc.fmt(s['err_mean']):>6}"
               f"{dc.fmt(s['err_p90']):>6}"
               f"{dc.fmt(s['frac_err_gt150'] * 100, 0):>6}{dc.fmt(s['abs_twist_median']):>6}{dc.fmt(s['swing_median']):>6}"
-              f"{dc.fmt(s['global_err_mean']):>6}{dc.fmt(s['joint_err_mm_mean']):>6}{dc.fmt(s['pred_spread_deg']):>7}"
+              f"{dc.fmt(s['global_err_mean']):>6}{dc.fmt(s['joint_err_mm_mean']):>6}{dc.fmt(s['child_joint_err_mm_mean']):>6}"
+              f"{dc.fmt(s['pred_spread_deg']):>7}"
               f"{dc.fmt(s['gt_spread_deg']):>6}{dc.fmt(s['rel_spread_deg']):>7}{dc.fmt(s['rel_mean_angle_deg']):>7}"
               f"{dc.fmt(s['pred_angle_mean']):>6}{dc.fmt(s['gt_angle_mean']):>6}")
     vns = list(summ['variants'])
@@ -342,8 +375,17 @@ def bone_dump_report(recs, variants, dump, out, meta):
           f"singular values in [{dc.fmt(g['sv_min'], 4)}, {dc.fmt(g['sv_max'], 4)}] -> {g['verdict']}")
     ca = meta.get('ckpt_args') or {}
     print("checkpoint args as saved (H3; None = flag absent): " + " ".join(f"{k}={v}" for k, v in ca.items()))
-    print("  read: FLIP_TWIST = error > 150 deg in >= half the people and the bone axis moves < 30 deg (half-turn about an axis")
-    print("        within ~15 deg of the bone; the child joint stays); FLIP_SWING = such a flip that tilts the bone axis >= 30 deg;")
+    print("  read: joint = error at the bone's own head, which its own rotation cannot move (only the bones above it do);")
+    print("        child = error at its twist-axis child's head, the first joint its rotation moves. child well above joint = the")
+    print("        bone's GLOBAL orientation is off (= its local error only when the parent chain is right).")
+    print("        FLIP_TWIST = error > 150 deg in >= half the people and the bone axis moves < 30 deg (half-turn about an axis")
+    print("        within ~15 deg of the bone; relative to the parent frame the child joint moves < 0.52 bone lengths);")
+    print("        FLIP_SWING = such a flip that tilts the bone axis >= 30 deg relative to the GT-posed parent frame: it moves the")
+    print("        child only if the parent chain is right. Under H1 the compensating head reads FLIP_SWING (its error is a half-turn")
+    print("        about the flipped neck bone's axis, 19-30 deg off the head axis at rest, so swing ~2x that) with small glob and")
+    print("        child ~ joint; glob and child tell it from a head flip that moves the head's child.")
+    print("        Flip location: a neck03 flip moves no joint; a neck01/neck02 flip moves the neck03/head 'joint' by up to ~21 mm")
+    print("        at rest and ~12-59 mm (mean) with 10-20 deg GT neck bends (anny default rig), so a rise there fits H1.")
     print("        PARTIAL_FLIP = > 150 deg in 10-50% of the people (mean >> median); FIXED_OUTPUT = pred spread < 1/4 of GT spread;")
     print("        CONST_OFFSET = R_pred ~ R_gt C with one C (relSpr < 10); SPREAD = large input-dependent error. A label says what")
     print("        the rotations are, not why (L1 trap: exp5 vs its control; origin: lineage traces; visible thinning: girth + render).")

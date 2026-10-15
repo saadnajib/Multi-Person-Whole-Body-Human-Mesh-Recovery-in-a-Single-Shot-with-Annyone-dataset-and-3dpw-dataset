@@ -2,20 +2,27 @@
 # exp5_neck_fix: fine-tune with the GEODESIC per-bone rotation loss (--rotmat_loss geodesic, loss.py) instead of the
 # L1 over the 9 rotation-matrix entries, then dump the neck/head bones on the holdout (--dump_bones 1).
 #
-# WHY (docs/experiments_plan.md, "Neck root cause"): v5, v9 (149 more epochs) and every v5 pilot carry the same local
-# error, neck01-03 62.7 deg and head+jaw 89.5 deg, per person 62.7 +/- 1.6 and 89.5 +/- 1.5, while the GLOBAL head
+# WHY (docs/experiments_plan.md, "Neck root cause"): v5 00099, v9 00062/00149 (149 more epochs) and the six exp2-exp4
+# pilot and control runs carry the same local error (exp1 and the ancestors not yet traced), neck01-03 62.7 deg and
+# head+jaw 89.5 deg, per person 62.7 +/- 1.6 and 89.5 +/- 1.5, while the GLOBAL head
 # error is 12.0 deg like v10's 12.9. The code audit refuted the mask, weight, eval and 3DPW causes (useful_rotmat is 1 on
 # bones 100-104, non-zero decpose gradients, V0 == V1, same GT tensor in training and eval, v5 never saw 3DPW). Two
 # bookkeeping causes are still UNTESTED: H3, an ancestor of the inherited heads trained in another pose_param, and H4,
 # raw dataset neck/head blocks that are not proper rotations (so the SVD-projected target disagrees with the GT mesh).
 # slurm/diagnostics/diag_neck_bones.sh checks both (H3 needs the ancestor checkpoints traced); read it before this.
 # The leading optimisation hypothesis [Likely, not yet measured per bone] is a compensated 180-deg twist flip: one neck
-# bone turned half a turn about its own axis and the head turned back, so joints and head orientation stay right while
-# the neck skin collapses.
-# The L1 over matrix entries has a barrier along that twist (4.83 at 135 deg vs 4.00 at 180 deg), so it can hold a flip
-# for any number of steps; the rotation angle has no such barrier (synthetic Adam test: L1 stays at ~165 deg from a
-# 175-deg start, geodesic reaches 0.1 deg). Whether v5 really holds a flip is what slurm/diagnostics/diag_neck_bones.sh
-# decides; this script is the training-side candidate and the guard against re-trapping after any repair.
+# bone turned half a turn about its own axis and the head turned back, so head orientation stays right and the joints
+# stay approximately right while the neck skin collapses. Exact only for a neck03 flip; a neck01/neck02 flip moves the
+# neck03/head joints up to ~21 mm at rest on anny's default rig and ~12-59 mm (mean) with 10-20 deg GT neck bends, so it
+# pays a position cost (docs table "flip | neck02 joint | ...").
+# The L1 over matrix entries has a barrier along that twist (4.83 at 135 deg vs 4.00 at 180 deg), so the rotation term
+# alone can hold a flip for any number of steps (whether a neck01/02 flip's position cost breaks it out is untested);
+# the rotation angle has no such barrier. Synthetic single-bone Adam tests with the rotation
+# term only (no position terms, so they do not show that a coupled neck-bone + head flip escapes in the real model):
+# from a 175-deg twist L1 ends at a median of 166.6 deg (16/16 > 90 deg), geodesic at 0.1 deg (0/16); from 160-180 deg
+# geodesic still left 1/8 above 90 deg (114.9). Whether v5 really holds a flip is what slurm/diagnostics/diag_neck_bones.sh
+# decides; this script is the training-side CANDIDATE (the name exp5_neck_fix is historical, nothing is established
+# yet) and the guard against re-trapping after any repair.
 #
 # WHAT RUNS (one GPU; ~45-60 min with the defaults):
 #   1. the diag manifest's image indices -> ${OUT}/exclude_manifest_indices.txt (as in exp3/exp4)

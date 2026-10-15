@@ -55,8 +55,22 @@ def load_model(ckpt_path, device, tf32=True):
     torch.backends.cuda.matmul.allow_tf32 = bool(tf32)
     torch.backends.cudnn.allow_tf32 = bool(tf32)
     ckpt = torch.load(ckpt_path, map_location=device)
-    kwargs = dict(vars(ckpt['args']))
-    raw_args = dict(kwargs)               # as saved, before the defaults below (H3: pose_param of old checkpoints)
+    a = ckpt.get('args') if isinstance(ckpt, dict) else None
+    raw_args = dict(vars(a)) if hasattr(a, '__dict__') else dict(a or {})   # as saved, before the defaults below
+    # H3 readout FIRST, before anything that can fail on an old checkpoint (Model(**kwargs), the >= 95% load check):
+    # the oldest ancestors are the ones H3 is about and the ones most likely not to build under the current model.py
+    rp = raw_args.get('pose_param', None)
+    print(f"[load_model] {ckpt_path}: saved ckpt_args (H3, read before the model is built): "
+          f"{'NO args saved; ' if not raw_args else ''}"
+          f"pose_param={'absent(local-bone assumed)' if rp is None else rp} "
+          + " ".join(f"{k}={raw_args.get(k)}" for k in CKPT_ARGS_REPORTED), flush=True)
+    if rp is not None and rp != 'local-bone':
+        print(f"[load_model] WARNING: checkpoint trained with pose_param='{rp}', but model.py evaluates every "
+              f"checkpoint as local-bone (demo.py refuses this case): its rotations are read in the wrong space",
+              flush=True)
+    if not raw_args:                      # as before (KeyError on ckpt['args']): never rebuild from defaults
+        raise KeyError(f"{ckpt_path}: no saved 'args'; cannot rebuild the model")
+    kwargs = dict(raw_args)
     kwargs.setdefault('simple_depth_encoding', 1)
     kwargs.setdefault('pose_param', 'local-bone')
     kwargs['person_center'] = 'head'      # demo.py does the same override
@@ -77,17 +91,12 @@ def load_model(ckpt_path, device, tf32=True):
         raise RuntimeError(f"only {pct:.1f}% of the model initialised; missing e.g. {missing}")
     model.eval()
     model.ckpt_raw_args = raw_args        # the saved args, unmodified (diag_holdout_trace --dump_bones meta)
-    rp = raw_args.get('pose_param', None)
     print(f"[load_model] img_size={model.img_size} backbone_dim={model.backbone_dim} "
           f"feat_proj={'yes' if getattr(model, 'feat_proj', None) is not None else 'no'} "
           f"ckpt_args: backbone={kwargs.get('backbone')} head_dim={kwargs.get('head_dim')} "
           f"mask_helper_joints_train={kwargs.get('mask_helper_joints_train')} "
           f"use_anny_shape={kwargs.get('use_anny_shape')} alpha_shape={kwargs.get('alpha_shape')} "
-          f"pose_param={'absent(local-bone assumed)' if rp is None else rp} "
-          + " ".join(f"{k}={raw_args.get(k)}" for k in CKPT_ARGS_REPORTED))
-    if rp is not None and rp != 'local-bone':
-        print(f"[load_model] WARNING: checkpoint trained with pose_param='{rp}', but model.py evaluates every "
-              f"checkpoint as local-bone (demo.py refuses this case): its rotations are read in the wrong space")
+          f"pose_param={'absent(local-bone assumed)' if rp is None else rp}")
     return model, kwargs
 
 
@@ -180,7 +189,7 @@ def identity_pose(n, n_bones, device):
     return torch.eye(4, device=device).reshape(1, 1, 4, 4).repeat(n, n_bones, 1, 1)
 
 
-def swing_twist_deg(R, axis):
+def swing_twist_deg(R, axis, undefined_tol=3e-4):
     """
     Swing-twist split of rotations R [..., 3, 3] about unit axes [..., 3] given in the same frame as R:
     R = R_swing @ R_twist, R_twist a rotation about `axis`, R_swing about an axis perpendicular to it.
@@ -188,7 +197,13 @@ def swing_twist_deg(R, axis):
     Closed form without a quaternion branch: with c = cos(angle) = (tr R - 1) / 2, the unit quaternion (w, v) of R
     has w^2 = (1 + tr R) / 4 and (v . axis)^2 = (axis . R axis - c) / 2, so |twist| = 2 atan2(|v . axis|, |w|), with
     the sign of axis . vee(R - R^T); swing = angle between axis and R axis (the twist leaves the axis fixed).
-    A pure 180-deg swing (R axis = -axis) has no defined twist and returns twist 0.
+    The twist is UNDEFINED, and returned as NaN (not 0), when the swing is near 180 deg: w^2 + (v . axis)^2 =
+    cos^2(swing / 2), so both terms vanish there and float32 round-off alone sets the atan2 (measured: 0 to 110+ deg
+    for exact 180-deg swings). It degrades before that: float32 twist error, max over 400 random frames, 0.26 deg at a
+    170-deg swing, 2.1 at 178, 3.2 at 179, 8.1 at 179.5. NaN is returned where w^2 + (v . axis)^2 < undefined_tol
+    (3e-4: swing > ~178.0 deg), so a returned twist is within ~2.5 deg in float32 (max 2.4 at a 177.9-deg swing).
+    The SIGN is also unreliable for |twist| near 180: vee(R - R^T) shrinks to 0 there, so a few degrees of residual
+    flip it; average twists on the circle (circular_mean_deg), never as signed numbers.
     """
     a = axis / torch.clamp(axis.norm(dim=-1, keepdim=True), min=1e-12)
     tr = R[..., 0, 0] + R[..., 1, 1] + R[..., 2, 2]
@@ -200,7 +215,20 @@ def swing_twist_deg(R, axis):
     vee = torch.stack([R[..., 2, 1] - R[..., 1, 2], R[..., 0, 2] - R[..., 2, 0], R[..., 1, 0] - R[..., 0, 1]], -1)
     sgn = torch.where((a * vee).sum(-1) < 0, -torch.ones_like(twist), torch.ones_like(twist))
     swing = torch.acos(torch.clamp(a_Ra, -1.0, 1.0))
+    twist = torch.where(w2 + vd2 < undefined_tol, torch.full_like(twist, float('nan')), twist)
     return torch.rad2deg(swing), torch.rad2deg(twist) * sgn
+
+
+def circular_mean_deg(a):
+    """Circular mean of angles a (deg; NaN entries ignored) = atan2(mean sin, mean cos), in [-180, 180], plus the
+    mean resultant length in [0, 1] (1 = all equal, ~0 = no preferred direction, e.g. +-180 split evenly reads ~180
+    with length ~1, but +90/-90 split evenly has length 0 and no meaningful mean). Returns (None, None) when empty."""
+    a = np.asarray(a, dtype=np.float64)
+    a = np.deg2rad(a[np.isfinite(a)])
+    if a.size == 0:
+        return None, None
+    s, c = float(np.sin(a).mean()), float(np.cos(a).mean())
+    return math.degrees(math.atan2(s, c)), math.hypot(s, c)
 
 
 def chordal_mean(R):
@@ -242,8 +270,10 @@ def pick_twist_children(bp_rest, parents, bone_idx, min_cos=0.95):
     For each bone b the axis is the rest child-offset direction R_rest_b^T (head_c - head_b) / |.| to its CONNECTED
     child c: the direct child whose offset is most aligned with the bone's local +Y, accepted when that cosine is
     >= min_cos (anny rigs follow Blender: +Y runs from a bone's head to its tail, and a connected child's head is
-    that tail, e.g. neck01 -> neck02 -> neck03 -> head, spine01 -> neck01, clavicle -> shoulder01). Without a
-    connected child (head: crown tail; jaw: chin tail; wrist) the axis is local +Y itself.
+    that tail, e.g. neck01 -> neck02 -> neck03 -> head, spine01 -> neck01, clavicle -> shoulder01). Helper and hand
+    children count too: on anny's default rig head -> special06.L, jaw -> special04 and wrist.L/R -> metacarpal1.L/R
+    have their head at the parent's tail (cos 1.000), so those axes equal local +Y. A bone with no child within
+    min_cos uses local +Y itself.
     Returns (child index or -1 per bone, cosine of the best child offset with +Y or nan per bone).
     """
     parents = [int(p) for p in parents]
