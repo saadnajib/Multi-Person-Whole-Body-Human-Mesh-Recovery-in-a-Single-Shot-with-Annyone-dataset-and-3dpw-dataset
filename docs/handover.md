@@ -1,23 +1,26 @@
-# Handover: project state on Thursday 15 October 2026
+# Handover: project state on Thursday 15 October 2026 (evening)
 
 This file replaces the chat history. It is written for an assistant that cannot see that chat, the cluster or any
 temporary files. Everything you need is either here or in this repository. **Where this file disagrees with
 `README.md`, `docs/diagnostics_findings.md`, `docs/experiments_plan.md` or `docs/experiments/exp2_children.md`, trust
-this file** (section 7 lists the outdated lines). The speaker notes `docs/supervisor_talk_notes_2026-10-16.md` are
-current except for known stale lines: slide 13 ("The slope did not move toward 1"), slides 6, 15 and 16 ("the rebuild
-is running", never confirmed) and slide 16 ("about one hour of training", "77.0 against 70.5"). Section 9 gives the
-replacements, and which slides change when a pending result arrives.
+this file** (section 7 lists the outdated lines). The deck and the speaker notes
+`docs/supervisor_talk_notes_2026-10-16.md` were first written before the 15-Oct evening results (exp6 and the label
+rebuild). A deck update for those results was made next to this file. Section 9 says what the updated deck says, how
+to check that your copy has it, and which lines may still be stale.
 
-**Which version you have.** This file, `docs/deck_src/` and all code are on GitHub `main` (merged on 15 Oct, after
-`64266dc`). To check a copy, run `grep -c '^## 0a\. Tomorrow' docs/handover.md`: it prints `1` for this version and `0`
-for every older one (the 14-Oct `586faad`, or the work-in-progress `c6419ce`). On `0` you are reading an old copy: ask
-the student for the right file. The student should attach this file to the chat directly, not rely on you browsing
-GitHub. Download link: section 8.
+**Which version you have.** The 15-Oct afternoon version of this file, `docs/deck_src/` and all code are on GitHub
+`main` (merged on 15 Oct as `64ac9e3`). To check a copy, run `grep -c '^## 0a\. Tomorrow' docs/handover.md`: it prints
+`1` for the 15-Oct versions and `0` for every older one (the 14-Oct `586faad`, or the work-in-progress `c6419ce`). This
+**evening** version also has the exp6 and rebuild results: `grep -c 3579014 docs/handover.md` prints a number above `0`;
+`0` means the afternoon copy, which still calls those jobs pending. It was not committed when it was written, so it is
+on GitHub only once the student commits and pushes it. On a wrong copy, ask the student for the right file. The
+student should attach this file to the chat directly, not rely on you browsing GitHub. Download link: section 8.
 
 **Meeting date: open.** Planned for **Friday 16 October 2026**, with the deck `docs/supervisor_update_2026-10-16.pptx`.
 On 15 Oct (16:07) the student asked for a draft message asking the supervisor to move it to **Monday 19 October**.
-Whether it was sent is unknown. An earlier message to the supervisor (content unknown) had no reply. Ask which date
-holds before planning: it decides whether the pending results (section 4) go into the deck first.
+Whether it was sent is unknown; still open on the evening of 15 Oct. An earlier message to the supervisor (content
+unknown) had no reply. Ask which date holds before planning: it decides whether the panels, the real-photo demo and
+the image check (section 4) can go into the deck first.
 
 **Citation key** (used from section 1 on):
 - `3572482:126` = line 126 of that Slurm job's `.out` log. Job index in section 8. The student has every log; ask for
@@ -44,14 +47,18 @@ Project in brief:
 - Main model v5 (epoch 99): 70.5 mm PVE on a fixed 100-image synthetic holdout (setting "V1").
 - Depth-target bug: the fix halves the absolute root error (1.21 -> 0.54 m), but the depth slope stays 0.30-0.44
   (1 = right) and bodies are still drawn ~16% too small. It likely costs 2.6-4.9 mm PVE.
-- Neck: two bones are turned half a turn in every v5-line model. A correction, exp6, is merged; its result is not in.
-- 3DPW labels: three defects (reversed gender, a missing actor in two-person frames, missing labels).
-- Fingers and children: tested, nothing helped yet.
+- Neck: two bones are turned half a turn in every v5-line model. exp6 (a fixed correction at the network output,
+  then a 2-epoch fine-tune) turns them back, and the neck gets its thickness back (girth 0.46 -> 1.00). Without the
+  fine-tune the head points worse. One run, no seed: no sign of a PVE cost, but no proven PVE gain either.
+- 3DPW labels: three defects (reversed gender, a missing actor in two-person frames, missing labels). A label rebuild
+  gave the same counts; the image files of 8 sequences are probably missing on the cluster.
+- Fingers: flipped hand bones were a large part of the finger error (exp6 on v5: 17.3 -> 8.2 deg).
+- Children: tested, nothing helped yet.
 Supervisor meeting: planned Fri 16 Oct; I may have asked to move it to Mon 19 Oct. Ask me which date holds.
 Thesis: my 13 Oct brief said a one-week deadline. Ask me the submission date and the chapter list of my draft
 before planning anything that takes more than a day.
-Possibly submitted 14-15 Oct, none confirmed: x20 depth run (14 Oct), 3DPW label rebuild and exp6 (15 Oct).
-Ask me to run the status block from handover section 4 (squeue alone misses jobs that already finished).
+Finished 15 Oct: exp6 on v5 and on v10, 3DPW label rebuild (results in handover section 3). Never confirmed: the
+x20 depth run (14 Oct). Ask me to run the status block from handover section 4 (squeue alone misses finished jobs).
 
 You cannot see my repo or the cluster. The repo is public:
 github.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset
@@ -83,25 +90,29 @@ Paste this section with section 0. Each step names the section with the details.
 
 1. Ask the student: does the meeting hold on Friday 16 Oct or Monday 19 Oct (top of file)? What is the thesis
    submission date, and which chapters does the draft have (section 10)?
-2. Get the job status with the status block (section 4, top). Resubmit a job only if both `sacct` and its output
-   folder show nothing.
-3. Read what arrived: exp6 (4a, then its three-case table), label rebuild (4c), x20 depth run (4d). Ask for the `.out`
-   files; analyse only after the student says "done".
+2. Image-folder check: one command, seconds, login node (4c). It tells whether missing image files explain why the
+   label rebuild gave the same counts.
+3. Ask for 3-4 exp6 compare panels (4a). They show whether the thin neck seen in renders is the flip.
+4. Start the real-photo demo of the fine-tuned checkpoint with the fix (4b): copy, one script edit, commit, sbatch.
+5. Status block (section 4, top), for the x20 depth run (4d, never confirmed) and the demo job. Resubmit a job only
+   if both `sacct` and its output folder show nothing. Analyse logs only after the student says "done".
 
 If the meeting is on **Friday**:
 
-4. Hand-edit the pptx in PowerPoint, using the table in section 9. First the lines that are stale whatever arrives
-   (slides 6, 15, 16: "rebuild running"; slide 13 notes: the slope; slide 16 notes: "one hour", "77.0"). Then one row
-   per result that arrived.
-5. Open the pptx in PowerPoint and check slides 5, 6 and 16 for text that wraps one line longer.
-6. After the meeting: write the supervisor's answer to the slide-16 question into section 9.
+6. Check that the student's deck has the evening update (section 9, check command). If not, hand-edit the pptx in
+   PowerPoint with the list in section 9. Either way, hand-edit the stale lines in section 9's table (slides 7 and
+   16).
+7. Open the pptx in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 15 and 16 for text that wraps one line longer.
+8. After the meeting: write the supervisor's answer to the slide-16 question into section 9.
 
 If the meeting is on **Monday**:
 
-4. Start the 3DPW re-fit first, because it needs ~5-6 h of wall time (not measured): three code changes, then the
-   commands in 4e ("3DPW re-fit chain"; NEEDS CODE).
-5. If exp6 is case (a) or (b) of its table: real photos with the fix (section 5, item 2; NEEDS CODE).
-6. Before the meeting: Friday steps 4-5 (deck edits, PowerPoint check).
+6. If the image check shows missing folders: re-extract them, rebuild the labels, re-check (4c).
+7. Start the longer fine-tune with the fix and its matched control (section 5, item 3; 4e).
+8. Start the 3DPW re-fit, which needs ~5-6 h of wall time (not measured): three code changes, then the commands in 4e
+   ("3DPW re-fit chain"; NEEDS CODE). Re-extract the images first (step 6): the label build after the re-fit needs
+   them too.
+9. Before the meeting: Friday steps 6-7 (deck check, PowerPoint check).
 
 ## 0b. Numbers at a glance
 
@@ -111,19 +122,39 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
 - Depth fix: root error 0.53-0.73 m (controls 1.11-1.44 m), size 0.78-0.87. Slope 0.30 with the switch alone and
   0.38-0.44 with the stronger depth loss, far from 1. Best runs: x5 for 10 epochs 0.54 m / 0.84 / 0.38; x20 for 2
   epochs 0.53 m / 0.87 / 0.43.
-- Cost of the fix vs its control: PVE +2.6 to +4.9 mm, recall -1.6 to -2.4 points (each inside pilot noise, all the
+- Cost of the depth fix vs its control: PVE +2.6 to +4.9 mm, recall -1.6 to -2.4 points (each inside pilot noise, all the
   same direction).
 - Pilot noise: two identical configs differ by 7.6 mm PVE and 1.9 deg global head. One pilot resolves ~10 mm, ~3 deg,
   ~2 recall points.
 - Neck, v5 (all eight v5-line checkpoints alike): neck02 175.6 deg (half-turn), head 177.9 deg, global head only
   12 deg, neck girth pred/GT 0.46, PVE_neck 27.3 mm. v10: girth 1.00, PVE_neck 10.3 mm. exp5 geodesic loss: neck02
   175.6 -> 175.0.
-- Other half-turns: v5 metacarpal1.L 180 deg; v10 shoulder01.L 166, upperarm02.L 180, metacarpal2.L/2.R/3.R 180.
-- Fingers: predicted 17.3 deg vs 15.1 at rest pose; test-time crop 17.2; region-norm loss 17.5 vs 17.4 (control).
+- exp6 on v5 (job 3579014): one fixed rotation each for neck02, head, metacarpal1.L and finger4-1.R (178.8-179.8 deg,
+  estimated on 200 training images). Zero-training verdict FAIL (global head 19.1 vs limit 15.0); fine-tuned PASS.
+
+  | V1 holdout | v5 | fix, no training | fix + 2-epoch fine-tune | control (2 epochs, no fix) |
+  |---|---|---|---|---|
+  | neck02 / head, deg | 175.6 / 177.9 | 4.5 / 12.4 | 4.7 / 11.2 | 175.7 / 177.9 |
+  | girth pred/GT; PVE_neck mm | 0.461; 27.3 | 1.004; 10.8 | 0.997; 10.7 | 0.461; 27.9 |
+  | PVE / PA-PVE / PVE_hn, mm | 70.5 / 53.3 / 52.3 | 71.3 / 52.2 / 63.1 | 68.8 / 50.9 / 51.8 | 76.9 / 55.2 / 55.8 |
+  | recall %; global head deg | 90.2; 12.0 | 90.2; 19.1 | 89.4; 14.4 | 91.1; 13.8 |
+  | fingers deg | 17.3 | 8.2 | 8.3 | 17.4 |
+
+  One run each, no seed; identical configs differ by up to 7.6 mm PVE. Say "no sign of a PVE cost", not "PVE
+  improved".
+- exp6 on v10 (job 3579015, no training, metacarpal2.L/2.R/3.R): PASS. PVE 74.1 -> 69.9, PA-PVE 55.6 -> 51.1,
+  fingers 32.0 -> 17.8 deg; global head 12.9 and recall 89.0 unchanged. The PVE drop is certain only for these 100
+  images (no training, so no run-to-run noise); [Likely] on other images. shoulder01.L (166) and upperarm02.L (180)
+  stay flipped: they need a two-sided correction, not implemented.
+- Other half-turns: v5 metacarpal1.L 180 deg, finger4-1.R 178.8 (found by exp6 on training images); v10
+  shoulder01.L 166, upperarm02.L 180, metacarpal2.L/2.R/3.R 180; v10 finger2-1.L 178.8, finger5-2.L 180 (training
+  images; not corrected).
+- Fingers: predicted 17.3 deg vs 15.1 at rest pose; with the exp6 fix 8.2; test-time crop 17.2; region-norm loss 17.5
+  vs 17.4 (control).
 - Children: sampler raises children per batch 2.1% -> 9.7-11%; real photos stay at age 0.57-0.67 either way.
 - 3DPW labels: body joints 18.7 mm median (p95 24.5); surface 18.9 / 18.3 mm (lower bound). Gender reversed (men:
   19.2 -> 15.3 mm when flipped); 407 of 960 two-person images miss an actor; train 4,451 of 6,437 images labelled,
-  validation 2,458 of 2,777.
+  validation 2,458 of 2,777. Rebuild (job 3579266): the same 4,451 / 2,458 / 9,722; [Likely] image files missing.
 - 3DPW-test PVE, against our converted labels only (not comparable with published numbers): v5 119.1, v9 102.5,
   v10 111.5.
 
@@ -169,6 +200,9 @@ defects (section 3.5). Say "best on our 3DPW-Anny labels", never "best model".
 - v5 lineage: `models/multiHMR/anny_s2_frozen_bb_v2_00299.pt`, `logs/anny_model/anny_s2_partialft_v3/checkpoints/00054.pt`,
   `logs/anny_model/anny_s2_boosted_v4/checkpoints/00299.pt` (paths from 3573519:1, :89, :177).
 - NAVER's original (backbone source of frozen_bb_v2 and v10): `models/multiHMR/multiHMR_672_L_anny.pt`.
+- exp6, v5 fine-tuned 2 epochs with the bone fix: `results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/train/checkpoints/00001.pt`
+  (the fix is saved in its args and re-applied on load; 3579014:80). Demo copy `models/multiHMR/exp6_v5_bonefix_00001.pt`
+  once made (4b).
 - Experiment runs: `results/experiments/<exp>/<RUN>/train/checkpoints/`, last epoch `00001.pt` (2 epochs) or
   `00009.pt` (10 epochs); only the last 2 are kept. Example: `results/experiments/exp1_depth_anchor/long_pc_dist5/train/checkpoints/00009.pt`.
   Run names are in section 3.1 and the job index (section 8).
@@ -245,8 +279,9 @@ mention it in the thesis as a known issue.
   more than 150 deg in 10-50% of people. **OK** = median < 15 deg. **FIXED_OUTPUT** = predicted spread < 1/4 of GT
   spread. **CONST_OFFSET** = R_pred ~ R_gt C with one C (relSpr < 10). **SPREAD** = large, image-dependent error.
 - **compensated chain**: a flipped bone whose half-turn a second flipped bone further down undoes, so the bones
-  below point the right way (v5: neck02 -> head; v10: shoulder01.L -> upperarm02.L). Correcting only one of the pair
-  breaks the bones in between.
+  below point the right way (v5: neck02 -> head; v10: shoulder01.L -> upperarm02.L). A constant on each flipped bone
+  still leaves the link in between wrong (exp6 v5: global head 19.1 without training, 3579014:32-35, :113); keeping
+  the chain needs a two-sided correction.
 - **girth** = neck-skin radius pred/GT. **PVE_neck** = vertex error over the 171 neck-skin vertices (skinned >= 50%
   to neck01-03), reported neck01-centred. **PVE_hn** = vertex error over head + neck vertices (neck01 joint to the
   crown). **neck%** = predicted / GT neck length, %.
@@ -287,7 +322,7 @@ followed by the path (e.g. `.../main/train.py`), if your tools can fetch URLs; o
 | `slurm/train/` | v9, v10, final student training scripts |
 | `slurm/eval/` | `run_eval_3dpw_test.sh` (3DPW-test via `train.py --eval_only 1`, V0; [Likely] the source of the 3DPW-test column in section 1), `run_eval_3dpw.sh`, `run_eval_3dpw_teacher.sh`, `run_test.sh` |
 | `slurm/history/` | finished training runs of the v5 line (`train_step2_frozen_bb.sh` = frozen_bb_v2, ...) |
-| `slurm/demo/` | `run_demo.sh` (real photos; copies v5 00099 under the misleading name `anny_distill_vits_v2_00099`, :58-59), `run_demo_syn.sh` (AnnyOne images), `run_demo_compare.sh` (five models), `run_demo_3dpw.sh`, `run_demo_student.sh`. All hard-code their checkpoints; none passes `--bone_fix` |
+| `slurm/demo/` | `run_demo.sh` (real photos; copies v5 00099 under the misleading name `anny_distill_vits_v2_00099`, :58-59), `run_demo_syn.sh` (AnnyOne images), `run_demo_compare.sh` (five models), `run_demo_3dpw.sh`, `run_demo_student.sh`. All hard-code their checkpoints; none passes `--bone_fix`, but `demo.py` re-applies a fix saved in the checkpoint args (`demo.py:151-155`) |
 | `configs/threedpw_tasks.txt` | the 87 fit tasks (split, sequence, person, frames), one per array index 0-86 |
 | `scripts/diagnostics/README.md` | legend of the trace metrics (PVE_hn, neck%, skeletal height); its "not yet executed" (:9) is stale |
 | `docs/` | this file, the deck, speaker notes, findings, plan, `deck_src/` (deck source) |
@@ -338,7 +373,7 @@ GitHub; you cannot (next paragraph).
 2. Give each change as ONE copy-paste block, run in `/netscratch/najib/multi-hmr`, that makes the change and checks
    it. For an edit, a Python heredoc that replaces an exact old text and refuses if it does not match exactly once
    (safer than a hand-written diff). For a new file, a full-file heredoc (`cat > path <<'EOF'`). Worked example,
-   the first change of the 3DPW re-fit (section 5, item 3; section 4e):
+   the first change of the 3DPW re-fit (section 5, item 7; section 4e):
    ```
    cd /netscratch/najib/multi-hmr && python - <<'EOF'
    p = "slurm/data/run_smpl_to_anny_task.sh"
@@ -423,7 +458,7 @@ statistic in the findings doc and the exp1 script's "baseline(findings)" column;
 **Submitted?** `long_pc_dist20` (x20, 10 epochs): the command was given on 14 Oct (~19:07, "Run this tonight"); never
 confirmed, no job ID, no log. Check with the status block (section 4). Command and reading in 4d.
 
-**Next:** see section 5, items 3-6.
+**Next:** see section 5, items 6-9.
 
 ### 3.2 Neck
 
@@ -471,8 +506,8 @@ confirmed, no job ID, no log. Check with the status block (section 4). Command a
   control stayed at 175.7 / 177.9 (3573521:89-91; verdict "NO MOVEMENT", :103). [Likely] neck02 and head would have to
   turn back together; a partial move raises the loss.
 
-**Not refuted, not shown:** that the visible long/thin-neck look in the overlays IS this flip [Likely; render
-pending, exp6 `compare/`].
+**Not refuted, not shown:** that the visible long/thin-neck look in the overlays IS this flip [Likely]. exp6 wrote 12
+side-by-side panels (3579014:58); nobody has looked at them yet (4a).
 
 **Origin: unknown.** The 6D init `[1,0,0,1,0,0]` (`model.py:641`) is singular under `rot6d_to_rotmat`
 (`utils/humans.py:20-21`). It starts a bone turned about its local X axis, i.e. a tilt (FLIP_SWING). That fits
@@ -488,39 +523,110 @@ trainable (`slurm/train/train_v10_scratch_mixed.sh:52-86`). They also differ in 
 trainable, helper mask, `alpha_shape 20` and 3DPW from step 0. So "fresh heads" alone does not explain it, and the
 recipe is not ruled out.
 
-**Not yet done:** render the flip to confirm it is the thin/long-neck look seen in the overlays.
+**Not yet done:** look at the exp6 panels (4a) and at real photos with the fix (4b).
 
-**exp6 (maybe submitted 15 Oct; no job ID or log; check with the status block in section 4)** (`--bone_fix`, code
-in `d902e00`, final in `81dbdcb`). One constant rotation `C` per flipped bone,
-estimated on 200 random training images (never the holdout) by `compute_bone_fix.py`, applied as `R <- R·C` right after
-the 6D decoding. Then a zero-training test on the holdout and a 2-epoch fine-tune with the fix in place. Expected
-[Likely]: neck02 -> ~5 deg, metacarpals -> ~0-1 deg, head -> ~15 deg (its half-turn compensates neck02 differently per
-person, which one constant cannot undo), global head error rises. Commands, pass criteria and the three-case reading
-in section 4a.
+**exp6 on v5: the fix passes after a 2-epoch fine-tune (one run, no seed; panels not seen)** (job 3579014;
+`--bone_fix`, code in `d902e00`, final in `81dbdcb`). One constant rotation `C` per flipped bone, estimated on 200
+random training images (never the holdout) by `compute_bone_fix.py`, applied as `R <- R·C` right after the 6D decoding
+(3579014:2, :7, :48). Then a zero-training test on the holdout, and a 2-epoch fine-tune with the fix in place, with
+the exp5 L1 recipe (3579014:59). The control is the exp5 L1 run: the same recipe without the fix (3579014:94).
+- Bones picked by the script: neck02, head, metacarpal1.L, finger4-1.R; C = 178.8, 179.2, 179.8, 179.7 deg (:12, :37).
+  finger4-1.R is new: FLIP_TWIST 178.8 on the training images (:13); the earlier dump (3573518) did not cover finger
+  bones.
+- The GLOBAL GUARD fired, as expected: on the training images the fix raises the predicted global error of head
+  8.4 -> 17.9 deg and jaw 9.1 -> 17.5 (:31). The job went on (`ON_GLOBAL_RISE=continue`, :43-44).
+
+| V1, 100-image holdout | v5 baseline | fix, no training | fix + 2-epoch fine-tune | control: 2 epochs, no fix | 3579014 line |
+|---|---|---|---|---|---|
+| neck02 median, deg | 175.6 FLIP_TWIST | 4.5 | 4.7 | 175.7 FLIP_TWIST | :101 |
+| head median, deg | 177.9 FLIP_TWIST | 12.4 | 11.2 | 177.9 FLIP_TWIST | :103 |
+| metacarpal1.L / finger4-1.R, deg | 180.0 / not dumped | 0.0 / 10.2 | 0.0 / 10.3 | - | :105-106 |
+| girth pred/GT | 0.461 | 1.004 | 0.997 | 0.461 | :107 |
+| PVE_neck (neck01-centred), mm | 27.3 | 10.8 | 10.7 | 27.9 | :108 |
+| PVE, mm | 70.5 | 71.3 | 68.8 | 76.9 | :109 |
+| PA-PVE, mm | 53.3 | 52.2 | 50.9 | 55.2 | :110 |
+| PVE_hn, mm | 52.3 | 63.1 | 51.8 | 55.8 | :111 |
+| recall, % | 90.2 | 90.2 | 89.4 | 91.1 | :112 |
+| global head, deg | 12.0 | 19.1 | 14.4 | 13.8 | :113 |
+| fingers, deg | 17.3 | 8.2 | 8.3 | 17.4 | :114 |
+
+Verdict lines: `ZERO-TRAINING FIX: FAIL (rot_global_head_deg 19.1 vs limit 15.0)` (:120); `FINE-TUNED FIX: PASS`
+(:121). By the three-case rule written before the run (afternoon handover, its 4a), this is case (a) (fine-tuned
+PASS), not the expected case (b) (head >= 15 deg).
+
+What this says:
+- [Certain] The fix turns both neck bones back on unseen holdout images (neck02 175.6 -> 4.5 deg without training,
+  4.7 after the fine-tune), and the neck skin gets its thickness back: girth 0.46 -> 1.00, PVE_neck 27.3 -> 10.7 mm
+  (v10 level: 10.3). The control without the fix keeps the flip (175.7, girth 0.461). These changes are far larger than
+  the pilot noise (3.6).
+- [Certain] Without training, the head is not right: the head bone keeps 12.4 deg, global head rises 12.0 -> 19.1 deg
+  and PVE_hn 52.3 -> 63.1 mm. The guard predicted this rise before the holdout test (:31, :44). Do not claim "no
+  training needed".
+- [Likely] Why: the compensated chain the guard warned about (:32-35). The head's offset differs per person (relSpr
+  15.5, :16; the log's own reading, :123), so one constant cannot undo it. The deck should give this one reason too
+  (section 9, table).
+- [Certain] After 2 epochs with the fix in place, the head residual shrinks (head 11.2 deg, global head 14.4, PVE_hn
+  51.8) and the fine-tune checks against the control pass (:119, :121): corrected bones under 15 deg, girth >= 0.9,
+  PVE <= control + 8 mm, recall >= control - 2 points (89.4 vs a limit of 89.1: a 0.3-point margin), global head <=
+  control + 3 deg (14.4 vs 16.8). The PVE check only rules out a cost above 8 mm; it does not show a gain.
+- [Likely, not certain] PVE 68.8 against 76.9 for the control (-8.1 mm) and 70.5 for v5. One run each, no seed; two
+  identical configs differed by 7.6 mm (3.6), and the control's 76.9 is above the earlier range of six arms
+  (68.7-76.3). Say "no sign of a PVE cost", not "PVE improved".
+- [Certain] Global head 14.4 vs 13.8 (control) and recall 89.4 vs 91.1 (control) are inside the noise (1.9 deg, ~2
+  points).
+- The training log's own eval (pve 71.0, then 72.7; :68, :76) is `train.py evaluate()`, [Likely] with helper bones
+  unmasked (V0-like, +3.8 mm on v5, README :321). Quote the trace's 68.8, never the 72.7.
+- Not shown: why the flip arose (origin still open; the fix is a constant and says nothing about why, :124); that the
+  thin neck seen in renders is this flip (panels not yet seen); real photos.
+
+**exp6 on v10: three metacarpals corrected without training (bone medians; panels not seen)** (job 3579015;
+`TRAIN=0`, bones metacarpal2.L, metacarpal2.R, metacarpal3.R; :2, :12).
+- [Certain] `ZERO-TRAINING FIX: PASS` (:86); the guard did not fire (:60). metacarpal2.L / 2.R / 3.R 180.0 -> 0.0 / 1.8
+  / 0.0 deg (:70-72), fingers 32.0 -> 17.8 deg (:80). Global head 12.9 (:79), recall 89.0 (:78) and girth 0.998 (:73)
+  are unchanged.
+- PVE 74.1 -> 69.9 (:75), PA-PVE 55.6 -> 51.1 (:76): [Certain] for these 100 holdout images only. No training is
+  involved (same checkpoint, same images, only the output correction differs), so the run-to-run noise of 3.6 does
+  not apply. [Likely] on other images. Never call it a certain PVE gain without "on these 100 images".
+- [Certain] Not corrected: shoulder01.L 166.2 and upperarm02.L 180.0, still FLIP_TWIST (:68-69). They form a
+  compensated chain, so they need a two-sided correction (not implemented, below).
+- The training images show two more flipped v10 finger bones, finger2-1.L FLIP_TWIST 178.8 and finger5-2.L FLIP_SWING
+  180.0 (:13); the holdout dump did not cover finger bones, and they were not corrected.
 
 **Not implemented:** the two-sided correction `R_l <- K_l^T R_l K_l` (needed to keep a compensated chain such as
-v10's left arm intact; plan :489, :561) and a chain-preserving head correction (plan :558; the expected head residual
-it would address is explained at plan :534-551).
+v10's left arm intact; plan :489, :561). The chain-preserving head correction (plan :558) was meant for case (b); after
+the fine-tune the v5 head is already under 15 deg, so [Likely] it is no longer needed for v5.
 
 ### 3.3 Fingers
 
 **Measured** [Certain] (v5, V1):
-- Predicted fingers 17.3 deg; fingers set to rest pose 15.1 deg (3571960:290). The prediction is worse than no
-  prediction, so all demos use `--relax_hands 1` and say so.
+- Predicted fingers 17.3 deg; fingers set to rest pose 15.1 deg (3571960:290). Without the bone fix the prediction is
+  worse than no prediction, so all demos use `--relax_hands 1` and say so (with the fix: below).
 - Hands are small: median 2.25 tokens long at 672 px, 41% under 2 tokens (3571960:287).
 - exp4a, test-time person crop (x1.3, no retraining): paired 17.3 -> 17.2 deg (3571960:299); body PVE nearly doubles
   (124.8, 3571960:294) because the model never saw such a camera.
 - exp4b, region-normalised rotation loss: 17.5 deg vs 17.4 for its control (3571959:316; 3571960:314). It cut the
   hands' share of the rotation loss from ~70% (with the x4 hand boost) to 33%, so it is a rebalance, not an
   upweighting (notes :35). The earlier x4 hand boost (v4) did not help either.
-- v5's `metacarpal1.L` is flipped 180 deg (3.2). [Likely] it adds ~4.7 deg to both finger numbers, so it does not explain
-  the 17.3 vs 15.1 gap. `--relax_hands` does not reset metacarpals, so [Likely] the bent left index base is visible in
-  the demos.
+- v5's `metacarpal1.L` is flipped 180 deg (3.2). `--relax_hands` does not reset metacarpals, so [Likely] the bent left
+  index base is visible in the demos.
+
+**Flipped bones (exp6, 3.2)** [Certain]:
+- Flipped hand bones are a large part of the finger error. v5: correcting metacarpal1.L and finger4-1.R lowers the
+  finger error 17.3 -> 8.2 deg without training (3579014:114) and 8.3 after the fine-tune; the control stays at 17.4.
+  v10: correcting three metacarpals lowers it 32.0 -> 17.8 (3579015:80).
+- So the old reading "the prediction is worse than no prediction" holds only without the fix: v5 with the fix (8.2) is
+  well below the 15.1 rest-pose number. That rest-pose number still contains the metacarpal1.L flip (relax_hands keeps
+  metacarpals), so a fair rest-pose floor with the fix was not measured.
+- The earlier "[Likely] metacarpal1.L adds ~4.7 deg" was for that bone alone. Correcting it together with finger4-1.R
+  removes 9.1 deg; the split between the two is not measured.
+- v10 has two more flipped finger bones on training images (finger2-1.L, finger5-2.L; 3579015:13), not corrected.
 
 **Refuted:** "fingers are a resolution problem" for test-time zoom only. **Not shown:** that a model trained on larger
 hands would not help. "Under-trained" / "supervision or capacity" is a guess [Guessing].
 
-**Next:** train on larger hand crops; otherwise a thesis limitation. Low priority.
+**Next:** in the real-photo demo of the fixed checkpoint (4b), also look at the hands; a run with `--relax_hands 0`
+would show the fixed model's own fingers (NEEDS a copy of the demo call, not written). Then larger hand crops;
+otherwise a thesis limitation. Low priority.
 
 ### 3.4 Children
 
@@ -547,7 +653,7 @@ not settled (notes :41). Avoid years; compare with the holdout adults instead.
 
 **Verdict so far:** no effect from a 2-epoch sampler. [Guessing] a synthetic-to-real gap plus an old-age bias.
 
-**Next:** lowest priority: a 10-epoch run with its own control and the real-photo read (section 5, item 9); if
+**Next:** lowest priority: a 10-epoch run with its own control and the real-photo read (section 5, item 12); if
 nothing, a thesis limitation.
 
 ### 3.5 3DPW -> Anny labels
@@ -578,12 +684,13 @@ the fingers. The label builder drops fits > 80 mm, people < 30% visible and boxe
    (13.7 -> 16.3 mm), surface closer for 27/31 (:316-317). So the fix is confirmed only for men.
 2. **Missing actor.** 407 of 960 two-person images have one valid actor without a label; all 407 because that actor was
    not fitted on that frame (per-person stride phase) (:228-229).
-3. **Missing labels.** Train has 4,451 label images where the fits give 6,437 (:31). Six train sequences have none:
+3. **Missing labels.** Train has 4,451 label images where the fits give 6,437 (:31); [Likely] cause: missing image
+   files (rebuild below). Six train sequences have none:
    `courtyard_arguing_00`, `courtyard_backpack_00`, `courtyard_basketball_00`, `courtyard_bodyScannerMotions_00`,
    `courtyard_box_00`, `courtyard_capoeira_00`; `courtyard_captureSelfies_00` is partial, 319 of 401 (:25, :63-70).
    Validation: `courtyard_basketball_01` not built (319 images; 2,458 of 2,777; :26, :33, :89). All 162 frames of
    `outdoors_crosscountry_00` are dropped by the < 30% visibility filter (:96); they are already outside the 2,777, and
-   the rebuild will not recover them.
+   a rebuild cannot recover them.
 
 **By design, not bugs:** neck02/neck03/head at rest in 100% of labels; age 0.55; head turn kept only through neck01:
 overall 9.5 vs 20.2 deg in SMPL (:223-224). Train and validation keep most of it (18.5 vs 21.2; 19.1 vs 19.3); test
@@ -596,11 +703,28 @@ and check V4e (people with a joint over 100 mm), 5.2% in train = FAIL there, 3.2
 of the test-split limb ratios: unknown. All checked test people are men labelled 1, so a link to the gender defect is
 possible, not shown (notes :27).
 
-**Submitted?** label rebuild into `threedpw_anny_full/labels_rebuilt` (b395a10): maybe on 15 Oct; not confirmed, no job
-ID, no log. Check with the status block (section 4).
+**Label rebuild (job 3579266): the same counts, so it did not recover the missing labels.** Output
+`threedpw_anny_full/labels_rebuilt` (b395a10):
+- train 4,451 images, 5,183 people (3579266:25); the six train sequences still have 0 images (:1-6);
+  captureSelfies_00 still 319 (:7).
+- validation 2,458 images (:39); `courtyard_basketball_01` still 0 (:27); crosscountry 0, its 162 frames dropped by the
+  visibility filter (:34, :39).
+- test 9,722 (:65); total 16,631 label files, 20,028 people (:67). These match the old labels (3575369:31, :33, :35).
+- The "unconverted tasks (no .npz yet)" list is empty (:68): all 87 fits exist.
 
-**Next:** fix gender and use one shared frame grid for both actors, re-fit all 87 tasks into a **new** folder, rebuild,
-re-check (section 5). Only then test anything on 3DPW.
+What this says:
+- [Certain] The old explanation "the label builder ran before all fits finished" is wrong (section 6).
+- [Certain] The builder skips any frame whose image file is missing, and does not count it
+  (`build_threedpw_anny_labels.py:123-125`: `if not os.path.isfile(img): continue`). The counters for the other drop
+  reasons (error, visibility, box size) are 0 in train (3579266:25).
+- [Likely] The image folders of those 8 sequences (six train, captureSelfies_00, basketball_01) are missing or
+  incomplete on the cluster, from an incomplete unzip of `/ds-av/public_datasets/3DPW/original/imageFiles.zip`. The
+  extract step unzips only if `data/3DPW/imageFiles` does not exist yet (`slurm/data/run_3dpw_list.sh:36`), so a broken
+  first unzip is never repeated [Certain about the code; the broken unzip itself is not checked]. Check command: 4c.
+
+**Next:** check the image folders, re-extract the missing ones, rebuild, re-check (4c). Then fix gender and use one
+shared frame grid for both actors, re-fit all 87 tasks into a **new** folder, rebuild, re-check (section 5, item 7).
+Only then test anything on 3DPW.
 
 ### 3.6 Pilot noise (read every 2-epoch result against this)
 
@@ -608,93 +732,129 @@ The exp3 control (3571958) and exp4 control (3571960) are identical configs. The
 68.7; 3571958:104, 3571960:320), 1.9 deg global head (13.6 vs 11.7) and 0.8 recall points. Over six 2-epoch v5-recipe
 arms: PVE 68.7-76.3, recall 88.6-90.2, global head 11.3-13.7 (`docs/experiments_plan.md:413-419`). So one pilot
 resolves only ~10 mm PVE, ~3 deg, ~2 recall points. `train.py` sets no random seed (the trace's `--seed` only picks
-which training images exp6 samples). Restarting a fine-tune alone costs ~2.4 mm (notes :61).
+which training images exp6 samples). Restarting a fine-tune alone costs ~2.4 mm (notes :61). The exp5 L1 control, which is
+also exp6's control, sits just above that range (PVE 76.9, 3573521:98).
 
 ---
 
 ## 4. Pending jobs
 
 All commands run on the cluster in `/netscratch/najib/multi-hmr`, after `git pull`; every block below starts with the
-`cd`. On 15 Oct 15:39 the student said "since it's running" without job IDs. **Treat every job below as "maybe
-submitted"** and check first.
+`cd`.
 
-**Status block.** `squeue -u najib` lists only queued and running jobs. exp6 (~30 min) and the rebuild (~1 min) were
-maybe sent on 15 Oct, so by now they have probably finished and `squeue` shows nothing. This block also shows
-finished jobs and their outputs (`;` so that a missing folder does not stop the rest):
+**Done on 15 Oct (no longer pending):** exp6 on v5 (job 3579014), exp6 on v10 (job 3579015), label rebuild (job
+3579266). Results in 3.2, 3.3 and 3.5. **Still pending:** the image-folder check (4c), the exp6 panels (4a), the
+real-photo demo with the fix (4b), and the x20 depth run (4d, never confirmed).
+
+**Status block.** `squeue -u najib` lists only queued and running jobs. This block also shows finished jobs and their
+outputs (`;` so that a missing folder does not stop the rest):
 ```
-cd /netscratch/najib/multi-hmr; sacct -u najib -S 2026-10-14 --format=JobID,JobName%28,State,Elapsed; ls -lt logs | head -20; ls results/experiments/exp6_bone_fix/ results/experiments/exp1_depth_anchor/; ls threedpw_anny_full/labels_rebuilt | head
+cd /netscratch/najib/multi-hmr; sacct -u najib -S 2026-10-14 --format=JobID,JobName%28,State,Elapsed; ls -lt logs | head -20; ls results/experiments/exp1_depth_anchor/; ls -d demo_out_exp6_v5_bonefix_00001_*
 ```
-What to look for: job names `exp6-bone-fix`, `3dpw-labels` and `exp1-depth-anchor` in `sacct` (State `COMPLETED`,
-`FAILED`, `TIMEOUT`, ...); run folder `anny_s2_shape_v5_00099_n200_s0` under `exp6_bone_fix/`; `long_pc_dist20` under
-`exp1_depth_anchor/`; index files in `labels_rebuilt`. If `sacct` prints an error (accounting may be off on this
-cluster [Guessing]), use the `ls` lines alone. **Resubmit a job only if both `sacct` and its output folder show nothing.** If the folder exists
+What to look for: job names `exp1-depth-anchor` and `demo-compare` in `sacct` (State `COMPLETED`, `FAILED`,
+`TIMEOUT`, ...); `long_pc_dist20` under `exp1_depth_anchor/`; the folders `demo_out_exp6_v5_bonefix_00001_photos` and
+`_3dpwtest` once the demo (4b) ran. If `sacct` prints an error (accounting may be off on this cluster [Guessing]), use
+the `ls` lines alone. **Resubmit a job only if both `sacct` and its output folder show nothing.** If the folder exists
 but the job failed, ask for its `.out` and `.err` before resubmitting.
 
-### 4a. exp6 on v5 (bone correction + 2-epoch fine-tune)
+### 4a. exp6 compare panels (results in; panels not yet seen)
 
+List them:
 ```
-cd /netscratch/najib/multi-hmr && sbatch slurm/experiments/exp6_bone_fix.sh
+cd /netscratch/najib/multi-hmr && ls results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/compare/ results/experiments/exp6_bone_fix/anny_v10_scratch_mixed_00290_n200_s0_metacarpal2_L-metacarpal2_R-metacarpal3_R/compare/
 ```
-- ~30 min (limit 1 h). Log `logs/exp6_bone_fix_<jobid>.out`. Run dir
-  `results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/` (`bone_fix.json`, `summary.json`, `compare/*.jpg`
-  = top row without, bottom row with the fix).
-- The final table has 4 columns: baseline | zero-training | fine-tuned | control (the exp5 L1 run).
-- **Zero-training PASS** needs all of: neck02, head and metacarpal1.L each below 15 deg; girth >= 0.9; global head <=
-  baseline + 3 deg; PVE <= baseline + 1 mm.
-- **Fine-tuned PASS** needs: the same bone and girth conditions; PVE <= control + 8 mm; recall >= control - 2;
-  global head <= control + 3 deg.
-- **Expected** [Likely]: a "GLOBAL GUARD" warning (exit 4) in step a; the job continues. neck02 near 5 deg; head near
-  15 deg, so both verdict lines may say FAIL on the head or global head even though the neck skin recovers. That is
-  case (b) below, not a failure of the idea.
+- 12 panels per run (3579014:58, 3579015:49): top row without the fix, bottom row with it. Ask the student to copy 3-4
+  v5 panels to the laptop and attach them.
+- These panels show the **zero-training** fix (step b), where the head still points worse (global head 19.1 deg). The
+  fine-tuned checkpoint's own trace panels are [Likely] in
+  `results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/holdout_ft/vis/` (the trace saves panels under
+  `vis/`; this folder was not listed).
+- Look for: a thicker, shorter neck in the bottom row (girth 0.46 -> 1.00), and the head direction. If the bottom-row
+  neck looks like the real-photo overlays should, "the thin neck is the flip" moves from [Likely] to shown.
 
-**Reading exp6: three cases.** Use the final table (columns `baseline | zero-training | fine-tuned | control`; rows
-`neck02 *`, `head *`, `girth pred/GT`, `global head`, `PVE`, `recall`; `*` = corrected bone) and the two verdict
-lines `ZERO-TRAINING FIX:` and `FINE-TUNED FIX:`. Judge on the fine-tuned column; on the zero-training column if
-training did not run. A "NO TARGET" stop (exit 3: no bone qualified) counts as case (c).
+### 4b. Real-photo demo of the fine-tuned checkpoint with the fix
 
-| case | what the log shows | what to claim | next |
-|---|---|---|---|
-| (a) | `FINE-TUNED FIX: PASS`, or `ZERO-TRAINING FIX: PASS` with the fine-tuned line FAIL or not run | "A fixed correction at the network output removes the neck flip (neck02 175.6 -> X deg; head 177.9 -> Y deg) and the neck skin recovers (girth 0.46 -> Z), within the PVE / recall / global-head guards." Fine-tuned PASS: add "fine-tuning keeps it removed". Zero-training PASS only: say "without training" and name what the fine-tune failed on | keep the fix (it is saved in the fine-tuned checkpoint args); look at `compare/`; real photos (section 5, item 2) |
-| (b) | `neck02 *` < 15 and `girth pred/GT` >= 0.9, but the verdict line says FAIL on `head` (>= 15), on `global head` (> ref + 3) or on PVE / recall | "The neck skin recovers with a fixed output correction (girth 0.46 -> Z, neck02 175.6 -> X deg); the head keeps a ~Y deg residual (global head A -> B deg)." Name any PVE / recall cost. Do **not** claim a neck fix | the expected outcome [Likely]. Next: the chain-preserving head correction (plan :558; NEEDS CODE in `bone_fix.py`); look at `compare/` |
-| (c) | `neck02 *` still >= 15, or `girth pred/GT` < 0.9 | neck02 >= 15: "a constant correction does not undo the flip on unseen images". neck02 < 15 but girth < 0.9: "neck02 is turned back, but the neck stays thin: the thinning has another cause" (plan :560) | the origin stays open; look at `compare/` and the shape outputs |
+Not run yet. Four blocks, in order.
 
-Fill X, Y, Z, A, B from the table; never write the letters into a slide.
-
-### 4b. exp6 on v10 (three metacarpals, no training)
-
+1. Copy the checkpoint under a new name (`-n`: never overwrite):
 ```
-cd /netscratch/najib/multi-hmr && CKPT=logs/anny_model/anny_v10_scratch_mixed/checkpoints/00290.pt TRAIN=0 BONES=metacarpal2.L,metacarpal2.R,metacarpal3.R sbatch --time=00:30:00 slurm/experiments/exp6_bone_fix.sh
+cd /netscratch/najib/multi-hmr && cp -n results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/train/checkpoints/00001.pt models/multiHMR/exp6_v5_bonefix_00001.pt && ls -l models/multiHMR/exp6_v5_bonefix_00001.pt
 ```
-- ~10 min. Expected: the three metacarpals -> ~0-1 deg, PVE and global head about unchanged, zero-training PASS.
-- Do **not** use `BONES=auto` on v10: it would also correct shoulder01.L and upperarm02.L, break the compensated
-  left-arm chain, and the guard would stop the job.
-
-Re-print a finished table without a GPU (login node):
+2. Add the model to `MODELS` in `slurm/demo/run_demo_compare.sh` (`:93-100`), right after v5, and check:
 ```
-cd /netscratch/najib/multi-hmr && SUMMARY_ONLY=1 RUN=anny_s2_shape_v5_00099_n200_s0 bash slurm/experiments/exp6_bone_fix.sh
-SUMMARY_ONLY=1 RUN=anny_v10_scratch_mixed_00290_n200_s0_metacarpal2_L-metacarpal2_R-metacarpal3_R bash slurm/experiments/exp6_bone_fix.sh
+cd /netscratch/najib/multi-hmr && python - <<'EOF'
+p = "slurm/demo/run_demo_compare.sh"
+s = open(p).read()
+old = '  "anny_s2_shape_v5|00099"\n'
+new = '  "anny_s2_shape_v5|00099"\n  "exp6_v5_bonefix|00001"\n'
+assert s.count(old) == 1, "old text not found exactly once; nothing changed"
+open(p, "w").write(s.replace(old, new))
+print("changed", p)
+EOF
+bash -n slurm/demo/run_demo_compare.sh && git diff
 ```
+3. After the student confirms the diff, commit and push in a separate block:
+```
+cd /netscratch/najib/multi-hmr && git add slurm/demo/run_demo_compare.sh && git commit -m "run_demo_compare.sh: add the exp6 v5 bone-fix checkpoint" && git push origin main
+```
+4. Submit:
+```
+cd /netscratch/najib/multi-hmr && sbatch --time=03:30:00 slurm/demo/run_demo_compare.sh
+```
+- `resolve_ckpt` finds `models/multiHMR/exp6_v5_bonefix_00001.pt` (`run_demo_compare.sh:126`). `demo.py` re-applies
+  the fix saved in the checkpoint args (`demo.py:151-155`); for that model the log `logs/demo-compare-<jobid>.out`
+  should print `[load_model] bone_fix: checkpoint args (bone_fix_spec)` [Likely: the same text as in the trace,
+  3579014:82].
+- The script runs all six models on both image sets. The 2:30 limit was set for five models, hence `--time=03:30:00`
+  [Guessing; no timing log in hand].
+- Output: `demo_out_exp6_v5_bonefix_00001_photos/` and `demo_out_exp6_v5_bonefix_00001_3dpwtest/`. Compare with
+  `demo_out_anny_s2_shape_v5_00099_photos/`: neck thickness and length. Real-photo demos place bodies from the detection
+  box, so depth plays no role.
+- The montage command printed at the end of the log still has five labels (`run_demo_compare.sh:188`). With six
+  folders `make_montage.py` stops (`:64-65`): add `'v5 + bone fix'` as the second label when running it.
+- `--relax_hands 1` stays on: fingers are set to rest. [Likely] the metacarpal1.L fix still shows, since
+  `relax_hands` is believed not to reset metacarpals (3.3); check it in the demo.
 
-### 4c. 3DPW label rebuild (no new fit)
+### 4c. Image-folder check, then re-extract and rebuild
 
+The label rebuild (job 3579266) gave the same counts as the old labels (3.5). Check whether the image folders of the
+8 affected sequences are missing (login node, seconds). `courtyard_jacket_00` is a control: it has 412 labelled images
+(3579266:12), so its folder must have files.
+```
+cd /netscratch/najib/multi-hmr && for s in courtyard_arguing_00 courtyard_backpack_00 courtyard_basketball_00 courtyard_bodyScannerMotions_00 courtyard_box_00 courtyard_capoeira_00 courtyard_captureSelfies_00 courtyard_basketball_01 courtyard_jacket_00; do echo "$s $(ls data/3DPW/imageFiles/$s 2>/dev/null | wc -l)"; done; ls data/3DPW/imageFiles | wc -l
+```
+- Expected [Likely]: 0 (or few) files for the first six and `courtyard_basketball_01`, a partial count for
+  `captureSelfies_00` (319 of its 401 label frames were built; 3.5), many for `courtyard_jacket_00`. The last number
+  is the count of sequence folders: 60 if all are there (24 train + 12 validation + 24 test, 3575369:25-27).
+- If all folders are full, the cause is something else (file names, for example): ask for
+  `ls data/3DPW/imageFiles/courtyard_arguing_00 | head -3` before doing anything else.
+
+If folders are missing: re-extract only those sequences. Never run so far. First check that the zip is reachable from
+this node and how its paths look (the commands below assume they start with `imageFiles/`, as the extract step in
+`slurm/data/run_3dpw_list.sh:36` implies):
+```
+cd /netscratch/najib/multi-hmr && ls -l /ds-av/public_datasets/3DPW/original/imageFiles.zip && unzip -l /ds-av/public_datasets/3DPW/original/imageFiles.zip | grep -c "imageFiles/courtyard_arguing_00/"
+```
+If `ls` says "No such file", `/ds-av` is not mounted on that node (the old jobs mounted it into the container): ask
+before going further. If the count is above 0, extract (`-n` never overwrites existing files, so the images v9/v10 used
+stay as they are):
+```
+cd /netscratch/najib/multi-hmr && unzip -n -q /ds-av/public_datasets/3DPW/original/imageFiles.zip 'imageFiles/courtyard_arguing_00/*' 'imageFiles/courtyard_backpack_00/*' 'imageFiles/courtyard_basketball_00/*' 'imageFiles/courtyard_bodyScannerMotions_00/*' 'imageFiles/courtyard_box_00/*' 'imageFiles/courtyard_capoeira_00/*' 'imageFiles/courtyard_captureSelfies_00/*' 'imageFiles/courtyard_basketball_01/*' -d data/3DPW
+```
+Run the check block again, then rebuild into the same new folder (it only held a copy of the old counts):
 ```
 cd /netscratch/najib/multi-hmr && OUT=/netscratch/najib/multi-hmr/threedpw_anny_full/labels_rebuilt sbatch slurm/data/run_build_labels.sh
 ```
-- ~1 min of CPU (limit 30 min). Log `logs/3dpw-labels-<jobid>.out`. Writes to a new folder, so the old labels that
-  v9/v10 trained on stay intact.
-- Read the per-sequence lines (e.g. `[train] courtyard_arguing_00 ... N images`), the per-split totals
-  `[split] N images, M people` and `TOTAL`. Expected [Likely]: train ~6,437 (was 4,451), validation ~2,777 (was
-  2,458; +319 from `courtyard_basketball_01`; crosscountry is already excluded from the 2,777 and stays at 0), test
-  9,722 unchanged (3575369:31, :33, :35). The "unconverted tasks" list at the end should be empty.
-- The builder silently skips a frame whose image file is missing (`build_threedpw_anny_labels.py:123-125`). If a train
-  sequence still shows 0 images, its images are probably missing under `data/3DPW/imageFiles/<seq>/`.
-- Then re-check the new labels (my suggestion; not run yet):
+- ~1 min of CPU (limit 30 min). Log `logs/3dpw-labels-<jobid>.out`. Expected [Likely]: train ~6,437 (was 4,451),
+  validation ~2,777 (was 2,458; +319 from `courtyard_basketball_01`; crosscountry is already outside the 2,777 and stays
+  at 0), test 9,722 unchanged (3575369:31, :33, :35). The "unconverted tasks" list should stay empty.
+- Then re-check the new labels (not run yet):
 ```
 cd /netscratch/najib/multi-hmr && LABELS=threedpw_anny_full/labels_rebuilt OUT=results/diagnostics/check_3dpw_conversion_rebuilt sbatch slurm/diagnostics/check_3dpw_conversion.sh
 ```
 - Training scripts hard-code the old folder (`slurm/train/train_teacher_v9_mixed.sh:55`,
-  `train_v10_scratch_mixed.sh:45`, `train_distill_vits_v8_final.sh:42`). Do not overwrite `labels/`.
-- The rebuild does **not** fix gender or the missing actor; both are decided inside the fit.
+  `train_v10_scratch_mixed.sh:45`, `train_distill_vits_v8_final.sh:42`). Never overwrite `labels/`.
+- The rebuild does **not** fix gender or the missing actor; both are decided inside the fit (re-fit chain, 4e).
 
 ### 4d. Depth x20 for 10 epochs (command given 14 Oct; never confirmed)
 
@@ -738,15 +898,42 @@ Depth: the missing control at x20 (same schedule as `long_pc_dist20`, old root t
 ```
 cd /netscratch/najib/multi-hmr && GT_CENTER=root ALPHA_DIST=20 ALPHA_TRANSL=20 MAX_ITER=10000 RUN=long_root_dist20 sbatch --time=04:00:00 slurm/experiments/exp1_depth_anchor.sh
 ```
-exp6 on v9 (zero training; only if the v5 result is a PASS and a v9 fine-tune is planned; the head guard is expected
-to fire, so let it continue; ~20-30 min, not measured: v9 00062 has no stored no-fix dump, so the job traces one;
-never run, the env vars are the ones documented in the script header):
+exp6 on v9 (zero training; run it when a v9 fine-tune is planned: the v5 fine-tuned fix passed, 3579014:121; the
+head guard is expected to fire as on v5, so let it continue; expect the zero-training verdict to FAIL on global head
+as on v5, which does not matter here, since only its `bone_fix.json` is needed; ~20-30 min, not measured: v9 00062 has
+no stored no-fix dump, so the job traces one; never run, the env vars are the ones documented in the script header):
 ```
 cd /netscratch/najib/multi-hmr && CKPT=/netscratch/najib/multi-hmr/models/multiHMR/anny_teacher_v9_mixed_00062.pt TRAIN=0 ON_GLOBAL_RISE=continue sbatch slurm/experiments/exp6_bone_fix.sh
 ```
 Its `bone_fix.json` lands in `results/experiments/exp6_bone_fix/anny_teacher_v9_mixed_00062_n200_s0/`.
 
-3DPW re-fit chain (section 5, item 3). **NEEDS CODE** first, three changes. Both fitter fixes go behind default-off
+Longer fine-tune with the fix (section 5, item 3; never run). 10 epochs, the same recipe as the 2-epoch run, plus a
+matched 10-epoch control without the fix (the exp5 L1 recipe; the 2-epoch control is not a fair reference for 10
+epochs). Training ~1 h each at the measured ~12.7 images/s (3579014:66), plus traces; not measured at 10 epochs.
+Control first:
+```
+cd /netscratch/najib/multi-hmr && ROTMAT_LOSS=l1 MAX_ITER=10000 RUN=long_l1 sbatch --time=05:00:00 slurm/experiments/exp5_neck_fix.sh
+```
+The fix run (it re-estimates `C` on the same 200 seeded training images, ~2 min):
+```
+cd /netscratch/najib/multi-hmr && MAX_ITER=10000 RUN=anny_s2_shape_v5_00099_n200_s0_long CONTROL_RUN=results/experiments/exp5_neck_fix/long_l1 sbatch --time=04:00:00 slurm/experiments/exp6_bone_fix.sh
+```
+When both have finished, re-print the table with the 10-epoch control (login node, no GPU):
+```
+cd /netscratch/najib/multi-hmr && SUMMARY_ONLY=1 RUN=anny_s2_shape_v5_00099_n200_s0_long CONTROL_RUN=results/experiments/exp5_neck_fix/long_l1 bash slurm/experiments/exp6_bone_fix.sh
+```
+Read: neck02, head, girth, global head, PVE, recall in the fine-tuned column against the control. Last checkpoint
+`results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0_long/train/checkpoints/00009.pt`.
+
+Re-print a finished exp6 table without a GPU (login node):
+```
+cd /netscratch/najib/multi-hmr && SUMMARY_ONLY=1 RUN=anny_s2_shape_v5_00099_n200_s0 bash slurm/experiments/exp6_bone_fix.sh
+```
+```
+cd /netscratch/najib/multi-hmr && SUMMARY_ONLY=1 RUN=anny_v10_scratch_mixed_00290_n200_s0_metacarpal2_L-metacarpal2_R-metacarpal3_R bash slurm/experiments/exp6_bone_fix.sh
+```
+
+3DPW re-fit chain (section 5, item 7). **NEEDS CODE** first, three changes. Both fitter fixes go behind default-off
 flags (the brief's rule, section 10): the old labels that v9/v10 trained on must stay reproducible, and the new
 behaviour is switched on only by the v2 re-fit command below.
 1. `slurm/data/run_smpl_to_anny_task.sh`:
@@ -793,26 +980,29 @@ near 0 of 960; check V1 (body joints) median still ~19 mm. Training scripts read
 
 ## 5. Next steps, in priority order
 
-1. **Read the pending results** (section 4). Analyse only after the student says "done".
-2. **Neck.** Act on the exp6 case from the three-case table in 4a.
-   - Case (a) or (b): look at `compare/` (top row without, bottom row with the fix). In case (a) keep the fix (it is
-     saved in the fine-tuned checkpoint's args and re-applied on load).
-   - Real photos with the fix (cases (a) and (b)): **NEEDS CODE** (a copy of `slurm/demo/run_demo.sh`; it hard-codes v5
-     at :58-59). Point `CKPT_SRC` at
-     `results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/train/checkpoints/00001.pt` (fix in its args)
-     and give `CKPT_NAME` a new name; or keep v5 and add
-     `--bone_fix results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/bone_fix.json` to the
-     `python3.9 demo.py` call in the copied script (`run_demo.sh:95`; the flag is defined at `demo.py:819`).
-   - Case (b): **NEEDS CODE** in `bone_fix.py`, the chain-preserving head correction (plan :558). For v10's left arm:
-     the two-sided correction `R_l <- K_l^T R_l K_l` (plan :489). Find the origin of the flip only if time allows.
-   - Case (c): the origin question comes back first; no further fix is planned.
-3. **3DPW labels (after the meeting, before any 3DPW claim).** Three code changes (two new default-off flags in the
-   fitter, one env var in the array job), then re-fit all 87 tasks into a new folder, rebuild, re-check: exact changes
-   and commands in 4e ("3DPW re-fit chain"). The gender refit confirmed the flip only for men; check the women in the
-   new check I1 (gender labels). If the meeting moves to Monday, the re-fit (~5-6 h wall time, not measured) could
-   start before it.
-4. **Supervisor's decision (slide 16).** Fine-tune v9 now with `--gt_center_joint person_center` and x5, or first fix
-   the labels (item 3) and then fine-tune? The student proposes labels first, because 3DPW is 30% of each batch and the
+Analyse any new log only after the student says "done". The image-folder check (item 5) takes seconds and can go
+first on any day (section 0a).
+
+1. **exp6 panels.** Look at the compare panels (4a). They decide whether "the thin neck seen in renders is the flip"
+   can be said; until then it stays [Likely].
+2. **Real photos with the fix.** Run the demo of the fine-tuned checkpoint with the fix (4b: copy, one edit of
+   `run_demo_compare.sh`, commit, sbatch). Compare the neck with v5 on the same photos. This is the visible result the
+   supervisor will ask for.
+3. **Longer fine-tune with the fix.** 10 epochs, with a matched 10-epoch control without the fix (commands in 4e,
+   "Longer fine-tune with the fix"). Why: at 2 epochs the evidence is only "no sign of a PVE cost" (68.8 vs 76.9
+   for the control; one run, no seed, inside the noise of 3.6), and recall passed by 0.3 points (89.4 vs a limit of
+   89.1); a longer run against its own control is the next evidence. [Guessing] the head residual (11.2 deg) and global head
+   (14.4) shrink further. Keep the fix: it is saved in the checkpoint args and re-applied on load.
+4. **Two-sided correction for compensated chains (v10's left arm).** **NEEDS CODE** in `bone_fix.py`:
+   `R_l <- K_l^T R_l K_l` (plan :489, :561), so that shoulder01.L and upperarm02.L (166, 180 deg; 3579015:68-69) can be
+   corrected without breaking upperarm01.L between them. New behaviour behind a default-off option. Only worth it if
+   v10 stays in the thesis. The chain-preserving head correction (plan :558) is [Likely] no longer needed for v5
+   (head 11.2 deg after the fine-tune).
+5. **3DPW images, then rebuild.** Image-folder check; if folders are missing, re-extract them, rebuild into
+   `labels_rebuilt`, re-check (4c). This would bring back the 31% missing train labels without a re-fit [Likely]. The
+   label build after the re-fit (item 7) needs the same images.
+6. **Supervisor's decision (slide 16).** Fine-tune v9 now with `--gt_center_joint person_center` and x5, or first fix
+   the labels (item 7) and then fine-tune? The student proposes labels first, because 3DPW is 30% of each batch and the
    men would keep learning the wrong body. Expected from v5: size ~0.84, root ~0.5 m, cost ~2.6 mm PVE and ~1.6 recall
    points (notes :77). **The v9 fine-tune script does not exist yet (NEEDS CODE).** Recipe:
    - Copy the training call of `slurm/train/train_teacher_v9_mixed.sh` (it has the 3DPW mix flags), into a new
@@ -826,7 +1016,8 @@ near 0 of 960; check V1 (body joints) median still ~19 mm. Training scripts read
    - Keep from the v9 script: freeze pattern, alphas, boosts, `--mix_3dpw_ratio 0.3 --mix_3dpw_split train
      --val_3dpw_split validation --val_3dpw_n 300`, `--tf32 1`. Set `--start_2d_epoch 0 --learning_rate 1e-5
      --lr_decay_every 30 --n_iters_per_epoch 1000 --max_iter 10000 --eval_freq 1 --nb_max_ckpt 2`.
-   - Add: `--gt_center_joint person_center --alpha_dist 5 --alpha_transl 5 --mask_3dpw_hands 1`. Optional:
+   - Add: `--gt_center_joint person_center --alpha_dist 5 --alpha_transl 5 --mask_3dpw_hands 1`. Recommended now that
+     the v5 fix passed after fine-tuning (3579014:121), in both arms:
      `--bone_fix results/experiments/exp6_bone_fix/anny_teacher_v9_mixed_00062_n200_s0/bone_fix.json` (estimate it on v9
      first, 4e; the v5 JSON belongs to v5). Without it the neck flip stays.
    - Output: `--save_dir /netscratch/najib/multi-hmr/results/experiments/exp7_v9_depth/v9e62_pc_dist5 --name train`.
@@ -834,49 +1025,56 @@ near 0 of 960; check V1 (body joints) median still ~19 mm. Training scripts read
      a folder (`train.py:400-410`), so a run written there deletes checkpoints (its own low epochs, or old v9 ones).
    - Control arm, same script and weight: `--gt_center_joint root` (still x5), output `.../exp7_v9_depth/v9e62_root_dist5`.
    - Labels (`--mix_3dpw_labels`): slide-16 option 1 ("now") = `/netscratch/najib/multi-hmr/threedpw_anny_full/labels`
-     (what v9 trained on; gender reversed, 31% of train missing) or `labels_rebuilt` if the rebuild passed (missing
-     sequences back, gender still reversed). Option 2 ("labels first") = `/netscratch/najib/multi-hmr/threedpw_anny_full_v2/labels`
-     after item 3.
-   - Time: the v9 script quotes ~8-10 min per 1,000-iteration epoch with mixed batches (`train_teacher_v9_mixed.sh:16`),
-     so 10 epochs ~1.5-2 h plus evaluations; `--time=04:00:00`.
+     (what v9 trained on; gender reversed, 31% of train missing) or `labels_rebuilt` once item 5 brings the missing
+     sequences back (gender still reversed; today it holds the same counts as `labels`, 3579266:67). Option 2 ("labels
+     first") = `/netscratch/najib/multi-hmr/threedpw_anny_full_v2/labels` after item 7.
+   - Time: the v9 script's comment expects ~8-10 min per 1,000-iteration epoch at batch 4
+     (`train_teacher_v9_mixed.sh:16`; an estimate, never measured), so 10 epochs ~1.3-1.7 h plus evaluations. Not
+     measured with 3DPW batches; the exp6 fine-tune on AnnyOne alone took 315 s per epoch (12.7 images/s,
+     3579014:66). Say "about 1 to 2 hours". `--time=04:00:00`.
    - Read: trace the last checkpoint of each arm with `diag_holdout.sh` and a `TAG` (4e); root error, slope, size,
      PVE, recall vs the control. The training log's 3DPW-val numbers are against converted labels only.
-5. **Depth slope stuck at 0.3-0.44.** Measure the training-set depth distribution properly (so far only batch means of
+7. **3DPW labels (after the meeting, before any 3DPW claim).** Three code changes (two new default-off flags in the
+   fitter, one env var in the array job), then re-fit all 87 tasks into a new folder, rebuild, re-check: exact changes
+   and commands in 4e ("3DPW re-fit chain"). The gender refit confirmed the flip only for men; check the women in the
+   new check I1 (gender labels). If the meeting moves to Monday, the re-fit (~5-6 h wall time, not measured) could
+   start before it. Do item 5 first: the label build after the re-fit skips frames without image files too.
+8. **Depth slope stuck at 0.3-0.44.** Measure the training-set depth distribution properly (so far only batch means of
    ~2.5-3.2 m) and the fix run's slope on training images. Both **NEED CODE**: extend
    `scripts/experiments/measure_batch_ages.py` (it already draws real training batches and applies a copy of
    `prepare_gt`'s visibility filter) to also print GT root-depth percentiles; and pass `--select train_sample`
    through `slurm/diagnostics/diag_holdout.sh` (the trace supports it, `diag_holdout_trace.py:527`; the wrapper passes
    only `--ckpt --n --out`). [Guessing] it needs more unfrozen blocks or a higher LR on the depth head.
-6. **Cost of the fix.** PVE paired on the same people; recall on people whose head is visible ([Likely, untested]: the
+9. **Cost of the fix.** PVE paired on the same people; recall on people whose head is visible ([Likely, untested]: the
    recall drop is a cohort effect from moving the detection cell to the head). **NEEDS CODE**, no tool exists: paired
    PVE = join two runs' `holdout_trace/per_person.csv` on `idx` + `gid` for `variant == V1_eval_masked`; head-visible
    recall needs a head-visibility column in `diag_holdout_trace.py`. Report root error next to PVE in the thesis.
-7. **Pilot noise.** Set a seed, or repeat the key run, before reading any 2-epoch difference under ~10 mm. **NEEDS
-   CODE**: `train.py` has no seed at all. Add `--seed` (default -1 = off, old behaviour) and, at the top of `main()`
-   (`train.py:899`), seed `random`, `numpy` and `torch`, and give the training DataLoader a seeded generator.
-8. **People very close to the camera.** Count misses (4 of 12 rendered images, both models).
-9. **Children (lowest priority).** The exp2 script's own gate says not to run longer (`exp2_children.sh:38`; both
-   pilots print "ADULT REGRESSION ... do not run longer", 3571955:183, 3571956:178). Running it anyway is a deliberate
-   override: the control fails the same gate, so the gate measures the restart cost, not the sampler [Likely]. Run
-   both arms (default `GT_CENTER=root`, i.e. without the depth fix):
-   ```
-   cd /netscratch/najib/multi-hmr && MAX_ITER=10000 RUN=long_balanced sbatch --time=05:00:00 slurm/experiments/exp2_children.sh
-   ```
-   ```
-   cd /netscratch/najib/multi-hmr && AGE_BALANCE=0 MAX_ITER=10000 RUN=long_control sbatch --time=05:00:00 slurm/experiments/exp2_children.sh
-   ```
-   Then the real-photo read on both final checkpoints (the real target; `TAG` needed, section 2):
-   ```
-   cd /netscratch/najib/multi-hmr && CKPT=/netscratch/najib/multi-hmr/results/experiments/exp2_children/long_balanced/train/checkpoints/00009.pt TAG=long_balanced_00009 sbatch slurm/diagnostics/diag_crop_camera.sh
-   ```
-   ```
-   cd /netscratch/najib/multi-hmr && CKPT=/netscratch/najib/multi-hmr/results/experiments/exp2_children/long_control/train/checkpoints/00009.pt TAG=long_control_00009 sbatch slurm/diagnostics/diag_crop_camera.sh
-   ```
-   Compare the five small people's ages with 0.57-0.67. **Fingers:** train on larger hand crops (no script). If
-   neither moves, both become thesis limitations.
-10. **Docs and thesis.** Fix the stale lines in section 7; thesis draft 74 -> 70.5 mm (V1; the draft is outside the
+10. **Pilot noise.** Set a seed, or repeat the key run, before reading any 2-epoch difference under ~10 mm. **NEEDS
+    CODE**: `train.py` has no seed at all. Add `--seed` (default -1 = off, old behaviour) and, at the top of `main()`
+    (`train.py:899`), seed `random`, `numpy` and `torch`, and give the training DataLoader a seeded generator.
+11. **People very close to the camera.** Count misses (4 of 12 rendered images, both models).
+12. **Children (lowest priority).** The exp2 script's own gate says not to run longer (`exp2_children.sh:38`; both
+    pilots print "ADULT REGRESSION ... do not run longer", 3571955:183, 3571956:178). Running it anyway is a deliberate
+    override: the control fails the same gate, so the gate measures the restart cost, not the sampler [Likely]. Run
+    both arms (default `GT_CENTER=root`, i.e. without the depth fix):
+    ```
+    cd /netscratch/najib/multi-hmr && MAX_ITER=10000 RUN=long_balanced sbatch --time=05:00:00 slurm/experiments/exp2_children.sh
+    ```
+    ```
+    cd /netscratch/najib/multi-hmr && AGE_BALANCE=0 MAX_ITER=10000 RUN=long_control sbatch --time=05:00:00 slurm/experiments/exp2_children.sh
+    ```
+    Then the real-photo read on both final checkpoints (the real target; `TAG` needed, section 2):
+    ```
+    cd /netscratch/najib/multi-hmr && CKPT=/netscratch/najib/multi-hmr/results/experiments/exp2_children/long_balanced/train/checkpoints/00009.pt TAG=long_balanced_00009 sbatch slurm/diagnostics/diag_crop_camera.sh
+    ```
+    ```
+    cd /netscratch/najib/multi-hmr && CKPT=/netscratch/najib/multi-hmr/results/experiments/exp2_children/long_control/train/checkpoints/00009.pt TAG=long_control_00009 sbatch slurm/diagnostics/diag_crop_camera.sh
+    ```
+    Compare the five small people's ages with 0.57-0.67. **Fingers:** train on larger hand crops (no script). If
+    neither moves, both become thesis limitations.
+13. **Docs and thesis.** Fix the stale lines in section 7; thesis draft 74 -> 70.5 mm (V1; the draft is outside the
     repo).
-11. **Lower priority:** v10 shape drift (only epochs 290-293 traced). First list what exists (only the last 10 epochs
+14. **Lower priority:** v10 shape drift (only epochs 290-293 traced). First list what exists (only the last 10 epochs
     are kept per run): `ls /netscratch/najib/multi-hmr/logs/anny_model/anny_v10_scratch_mixed/checkpoints/` and
     `ls /netscratch/najib/multi-hmr/models/multiHMR/ | grep v10`; then trace each with `diag_holdout.sh` (4e).
     Students' depth bug (not measured); output-neutral fix of the 6D init (only matters for new heads; plan :680);
@@ -911,11 +1109,21 @@ near 0 of 960; check V1 (body joints) median still ~19 mm. Training scripts read
   labels keep the head at rest; the deformed v10 arm is the flip mechanism.
 - "v9 checkpoint at `logs/anny_model/anny_teacher_v9_mixed/checkpoints/00062.pt`." Real path:
   `models/multiHMR/anny_teacher_v9_mixed_00062.pt` (and `_00149.pt`).
+- "exp6 will leave the head near 15 deg: case (b)" (the 15-Oct expectation, [Likely] then). Measured: head 12.4 deg
+  without training, 11.2 after the fine-tune; `FINE-TUNED FIX: PASS` (3579014:103, :121). The zero-training verdict did
+  fail, on global head (19.1 vs 15.0, :120).
+- "Neck: found, not yet fixed." Superseded: a fixed output correction plus a 2-epoch fine-tune removes the flip and
+  restores the girth (3.2). Still not claimed: a PVE gain (single run), the flip's origin.
 
 **Fingers**
 - "Fingers need a hand-crop branch." Not shown; only test-time zoom was tested.
 - "The index-base flip is part of the finger gap." It adds ~4.7 deg to both the predicted and the rest-pose numbers.
 - "Fingers are under-trained / a supervision or capacity problem." A guess.
+- "Fingers: tested, nothing helped" and "the prediction is worse than no prediction." True only without the bone fix:
+  correcting the flipped hand bones lowers the finger error 17.3 -> 8.2 deg on v5 (3579014:114) and 32.0 -> 17.8 on v10
+  (3579015:80).
+- "metacarpal1.L adds ~4.7 deg to the finger numbers" covers that one bone only; with finger4-1.R also corrected the
+  drop is 9.1 deg.
 
 **Children**
 - Quoting ages in years ("0.3 ~ 11 y", "0.55 ~ 20 y", "0.5 ~ 18 y"). Do not quote years at all: the code's anchors
@@ -931,13 +1139,17 @@ near 0 of 960; check V1 (body joints) median still ~19 mm. Training scripts read
 - "The 3DPW labels are accurate." Say "pass": the nearest-point surface test is a lower bound and blind to gender.
 - "OVERALL FAIL is from limb ratios and 3.2% outliers." FAIL is from limb ratios (test split) and from 5.2% outliers in
   the train split; the 3.2% overall is only WARN.
+- "The label builder ran before all fits finished, so a rebuild recovers the missing labels." Wrong: the rebuild
+  (job 3579266) gives the same counts (train 4,451, validation 2,458, test 9,722; :25, :39, :65), and its "unconverted
+  tasks" list is empty (:68), so all fits exist. [Likely] cause: the builder skips frames without an image file
+  (`build_threedpw_anny_labels.py:123-125`), and the image folders of 8 sequences are missing on the cluster (3.5, 4c).
 
 **Numbers and workflow (corrected while checking this file against the logs)**
 - "Job 3571601 is an earlier sampler run." It is measurement only (`SKIP_TRAIN=1`, 3571601:54): age index and batch
   ages, natural 2.14% -> balanced 9.91% (:35, :49-51); no training.
 - "exp1: the slope did not move toward 1." The rule's slope clause printed `yes` for x5, x20 and even the 2-epoch
   control. The slope is 0.30 with the switch alone and 0.38-0.44 with the stronger depth loss (baseline 0.33), far
-  from 1. The deck's slide-13 notes still use the old wording.
+  from 1.
 - "v10 is a ViT-L from scratch." Pretrained DINOv2 backbone, fresh heads.
 - "v9 exists only in `models/multiHMR/`." Only epoch 62 is known to be missing under `logs/`.
 - "6.7 images/s." Measured ~12 in most runs; 6.7 on one node.
@@ -947,8 +1159,9 @@ near 0 of 960; check V1 (body joints) median still ~19 mm. Training scripts read
   [Likely] until rendered.
 
 **Still untested [Likely] claims; keep the tag**
-- "The label builder ran before all fits finished" (or before images were extracted).
+- "The image folders of 8 3DPW sequences are missing on the cluster (incomplete unzip)." Check in 4c.
 - "The recall drop is a cohort artefact."
+- "The thin/long-neck look in the renders is the neck flip." Check with the exp6 panels (4a) and real photos (4b).
 
 ---
 
@@ -959,12 +1172,13 @@ Trust this file over these. Fix them when there is time (one commit per doc).
 **`README.md`**
 - :114 "numbers look normal while the overlays look wrong" (real-photo demos use box placement).
 - :115 whole neck row (weak supervision, redundant chain, long neck = depth defect).
-- :116 "Under-trained" (a guess; missing the crop/region-norm nulls and the metacarpal1.L flip).
+- :116 "Under-trained" (a guess; missing the crop/region-norm nulls, the flipped hand bones and the exp6 result).
 - :117 "about 11 years", "0.55 (about 20 years)" (code anchors); exp2 null missing.
 - :119 "No improvement is claimed until its holdout trace has been re-run" (it has).
 - :126 "Future work (not measured)" (both measured, both null). :128 "Nothing from them has been measured yet."
 - :211-214 fit description omits the reversed gender and the per-person stride.
-- :227 "4,451 train / 2,458 validation" without the expected 6,437 / 2,777 and the pending rebuild.
+- :227 "4,451 train / 2,458 validation" without the expected 6,437 / 2,777, and without the cause: a rebuild gave the
+  same counts (3579266), [Likely] image files missing.
 - :312-325 3DPW-val column needs the converted-label caveat. :331 v4_restpose reading ignores the neck flip / girth 0.46.
 - :36-80 layout omits `bone_fix.py`, `scripts/diagnostics`, `scripts/experiments`, `slurm/diagnostics`,
   `slurm/experiments`, `docs/deck_src`. :243 "x4" is effectively x2.41 (boost renormalisation).
@@ -980,7 +1194,7 @@ Trust this file over these. Fix them when there is time (one commit per doc).
 **`docs/experiments_plan.md`**
 - :8-9 and :740-746 "Nothing in this plan has been run."
 - :27 exp5 as WIP `bd7cfa3` (merged in `637dc5c`); ancestors "not yet traced" (traced).
-- :28 and :428 exp6 "uncommitted" (it is in `d902e00` / `81dbdcb`).
+- :28 and :428 exp6 "uncommitted" (it is in `d902e00` / `81dbdcb`). No exp6 results (use 3.2 here).
 - :94, :735 size baseline 0.67 (trace: 0.63). :150-152 exp3 redundant-chain hypothesis (refuted).
 - :229 heading "WIP bd7cfa3". :235 "per-bone split never measured". :241-250 H3/H4 "untested" (refuted).
 - :252 "Leading hypothesis [Likely]" (flip now measured). :273-278 6D-init sentence only half corrected.
@@ -999,13 +1213,9 @@ Trust this file over these. Fix them when there is time (one commit per doc).
 - `docs/3dpw_adapter_check.md`: one-sequence pilot; superseded by the full check (job 3575369).
 - Job-script headers (`exp1_depth_anchor.sh`, `exp2_children.sh`, others): time estimates at 6.7 images/s (measured
   ~12 in most runs).
-- Deck and notes (fix both in the pptx by hand, then in `docs/deck_src/build.js`; table in section 9):
-  - notes slide 13 (notes :59): "The slope did not move toward 1" (see section 6).
-  - "rebuild running now", never confirmed: slide 6 text (`build.js:187`) and notes :25; slide 15 item 7 text
-    (`build.js:384`) and notes :69; slide 16 notes :77.
-  - notes slide 16 (notes :77): "The fine-tune is about one hour of training" (section 5, item 4: ~1.5-2 h with 30%
-    3DPW batches); "On the AnnyOne holdout v9 is not the best: 77.0 against 70.5" (77.0 is epoch 149; the planned
-    start, epoch 62, is 75.0).
+- Deck and notes: section 9 lists what the 15-Oct evening update changed, how to check a copy, and the lines still
+  stale: the slide 7 and 16 wording in section 9's table (head-direction cause, "passes every check", "the PVE gain
+  is not certain", "1.5 to 2 hours").
 
 ---
 
@@ -1026,13 +1236,16 @@ Trust this file over these. Fix them when there is time (one commit per doc).
 | d902e00 | bone fix code: `bone_fix.py`, model/train/demo wiring, `compute_bone_fix.py`, exp6 script and summary |
 | 81dbdcb | bone fix final (2-line summary docstring; carries the feature commit message) |
 | 64266dc | deck slide 6 = measured conversion check; slides 1, 5, 14-16 and notes updated (17 slides) |
+| 64ac9e3 | handover rewritten (15-Oct afternoon version); deck source in `docs/deck_src/` |
 
-This file and `docs/deck_src/`: the branch `claude/gallant-dijkstra-bnlowv`. Pushed there: only the WIP commit
-`c6419ce`. The final version (this file, `docs/deck_src/README.md`, `docs/deck_src/apply_theme.js` and the two-line
-`build.js` change) was not committed when this was written. None of it is on `main` until the branch is merged.
+The 15-Oct **evening** update of this file (exp6 and rebuild results; jobs 3579014, 3579015, 3579266) and the deck
+update made with it (`docs/deck_src/build.js`, the notes, the pptx; section 9) were made on the branch
+`claude/gallant-dijkstra-bnlowv` and were **not committed** when this was written. They reach `main` only once they
+are committed, pushed and merged.
 
-**Getting this file.** It is on `main`. On the cluster: `cd /netscratch/najib/multi-hmr && git pull`, then
-`grep -c '^## 0a\. Tomorrow' docs/handover.md` must print `1`. To give it to ChatGPT, download
+**Getting this file.** On the cluster: `cd /netscratch/najib/multi-hmr && git pull`, then
+`grep -c '^## 0a\. Tomorrow' docs/handover.md` must print `1`, and `grep -c 3579014 docs/handover.md` must print a number
+above `0` (the evening version; `0` = the afternoon version). To give it to ChatGPT, download
 `https://raw.githubusercontent.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/main/docs/handover.md`
 (save the page as `handover.md`) and attach it.
 
@@ -1056,10 +1269,15 @@ This file and `docs/deck_src/`: the branch `claude/gallant-dijkstra-bnlowv`. Pus
 | 3573518, 3573519 | diag_neck_bones | per-bone dumps: v5, v9 e149, v10, long_pc_dist5; lineage v2/v3/v4 |
 | 3573520, 3573521 | exp5_neck_fix | L1 control, geodesic |
 | 3575369 | check_3dpw_conversion | 3DPW->Anny label check |
+| 3579014 | exp6_bone_fix | exp6 on v5: fix on neck02, head, metacarpal1.L, finger4-1.R; zero-training FAIL (global head 19.1 vs 15.0, :120), fine-tuned PASS (:121) |
+| 3579015 | exp6_bone_fix | exp6 on v10: metacarpal2.L/2.R/3.R, no training; PASS (:86) |
+| 3579266 | 3dpw-labels | label rebuild into `threedpw_anny_full/labels_rebuilt`: the same counts as the old labels (:25, :39, :65, :67). Log name `logs/3dpw-labels-3579266.out` (dash, not underscore) |
 
 **Experiments, one line each:** exp1 depth anchor (placement much better, slope not, likely cost; rule failed);
 exp2 children sampler (null); exp3 global head loss (null); exp4 fingers crop + region-norm (both null); exp5
-geodesic loss (flip did not move); exp6 bone correction (maybe submitted 15 Oct; no job ID or log yet).
+geodesic loss (flip did not move); exp6 bone correction (v5: flip removed and neck girth back after a 2-epoch
+fine-tune with the fix, fine-tuned PASS, zero-training FAIL on global head, no sign of a PVE cost; v10: three
+metacarpals fixed without training, PASS).
 
 ---
 
@@ -1071,39 +1289,84 @@ part + "If asked:" part per slide), `docs/figures/depth_before_after_579860.jpg`
 **Source:** `docs/deck_src/build.js` (pptxgenjs) and its theme helper `docs/deck_src/apply_theme.js`; instructions in
 `docs/deck_src/README.md`. No setup beyond `cd docs/deck_src && npm ci && node build.js`, on a machine with node >= 18
 and internet access for `npm ci` (probably the student's laptop; the cluster may lack node). Checked on 15 Oct: the
-rebuild gives the same slides, theme, media and layouts as the published pptx, and byte-identical notes. Only on the
-branch until it is merged (section 8). Notes are generated from `build.js`; never edit the `.md` alone.
+rebuild gives the same slides, theme, media and layouts as the published pptx, and byte-identical notes. On `main`
+since `64ac9e3` (section 8). Notes are generated from `build.js`; never edit the `.md` alone.
 
-**Before the meeting** (whichever date holds): open the pptx once in PowerPoint and check slides 5, 6 and 16 for text
-that wraps one line longer (they were only rendered with LibreOffice).
+**Before the meeting** (whichever date holds): open the pptx once in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 15
+and 16 for text that wraps one line longer (they were only rendered with LibreOffice; all but 5 changed in the evening
+update).
 
-**Deck edits before the meeting** (stale lines, and pending results that arrive). Edit the pptx by hand in PowerPoint
-(slide text and its speaker notes); port the same changes into `build.js` after the meeting and rebuild, so the `.md`
-notes match again.
+**Evening update (15 Oct, after jobs 3579014, 3579015, 3579266).** The deck source, the notes and the pptx were
+updated for the new results next to this file, from the same logs (not committed when this was written; section 8).
+What the updated deck says (quotes as in `build.js` when this was written; if a wording here differs, `build.js` is
+the reference):
+- slide 1 (agenda): "Neck: two bones turned half a turn; a pilot fix passes (one run)." and "Fingers: half the error
+  was two flipped bones. Children: open." (was "found, not yet fixed" and "measured, still open").
+- slide 2: the neck card adds "A pilot fix restores it (one run)"; the fingers card adds "half the error was two
+  flipped bones".
+- slide 6 and notes: "Rebuild: same counts; likely missing image files." The notes give the counts (3579266), say
+  the old guess "the builder ran before the fits finished" is wrong, and that the image check is not done yet.
+  Replaces "rebuild running now".
+- slide 7, new title "Neck: two half-turned bones, and a pilot fix": a table v5 before | fix, no training | fix +
+  2-epoch fine-tune | control (no fix) for neck02 (175.6 / 4.5 / 4.7 / 175.7 deg), head (177.9 / 12.4 / 11.2 /
+  177.9), neck thickness (0.46 / 1.00 / 1.00 / 0.46), neck-skin error (27.3 / 10.8 / 10.7 / 27.9 mm), body PVE
+  (70.5 / 71.3 / 68.8 / 76.9) and head direction (12.0 / 19.1 / 14.4 / 13.8). Text: the fix with no training "fails
+  its 15° limit" on head direction (19.1 in the table); with the fine-tune it "passes every check against its control
+  (PVE, recall, head direction)". Caveat line: one run, no fixed seed (7.6 mm), head direction 14.4 vs 12.0 before.
+  Next: real-photo demo, longer fine-tune. Three wordings here are still to fix (table below).
+- slide 8, new title "Fingers: about half the error was two flipped bones": 17.3 deg before, 8.3 with the fix after
+  the fine-tune (8.2 with no training), 15.1 at rest pose before the fix. The slide 8 notes give the v10 metacarpal
+  result (PVE 74.1 -> 69.9, fingers 32.0 -> 17.8).
+- slide 15: item 1 "Bone flips: confirm the pilot fix" (renders, real photos, a longer run; v10's left arm needs a
+  two-sided fix, not built); item 7 "Rebuild gave the same counts; the image files are likely missing (check pending):
+  re-extract, rebuild", then the re-fit. The slide 15 notes give the uncorrected v10 shoulder01.L (166) and
+  upperarm02.L (180).
+- slide 16: Claimed: "in one pilot run, a fixed correction plus a 2-epoch fine-tune restores the neck and passes all
+  checks"; two flipped hand bones were half the finger error. Not claimed: "a proven neck fix (one run, no seed; head
+  direction 14.4° vs 12.0°) or why the bones flipped". The question box adds: "v9 also has the neck flip (measured
+  at epoch 149) and needs its own bone fix; v10 has a similar left-arm flip." Notes: "1.5 to 2 hours of training"
+  (still to fix, table below); "75.0 at epoch 62, the planned start" (the old "one hour" and "77.0 against 70.5" are
+  gone).
+If your copy does not say this, hand-edit the pptx in PowerPoint with this list (slide text and speaker notes), then
+port the changes into `build.js` after the meeting and rebuild, so the `.md` notes match again.
 
-The first three rows apply whatever arrives (stale today). The exp6 rows follow the three cases of 4a.
+**Check a copy** (deck source and notes; the pptx itself must be opened):
+```
+cd /netscratch/najib/multi-hmr && grep -ci "running now" docs/deck_src/build.js; grep -c "not yet fixed" docs/deck_src/build.js; grep -c "The slope did not move toward 1" docs/supervisor_talk_notes_2026-10-16.md; grep -c "about one hour of training" docs/supervisor_talk_notes_2026-10-16.md; grep -c "77.0 against 70.5" docs/supervisor_talk_notes_2026-10-16.md
+```
+One number per line. The afternoon deck prints `4`, `1`, `1`, `1`, `1` (at `64ac9e3`; a copy at `64266dc` has the
+same pptx and notes but no `build.js`, so the first two greps print "No such file" instead). The evening update
+prints `0`, `0`, `0`, `0`, `0`: its slide-13 notes already give the measured slopes.
+
+The slide 7 and 16 wordings in the first two rows of the table are not caught by that check. This one counts them
+in the source:
+```
+cd /netscratch/najib/multi-hmr && grep -c "every check passes\|passes every check\|passes all checks" docs/deck_src/build.js; grep -c "the PVE gain is not certain" docs/deck_src/build.js; grep -c "compensate each other" docs/deck_src/build.js; grep -c "1.5 to 2 hours" docs/deck_src/build.js
+```
+The evening update prints `4`, `1`, `1`, `1`; once `build.js` is fixed, all four print `0`. The afternoon deck also
+prints four `0`s (it never had these lines), so read this only after the first check shows the evening update.
+
+**Lines still stale, and results still to come.** Edit by hand as above.
 
 | result | slides to change | what changes |
 |---|---|---|
-| always | 13 (notes :59) | "The slope did not move toward 1" -> "the slope is 0.30 with the switch alone and 0.38-0.44 with the stronger depth loss (baseline 0.33), far from 1" |
-| always: rebuild not confirmed | 6 (text "rebuild running now"; notes :25), 15 (item 7 "Running now: rebuild"; notes :69), 16 (notes :77, "the rebuild is running") | "running now" -> "to run" (or the counts, row "label rebuild ran" below) |
-| always | 16 (notes :77) | "The fine-tune is about one hour of training" -> "about 1.5-2 hours with 30% 3DPW batches"; "77.0 against 70.5" -> "75.0 at epoch 62, the planned start (77.0 at epoch 149), against 70.5" |
-| exp6 v5 case (a): script PASS | 7, 15 (item 1), 16, 1 | slide 7 "Next (exp6): ..." becomes the measured result; slide 15 item 1 "not fixed" becomes the numbers; slide 16: move "a neck fix" from "Not claimed" to "Claimed" only for `FINE-TUNED FIX: PASS`; for a zero-training PASS only, claim "a fixed output correction removes the flip without training"; slide 1 line "found, not yet fixed" -> "found; a fixed output correction removes it" |
-| exp6 v5 case (b): neck02 < 15 and girth >= 0.9, verdict FAIL on head / global head / PVE / recall | 7, 15 (item 1), 16 | slide 7 "Next (exp6)" -> "exp6: the neck skin recovers with a fixed output correction (girth 0.46 -> Z); the head keeps a ~Y deg residual"; slide 15 item 1: the same numbers + "next: a head correction that keeps the chain"; slide 16: keep "a neck fix" under "Not claimed", add "the neck skin recovers with a fixed output correction" under "Claimed" |
-| exp6 v5 case (c): neck02 >= 15 or girth < 0.9 | 7, 15 (item 1) | "Next (exp6)" -> what was tried and that it did not work (neck02 or girth numbers); origin still open |
-| exp6 v10 metacarpals, PASS only | 7 (v10 column) | one line: the three metacarpals corrected without training |
-| label rebuild ran | 6, 15 (item 7), notes :25, :69, :77 | the rebuilt train / validation / test counts (expected ~6,437 / ~2,777 / 9,722) |
+| stale wording (second check) | 7 (slide text and notes) | Bullet "passes every check against its control (PVE, recall, head direction)" and spoken "every check passes" -> "passes the fine-tune checks (bones, thickness, PVE within 8 mm, recall within 2 points, head within 3 deg of the control)"; recall passed by 0.3 points (3.2). Spoken "so the PVE gain is not certain" -> "no sign of a PVE cost (68.8 vs 76.9 for the control; one run, no seed)". Head-direction cause: the bullet and spoken notes say "likely because the head's offset differs per person", "If asked" says "because the two bones compensate each other"; use one reason in all three: "likely the compensated chain the guard predicted: the head's offset differs per person, so one constant cannot undo it" (3.2) |
+| stale wording (second check) | 16 (slide text and notes) | Slide "passes all checks" and spoken "passes every check" -> "passes the fine-tune checks". "If asked" "The fine-tune is about 1.5 to 2 hours of training" -> "about 1 to 2 hours; not measured with 3DPW batches (the v9 script expects 8-10 min per epoch)". The 10-epoch "about one hour" in the slide 13 notes is AnnyOne alone (12.7 images/s, 3579014:66) and can stay (section 5, item 6) |
+| exp6 panels seen (4a) | 7, 16 | if the bottom row shows the thicker neck: "the thin neck seen in renders is this flip" can move from "likely" to shown; add one panel as a figure |
+| real-photo demo with the fix (4b) | 7 (or a backup slide) | v5 next to v5 + fix on the same photo |
+| image check + rebuild after re-extraction (4c) | 6, 15 (item 7), and the notes of 6, 15, 16 | the rebuilt train / validation / test counts (expected ~6,437 / ~2,777 / 9,722) |
+| longer fine-tune with the fix (4e) | 7, 15 (item 1) | neck02, head, girth, global head, PVE, recall at 10 epochs against the 10-epoch control |
 | `long_pc_dist20` | 12 (table note), 15 (item 3, "No result yet for the ×20 run") | root error, size, slope, PVE, recall of x20 10 epochs next to x5 10 epochs |
 
-**Slides:**
+**Slides** (titles after the evening update):
 1. Multi-HMR with Anny: what this week found (agenda).
 2. Where we started: three visible failures (neck, fingers, children).
 3. What I did: test each stage on its own (holdout + manifest).
 4. What is not the cause: the structural checks pass (+ overfit warnings).
 5. 3DPW to Anny: how the labels are made.
 6. 3DPW labels: joints and surface pass, three defects.
-7. Neck: two bones turned half a turn.
-8. Fingers: test-time zoom and a loss rebalance do not help.
+7. Neck: two half-turned bones, and a pilot fix.
+8. Fingers: about half the error was two flipped bones.
 9. Children: child-like in training, adult on real photos.
 10. The hidden bug: head anchored, pelvis targeted.
 11. Depth fix: bodies drawn much closer to true size (figure 579862).
