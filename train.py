@@ -23,6 +23,7 @@ from smplx.joint_names import JOINT_NAMES
 import roma
 from torch.utils.tensorboard import SummaryWriter
 from loss import Loss
+import bone_fix as bone_fix_lib
 from PIL import Image
 import pickle
 import torch
@@ -907,6 +908,12 @@ def main(args):
         torch.backends.cuda.matmul.allow_tf32 = False
         print("[speed] TF32 disabled (plain fp32 matmuls)", flush=True)
 
+    # --bone_fix (exp6): the parsed JSON goes into args.bone_fix_spec, which Model() applies and every checkpoint of
+    # this run saves with its args, so a model fine-tuned with a fix re-applies it whenever it is rebuilt from them
+    # (diag_common.load_model, demo.py, distill.build_teacher). '' = none unless --pretrained carries one (below).
+    args.bone_fix_spec = None
+    if args.bone_fix and not bone_fix_lib.is_off(args.bone_fix):
+        args.bone_fix_spec = bone_fix_lib.load(args.bone_fix)
     model = Model(pretrained_backbone=1, **vars(args))
     model = model.to(device)
 
@@ -997,6 +1004,23 @@ def main(args):
                 f"  python inspect_ckpt.py --ckpt {args.pretrained} --compare\n"
                 f"  python inspect_prefix.py --ckpt {args.pretrained} --prefix encoder"
             )
+
+        # A head fine-tuned WITH a bone fix only makes sense with it: inherit the --pretrained checkpoint's
+        # bone_fix_spec when --bone_fix is '' and its heads are loaded (load_only_backbone 0); --bone_fix <file>
+        # replaces it (compute_bone_fix.py estimates absolute corrections from the raw head output), 'none' drops it.
+        _pa = ckpt.get('args') if isinstance(ckpt, dict) else None
+        _pspec = (_pa.get('bone_fix_spec') if isinstance(_pa, dict) else getattr(_pa, 'bone_fix_spec', None))
+        if _pspec:
+            if bone_fix_lib.is_off(args.bone_fix):
+                print("[bone_fix] --pretrained carries a bone fix; dropped (--bone_fix none)", flush=True)
+            elif args.bone_fix:
+                print(f"[bone_fix] --pretrained carries a bone fix; replaced by --bone_fix {args.bone_fix}", flush=True)
+            elif args.load_only_backbone:
+                print("[bone_fix] --pretrained carries a bone fix; NOT inherited (load_only_backbone=1: fresh heads)",
+                      flush=True)
+            else:
+                args.bone_fix_spec = bone_fix_lib.normalize(_pspec, origin=args.pretrained)
+                model.set_bone_fix(args.bone_fix_spec, origin=f'inherited from --pretrained {args.pretrained}')
 
     # ----------------------------------------------------------------------
     # OPTIONAL BACKBONE FREEZE  (task step 2)
@@ -1134,6 +1158,10 @@ def main(args):
                 else:
                     skipped_shape.append(k)
             model.load_state_dict(sd_s)
+            if getattr(teacher, 'bone_fix_on', False) and not getattr(model, 'bone_fix_on', False):
+                print("[bone_fix] WARNING: the teacher applies a bone fix (from its checkpoint args) but the student "
+                      "does not: its copied heads were trained with the fix; pass the teacher's fix with --bone_fix",
+                      flush=True)
             # remembered for --freeze_heads_epochs (see train_n_iters)
             model._teacher_head_keys = set(copied)
             n_head = sum(1 for k in sd_s if not k.startswith('backbone.'))
@@ -1579,6 +1607,13 @@ if __name__ == "__main__":
                              'sampling weight 0, e.g. the diag manifest images so an in-sample evaluation set stays '
                              'out of a fine-tune. Works with or without --age_balance (without: uniform weights, '
                              'with replacement). Empty = off.')
+    parser.add_argument('--bone_fix', type=str, default='',
+                        help="exp6: JSON from scripts/diagnostics/compute_bone_fix.py; model.py multiplies the head's "
+                             "final local rotmat of each listed bone by its constant C (R_b <- R_b @ C_b) before "
+                             "masking, FK and the losses. The parsed file is saved in the checkpoint args "
+                             "(bone_fix_spec) and re-applied whenever the checkpoint is loaded. '' = off, or the "
+                             "--pretrained checkpoint's own fix when it has one and load_only_backbone is 0; "
+                             "'none' = off even then.")
     parser.add_argument('--eval_freq', type=int, default=1, help='run evaluation every N epochs')
     parser.add_argument('--det_thresh', type=float, default=0.2)
     parser.add_argument('--nms_kernel_size', type=int, default=3)

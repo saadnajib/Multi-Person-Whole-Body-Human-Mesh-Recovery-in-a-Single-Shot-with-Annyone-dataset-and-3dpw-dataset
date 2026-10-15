@@ -75,6 +75,18 @@ USAGE (repo root, multihmr env, GPU node):
     so their axis is local +Y); local +Y (Blender head->tail) for a bone without such a child. Positive twist = right-hand
     rule about that axis; E is the error expressed in the bone frame, so a twist of E is the prediction turned about
     its own long axis relative to GT.
+
+    # exp6 bone fix (slurm/experiments/exp6_bone_fix.sh): estimate on seeded random TRAINING images, never the holdout
+    python scripts/diagnostics/diag_holdout_trace.py --ckpt ... --select train_sample --n 200 --seed 0 \
+        --variants V1_eval_masked --n_vis 0 --bone_fix none --dump_bones 1 --dump_bone_names all --out <est dir>
+    python scripts/diagnostics/compute_bone_fix.py --trace_dir <est dir> --out bone_fix.json
+    python scripts/diagnostics/diag_holdout_trace.py --ckpt ... --bone_fix bone_fix.json --dump_bones 1 --out <dir>
+    --select train_sample draws --n of the training indices (all but the last 100) minus the --exclude_manifest images
+    (default results/diagnostics/manifest.json) and --exclude_indices_file, sorted; writes <out>/selected_indices.txt.
+    --bone_fix: '' = the checkpoint's own fix (train.py --bone_fix saves it in the args), 'none' = off, a path = that
+    file. With a fix active, every metric is WITH it; bones.npz adds R_pred_local_raw (the prediction without it),
+    bone_fix_C / bone_fix_on, and (always under --dump_bones) bone_parent_index, rig_parents, rig_names, bone_active.
+    --dump_bone_names all = every active bone (75), so compute_bone_fix.py --bones auto can find a flip anywhere.
 """
 import argparse
 import csv
@@ -125,25 +137,39 @@ DUMP_TWIST_MAX_SWING = 30.0    # FLIP_TWIST needs the bone axis to move < this (
 DUMP_RAW_TOL = 1e-3            # H4: raw dataset blocks count as proper rotations when det > 0 and |s - 1| <= this
 
 
-def bone_dump_setup(bm, names, chain, useful, extra, device):
+def bone_dump_setup(bm, names, chain, useful, extra, device, fix_C=None, fix_mask=None, hand_mask=None):
     """--dump_bones: the bones to dump, their twist-axis children (dc.pick_twist_children on the neutral-shape rest
-    skeleton) and the neck-skin vertex mask. Order: parent of neck01, neck01..head, jaw, DUMP_CONTROL_BONES, extra."""
+    skeleton) and the neck-skin vertex mask. Order: parent of neck01, neck01..head, jaw, DUMP_CONTROL_BONES, extra
+    ('all' in extra = every active bone, rig order). fix_C [163,3,3] / fix_mask [163]: the model's bone fix (exp6),
+    kept per dumped bone so bones.npz can store the prediction without it (R_pred_local_raw). hand_mask [163] (or [1,163]):
+    the model's hand_bone_mask, the bones relax_hands forces to identity (None: the same name rule, 'finger'/'thumb')."""
     parents = [int(p) for p in bm.bone_parents]
     lower = {n.lower(): i for i, n in enumerate(names)}
     bones = ([parents[chain[0]]] if chain and parents[chain[0]] >= 0 else []) + list(chain)
     bones += [lower[n.lower()] for n in ('jaw',) + DUMP_CONTROL_BONES if n.lower() in lower]
     for n in [s.strip() for s in extra.split(',') if s.strip()]:
+        if n.lower() in ('all', 'all_active'):
+            bones += [i for i in range(len(names)) if bool(useful[i])]
+            continue
         if n.lower() not in lower:
-            raise SystemExit(f"--dump_bone_names: unknown bone '{n}' (examples: upperarm01.L, metacarpal1.L, clavicle.R)")
+            raise SystemExit(f"--dump_bone_names: unknown bone '{n}' (examples: upperarm01.L, metacarpal1.L, clavicle.R; "
+                             f"'all' = every active bone)")
         bones.append(lower[n.lower()])
     bones = list(dict.fromkeys(bones))                                        # unique, order kept
     I1 = dc.identity_pose(1, len(names), device)
     _, _, bp_t = dc.run_body_model_full(bm, I1, torch.full((1, len(list(bm.phenotype_labels))), 0.5, device=device))
     children, cos_y = dc.pick_twist_children(bp_t[0], parents, bones)
     skin = dc.neck_skin_vertex_mask(bm, names)
+    bt = torch.tensor(bones, dtype=torch.long)
+    fC = (fix_C.detach().double().cpu()[bt] if fix_C is not None else torch.eye(3, dtype=torch.float64).repeat(len(bones), 1, 1))
+    fon = ([bool(fix_mask[b]) for b in bones] if fix_mask is not None else [False] * len(bones))
+    hm = hand_mask.detach().reshape(-1).cpu() if hand_mask is not None else None
+    hand = [(bool(hm[b]) if hm is not None else ('finger' in names[b].lower() or 'thumb' in names[b].lower())) for b in bones]
     d = dict(bones=bones, names=[names[b] for b in bones], children=children, cos_y=cos_y,
              axis_src=[(f"child:{names[c]}" if c >= 0 else 'local+Y') for c in children],
-             active=[bool(useful[b]) for b in bones], skin=skin, chain=list(chain))
+             active=[bool(useful[b]) for b in bones], skin=skin, chain=list(chain),
+             parent=[parents[b] for b in bones], rig_parents=parents, rig_names=list(names), fix_C=fC, fix_on=fon,
+             hand=hand)
     print(f"[dump_bones] {len(bones)} bones; twist axis per bone (cos of the connected-child offset with local +Y): "
           + ", ".join(f"{n}={s} ({dc.fmt(c, 3)})" for n, s, c in zip(d['names'], d['axis_src'], cos_y)))
     if any(not a for a in d['active']):
@@ -151,11 +177,14 @@ def bone_dump_setup(bm, names, chain, useful, extra, device):
               f"{[n for n, a in zip(d['names'], d['active']) if not a]}")
     print("[dump_bones] neck-skin vertices (surface, summed neck01-03 LBS weight >= 0.5): "
           + (f"{int(skin.sum())}" if skin is not None else "UNAVAILABLE (no vertex_bone_weights on this anny)"))
+    if any(fon):
+        print(f"[dump_bones] bone fix active on {[n for n, f in zip(d['names'], fon) if f]}: R_pred_local = the "
+              f"corrected output, R_pred_local_raw = the same prediction without the fix")
     return d
 
 
 def bone_dump_person(dump, vname, idx, gid, R_hat, R_gt, bp_hat, bp_gt, ang, glob_err, j_hat, j_gt, v_hat, v_gt, axes,
-                     R_gt_raw=None):
+                     R_gt_raw=None, variant_masked=False, relax=False):
     """One record per (variant, matched person): every array is [n_dump_bones, ...] except the neck-skin scalars.
     R_hat/R_gt [163,3,3] local (pred after the variant's masks, GT orthonormalised), bp_* [163,4,4] global FK poses,
     ang/glob_err [163] (trace values), j_* [163,3], v_* [V,3] camera frame, axes [n_dump_bones,3] (dc.twist_axes),
@@ -163,10 +192,21 @@ def bone_dump_person(dump, vname, idx, gid, R_hat, R_gt, bp_hat, bp_gt, ang, glo
     joint_err_mm is the error at the bone's OWN head, which its own rotation cannot move (anny FK: pose_b =
     pose_parent rest_parent^-1 rest_b delta_b, delta_b without translation), so it reflects only the bones above it.
     child_joint_err_mm is the error at the head of its twist-axis child dump['children'][k] (nan without one): the
-    first joint the bone's own rotation moves. Both pelvis-relative."""
+    first joint the bone's own rotation moves. Both pelvis-relative.
+    R_pred_local_raw: the same prediction WITHOUT the model's bone fix (exp6), R_hat C_b^T on the fixed bones (masks
+    still applied: a fixed bone that this variant's helper mask, or under relax (V3, relax_hands) the hand mask, forces
+    to identity is identity either way, so it is not undone), = R_pred_local when no fix is active;
+    compute_bone_fix.py estimates absolute corrections from it."""
     b = torch.tensor(dump['bones'], dtype=torch.long)
     bd = b.to(R_hat.device)
     Rp, Rg = R_hat[bd].float().cpu(), R_gt[bd].float().cpu()
+    Rp_raw = Rp.clone()
+    hand = dump.get('hand') or [False] * len(dump['bones'])
+    undo = [k for k, (f, a, h) in enumerate(zip(dump.get('fix_on', []), dump['active'], hand))
+            if f and (a or not variant_masked) and not (h and relax)]
+    if undo:
+        u = torch.tensor(undo, dtype=torch.long)
+        Rp_raw[u] = (Rp[u].double() @ dump['fix_C'][u].transpose(-1, -2)).float()
     eye = torch.eye(3).expand_as(Rp)
     E = Rg.transpose(-1, -2) @ Rp                                              # error in the bone's own rest frame
     swing, twist = dc.swing_twist_deg(E, axes.float().cpu())
@@ -176,7 +216,7 @@ def bone_dump_person(dump, vname, idx, gid, R_hat, R_gt, bp_hat, bp_gt, ang, glo
     cerr = (((j_hat[cd] - j_hat[0:1]) - (j_gt[cd] - j_gt[0:1])).norm(dim=-1) * 1000).double().cpu().numpy()
     cerr[ch < 0] = np.nan
     rec = dict(variant=vname, idx=int(idx), gid=int(gid),
-               R_pred_local=Rp.numpy(), R_gt_local=Rg.numpy(),
+               R_pred_local=Rp.numpy(), R_pred_local_raw=Rp_raw.numpy(), R_gt_local=Rg.numpy(),
                R_pred_global=bp_hat[bd, :3, :3].float().cpu().numpy(), R_gt_global=bp_gt[bd, :3, :3].float().cpu().numpy(),
                err_deg=ang[b].float().numpy(), global_err_deg=glob_err[b].float().numpy(),
                pred_angle_deg=dc.geodesic_deg(eye, Rp).numpy(), gt_angle_deg=dc.geodesic_deg(eye, Rg).numpy(),
@@ -253,7 +293,8 @@ def bone_dump_report(recs, variants, dump, out, meta):
         print("\n=== NECK/HEAD BONE DUMP: no matched people; nothing written ===")
         return None
     A = {k: np.stack([np.asarray(r[k]) for r in recs]) for k in (
-        'idx', 'gid', 'R_pred_local', 'R_gt_local', 'R_pred_global', 'R_gt_global', 'err_deg', 'global_err_deg',
+        'idx', 'gid', 'R_pred_local', 'R_pred_local_raw', 'R_gt_local', 'R_pred_global', 'R_gt_global', 'err_deg',
+        'global_err_deg',
         'pred_angle_deg', 'gt_angle_deg', 'swing_deg', 'twist_deg', 'twist_axis', 'joint_err_mm', 'child_joint_err_mm',
         'gt_raw_det', 'gt_raw_sv_min', 'gt_raw_sv_max', 'pve_neckskin_mm', 'pve_neckskin_local_mm', 'neck_girth_ratio')}
     vn_all = np.asarray([r['variant'] for r in recs])
@@ -263,6 +304,10 @@ def bone_dump_report(recs, variants, dump, out, meta):
         twist_child=np.asarray(dump['children']), twist_axis_src=np.asarray(dump['axis_src']),
         twist_axis_cos_y=np.asarray(dump['cos_y'], dtype=np.float64),
         neck_skin_vertices=(np.nonzero(dump['skin'].cpu().numpy())[0] if dump['skin'] is not None else np.zeros(0, int)),
+        bone_parent_index=np.asarray(dump['parent'], dtype=np.int64), bone_active=np.asarray(dump['active'], dtype=bool),
+        rig_parents=np.asarray(dump['rig_parents'], dtype=np.int64), rig_names=np.asarray(dump['rig_names']),
+        bone_fix_C=dump['fix_C'].numpy(), bone_fix_on=np.asarray(dump['fix_on'], dtype=bool),
+        bone_hand=np.asarray(dump.get('hand') or [False] * len(dump['bones']), dtype=bool),
         **A)
     m = dc.mean_or_none
     med = lambda a: float(np.median(a)) if len(a) else None                    # noqa: E731
@@ -290,6 +335,10 @@ def bone_dump_report(recs, variants, dump, out, meta):
                'these and the rotmat target from their SVD projection); proper rotations have det +1 and s = 1',
         spread='mean geodesic distance of each rotation to the chordal (SVD-projected entry-wise) mean over people',
         rel='chordal mean of E over people: one fixed rotation C with R_pred ~ R_gt C when rel_spread is small',
+        bone_fix='exp6 output-level fix R_b <- R_b @ C_b (bone_fix.py): R_pred_local and every error here are WITH the '
+                 'fix the model applied (bones[].bone_fix_deg = angle of C_b, None = not fixed); bones.npz '
+                 'R_pred_local_raw = the same prediction without it (R_pred_local C_b^T; identity where the variant\'s '
+                 'helper mask, or relax_hands (V3) on bone_hand bones, forces identity), bone_fix_C/bone_fix_on per bone',
         neck_skin='vertices on a face with summed LBS weight on neck01..neck03 >= 0.5 (head excluded); PVE pelvis-centred '
                   'like PVE_hn, and centred at each mesh\'s own neck01 joint; girth = mean distance of those vertices from '
                   'the neck01-head line, pred/GT'),
@@ -297,8 +346,10 @@ def bone_dump_report(recs, variants, dump, out, meta):
                         partial_flip_frac=DUMP_PARTIAL_FRAC, twist_max_swing_deg=DUMP_TWIST_MAX_SWING,
                         fixed_output_ratio=DUMP_FIXED_RATIO, const_rel_spread_deg=DUMP_CONST_REL_DEG,
                         gt_raw_tol=DUMP_RAW_TOL),
-        bones=[dict(name=n, index=int(b), twist_axis_src=s, twist_axis_cos_y=c, active=a) for n, b, s, c, a in
-               zip(dump['names'], dump['bones'], dump['axis_src'], dump['cos_y'], dump['active'])],
+        bones=[dict(name=n, index=int(b), twist_axis_src=s, twist_axis_cos_y=c, active=a, parent=int(p),
+                    bone_fix_deg=(float(dc.geodesic_deg(torch.eye(3, dtype=torch.float64), dump['fix_C'][k])) if f else None))
+               for k, (n, b, s, c, a, p, f) in enumerate(zip(dump['names'], dump['bones'], dump['axis_src'], dump['cos_y'],
+                                                             dump['active'], dump['parent'], dump['fix_on']))],
         neck_skin_n_vertices=(int(dump['skin'].sum()) if dump['skin'] is not None else None), variants={})
     for vn in variants:
         sel = np.nonzero(vn_all == vn)[0]
@@ -350,6 +401,10 @@ def bone_dump_report(recs, variants, dump, out, meta):
     R = summ['variants'][ref]
     print(f"\n=== NECK/HEAD BONE DUMP ({ref}, {R['n']} matched people; local = parent-relative, deg; joint = own head, "
           f"child = child's head, mm) ===")
+    fixed = [(b['name'], b['bone_fix_deg']) for b in summ['bones'] if b.get('bone_fix_deg') is not None]
+    if fixed:
+        print("[bone_fix] these rows are WITH the model's output fix R_b <- R_b @ C_b on: "
+              + ", ".join(f"{n} ({a:.1f} deg)" for n, a in fixed))
     print(f"{'bone':<14}{'axis':<16}{'verdict':<13}{'med':>6}{'mean':>6}{'p90':>6}{'>150%':>6}{'|tw|':>6}{'swing':>6}"
           f"{'glob':>6}{'joint':>6}{'child':>6}{'prdSpr':>7}{'gtSpr':>6}{'relSpr':>7}{'relAng':>7}{'|prd|':>6}{'|gt|':>6}")
     for name, src in zip(dump['names'], dump['axis_src']):
@@ -415,6 +470,29 @@ def select_indices(args, pkls):
     if args.select == 'indices':
         idx = [int(s) for s in args.indices.split(',') if s.strip()]
         return idx, 'explicit indices', {}, {}
+    if args.select == 'train_sample':
+        # exp6: seeded random TRAINING images to estimate a bone fix on, never the holdout it is evaluated on.
+        # Pool = every index train.py trains on (all but the last N_HOLDOUT, --val_anny_n 100) minus the diag manifest
+        # images (an in-sample evaluation set, also kept out of the exp5/exp6 fine-tunes) and --exclude_indices_file.
+        n_train = n_total - dc.N_HOLDOUT
+        excl = set()
+        if args.exclude_manifest:
+            if os.path.isfile(args.exclude_manifest):
+                excl |= {int(e['idx']) for e in json.load(open(args.exclude_manifest))['entries']}
+            else:
+                print(f"[select] WARNING: --exclude_manifest {args.exclude_manifest} not found; manifest images not excluded")
+        if args.exclude_indices_file:
+            with open(args.exclude_indices_file) as fh:
+                excl |= {int(ln.split('#')[0]) for ln in fh if ln.split('#')[0].strip()}
+        pool = np.setdiff1d(np.arange(n_train, dtype=np.int64), np.asarray(sorted(excl), dtype=np.int64))
+        k = min(args.n, len(pool))
+        idx = sorted(int(i) for i in np.random.default_rng(args.seed).choice(pool, size=k, replace=False))
+        assert all(i < n_train for i in idx), 'train_sample drew a holdout index'
+        print(f"[select] train_sample: {k} of {len(pool)} training images (seed {args.seed}; holdout = last {dc.N_HOLDOUT} "
+              f"of {n_total} and {len(excl & set(range(n_train)))} excluded training images left out). IN-SAMPLE: these "
+              f"were trained on, as an estimation set should be; never evaluate on them.")
+        return idx, (f'train_sample: {k} seeded random training images (seed {args.seed}; not the last {dc.N_HOLDOUT} '
+                     f'holdout, not the {len(excl)} manifest/excluded images)'), {}, {}
     if args.select == 'youngest':
         scan = max(0, min(args.scan, n_total - dc.N_HOLDOUT))
         ages = []
@@ -446,7 +524,12 @@ def main():
     ap.add_argument('--ckpt', required=True, help='path, models/multiHMR name, or run_name:epoch')
     ap.add_argument('--data_folder', default=dc.DATA_FOLDER_DEFAULT)
     ap.add_argument('--n', type=int, default=100)
-    ap.add_argument('--select', default='holdout', choices=['holdout', 'youngest', 'indices'])
+    ap.add_argument('--select', default='holdout', choices=['holdout', 'youngest', 'indices', 'train_sample'])
+    ap.add_argument('--seed', type=int, default=0, help='--select train_sample: RNG seed of the draw')
+    ap.add_argument('--exclude_manifest', default='results/diagnostics/manifest.json',
+                    help='--select train_sample: build_manifest.py JSON whose images (both splits) are left out of the draw')
+    ap.add_argument('--exclude_indices_file', default='',
+                    help='--select train_sample: extra AnnyOne indices to leave out (one per line, # comments)')
     ap.add_argument('--scan', type=int, default=20000, help='--select youngest: how many training pkls to scan')
     ap.add_argument('--indices', default='', help='--select indices: comma list of dataset indices')
     ap.add_argument('--manifest', default='', help='build_manifest.py JSON; overrides --select/--n')
@@ -470,7 +553,10 @@ def main():
                          '0 = every output unchanged.')
     ap.add_argument('--dump_bone_names', default='',
                     help='--dump_bones: extra comma-separated bone names to dump, e.g. the bones another checkpoint gets '
-                         'wrong (upperarm01.L,lowerarm01.L,metacarpal1.L)')
+                         'wrong (upperarm01.L,lowerarm01.L,metacarpal1.L); \'all\' = every active bone')
+    ap.add_argument('--bone_fix', default='',
+                    help="exp6 output-level bone fix (bone_fix.py): '' = the checkpoint's own (saved by train.py --bone_fix; "
+                         "none for older checkpoints), 'none' = off, a JSON path (compute_bone_fix.py) = that fix instead")
     ap.add_argument('--device', default='cuda')
     args = ap.parse_args()
 
@@ -481,7 +567,7 @@ def main():
         variants[CROP_VARIANT] = CROP_CFG
 
     ckpt_path = dc.resolve_ckpt(args.ckpt)
-    model, ckpt_args = dc.load_model(ckpt_path, device)
+    model, ckpt_args = dc.load_model(ckpt_path, device, bone_fix=args.bone_fix)
     bm = model.body_model
     names = list(bm.bone_labels)
     phen = list(bm.phenotype_labels)
@@ -498,13 +584,20 @@ def main():
         print(f"[rig] group {g:<18s} {len(idx):3d} bones ({act} active) e.g. {[names[i] for i in idx[:4]]}")
     if phen != dc.PHENOTYPES:
         print(f"[WARN] body model phenotype order {phen} != assumed dataset order {dc.PHENOTYPES}")
-    dump = bone_dump_setup(bm, names, chain, useful, args.dump_bone_names, device) if args.dump_bones else None
+    dump = (bone_dump_setup(bm, names, chain, useful, args.dump_bone_names, device,
+                            fix_C=model.bone_fix_C if getattr(model, 'bone_fix_on', False) else None,
+                            fix_mask=model.bone_fix_mask.cpu() if getattr(model, 'bone_fix_on', False) else None,
+                            hand_mask=getattr(model, 'hand_bone_mask', None))
+            if args.dump_bones else None)
     bone_recs = []            # --dump_bones: one record per (variant, matched person)
 
     ds = AnnyOne(data_folder=args.data_folder, img_size=S)
     pkls = ds.pkl_files
     indices, sel_desc, sel_person, tagmap = select_indices(args, pkls)
     print(f"[data] {len(pkls)} samples; evaluating {len(indices)} = {sel_desc}")
+    if args.select == 'train_sample':
+        with open(os.path.join(args.out, 'selected_indices.txt'), 'w') as fh:
+            fh.write(f"# {sel_desc}\n" + ''.join(f"{i}\n" for i in indices))
 
     rows = []                 # one row per (variant, matched person)
     det = {k: dict(gt=0, matched=0, fp=0, img_nodet=0, nonfinite=0) for k in variants}
@@ -690,7 +783,8 @@ def main():
             if dump is not None:          # --dump_bones: kept out of the per-person CSV, which stays unchanged
                 bone_recs.append(bone_dump_person(dump, vname, idx, gid, R_hat, gt_R[gid], bp_hat[0], gt_bp[gid], ang,
                                                   glob_err, j_hat, gt_j[gid], v_hat, gt_v[gid], dump_axes[gid],
-                                                  R_gt_raw=pose[gid, :, :3, :3]))
+                                                  R_gt_raw=pose[gid, :, :3, :3], variant_masked=bool(cfg['mask']),
+                                                  relax=bool(cfg['relax'])))
             return row
 
         vis_panels = {}
@@ -1113,11 +1207,13 @@ def main():
     if dump is not None:
         raw_args = getattr(model, 'ckpt_raw_args', {}) or {}
         bone_dump_report(bone_recs, variants, dump, args.out, dict(
-            ckpt=ckpt_path, selection=sel_desc,
+            ckpt=ckpt_path, selection=sel_desc, bone_fix=getattr(model, 'bone_fix_info', None),
             ckpt_args={k: (raw_args.get(k) if isinstance(raw_args.get(k), (int, float, str, bool, type(None)))
                            else str(raw_args.get(k))) for k in ('pose_param', 'mask_helper_joints_train')
                        + dc.CKPT_ARGS_REPORTED}))
 
+    if getattr(model, 'bone_fix_on', False):         # exp6: only when a fix is active (default output unchanged)
+        summary['bone_fix'] = model.bone_fix_info
     with open(os.path.join(args.out, 'summary.json'), 'w') as f:
         json.dump(dc.json_safe(summary), f, indent=2, allow_nan=False)
     print(f"\nwrote {args.out}/summary.json, per_person.csv and {min(args.n_vis, len(indices))} panels in vis/")

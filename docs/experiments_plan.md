@@ -25,6 +25,7 @@ defaults, the only observable change in train.py is one `[throughput]` line per 
 | exp4b | fingers: supervision? (a control, not a finger boost) | supervision | `--rotmat_region_norm 1` (0) | `3d51a7d` | 20 min train + ~10 min eval + traces; job ~1.5 h | V1 `rot_fingers` vs 17.3 and vs its own V3 floor; head 89.5° local / 12.0° global; PVE/recall guards |
 | exp4c | 3DPW identity fingers supervised as GT (mixed runs only) | confirmed bug fix, not in the production lineage | `--mask_3dpw_hands 1` (0) | `3d51a7d` | no script, not scheduled | n/a this week |
 | exp5 | neck: local neck/head error 62.7° / 89.5°, constant over v5 00099, v9 00062/00149 and the six exp2-exp4 pilot and control runs (exp1 runs and the ancestors not yet traced; global head 12.0°) | diagnostic first, then supervision (loss form, candidate) | trace `--dump_bones 1` (0); `--rotmat_loss geodesic` (default `l1`) | `bd7cfa3` (WIP, branch `claude/gallant-dijkstra-bnlowv`; review fixes on top) | dump ~20 min for 4 checkpoints; pilot ~20 min train, job ~1 h | dump: verdict per bone plus the H3/H4 bookkeeping lines; pilot: flagged bones' mean local error −3° beyond the l1 control arm; guards vs the control arm: PVE +8 mm, recall −2, global head +3° |
+| exp6 | measured half-turns: v5 lineage neck02 (175.6°) + head (177.9°) compensated pair, girth 0.46, metacarpal1.L 180° (constant); v10 metacarpal2.L/2.R/3.R (constant) and a compensated left-arm chain shoulder01.L → upperarm01.L → upperarm02.L; exp5 fine-tuning did not move them | output-level correction (zero-training test, then a fine-tune with it) | `--bone_fix <json>` in train.py / trace / demo ('' = none or the checkpoint's own, `none` = off); trace `--select train_sample`, `--dump_bone_names all` | uncommitted (this working tree) | ~30 min with TRAIN=1, ~10 min with TRAIN=0; limit 1 h | zero-training vs baseline: corrected bones median < 15°, girth ≥ 0.9, global head ≤ +3°, PVE ≤ +1 mm; fine-tuned vs the exp5 l1 control: same bones/girth, exp5 guards |
 
 Every baseline the scripts print (recall 90.2, PA-PVE 53.3, holdout age bias −0.015, PVE_hn 52.3, global wrist
 22.7°, head px error 64.5 mean / 46 median, ...) is now listed in `docs/diagnostics_findings.md`, "Baseline numbers
@@ -271,7 +272,10 @@ moves the head 1.1 mm at phenotype 0.3 and 2.5 mm at 0.5, and a 180° flip moves
 the probe bounds the rest-pose shift but says nothing about posed necks. The "neck03 ~25 mm, head ~40 mm" reported in
 the previous review round came from a posed check (random 20° GT on every bone) and agrees with the posed columns. The
 flip would be seeded by the singular 6D init (3h) in the lineage's only fresh-head phase (`anny_s2_frozen_bb`,
-inherited by v3, v4, v5, v9 and every pilot). The L1 over matrix entries would hold it in place, since it has a
+inherited by v3, v4, v5, v9 and every pilot). [Measured, diag_neck_bones_3573518 (v5 00099; the ancestors in 3573519 agree): neck02 is a twist flip
+(|tw| 175.7, swing 3.3; bone axis local +Y, cos 1.000), and the head is mostly twist too (|tw| ~178, swing 28-32,
+never near 180). A half-turn about local X, which is where the singular init starts a bone, would tilt the axis by
+180 deg (FLIP_SWING) and does not give that; in the v5 line the init fits metacarpal1.L's FLIP_SWING only.] The L1 over matrix entries would hold it in place, since it has a
 barrier along a twist (4.83 at 135° vs 4.00 at 180°); for a neck01/02 flip the position terms push the other way, and
 which wins is untested.
 
@@ -421,6 +425,171 @@ each weight by about lr per step, and undoing a flip means reversing such a colu
 do [Guessing]. The decisive zero-training test is the decpose surgery on the bone the dump names (not implemented
 here: it needs that bone). The 6D-init defect (3h) only matters for new fresh-head runs.
 
+### exp6_bone_fix: a constant output-level correction of the flipped bones (uncommitted)
+
+**Why (measured, `diag_neck_bones` jobs 3573518/3573519, `exp5_neck_fix` jobs 3573520/3573521; V1, 100-image holdout).**
+- v5 lineage (frozen_bb_v2 00299, partialft_v3 00054, boosted_v4 00299, v5 00099, v9 00149, long_pc_dist5 00009, both
+  exp5 pilots): neck02 `FLIP_TWIST` (median 175.6°, |twist| 175.7, swing 3.3, relSpr 5.3) and head `FLIP_TWIST` /
+  `FLIP_SWING` (177.9°, twist 178, swing ~29, relSpr ~15), a compensated pair: neck03 local OK (~6°) but global ~173°,
+  head global ~12° (right). neck01 ~5°, jaw ~2°. Neck-skin girth pred/GT 0.46 (v10 1.00), PVE_neck (neck01-centred)
+  27-28 mm (v10 10.3). metacarpal1.L `FLIP_SWING`, a constant 180° (pred spread 0, GT identity), in all 6 checkpoints
+  traced by diag_neck_bones (the exp5 pilots dumped only the 12 default bones, no metacarpals): child error 185-200 mm vs
+  joint 90-106 mm. Already in frozen_bb_v2 00299, before the helper mask, the boost and alpha_shape 20. H3 and H4
+  refuted for every checkpoint.
+- v10 00290: neck and head fine. Constant half-turns on metacarpal2.L (`FLIP_SWING` 180°), metacarpal2.R
+  (`FLIP_TWIST` 180°) and metacarpal3.R (`FLIP_SWING` 180°): GT identity, relSpr 0.0-0.3, global 167-170°, i.e.
+  uncompensated. Child error 182-185 mm for metacarpal2.L/3.R (`FLIP_SWING`) and 136 mm for metacarpal2.R
+  (`FLIP_TWIST`: a half-turn about the bone barely moves its child), vs joint 95-120 mm. In the left arm, a compensated
+  chain like v5's neck: shoulder01.L `FLIP_TWIST` 166° (relSpr 21.3: prdSpr 10.7 vs gtSpr 24.6, so not a constant) with
+  global 166.7°; upperarm01.L `SPREAD` 58° (swing 55.7, about twice its GT angle of 28°: its GT rotation conjugated by
+  the half-turn above) with global 169.0°; upperarm02.L `FLIP_TWIST` 180° (GT identity, relSpr 2.4) with global 18.0°,
+  i.e. the chain is right again from upperarm02.L down (lowerarm01.L global 19.7°).
+- exp5 (2 epochs, lr 1e-5): geodesic neck02 175.6 → 175.0, head 177.9 → 177.1; the l1 control did not move. Read
+  [Likely]: un-flipping needs neck02 and head to rotate back together; a partial move of one breaks the compensation
+  and raises the loss, so gradient steps from inside the flip do not leave it.
+
+A flip with a small relSpr is a near-constant offset of the head's output, so one constant rotation per bone should
+undo it with no training. That is cheaper and more direct than the decpose surgery the exp5 section proposed.
+
+**What.** `model.py` applies `R_b ← R_b · C_b` to the head's final local rotmats of the listed bones, right after
+`rot6d_to_rotmat` and before the helper mask, `relax_hands`, `rest_pose`, FK and the losses. Training, `evaluate()`,
+the diagnostics and the demo therefore all see the corrected rotations, and gradients flow through the constant. The
+head is a single pass whose query token is built from the constant `init_body_pose` buffer, so nothing feeds the
+uncorrected rotation back. `C` is a non-persistent buffer `[163,3,3]` (identity elsewhere) plus a bool mask. With no
+fix, `forward()` skips the step (the same tensor is returned, bit-identical to HEAD). `bone_fix.py` holds the JSON
+format `{"bones": {"neck02": 3×3, ...}, "source": ..., "estimated_on": ..., "stats": ...}`. Names are resolved against
+the rig (an unknown name is a hard error), and every matrix must be a proper rotation. Every loader prints one
+`[bone_fix]` line with the bones and angles.
+- `train.py --bone_fix <json>`: the parsed file is saved in the checkpoint args (`bone_fix_spec`). A model fine-tuned
+  with a fix re-applies it whenever it is rebuilt from its args (`diag_common.load_model`, `demo.py`,
+  `distill.build_teacher`), even after the JSON file is gone. With `--bone_fix ''` it inherits the `--pretrained`
+  checkpoint's fix when that checkpoint's heads are loaded (`load_only_backbone 0`), and `none` drops it.
+- `diag_holdout_trace.py` / `demo.py --bone_fix`: `''` = the checkpoint's own fix (none for every existing
+  checkpoint), `none` = off, a path = that fix instead.
+- `scripts/diagnostics/compute_bone_fix.py`: `C_b` = SO(3) projection (SVD, det +1) of `mean_i R_pred_iᵀ R_gt_i`, using
+  `R_pred` from the dump's new `R_pred_local_raw` (the prediction without any fix). `--bones auto` takes every dumped,
+  active bone whose verdict is `FLIP_TWIST/FLIP_SWING/CONST_OFFSET/FIXED_OUTPUT` with a median above 90°. It prints, per
+  bone, the angle of `C_b`, the median/p90 local error before and after, the same with a 2-fold split by image
+  (out-of-sample inside the estimation set), and the singular values of the mean. It then prints the predicted
+  **global** error of every dumped bone at or below a corrected one, `G_b'' = Π_a (G_a C_a G_aᵀ) G_b`, which is exact
+  for anny's FK. Exit status 3 means no bone qualifies.
+- **Global guard** (`--max_global_rise 5`): when the fix raises the predicted global median of any dumped bone by more
+  than 5°, `compute_bone_fix.py` prints a WARNING naming those bones and the corrected bones on their chains, plus the
+  **safe subset** (the selected bones minus every corrected bone on a risen bone's chain, repeated until nothing
+  rises), stores both in the JSON (`global_guard`), and exits 4 with the JSON written. This is the compensated-chain
+  case: `--bones auto` corrects the flipped ends of a chain but not the link in between (v10 upperarm01.L is `SPREAD`,
+  median 58° < 90°), and one right-constant per flipped bone leaves that link's conjugated rotation uncompensated. In a
+  synthetic v10 arm (local 180/56/180°, global upperarm01.L 180° / upperarm02.L 0°), the auto fix moves upperarm02.L,
+  and with it the forearm, hand and fingers, from 0° to 56° global, and the elbow by ~264 mm (review script, no rest
+  offsets; with the real rig's rest offsets in `test_bone_fix.py`: 2° → 54°). `exp6_bone_fix.sh` acts
+  on exit 4 by `ON_GLOBAL_RISE`: `continue` (default with TRAIN=1: the fine-tune can still act on the residual), `stop`
+  (default with TRAIN=0: the zero-training test would only confirm the predicted failure) or `safe` (re-estimate with
+  the safe subset; the full fix is kept as `bone_fix_guarded.json`, which every new estimation deletes first, and the
+  summary reports a safe subset only when `bone_fix.json` holds exactly that file's safe subset). Keeping such a chain
+  intact needs a two-sided constant on the link, `R_l ← K_lᵀ R_l K_l` with `K_l` the parent's correction carried
+  through the rest offset (not implemented).
+- Estimation never touches the holdout. `diag_holdout_trace.py --select train_sample --n 200 --seed 0` draws seeded
+  random training indices (all but the last 100), minus the diag manifest images and `--exclude_indices_file`, and
+  writes `selected_indices.txt`. `--dump_bone_names all` dumps every active bone (75), so `auto` can find a flip
+  anywhere. Under `--dump_bones 1`, `bones.npz` now also holds `R_pred_local_raw`, `bone_fix_C`, `bone_fix_on`,
+  `bone_hand`, `bone_parent_index`, `rig_parents`, `rig_names` and `bone_active`; `--dump_bones 0` output is unchanged.
+  `R_pred_local_raw` is the prediction the same variant would give without the fix: the fix is not undone where the
+  variant forces identity anyway (helper bones under the helper mask; finger/thumb bones, `bone_hand`, under
+  `relax_hands` in V3). `compute_bone_fix.py --variant V3_demo_relaxhands` never selects a finger/thumb bone.
+
+**Commands** (repo root on the cluster; ~30 min with TRAIN=1, ~10 min with TRAIN=0):
+```
+sbatch slurm/experiments/exp6_bone_fix.sh                                   # v5 00099: estimate, zero-training test, 2-epoch fine-tune
+CKPT=logs/anny_model/anny_v10_scratch_mixed/checkpoints/00290.pt TRAIN=0 BONES=metacarpal2.L,metacarpal2.R,metacarpal3.R \
+    sbatch --time=00:30:00 slurm/experiments/exp6_bone_fix.sh               # v10's uncompensated flips, no training
+SUMMARY_ONLY=1 RUN=anny_s2_shape_v5_00099_n200_s0 bash slurm/experiments/exp6_bone_fix.sh   # the table alone, login node
+SUMMARY_ONLY=1 RUN=anny_v10_scratch_mixed_00290_n200_s0_metacarpal2_L-metacarpal2_R-metacarpal3_R \
+    bash slurm/experiments/exp6_bone_fix.sh                                 # the v10 table
+```
+In SUMMARY_ONLY mode the TAG (and so the baseline and control) comes from the run's `bone_fix.json` (`source.ckpt`),
+not from the default CKPT (v5); without it, a RUN that does not start with `<TAG>_` is an error. v10 runs with the
+three metacarpals because `--bones auto` would also correct shoulder01.L and upperarm02.L, the two ends of the
+compensated chain above (the global guard would stop that run). Outputs go to
+`results/experiments/exp6_bone_fix/<TAG>_n200_s0[_<bones>]/`:
+- `est_trace/` (training sample, no fix) and `bone_fix.json`;
+- `holdout_fix/` (zero-training) and `holdout_nofix_vis/` (the same 12 images without the fix);
+- `compare/<idx>.jpg`: the two panel rows stacked, top without the fix, bottom with it;
+- `train/` and `holdout_ft/` (TRAIN=1 only);
+- `summary.json`.
+
+The baseline is `results/diagnostics/neck_bones/<TAG>/` (`diag_neck_bones.sh`). Without it, the job traces CKPT itself
+into `holdout_baseline/`. The control is `results/experiments/exp5_neck_fix/pilot_l1_a0.1_<TAG>`; it only exists for
+v5, and v10 runs without one.
+
+**Pass criteria** (V1, holdout, matched people):
+- Zero-training, against the baseline: every corrected bone has a median below 15° (v5: neck02, head, metacarpal1.L),
+  girth ≥ 0.9, global head ≤ baseline + 3°, and PVE ≤ baseline + 1 mm.
+- Fine-tuned, against the exp5 l1 control (or the baseline when there is none): the same bone and girth conditions,
+  plus the exp5 guards PVE ≤ ref + 8 mm, recall ≥ ref − 2 and global head ≤ ref + 3°.
+
+The summary table has one column each for baseline, zero-training, fine-tuned and control. Its rows: verdict and median
+for the neck chain, the corrected bones and every baseline-flagged bone; girth, PVE_neck, PVE, PA-PVE, PVE_hn, recall,
+global head and finger rotation.
+
+**What to expect, from the measured spreads [Likely].** After the fix, a bone's local error is about its relSpr (the
+mean distance of its per-person error rotations from their mean):
+- neck02 → ~5°, metacarpal1.L (v5) and the three v10 metacarpals → ~0-1° (relSpr 0-0.3), with v10 PVE and global head
+  about unchanged (nothing above the metacarpals changes);
+- head → ~15°, borderline against the 15° criterion. Its half-turn compensates the neck02 flip person by person (the
+  error is a 180° turn about an axis that moves with the GT neck03/head pose), which no constant can undo.
+- v10 with `--bones auto` (not the planned run): upperarm02.L and the metacarpals → ~0-2° (relSpr 0-2.4), shoulder01.L
+  → ~20° (relSpr 21.3; shoulder01 sits at 12-15° even unflipped: v5 14.3 L / 12.0 R, v10 14.7 R), and upperarm01.L,
+  the link of the compensated chain, is no longer compensated: the left-arm global error and PVE rise. The global
+  guard fires in step a (predicted global rise on upperarm02.L, lowerarm01/02.L, wrist.L and the left hand below it;
+  upperarm01.L itself drops from 169° to about its local error), and with TRAIN=0 the job stops there.
+
+The head's remaining ~15° is no longer compensated, so the **global** head error is likely to rise. In a synthetic
+compensated pair (relSpr 23°), the predicted global head error went from 2° to 22°. `compute_bone_fix.py` prints this
+prediction on the training sample in step a, before the holdout runs. If it rises by more than 3°, the zero-training
+column fails on global head; above 5° the global guard fires (exit 4) for the v5 run too, and with TRAIN=1 the job
+continues by default (`ON_GLOBAL_RISE=continue`), so the WARNING in the v5 log is this expected rise. The fine-tuned column then shows whether training starting from the un-flipped state
+removes the residual. The neck skin should recover either way, because neck02 is the bone that twists it.
+
+**How to read.**
+
+| outcome | meaning | next |
+|---|---|---|
+| zero-training PASS | the flips are fixed output offsets of the head; one constant per bone removes them on unseen images | keep the fix in the checkpoint args (fine-tuned column), render `compare/`, re-run the exp1-exp4 reads on the fixed model |
+| neck02 / metacarpals < 15°, girth ≥ 0.9, but head ≈ 15° and/or global head > +3° | consistent with the compensation residual above | the fine-tuned column decides; otherwise a chain-preserving head correction `d_h ← X⁻¹ C_n2⁻¹ X d_h`, with X = rest(neck02→neck03) · predicted neck03 · rest(neck03→head), which keeps the head's global rotation exactly (not implemented) |
+| a corrected bone does not drop on the holdout although `after` / `2-fold` dropped on the training sample | the offset is not constant across images (train ≠ holdout) | read the per-person rows in `holdout_fix/bones.npz` |
+| girth stays < 0.9 with neck02 corrected | the thinning has another cause | render; look at shape |
+| v10 (three metacarpals): → ~0°, PVE / global head unchanged | the same constant-offset mechanism in a fresh-head run | apply to v10 itself; the left-arm chain needs the two-sided link correction |
+| GLOBAL GUARD warning in step a, then PVE / global head up in the zero-training column | the compensated chain the guard predicted, not a new effect | run the safe subset (`ON_GLOBAL_RISE=safe` or `BONES=`) for the constant flips; the chain needs the two-sided correction |
+
+**Caveat.** The correction is one constant per bone, estimated on 200 training images. It removes a symptom and
+says nothing about why the heads converged to the flip (origin: present in frozen_bb_v2 00299). The holdout is never
+used for estimation. A model fine-tuned with `--bone_fix` keeps the fix in its args and needs it at inference;
+`--bone_fix none` turns it off for any diagnostic.
+
+**Verified offline** (`scratchpad/bonefix/test_bone_fix.py`, 94 checks, CPU, stub anny on the real 163-bone default rig):
+- With no fix, `Model.forward` is bit-identical to HEAD `model.py` in eval and training, with and without the helper mask.
+- On random 6D inputs through `rot6d_to_rotmat`, the fixed bones equal `R @ C` exactly (`torch.equal`) and every other
+  bone is untouched. The same holds under autocast. The gradient is `dL/dR' Cᵀ`.
+- In the full forward, the fixed bones are HEAD's rotmat times C, the other bones, shape, loc and scores are unchanged,
+  and the mesh moves.
+- The fix survives `train.py --bone_fix` → checkpoint → `load_model`, even with the JSON file deleted. The `''`,
+  `none`, `<path>` and `--pretrained` inheritance cases all behave as described above.
+- For `R_pred = R_gt F_b` with 2° noise and 300 people, `compute_bone_fix.py` recovers `C_b = F_bᵀ` within 0.11°, the
+  corrected median is ~1°, and the predicted global errors equal FK of the corrected locals (1.6e-11).
+- Global guard, synthetic v10 arm with the real rig's rest offsets (local shoulder01.L / upperarm01.L / upperarm02.L
+  179.6 / 54.3 / 179.6°, global upperarm01.L 179° and upperarm02.L 2°): `auto` picks shoulder01.L, upperarm02.L and
+  two metacarpals, the predicted global upperarm02.L, forearm, wrist and fingers rise from 2-3° to ~54° (equal to FK
+  of the corrected locals), exit 4, implicated = shoulder01.L + upperarm02.L, safe subset = the metacarpals; re-run
+  with the safe subset: exit 0, metacarpals ~1°, finger3-1.L global 179° → 3°. Uncompensated flips do not fire it. The
+  synthetic v5 pair fires it too (global head 2° → 22°, safe subset empty), and the NOTE line names the head (22°).
+- `train_sample` never draws holdout, manifest or excluded indices.
+- The summary verdicts were checked on synthetic JSONs, as were the step-a guard lines and the warning when the
+  baseline trace belongs to another checkpoint than the fix.
+- The generated slurm command passes `bash -n` and runs end to end with fake tools, for v5 with TRAIN=1, v10 with
+  TRAIN=0 (auto and the three metacarpals), and exit 4 under `ON_GLOBAL_RISE` stop (default with TRAIN=0), safe and
+  continue (default with TRAIN=1). `SUMMARY_ONLY=1 RUN=<v10 run>` without CKPT takes the v10 baseline from
+  `bone_fix.json`; without `source.ckpt` it stops unless TAG or CKPT is given.
+
 ## 3. Verified in code
 
 Readers' facts. Line numbers refer to `89db760`, whose `.py` files are identical to `0d8ef72`. The experiment
@@ -508,7 +677,7 @@ commits shift lines in train.py, loss.py, model.py and the trace.
 |---|---|---|---|
 | Head anchor vs root targets | `train.py:213-222, 239-245` | yes (depth) | exp1 |
 | 3DPW identity fingers as GT | see 3e | no (mixed runs) | exp4c flag, not scheduled |
-| 6D "identity" init `[1,0,0,1,0,0]` is singular under `rot6d_to_rotmat` (columns x[0:3], x[3:6]) | `model.py:569`; `utils/humans.py:20-21` | yes (fingers' 0.25-0.30 conditioning is \|sin\| of this angle) [Likely link] | **not implemented** (it seeds the neck flip hypothesis, section 2 "Neck root cause"; distinct from exp5_neck_fix). Candidate: after load, set the init to `[1,0,0,0,1,0]` (delta = `(0,0,0,-1,+1,0)` per bone, 978 values) and compensate BOTH places the init enters the head: the residual (`decpose.bias -= delta`, `model.py:650`) and the token input (`token = cat([x_central, init_body_pose, init_betas, init_cam])`, `model.py:627-632`, fed to `transformer.to_token_embedding`, an `nn.Linear`: `to_token_embedding.bias -= W[:, D:D+978] @ delta`, D = width of x_central). The decpose shift alone is NOT output-neutral: on the real `HPH` with random weights it changed rotmat entries by up to 1.86; with both shifts the change is 1e-14 in float64 and 2.6e-6 in float32 (round-off, so the check cannot be bit-exact; synthetic scratchpad check, not in the repo). Require a before/after prediction match (max \|d rotmat\| <= 1e-5 in fp32) before crediting any later change to it. Then reset the 30 phalanx rows to exact identity (a real change, intended); the buffer is restored from the checkpoint, so a constant change alone is overwritten |
+| 6D "identity" init `[1,0,0,1,0,0]` is singular under `rot6d_to_rotmat` (columns x[0:3], x[3:6]) | `model.py:569`; `utils/humans.py:20-21` | yes (fingers' 0.25-0.30 conditioning is \|sin\| of this angle) [Likely link] | **not implemented** (it seeds the neck flip hypothesis, section 2 "Neck root cause"; measured: neck02 is a twist flip (\|tw\| 175.7, swing 3.3), which a half-turn about local X does not give; the init fits metacarpal1.L's FLIP_SWING only; distinct from exp5_neck_fix). Candidate: after load, set the init to `[1,0,0,0,1,0]` (delta = `(0,0,0,-1,+1,0)` per bone, 978 values) and compensate BOTH places the init enters the head: the residual (`decpose.bias -= delta`, `model.py:650`) and the token input (`token = cat([x_central, init_body_pose, init_betas, init_cam])`, `model.py:627-632`, fed to `transformer.to_token_embedding`, an `nn.Linear`: `to_token_embedding.bias -= W[:, D:D+978] @ delta`, D = width of x_central). The decpose shift alone is NOT output-neutral: on the real `HPH` with random weights it changed rotmat entries by up to 1.86; with both shifts the change is 1e-14 in float64 and 2.6e-6 in float32 (round-off, so the check cannot be bit-exact; synthetic scratchpad check, not in the repo). Require a before/after prediction match (max \|d rotmat\| <= 1e-5 in fp32) before crediting any later change to it. Then reset the 30 phalanx rows to exact identity (a real change, intended); the buffer is restored from the checkpoint, so a constant change alone is overwritten |
 | Boost renormalised over 163 bones: "×4" is ×2.41, rest ×0.60 | `loss.py:76`, help `loss.py:188-193` | interpretation of v4/v5 | not fixed (proposed `--boost_renorm 0`) |
 | `prepare_gt` reads global `args.img_size`; `train_n_iters`/`evaluate` read global `args.amp` | `train.py:239, 448, 570` | no | not fixed |
 | `--use_anny_shape` default 0 → GT phenotypes 0 (newborn) | `train.py:148-159, 1337` | no (v5 passes 1) | not fixed |

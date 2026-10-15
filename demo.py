@@ -19,6 +19,7 @@ import math
 
 from utils import normalize_rgb, render_meshes, get_focalLength_from_fieldOfView, demo_color as color, print_distance_on_image, render_side_views, create_scene, MEAN_PARAMS, CACHE_DIR_MULTIHMR, SMPLX_DIR
 from model import Model
+import bone_fix as bone_fix_lib
 from multi_hmr_anny.multi_hmr import Multi_HMR as ModelAnny
 from pathlib import Path
 
@@ -113,8 +114,10 @@ def get_camera_parameters(img_size, fov=60, p_x=None, p_y=None, device=torch.dev
     K = K.unsqueeze(0).to(device)
     return K
 
-def load_model(model_name, device=torch.device('cuda')):
-    """ Open a checkpoint, build Multi-HMR using saved arguments, load the model weigths. """
+def load_model(model_name, device=torch.device('cuda'), bone_fix=''):
+    """ Open a checkpoint, build Multi-HMR using saved arguments, load the model weigths.
+    bone_fix (exp6, bone_fix.py): '' = the fix saved in the checkpoint args (bone_fix_spec; none for older
+    checkpoints), 'none' = off, a JSON path = that fix instead. Model (model.py) only. """
     # Model
     ckpt_path = os.path.join(CACHE_DIR_MULTIHMR, model_name+ '.pt')
     if not os.path.isfile(ckpt_path):
@@ -145,6 +148,11 @@ def load_model(model_name, device=torch.device('cuda')):
     kwargs.setdefault('pose_param', 'local-bone')
     print(f"pose_param from checkpoint: {kwargs['pose_param']}")
     kwargs['person_center'] = 'head'  # ← override pelvis → head (Anny uses 'head' not 'pelvis')
+    # --- OUTPUT-LEVEL BONE FIX (exp6): the checkpoint's own fix unless --bone_fix overrides it ---
+    fix_spec, fix_origin = bone_fix_lib.from_arg(bone_fix, kwargs.get('bone_fix_spec'))
+    print(f"[load_model] bone_fix: {fix_origin}")
+    kwargs['bone_fix'] = 'none' if fix_spec is None else ''
+    kwargs['bone_fix_spec'] = fix_spec
 
     # Build the model.
     #
@@ -174,6 +182,9 @@ def load_model(model_name, device=torch.device('cuda')):
         # with xat_dim=1024; these kwargs are meaningless for Model).
         kwargs['xat_dim'] = 1024
         kwargs['xat_mlp_dim'] = 4 * 1024
+        if fix_spec is not None:
+            print("[load_model] WARNING: --bone_fix is implemented in model.py's Model only; "
+                  "Multi_HMR (original repo class) ignores it")
         model = ModelAnny(**kwargs).to(device)
     else:
         # Neither anny-style layout: original SMPL-X path.
@@ -805,6 +816,10 @@ if __name__ == "__main__":
                                  "(all joints identity except root) with the predicted shape and "
                                  "placement. If a deformation (e.g. long neck) persists here, it is "
                                  "shape/body-model driven, NOT a pose prediction error.")
+        parser.add_argument("--bone_fix", type=str, default="",
+                            help="exp6 output-level bone fix (bone_fix.py): '' = the fix saved in the "
+                                 "checkpoint args (none for older checkpoints), 'none' = off, a JSON path from "
+                                 "scripts/diagnostics/compute_bone_fix.py = that fix instead.")
         parser.add_argument("--fov_json", type=str, default="",
                             help="path to a JSON file mapping image filename -> true FOV in "
                                  "degrees (written by the AnnyOne export script). Overrides --fov "
@@ -872,7 +887,7 @@ if __name__ == "__main__":
             l_img_path.sort()
 
         # Loading
-        model = load_model(args.model_name)
+        model = load_model(args.model_name, bone_fix=args.bone_fix)
         # Inference-time toggles (no effect on training; see Model.__init__).
         if hasattr(model, 'mask_helper_joints'):
             model.mask_helper_joints = bool(args.mask_helper_joints)

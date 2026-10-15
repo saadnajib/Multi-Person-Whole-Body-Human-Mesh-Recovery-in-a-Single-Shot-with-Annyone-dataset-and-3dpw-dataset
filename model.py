@@ -24,6 +24,7 @@ from blocks import (
     TransformerDecoder,
 )
 from utils import rot6d_to_rotmat, rebatch, pad_to_max
+import bone_fix as bone_fix_lib
 import torch.nn as nn
 import numpy as np
 import einops
@@ -60,6 +61,8 @@ class Model(nn.Module):
         clip_dist=True,
         num_betas=11,
         head_dim=None,
+        bone_fix='',
+        bone_fix_spec=None,
         *args,
         **kwargs,
     ):
@@ -175,6 +178,27 @@ class Model(nn.Module):
         print(f"[model] hand_bone_mask: {_n_hand} finger/thumb bones identified by name")
         self.relax_hands = False
 
+        # --- OUTPUT-LEVEL BONE FIX (exp6, bone_fix.py) ---
+        # Optional constant correction R_b <- R_b @ C_b of the head's final LOCAL rotmats for a few bones (the
+        # constant half-turns the per-bone dump measures: v5 neck02/head/metacarpal1.L, v10 shoulder01.L, ...),
+        # applied in forward() right after the head's rot6d_to_rotmat and BEFORE helper masking, relax_hands, FK
+        # and the losses, so training, evaluate(), the diagnostics and the demo all see the corrected rotations and
+        # gradients flow through the constant. Configured by bone_fix_spec (the parsed JSON, what train.py saves in
+        # the checkpoint args so a fine-tuned model re-applies its fix whenever it is rebuilt from them) or by
+        # bone_fix (a JSON path); bone_fix='none' forces it off. Buffers are non-persistent (state_dict and old
+        # checkpoints unchanged); with no fix forward() skips the step entirely (bit-identical to before).
+        _nb = len(joint_names)
+        self.register_buffer('bone_fix_C', torch.eye(3).repeat(_nb, 1, 1), persistent=False)      # [163,3,3]
+        self.register_buffer('bone_fix_mask', torch.zeros(_nb, dtype=torch.bool), persistent=False)  # [163]
+        self.register_buffer('bone_fix_index', torch.zeros(0, dtype=torch.long), persistent=False)
+        self.bone_fix_on, self.bone_fix_spec, self.bone_fix_info = False, None, None
+        if bone_fix_lib.is_off(bone_fix):
+            pass                                       # explicitly off; the loaders print why
+        elif bone_fix_spec:
+            self.set_bone_fix(bone_fix_spec, origin='bone_fix_spec (checkpoint/run args)')
+        elif bone_fix:
+            self.set_bone_fix(bone_fix_lib.load(bone_fix), origin=bone_fix)
+
         # --- SELECTIVE PHENOTYPE NEUTRALIZATION ---
         # List of phenotype names (e.g. ['proportions', 'age']) forced to the
         # neutral value 0.5 at inference, keeping all others as predicted.
@@ -208,6 +232,47 @@ class Model(nn.Module):
             at_token_res=self.img_size // self.patch_size,
             num_betas=11,                       # hardcode 11, not from args
         )
+
+    def set_bone_fix(self, spec, origin='', names=None, verbose=True):
+        """Install (spec = bone-fix dict, see bone_fix.py) or remove (spec = None) the output-level bone fix.
+        Names resolve against the rig (unknown name = ValueError). Prints one [bone_fix] line."""
+        names = list(names) if names is not None else list(self.body_model.bone_labels)
+        resolved = bone_fix_lib.resolve(spec, names) if spec else []
+        dev, dt = self.bone_fix_C.device, self.bone_fix_C.dtype
+        C = torch.eye(3, dtype=dt).repeat(len(names), 1, 1)
+        mask = torch.zeros(len(names), dtype=torch.bool)
+        for _, i, Cb in resolved:
+            C[i] = torch.as_tensor(Cb, dtype=dt)
+            mask[i] = True
+        self.bone_fix_C = C.to(dev)
+        self.bone_fix_mask = mask.to(dev)
+        self.bone_fix_index = torch.nonzero(mask).flatten().to(dev)
+        self.bone_fix_on = bool(resolved)
+        self.bone_fix_spec = bone_fix_lib.normalize(spec) if resolved else None
+        self.bone_fix_info = bone_fix_lib.info(self.bone_fix_spec, resolved)
+        if self.bone_fix_info is not None:
+            self.bone_fix_info['origin'] = origin
+        if verbose:
+            print(bone_fix_lib.describe(self.bone_fix_spec or {}, resolved, origin), flush=True)
+            useful = getattr(self, 'useful_rotmat', None)
+            masked = [n for n, i, _ in resolved if useful is not None and float(useful.reshape(-1)[i]) == 0.0]
+            if masked:
+                print(f"[bone_fix] WARNING: helper-masked bones {masked} are forced to identity after the fix whenever "
+                      f"mask_helper_joints(_train) is on: the fix has no effect on them there", flush=True)
+        return resolved
+
+    def _apply_bone_fix(self, rotmat):
+        """rotmat [N, 163, 3, 3] local-bone rotations -> R_b @ C_b on the fixed bones, every other bone untouched
+        (index_copy, not a 163-bone matmul). No fix: the input tensor itself is returned. The 3x3 products run
+        outside autocast in at least fp32."""
+        if not self.bone_fix_on:
+            return rotmat
+        idx = self.bone_fix_index
+        C = self.bone_fix_C.index_select(0, idx)                                  # [k,3,3]
+        dt = torch.promote_types(rotmat.dtype, C.dtype)
+        with torch.autocast(device_type=rotmat.device.type, enabled=False):
+            fixed = torch.matmul(rotmat.index_select(1, idx).to(dt), C.to(dt))  # [N,k,3,3]
+        return rotmat.index_copy(1, idx, fixed.to(rotmat.dtype))
 
     def detection(self, z, nms_kernel_size, det_thresh, N, idx=None, is_training=False):
         """Detection score on the entire low res image"""
@@ -352,6 +417,13 @@ class Model(nn.Module):
         # Get outputs from the Anny head
         shape = pred_anny_params["shape"]
         rotmat = pred_anny_params["rotmat"]
+
+        # --- OUTPUT-LEVEL BONE FIX (exp6; see __init__ and bone_fix.py): R_b <- R_b @ C_b on the listed bones,
+        # right after the head's rot6d_to_rotmat, before helper masking / relax_hands / rest_pose, rotvec, FK and the
+        # losses. HPH is a single pass whose query token is built from the CONSTANT init_body_pose buffer, never from
+        # a prediction, so nothing feeds the uncorrected rotation back; correcting the final output is enough.
+        # No fix configured: skipped (returns the same tensor).
+        rotmat = self._apply_bone_fix(rotmat)
 
         # --- CHEST/NECK FIX: replace helper-bone rotations with identity ---
         # (inference-time toggle, see __init__; mirrors the original repo's

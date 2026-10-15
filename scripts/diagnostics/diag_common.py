@@ -48,10 +48,13 @@ def resolve_ckpt(spec):
     raise FileNotFoundError(f"checkpoint not found: {spec} (tried {cand})")
 
 
-def load_model(ckpt_path, device, tf32=True):
+def load_model(ckpt_path, device, tf32=True, bone_fix=''):
     """Same construction as demo.load_model(), for model.py's Model only.
-    tf32=True mirrors train.py (--tf32 default 1): evaluate()'s 'fp32' numbers used TF32 matmuls."""
+    tf32=True mirrors train.py (--tf32 default 1): evaluate()'s 'fp32' numbers used TF32 matmuls.
+    bone_fix (exp6, bone_fix.py): '' = whatever the checkpoint args carry (bone_fix_spec, saved by train.py --bone_fix;
+    none for older checkpoints), 'none' = forced off, a path = that JSON instead of the checkpoint's."""
     from model import Model
+    import bone_fix as bone_fix_lib
     torch.backends.cuda.matmul.allow_tf32 = bool(tf32)
     torch.backends.cudnn.allow_tf32 = bool(tf32)
     ckpt = torch.load(ckpt_path, map_location=device)
@@ -74,6 +77,11 @@ def load_model(ckpt_path, device, tf32=True):
     kwargs.setdefault('simple_depth_encoding', 1)
     kwargs.setdefault('pose_param', 'local-bone')
     kwargs['person_center'] = 'head'      # demo.py does the same override
+    fix_spec, fix_origin = bone_fix_lib.from_arg(bone_fix, raw_args.get('bone_fix_spec'))
+    print(f"[load_model] bone_fix: {fix_origin}" + (" (the checkpoint's own fix is overridden)"
+                                                    if bone_fix and raw_args.get('bone_fix_spec') else ''), flush=True)
+    kwargs['bone_fix'] = 'none' if fix_spec is None else ''
+    kwargs['bone_fix_spec'] = fix_spec
     sd = ckpt['model_state_dict']
     n_model = sum(1 for k in sd if k.startswith(('backbone.encoder.', 'x_attention_head.', 'mlp_classif.')))
     n_orig = sum(1 for k in sd if k.startswith(('encoder.backbone.', 'decoder.', 'mlp_pose.')))
