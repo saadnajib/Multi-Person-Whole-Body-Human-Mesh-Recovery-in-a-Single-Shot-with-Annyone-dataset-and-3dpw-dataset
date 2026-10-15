@@ -11,9 +11,11 @@
 #SBATCH --error=/netscratch/najib/multi-hmr/logs/3dpw-labels-%j.err
 
 set -euo pipefail
-FITS="/netscratch/najib/multi-hmr/threedpw_anny_full"
-IMAGES="/netscratch/najib/multi-hmr/data/3DPW/imageFiles"
-OUT="/netscratch/najib/multi-hmr/threedpw_anny_full/labels"
+# FITS / IMAGES / OUT can be overridden from the environment, e.g. OUT=.../labels_rebuilt sbatch ... to keep the
+# labels that earlier runs trained and evaluated on.
+FITS="${FITS:-/netscratch/najib/multi-hmr/threedpw_anny_full}"
+IMAGES="${IMAGES:-/netscratch/najib/multi-hmr/data/3DPW/imageFiles}"
+OUT="${OUT:-/netscratch/najib/multi-hmr/threedpw_anny_full/labels}"
 
 COMMAND=$(cat <<EOF
 set -euo pipefail
