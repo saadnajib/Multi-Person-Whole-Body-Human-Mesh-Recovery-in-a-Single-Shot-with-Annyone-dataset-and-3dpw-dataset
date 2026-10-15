@@ -7,6 +7,10 @@ Reads (keys exactly as saved by smpl_to_anny.py):
     joint_err_mm  [F]           frames [F]          smpl_idx/anny_idx [M]
   optional (added by the patched smpl_to_anny.py):
     smpl_joints   [F,24,3]  anny_joints [F,24,3]  phenotype_labels [11]
+    v2.2 (scripts/data/smpl_to_anny.py) saves the target as target_joints
+    (3DPW jointPositions - trans, same frame as anny_joints); it is used
+    when smpl_joints is absent. Dataset-level check of the final labels:
+    scripts/diagnostics/check_3dpw_conversion.py.
 
 Checks, CPU only:
   1. contents + rotation-matrix validity (det=+1, orthonormal)
@@ -131,12 +135,14 @@ def main():
 
     # ---------------------------------------------------------------- 4
     section("4. SMPL vs ANNY OVERLAY")
-    if "smpl_joints" not in d or "anny_joints" not in d:
-        print("  smpl_joints / anny_joints not in file.")
+    tkey = "smpl_joints" if "smpl_joints" in d else ("target_joints" if "target_joints" in d else None)
+    if tkey is None or "anny_joints" not in d:
+        print("  smpl_joints (or v2.2 target_joints) / anny_joints not in file.")
         print("  -> replace smpl_to_anny.py with the patched version (saves them)")
         print("     and re-run MODE=fit, then run this checker again.")
     else:
-        S = d["smpl_joints"].astype(float); A = d["anny_joints"].astype(float)
+        S = d[tkey].astype(float); A = d["anny_joints"].astype(float)
+        print(f"  target = '{tkey}'")
         mapped = ~np.isnan(A[0, :, 0])
         pj = np.linalg.norm(S - A, axis=-1) * 1000.0          # [F,24] mm
         print(f"  {mapped.sum()}/24 joints mapped; per-joint mean error (mm):")
