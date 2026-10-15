@@ -1,5 +1,5 @@
 const pptxgen = require("pptxgenjs");
-const { applyTheme } = require("/root/.claude/skills/synced/9d62f05e-4200-4cf4-8106-de589de8d052_d2acd300-8cd3-4e6a-8972-a7838572b8ef/pptx/scripts/apply_theme.js");
+const { applyTheme } = require("./apply_theme.js");
 
 const THEME = { name: "MeshDiag", headFontFace: "Calibri", bodyFontFace: "Calibri",
   colors: { dk1: "1B2233", lt1: "FFFFFF", dk2: "4A5568", lt2: "EEF2F7", accent1: "0E7C86", accent2: "E8792B", accent3: "3BA55D", accent4: "C0392B", accent5: "7B8794", accent6: "F4C95D", hlink: "0E7C86", folHlink: "7B8794" } };
@@ -67,7 +67,7 @@ function numberedItem(slide, x, y, w, num, head, body, color, bodyH) {
 }
 
 // before/after figures (pixel size measured from the files; aspect ratio preserved)
-const FIG_DIR = "/home/user/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/docs/figures/";
+const FIG_DIR = require("path").join(__dirname, "../figures/");
 const FIG_PX = { w: 2394, h: 872 };            // 3 panels of 790 px + 2 gaps of 12 px
 function figureSlide(slide, file, x, y, w, captions, capH = 0.4) {
   const h = w * FIG_PX.h / FIG_PX.w;
