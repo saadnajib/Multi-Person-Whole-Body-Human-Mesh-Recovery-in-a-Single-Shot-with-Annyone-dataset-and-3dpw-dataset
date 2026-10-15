@@ -24,6 +24,8 @@ PASS CRITERIA
 Also printed: compute_bone_fix.py's GLOBAL GUARD from bone_fix.json (step a: which dumped bones the fix was predicted
 to turn globally worse, i.e. a compensated chain; a FAIL there was predicted, not new), and a WARNING when the
 baseline trace was made from another checkpoint than the one the fix was estimated on (TAG as exp6_bone_fix.sh).
+A bone_fix_guarded.json next to bone_fix.json (ON_GLOBAL_RISE=safe) is reported as this run's first selection only
+when bone_fix.json holds exactly its safe subset and is itself guard-clean; otherwise it is a leftover (WARNING).
 Exit status 0 = summary written (a FAIL is a result, not an error); 2 = the zero-training trace is missing.
 """
 import argparse
