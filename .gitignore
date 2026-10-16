@@ -3,6 +3,10 @@ __pycache__/
 logs/
 models/
 data/
+# ...but scripts/data/ and slurm/data/ hold CODE (the 3DPW -> Anny converter and its job scripts); the other
+# rules (*.npz, *.pkl, __pycache__/, ...) still apply inside them.
+!scripts/data/
+!slurm/data/
 # datasets/ holds the dataloader CODE (annyone.py, bedlam.py, threedpw.py,
 # threedpw_anny.py, ...) which train.py imports - track the .py files, ignore data.
 datasets/*

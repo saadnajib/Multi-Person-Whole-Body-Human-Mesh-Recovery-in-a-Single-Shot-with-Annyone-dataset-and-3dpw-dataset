@@ -24,12 +24,18 @@
 # ENVIRONMENT OVERRIDES (defaults = the v2.2 run that made threedpw_anny_full):
 #   OUT_ROOT     fits directory (default /netscratch/najib/multi-hmr/threedpw_anny_full)
 #   REFIT_FLAGS  extra smpl_to_anny.py flags, appended to the call (default empty)
-# v2.3 refit (gender in Anny's convention + one frame grid for both actors), into a NEW directory:
-#   OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 \
-#   REFIT_FLAGS="--gender_convention anny --frame_grid shared" \
-#   sbatch --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
-# Array index = line number - 1 of threedpw_tasks.txt. A non-empty REFIT_FLAGS with the default
-# OUT_ROOT is refused: existing .npz files are skipped, so old and new fits would mix silently.
+# v2.3 refit (gender in Anny's convention + one frame grid for both actors), into a NEW directory
+# (one line; both variables are needed):
+#   OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
+# Array index = line number - 1 of threedpw_tasks.txt. Guards against mixing fits made with different flags in one
+# directory (an existing .npz is never redone):
+#   - a non-empty REFIT_FLAGS with the default OUT_ROOT is refused;
+#   - an empty REFIT_FLAGS with another OUT_ROOT is refused unless ALLOW_DEFAULT_FLAGS=1 (v2.2 behaviour into a new
+#     directory, e.g. to reproduce the old fits);
+#   - outside the default OUT_ROOT, an existing .npz is skipped only if the gender_convention / frame_grid it records
+#     are the ones REFIT_FLAGS requests (scripts/data/check_refit_task.py --match_flags, in the container, ~1 min);
+#     otherwise the task FAILS: delete that .npz or use another OUT_ROOT. In the default OUT_ROOT an existing .npz is
+#     skipped without a check, as before.
 # =============================================================================
 #SBATCH --job-name=smpl2anny-all
 #SBATCH --partition=A100-40GB,A100-80GB,L40S-AV,A100-RP,A100-PCI,L40S,RTXA6000,RTXB6000
@@ -57,6 +63,14 @@ if [ -n "${REFIT_FLAGS}" ] && [ "${OUT_ROOT}" = "${DEFAULT_OUT_ROOT}" ]; then
   echo "       e.g. OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23"
   exit 1
 fi
+if [ -z "${REFIT_FLAGS}" ] && [ "${OUT_ROOT}" != "${DEFAULT_OUT_ROOT}" ] && [ "${ALLOW_DEFAULT_FLAGS:-0}" != "1" ]; then
+  echo "ERROR: OUT_ROOT=${OUT_ROOT} with an empty REFIT_FLAGS would write v2.2-behaviour fits"
+  echo "       (--gender_convention makehuman, --frame_grid per_person) into a new directory, and later runs"
+  echo "       with flags would skip them. For the v2.3 refit set both, e.g."
+  echo "       REFIT_FLAGS=\"--gender_convention anny --frame_grid shared\"; to really use the defaults there,"
+  echo "       set ALLOW_DEFAULT_FLAGS=1."
+  exit 1
+fi
 
 # ---- conversion settings ----------------------------------------------------
 STRIDE=3                      # 1 = every image; 3 = every third (10 fps)
@@ -76,9 +90,26 @@ echo "task ${TASK_ID}: ${SPLIT}/${SEQ} person ${PERSON} (${NFRAMES} frames) -> $
 echo "extra flags (REFIT_FLAGS): '${REFIT_FLAGS}'"
 
 if [ -f "${OUT}" ]; then
-  echo "already converted - skipping"; exit 0
+  if [ "${OUT_ROOT}" = "${DEFAULT_OUT_ROOT}" ]; then
+    echo "already converted - skipping"; exit 0
+  fi
+  # Another OUT_ROOT: skip only a fit made with the same flags (needs numpy, so in the container).
+  echo "already converted - checking that it was made with the requested flags"
+  COMMAND=$(cat <<EOF
+set -uo pipefail
+source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
+python scripts/data/check_refit_task.py --match_flags "${OUT}" --refit_flags="${REFIT_FLAGS}"
+RC=\$?
+if [ \$RC -eq 0 ]; then
+  echo "already converted with the requested flags - skipping"
+else
+  echo "ERROR: ${OUT} exists but was not made with REFIT_FLAGS='${REFIT_FLAGS}' (or cannot be read)."
+  echo "       Delete it to refit this task, or use another OUT_ROOT. Not refitted."
+  exit 1
 fi
-
+EOF
+)
+else
 COMMAND=$(cat <<EOF
 set -uo pipefail
 source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
@@ -108,6 +139,7 @@ else
 fi
 EOF
 )
+fi
 
 srun -K \
   --gpus=1 \

@@ -592,9 +592,13 @@ used for estimation. A model fine-tuned with `--bone_fix` keeps the fix in its a
 
 ### 3DPW converter fix (v2.3 flags)
 
-A label fix, not a training experiment. `scripts/data/smpl_to_anny.py` v2.3 and `slurm/data/run_smpl_to_anny_task.sh`
-are in the working tree (and in the WIP commit `40fd436`). `scripts/data/check_refit_task.py` and
-`slurm/data/run_check_refit_task.sh` are new. `.gitignore` has `data/`, so these two need `git add -f`.
+A label fix, not a training experiment. `scripts/data/smpl_to_anny.py` v2.3, `slurm/data/run_smpl_to_anny_task.sh`
+and this section are in the WIP commits `40fd436` and `b05c7ef` on `claude/gallant-dijkstra-bnlowv`, not on `main`.
+`scripts/data/check_refit_task.py` and `slurm/data/run_check_refit_task.sh` are new. `.gitignore`'s `data/` line also
+matched `scripts/data/` and `slurm/data/`, so a plain `git add -A` left these two out. `!scripts/data/` and
+`!slurm/data/` now follow that line; the `*.npz`, `*.pkl` and `__pycache__/` rules still apply inside both folders.
+Commit the `.gitignore` change in the same commit as the two files, or add them with `git add -f`. Step 0 below checks
+the cluster copy.
 
 **What was wrong (measured by `check_3dpw_conversion` job 3575369 on `threedpw_anny_full/labels`, converter md5
 `f502c8b2`).**
@@ -635,8 +639,19 @@ still be rebuilt.
   - `OUT_ROOT` (default `threedpw_anny_full`, unchanged) sets the fits directory.
   - `REFIT_FLAGS` (default empty) is appended to the `smpl_to_anny.py` call.
 
-  A non-empty `REFIT_FLAGS` with the default `OUT_ROOT` is refused, because existing `.npz` files are skipped and old
-  and new fits would mix. Array index = line − 1 of `configs/threedpw_tasks.txt`, so the 87 tasks are 0-86.
+  An existing `.npz` is never refitted, so three guards keep fits made with different flags out of one directory:
+  - A non-empty `REFIT_FLAGS` with the default `OUT_ROOT` is refused.
+  - An empty `REFIT_FLAGS` with any other `OUT_ROOT` is refused unless `ALLOW_DEFAULT_FLAGS=1`. Without this guard,
+    dropping `REFIT_FLAGS` from the v23 command would fill `threedpw_anny_v23` with v2.2-behaviour fits, and every
+    later correct submission would skip them. `ALLOW_DEFAULT_FLAGS=1` is for reproducing v2.2 into a new folder.
+  - Outside the default `OUT_ROOT`, an existing `.npz` is skipped only if the `gender_convention` and `frame_grid`
+    it records match what `REFIT_FLAGS` asks for (`check_refit_task.py --match_flags`, run in the container, about a
+    minute per skipped task). A file without these keys counts as v2.2 (`makehuman`, `per_person`). On a mismatch,
+    or an unreadable file, the task fails with `ERROR: ... exists but was not made with REFIT_FLAGS=...`. Delete
+    that `.npz` or choose another `OUT_ROOT`.
+
+  In the default `OUT_ROOT` an existing `.npz` is skipped without a check, as before. Array index = line − 1 of
+  `configs/threedpw_tasks.txt`, so the 87 tasks are 0-86.
 - `run_build_labels.sh` (`FITS`/`IMAGES`/`OUT`) and `check_3dpw_conversion.sh` (`LABELS`/`FITS`/`OUT`) could already
   point at another root, so they are unchanged.
 - `check_refit_task.py` checks one sequence or all of them. It compares the gender value with the 3DPW gender and the
@@ -645,6 +660,16 @@ still be rebuilt.
   are reported, not graded.
 
 **Commands, in order** (on the cluster):
+
+0. First merge the branch into `main`, with the two new files and `.gitignore` committed (or the two files added with
+   `git add -f`). Then check the cluster copy:
+   ```
+   cd /netscratch/najib/multi-hmr && git pull && grep -c REFIT_FLAGS slurm/data/run_smpl_to_anny_task.sh; grep -c gender_convention scripts/data/smpl_to_anny.py; grep -c ALLOW_DEFAULT_FLAGS slurm/data/run_smpl_to_anny_task.sh; ls scripts/data/check_refit_task.py slurm/data/run_check_refit_task.sh
+   ```
+   Go on only if all three numbers are above `0` and both files are listed. The old task script ignores `OUT_ROOT`
+   and `REFIT_FLAGS`, and all 87 `.npz` files exist in `threedpw_anny_full`. So with the old script, commands 1 and 3
+   print `already converted - skipping` and exit 0 for every task without fitting anything, and command 4 then
+   builds from an empty `threedpw_anny_v23`.
 1. One check task: `courtyard_captureSelfies_00`, train, array indices 9 (p0) and 10 (p1), i.e. lines 10-11.
    - Two actors of mixed gender: its 40 sampled images in 3575369 had one labelled person each with label gender
      mean 0.60, so 24 images of the man and 16 of the woman.
@@ -666,8 +691,9 @@ still be rebuilt.
    - `[p0+p1] NEW: ... both valid in 3DPW but only one fitted: 0/N`, while the `OLD` line shows a large share;
    - the man's label value is ~0.0001 and the woman's ~0.9999;
    - the man's paired joint error is lower than the old one (the woman's may rise ~2 mm, see I1).
-3. All 87 tasks. Tasks 9 and 10 are skipped because their `.npz` already exist; a task to redo must have its `.npz`
-   deleted first.
+3. All 87 tasks. Tasks 9 and 10 are skipped because their `.npz` already exist and record the same flags (the log
+   says `already converted with the requested flags - skipping`). A task to redo must have its `.npz` deleted first.
+   A task whose existing `.npz` records other flags fails instead of skipping (see the guards above).
    ```
    cd /netscratch/najib/multi-hmr && OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
    ```
@@ -675,15 +701,15 @@ still be rebuilt.
    - `ls /netscratch/najib/multi-hmr/threedpw_anny_v23/*/*_p*.npz | wc -l` should give 87.
    - Optionally, `cd /netscratch/najib/multi-hmr && SEQ=all sbatch slurm/data/run_check_refit_task.sh` should print
      PASS for every sequence.
-4. Labels (CPU, ~1 min):
+4. Labels (CPU, ~1 min), submitted in one block with step 5.
+5. The conversion check on v23 (~17 min; 997 s for 3575369). It waits for the label job (`--dependency=afterok`).
+   It must not start earlier: it only tests that `index_*.txt` exists, and the builder writes `index_train.txt`
+   before the other splits are done. Keep `OUT=` on the check, otherwise it overwrites the 3575369 results.
    ```
-   cd /netscratch/najib/multi-hmr && FITS=/netscratch/najib/multi-hmr/threedpw_anny_v23 OUT=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels sbatch slurm/data/run_build_labels.sh
+   cd /netscratch/najib/multi-hmr && L=$(FITS=/netscratch/najib/multi-hmr/threedpw_anny_v23 OUT=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels sbatch --parsable slurm/data/run_build_labels.sh) && echo "labels job ${L%%;*}" && LABELS=threedpw_anny_v23/labels FITS=threedpw_anny_v23 OUT=results/diagnostics/check_3dpw_conversion_v23 sbatch --dependency=afterok:${L%%;*} slurm/diagnostics/check_3dpw_conversion.sh
    ```
-5. The conversion check on v23. Set `OUT`, otherwise the 3575369 results are overwritten. Took ~17 min (997 s) for
-   3575369.
-   ```
-   cd /netscratch/najib/multi-hmr && LABELS=threedpw_anny_v23/labels FITS=threedpw_anny_v23 OUT=results/diagnostics/check_3dpw_conversion_v23 sbatch slurm/diagnostics/check_3dpw_conversion.sh
-   ```
+   If the label job fails, the check stays pending with reason `DependencyNeverSatisfied`; cancel it with
+   `scancel <jobid>`.
 
 **Runtime (estimated, not measured).** Each frame costs about 260 Anny forward+backward passes: pass 1 warm-started
 20+80+60, pass 2 100 refine, plus a few forwards and the bounding box.
@@ -694,8 +720,10 @@ still be rebuilt.
   as before, so the count stays about the same.
 - Total: ~34-38 GPU-h, plus 87 start-ups of ~1-2 min, i.e. ~35-41 GPU-h. With `%8` that is ~5-6 h of wall time if 8
   GPUs are free.
-- The longest single tasks are `outdoors_parcours_00` (~544 frames, ~50 min) and `downtown_bus_00` (~425 per person,
-  ~40 min), well under the 4 h limit.
+- The longest one-person tasks are `downtown_windowShopping_00` (608 frames, ~55-60 min), then
+  `outdoors_parcours_00` (544, ~50 min). I4 gives only the sum for two-person sequences (`downtown_sitOnStairs_00`
+  877, `downtown_bus_00` 850, ~425-440 per person if split evenly). A person cannot get more than a third of the
+  sequence's frames: at most 726 for `downtown_bus_00` (2,178 frames), ~65-75 min. All are well under the 4 h limit.
 - The check run (tasks 9-10, ~230 frames each) takes ~25 min.
 
 **Pass criteria (v23 check vs 3575369).**
@@ -716,18 +744,33 @@ still be rebuilt.
   climbing/slalom/freestyle sequences, so read V1 train (20.2, WARN) per gender in `per_person.csv`.
 - I4: 87 npz, `versions` {'2.3': 87}, and label images expected = indexed for every sequence (the images were
   re-extracted).
-- Expect fewer label images than 16,631 (both actors on one image instead of one each on two) with about the same
-  number of labelled people.
+- Label images: compare with the 18,936 that the v2.2 fits imply (I4 `expected_label_images`), not with the old
+  index's 16,631. The old index lacked the images of 8 sequences (6 train sequences, part of
+  `courtyard_captureSelfies_00`, validation `courtyard_basketball_01`), which have now been re-extracted.
+  - From I4: one-person sequences give 9,707 images; two-person sequences give 13,046 kept person-frames on 9,229
+    images.
+  - With both actors on one image wherever both are valid, expect ~16,200-18,900 label images: at least 9,707 +
+    13,046 / 2 (every two-person image holds both actors), at most 18,936.
+  - With I3's one-sided shares (train 41%, validation 26%, test 48%), about 16,900: train ~5,900 (old index 4,451),
+    validation ~2,650, test ~8,300. So more than 16,631 is expected, not a failure.
+  - Labelled people (person-frames) stay about v2.2's 22,753, which is ~2,700 more than the old index held.
 - V4d stature ratio (0.972) may move, since men now get the taller male body. This is informational.
 
 **Models.** v7-v10 were trained and 3DPW-evaluated on `threedpw_anny_full/labels`, and they are unaffected until a
-model is retrained or re-evaluated on v23. `train_teacher_v9_mixed.sh:55`, `train_distill_vits_v8_final.sh:42`,
-`train_v10_scratch_mixed.sh:45` and `run_eval_3dpw*.sh` hard-code that path, so nothing reads v23 until `LABELS` is
-changed. 3DPW numbers measured against the old labels cannot be compared with numbers against v23; re-evaluate the
-baseline on v23 first. The old labels stay reproducible: with the default flags and no `OUT_ROOT`, the task script
-writes the v2.2 fits.
+model is retrained or re-evaluated on v23.
+- `slurm/train/train_teacher_v9_mixed.sh:55`, `train_distill_vits_v8_final.sh:42`, `train_v10_scratch_mixed.sh:45`,
+  `slurm/eval/run_eval_3dpw.sh:39`, `run_eval_3dpw_teacher.sh:39` and `run_eval_3dpw_test.sh:61` set `LABELS` with a
+  plain assignment, `LABELS="/netscratch/najib/multi-hmr/threedpw_anny_full/labels"`.
+- So an environment override is overwritten without a warning:
+  `LABELS=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels sbatch slurm/eval/run_eval_3dpw.sh` still evaluates on
+  the old labels.
+- To use v23, edit that line in each script you run, then check the `--mix_3dpw_labels` path in the job log. (A
+  separate change could make it `LABELS="${LABELS:-/netscratch/najib/multi-hmr/threedpw_anny_full/labels}"`.)
+- 3DPW numbers measured against the old labels cannot be compared with numbers against v23; re-evaluate the baseline
+  on v23 first.
+- The old labels stay reproducible: with the default flags and no `OUT_ROOT`, the task script writes the v2.2 fits.
 
-**Verified offline** (`scratchpad/convfix`, 83 + 21 + 1 checks, CPU, real Anny 0.6.1, synthetic 3DPW data; the
+**Verified offline** (`scratchpad/convfix`, 122 + 36 + 1 checks, CPU, real Anny 0.6.1, synthetic 3DPW data; the
 numpy-only scripts also under Python 3.9 + numpy 1.24):
 - Frame selection over 9,600 random (validity pattern, stride, max_frames) cases:
   - `per_person` equals HEAD's `find_valid_frames`.
@@ -744,11 +787,21 @@ numpy-only scripts also under Python 3.9 + numpy 1.24):
   - The builder accepts v2.3 files under Python 3.9.
 - `check_refit_task.py` passes v23 fits and fails default-flag fits (13 violations), v2.2 fits, a doctored gender and
   a dropped frame.
+- `check_refit_task.py --match_flags`: for 10 flag strings it reads the same `gender_convention`/`frame_grid` as
+  the converter's own argparse. It returns 0/1/2 as expected on v2.3, v2.2 and default-flag fits, an unreadable file
+  and a bad value, under both Pythons.
 - `run_smpl_to_anny_task.sh` with fake sbatch/srun/python:
-  - Defaults give the same python call as HEAD, with output in `threedpw_anny_full`.
-  - The env overrides add the flags and write into the new root; resubmitting skips.
-  - The guard refuses `REFIT_FLAGS` with the old root.
+  - Defaults give the same python call as HEAD, with output in `threedpw_anny_full`. There an existing `.npz` is
+    skipped without any check, as before.
+  - The env overrides add the flags and write into the new root.
+  - Resubmitting with the same flags (also written as `--flag=value`) skips without refitting, using the real check
+    under Python 3.9. Other flags, a v2.2 fit, a default-flag fit or an unreadable file in the new root make the task
+    fail, and no file changes.
+  - The guards refuse `REFIT_FLAGS` with the old root, and an empty `REFIT_FLAGS` with a new root (all 87 tasks,
+    no python call, no folder) unless `ALLOW_DEFAULT_FLAGS=1`.
   - Indices 9/10 map to captureSelfies p0/p1 and 86 to the last task.
+- `.gitignore`: the two new files are no longer ignored; `*.npz`, `*.pkl`, `__pycache__/` and the top-level `data/`
+  still are.
 - `run_check_refit_task.sh` exits 0 / 1 as expected. `bash -n` passes on all touched scripts.
 
 ## 3. Verified in code
