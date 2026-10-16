@@ -32,7 +32,7 @@ byte-identical to `docs/supervisor_talk_notes_2026-10-16.md`.
 ## What `build.js` does when it runs
 
 1. Writes `supervisor_update.pptx` into the current folder.
-2. Calls `applyTheme("supervisor_update.pptx", THEME)` (`build.js:509`, from `apply_theme.js`): writes the deck's 12
+2. Calls `applyTheme("supervisor_update.pptx", THEME)` (`build.js:522`, from `apply_theme.js`): writes the deck's 12
    theme colours (theme "MeshDiag": dark `1B2233`, accent `0E7C86`, orange `E8792B`, green `3BA55D`, red `C0392B`,
    grey `7B8794`, yellow `F4C95D`; fonts Calibri; the object is `THEME` at `build.js:4-5`) into
    `ppt/theme/theme1.xml`, replacing the Office palette that pptxgenjs always writes there. Many shapes use scheme

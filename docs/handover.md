@@ -23,12 +23,18 @@ still calls the panels unseen. This version is **not on `main` yet**: it is on t
 `main` only once the branch is merged, by the Claude Code session that made these commits, not by you or the student
 (section 8). Until then a `git pull` of `main` gives the evening copy, and the branch download links in section 8 are
 the only way to get this version and the 18-slide deck. `40fd436` also carries the 3DPW converter flags (4e).
+**Later update of 16 Oct:** the real-image demo ran (job 3581312: v5 next to the exp6 fine-tuned checkpoint with the
+fix, on 4 photos and 8 3DPW-test frames). By eye, the thin necks get normal width with the fix (3.2, "Real images");
+slide 8 now shows a real pair (section 9). The image folders of the 8 short 3DPW sequences were re-extracted and a
+second label rebuild was submitted (job 3581320, log not read yet; 3.5, 4c). In this version
+`grep -c 3581312 docs/handover.md` prints a number above `0`; `0` means an older copy. Like the early-16-Oct
+update, it is on the branch only until the merge (section 8).
 
 **Meeting date: open.** Planned for **Friday 16 October 2026**, with the deck `docs/supervisor_update_2026-10-16.pptx`.
 On 15 Oct (16:07) the student asked for a draft message asking the supervisor to move it to **Monday 19 October**.
 Whether it was sent is unknown; still open on the evening of 15 Oct. An earlier message to the supervisor (content
-unknown) had no reply. Ask which date holds before planning: it decides whether the real-photo demo and the image
-check (section 4) can go into the deck first.
+unknown) had no reply. Ask which date holds before planning: it decides whether the result of the second label
+rebuild (job 3581320, 4c) can go into the deck first. The real-image demo is already on slide 8 (section 9).
 
 **Citation key** (used from section 1 on):
 - `3572482:126` = line 126 of that Slurm job's `.out` log. Job index in section 8. The student has every log; ask for
@@ -63,16 +69,20 @@ Project in brief:
   then a 2-epoch fine-tune) turns them back, and the neck gets its thickness back (girth 0.46 -> 1.00). Without the
   fine-tune the head points worse. One run, no seed: no sign of a PVE cost, but no proven PVE gain either.
   Synthetic holdout renders of the correction alone, no fine-tune (16 Oct): thin necks without it, normal width
-  with it. Real photos not checked yet.
+  with it. Real images (16 Oct, job 3581312, the fine-tuned checkpoint vs v5, 4 photos + 8 3DPW-test frames): the
+  same, judged by eye, no metric.
 - 3DPW labels: three defects (reversed gender, a missing actor in two-person frames, missing labels). A label rebuild
-  gave the same counts; the image files of 8 sequences are probably missing on the cluster.
+  gave the same counts; I then re-extracted the image folders of 8 sequences, and a second rebuild (job 3581320)
+  is waiting to be read. The converter fix for gender and the missing actor is under review, not merged.
 - Fingers: flipped hand bones were a large part of the finger error (exp6 on v5: 17.3 -> 8.2 deg).
-- Children: tested, nothing helped yet.
+- Children: tested, nothing helped yet. New (16 Oct): adult men on real photos get female-looking bodies, in v5 and
+  in the fixed model alike; cause unknown.
 Supervisor meeting: planned Fri 16 Oct; I may have asked to move it to Mon 19 Oct. Ask me which date holds.
 Thesis: my 13 Oct brief said a one-week deadline. Ask me the submission date and the chapter list of my draft
 before planning anything that takes more than a day.
-Finished 15 Oct: exp6 on v5 and on v10, 3DPW label rebuild; seen 16 Oct: the exp6 neck panels (results in handover
-section 3). Still to run: the 3DPW image-folder check and the real-photo demo with the fix (handover section 4).
+Finished 15 Oct: exp6 on v5 and on v10, 3DPW label rebuild. 16 Oct: the exp6 neck panels, the real-image demo with
+the fix (job 3581312), the 3DPW image re-extraction (results in handover section 3). Pending: the log of the
+second label rebuild (job 3581320) and the converter fix (under review) (handover section 4).
 Never confirmed: the x20 depth run (14 Oct). Ask me to run the status block from handover section 4 (squeue alone
 misses finished jobs).
 
@@ -106,20 +116,23 @@ Paste this section with section 0. Each step names the section with the details.
 
 1. Ask the student: does the meeting hold on Friday 16 Oct or Monday 19 Oct (top of file)? What is the thesis
    submission date, and which chapters does the draft have (section 10)?
-2. Image-folder check: one command, seconds, login node (4c). It tells whether missing image files explain why the
-   label rebuild gave the same counts.
+2. Image-folder check: **done** (16 Oct). The image folders of the 8 sequences were re-extracted (file counts in 4c)
+   and the second label rebuild was submitted as job 3581320. Ask for `logs/3dpw-labels-3581320.out` and compare
+   it with the expected train ~6,437 / validation ~2,777 / test 9,722 (4c). If the counts match, run the re-check
+   (4c).
 3. exp6 compare panels: **done** (early 16 Oct). The student sent all 12 v5 panels: the thin necks get normal width
    with the correction, on synthetic holdout images and without the fine-tune (3.2, 4a). Nothing to ask for here.
-4. Start the real-photo demo of the fine-tuned checkpoint with the fix (4b): copy, one script edit, commit, sbatch
-   (or the `DEMO_MODELS` route there, without the edit). It is now the main open visual check of the neck (the
-   fine-tuned checkpoint's holdout panels, 4a, are optional).
-5. Status block (section 4, top), for the x20 depth run (4d, never confirmed) and the demo job. Resubmit a job only
-   if both `sacct` and its output folder show nothing. Analyse logs only after the student says "done".
+4. Real-image demo of the fine-tuned checkpoint with the fix: **done** (job 3581312, 16 Oct). Judged by eye, with no
+   metric: v5's thin, stalk-like necks have normal width with the fix, on 3DPW-test frames and on real photos (3.2,
+   "Real images"; figures `docs/figures/neck_before_after_3dpw_bar.jpg` and `..._bar_office.jpg`). The same
+   images show a new open issue in both models: adult men get female-looking bodies (3.4). Nothing to run here.
+5. Status block (section 4, top), for the x20 depth run (4d, never confirmed) and the rebuild job 3581320. Resubmit
+   a job only if both `sacct` and its output folder show nothing. Analyse logs only after the student says "done".
 
 If the meeting is on **Friday**:
 
-6. Check that the student's deck is the 16-Oct version: 18 slides, the neck figure on slide 8 (section 9, check
-   commands). A `git pull` of `main` does not give it: `main` holds the 17-slide evening deck (`2ff8594`) until the
+6. Check that the student's deck is the 16-Oct version: 18 slides, the neck figures on slide 8, holdout panels and
+   the real pair (section 9, check commands). A `git pull` of `main` does not give it: `main` holds the 17-slide evening deck (`2ff8594`) until the
    branch `claude/gallant-dijkstra-bnlowv` is merged (who and when: section 8). Until then the branch download link in
    section 8 is the only way to get the 18-slide pptx; do not wait for the merge. If the link fails too, hand-edit the
    pptx in PowerPoint with the lists in section 9.
@@ -129,17 +142,15 @@ If the meeting is on **Friday**:
 
 If the meeting is on **Monday**:
 
-6. If the image check shows missing folders: re-extract them, rebuild the labels, re-check (4c).
+6. Read the rebuild log 3581320 (step 2); if the counts match, re-check the rebuilt labels (4c).
 7. Start the longer fine-tune with the fix and its matched control (section 5, item 3; 4e).
 8. Start the 3DPW re-fit, which needs ~5-6 h of wall time (not measured): three code changes, then the commands in 4e
-   ("3DPW re-fit chain"). The three changes are already written, in the branch commit `40fd436` (still being
-   verified, not on `main` yet): run the version check in 4e first. After the merge, check them, don't write them;
-   before it, 4e says what to do. Re-extract the images first (step 6): the label build after the re-fit needs them
-   too.
-9. Before the meeting: Friday steps 6-7 (deck check, PowerPoint check). If the real-photo demo (step 4) has run,
-   put v5 next to v5 + fix on the same photo into the deck: replace the 579863 pair on slide 8 with it, or add it as
-   appendix slide 19 after the backup, which needs no renumbering. Slide 8 has no room beside the holdout panels
-   (section 9, table).
+   ("3DPW re-fit chain"). The three changes are already written, in the branch commit `40fd436` and later review
+   edits (the converter fix, under review, not on `main` yet): run the version check in 4e first. After the merge,
+   check them, don't write them; before it, 4e says what to do. The images are already re-extracted (step 2), so
+   the label build after the re-fit has them.
+9. Before the meeting: Friday steps 6-7 (deck check, PowerPoint check). The real pair is already on slide 8
+   (section 9).
 
 ## 0b. Numbers at a glance
 
@@ -171,7 +182,14 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   improved".
 - exp6 v5 compare panels (12 holdout images 579860-579871; the correction with no training): thin, stalk-like necks
   without it, normal width with it, in every panel where a neck is visible [Certain, by eye]. Figure
-  `docs/figures/neck_before_after_v5.jpg`. Synthetic only; real photos not checked (4b).
+  `docs/figures/neck_before_after_v5.jpg`. Synthetic only.
+- Real-image demo (job 3581312; v5 vs the exp6 fine-tuned checkpoint, which applies the fix from its saved args;
+  4 photos + 8 3DPW-test frames, never trained on): thin, stalk-like necks with v5, normal width with the fix
+  [Certain for the 8 images the student sent; judged by eye, no metric]. Clearest on `downtown_bar_00` frame 701
+  and `office_phoneCall_00` frame 440. Figures `docs/figures/neck_before_after_3dpw_bar.jpg` and
+  `..._bar_office.jpg`. The two columns also differ by the 2-epoch fine-tune.
+- Both demo models, real photos: adult men get female-looking bodies. The log's predicted gender is 0.46-0.76 on
+  the photos (median 0.60-0.62), and Anny's male end is 0 (3.4). Cause unknown [Guessing: a synthetic-to-real gap].
 - exp6 on v10 (job 3579015, no training, metacarpal2.L/2.R/3.R): PASS. PVE 74.1 -> 69.9, PA-PVE 55.6 -> 51.1,
   fingers 32.0 -> 17.8 deg; global head 12.9 and recall 89.0 unchanged. The PVE drop is certain only for these 100
   images (no training, so no run-to-run noise); [Likely] on other images. shoulder01.L (166) and upperarm02.L (180)
@@ -185,6 +203,8 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
 - 3DPW labels: body joints 18.7 mm median (p95 24.5); surface 18.9 / 18.3 mm (lower bound). Gender reversed (men:
   19.2 -> 15.3 mm when flipped); 407 of 960 two-person images miss an actor; train 4,451 of 6,437 images labelled,
   validation 2,458 of 2,777. Rebuild (job 3579266): the same 4,451 / 2,458 / 9,722; [Likely] image files missing.
+  The image folders of the 8 sequences were re-extracted on 16 Oct (captureSelfies_00: 480 -> 750 files). Second
+  rebuild, job 3581320: log pending; expected train ~6,437, validation ~2,777, test 9,722.
 - 3DPW-test PVE, against our converted labels only (not comparable with published numbers): v5 119.1, v9 102.5,
   v10 111.5.
 
@@ -232,7 +252,7 @@ defects (section 3.5). Say "best on our 3DPW-Anny labels", never "best model".
 - NAVER's original (backbone source of frozen_bb_v2 and v10): `models/multiHMR/multiHMR_672_L_anny.pt`.
 - exp6, v5 fine-tuned 2 epochs with the bone fix: `results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/train/checkpoints/00001.pt`
   (the fix is saved in its args and re-applied on load; 3579014:80). Demo copy `models/multiHMR/exp6_v5_bonefix_00001.pt`
-  once made (4b).
+  (made 16 Oct; the demo job 3581312 loaded it under that name and applied the fix from its args, 3581312:419-427).
 - Experiment runs: `results/experiments/<exp>/<RUN>/train/checkpoints/`, last epoch `00001.pt` (2 epochs) or
   `00009.pt` (10 epochs); only the last 2 are kept. Example: `results/experiments/exp1_depth_anchor/long_pc_dist5/train/checkpoints/00009.pt`.
   Run names are in section 3.1 and the job index (section 8).
@@ -544,10 +564,12 @@ confirmed, no job ID, no log. Check with the status block (section 4). Command a
   control stayed at 175.7 / 177.9 (3573521:89-91; verdict "NO MOVEMENT", :103). [Likely] neck02 and head would have to
   turn back together; a partial move raises the loss.
 
-**The thin-neck look is this flip: shown on synthetic holdout renders, not yet on real photos.** In the 12 exp6
+**The thin-neck look is this flip: shown on synthetic holdout renders and, by eye, on real images.** In the 12 exp6
 compare panels the thin neck turns normal when only the output correction changes (16 Oct; "Visual check" below)
-[Certain for those renders]. That the look in the real-photo overlays is the same flip stays [Likely] until the
-real-photo demo with the fix (4b).
+[Certain for those renders]. On real images (job 3581312; "Real images" below) the fine-tuned checkpoint with the
+fix has normal-width necks where v5 has thin stalks [Certain for the 8 images the student sent; by eye, no metric].
+There the two models also differ by the 2-epoch fine-tune, so "the correction, not the fine-tune, widens the neck on
+real images" is [Likely]: on the holdout the same fine-tune without the fix keeps girth 0.461 (control column below).
 
 **Origin: unknown.** The 6D init `[1,0,0,1,0,0]` (`model.py:641`) is singular under `rot6d_to_rotmat`
 (`utils/humans.py:20-21`). It starts a bone turned about its local X axis, i.e. a tilt (FLIP_SWING). That fits
@@ -563,10 +585,11 @@ trainable (`slurm/train/train_v10_scratch_mixed.sh:52-86`). They also differ in 
 trainable, helper mask, `alpha_shape 20` and 3DPW from step 0. So "fresh heads" alone does not explain it, and the
 recipe is not ruled out.
 
-**Not yet done:** real photos with the fix (4b). Optional: the fine-tuned checkpoint's own holdout panels (4a).
+**Not yet done:** a number for the neck on real images (no ground truth there; the demo is judged by eye only).
+Optional: the fine-tuned checkpoint's own holdout panels (4a).
 
 **exp6 on v5: the fix passes after a 2-epoch fine-tune (one run, no seed; holdout panels checked by eye for the
-correction without training)** (job 3579014;
+correction without training; real images checked by eye for the fine-tuned checkpoint, job 3581312)** (job 3579014;
 `--bone_fix`, code in `d902e00`, final in `81dbdcb`). One constant rotation `C` per flipped bone, estimated on 200
 random training images (never the holdout) by `compute_bone_fix.py`, applied as `R <- R·C` right after the 6D decoding
 (3579014:2, :7, :48). Then a zero-training test on the holdout, and a 2-epoch fine-tune with the fix in place, with
@@ -617,8 +640,9 @@ What this says:
   points).
 - The training log's own eval (pve 71.0, then 72.7; :68, :76) is `train.py evaluate()`, [Likely] with helper bones
   unmasked (V0-like, +3.8 mm on v5, README :321). Quote the trace's 68.8, never the 72.7.
-- Not shown: why the flip arose (origin still open; the fix is a constant and says nothing about why, :124); the neck
-  on real photos (4b); the fine-tuned checkpoint's own renders (only the correction without training was looked at).
+- Not shown: why the flip arose (origin still open; the fix is a constant and says nothing about why, :124); a
+  measured neck number on real images (the demo, "Real images" below, is judged by eye); the fine-tuned checkpoint's
+  own holdout renders (on the holdout only the correction without training was looked at).
 
 **Visual check: the exp6 compare panels (seen early 16 Oct).** The student sent all 12 v5 panels,
 `results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/compare/`, holdout images 579860-579871 (the first
@@ -640,8 +664,47 @@ training** (step b of the script: same checkpoint, same images, only the output 
     looked at (4a).
   - v5 base model: the bodies are still drawn too small (the separate depth bug, 3.1). The figure shows neck shape,
     not placement.
-  - Synthetic holdout only. Real photos are not checked yet (4b).
+  - Synthetic holdout only. Real images: next paragraph (job 3581312).
   - Judged by eye; the number behind it is the girth (and PVE_neck 27.3 -> 10.8 mm, :108).
+
+**Real images: v5 next to the fine-tuned checkpoint with the fix (job 3581312, seen 16 Oct).** Log
+`logs/demo-compare-3581312.out`. Run with the `DEMO_MODELS` route of 4b: the log lists only the two models, v5
+00099 and `exp6_v5_bonefix_00001` (3581312:14, :418), so the variable reached the job. The second model is the exp6
+fine-tuned checkpoint: correction plus the 2-epoch fine-tune. Demo settings of `slurm/demo/run_demo_compare.sh`
+(`:158-171` at `fbda1b4`), the same for both: person detector (threshold 0.8), `--anchor_to_box 1`, `--relax_hands 1`,
+`--mask_helper_joints 1` (3581312:22, :429). Images: the 4 real photos in `example_data`, and 8 3DPW **test** frames
+in `demo_images/3dpw_test/`, the middle frame of each of 8 test sequences (`run_demo_compare.sh:115-124` at `fbda1b4`). Neither
+model trained on 3DPW: v5 is synthetic only, and the exp6 fine-tune is AnnyOne only (`exp6_bone_fix.sh` passes no
+`--mix_3dpw_*`).
+- [Certain, from the log] The fixed model ran with the fix: `[load_model] bone_fix: checkpoint args (bone_fix_spec)`,
+  then `[bone_fix] ON, 4 bone(s)`, neck02 178.8, head 179.2, metacarpal1.L 179.8, finger4-1.R 179.7 deg (3581312:424,
+  :427; again :604, :607). v5 prints `bone_fix: none in the checkpoint args` (:18, :191). All four output folders
+  are `ok` (:832-837).
+- [Certain for the 8 images the student sent; judged by eye, no metric] With v5 the necks are thin stalks, with
+  visible tendon-like ridges and pinched under the head. With the fix they have normal width. Clearest on 3DPW
+  `downtown_bar_00` frame 701 and `office_phoneCall_00` frame 440. Also visible on `downtown_walking_00`,
+  `downtown_weeklyMarket_00` and the real photos (tennis, singers, glasses).
+- [Likely] The correction, not the fine-tune, makes the difference: the columns differ by both, but on the holdout
+  the fine-tune without the fix (exp5 L1 control) keeps girth 0.461 and the correction alone gives 1.004 (table
+  above).
+- Figures (in git as `a01eb5b`, on the branch until the merge, section 8):
+  - `docs/figures/neck_before_after_3dpw_bar.jpg` (1134 x 570): one pair, "Before: v5" | "After: v5 + neck fix",
+    3DPW test `downtown_bar_00` frame 701.
+  - `docs/figures/neck_before_after_3dpw_bar_office.jpg` (1134 x 1118): the bar pair on top,
+    `office_phoneCall_00` frame 440 below.
+  - The label "v5 + neck fix" is short for the fine-tuned checkpoint, whose fix also turns back metacarpal1.L and
+    finger4-1.R (hand bones).
+- Caveats, say them with the figures:
+  - The "after" column is correction plus the 2-epoch fine-tune, so not every difference between the columns comes
+    from the correction.
+  - Fingers are set to rest in both (`--relax_hands 1`). metacarpal1.L is still corrected, because `relax_hands` does
+    not reset metacarpals (3.3). Hands were not judged.
+  - The demo places each body from its detection box (`--anchor_to_box 1`). Bodies still look small or misplaced in
+    depth in places, in both models: the depth bug (3.1) is in both.
+  - A figure in a painting (`flat_guitar_01`) is detected as a person by both models: a detector false positive,
+    seen by eye (the detector keeps 2 boxes on that frame, 3581312:375, :788).
+  - Seen in the same images and in both models, unrelated to the neck: adult men on the photos get female-looking
+    bodies (3.4).
 
 **exp6 on v10: three metacarpals corrected without training (bone medians; the v10 panels were not sent)** (job
 3579015; `TRAIN=0`, bones metacarpal2.L, metacarpal2.R, metacarpal3.R; :2, :12).
@@ -688,11 +751,12 @@ the fine-tune the v5 head is already under 15 deg, so [Likely] it is no longer n
 **Refuted:** "fingers are a resolution problem" for test-time zoom only. **Not shown:** that a model trained on larger
 hands would not help. "Under-trained" / "supervision or capacity" is a guess [Guessing].
 
-**Next:** the 16-Oct look at the exp6 panels (3.2) judged the neck only, not the hands. In the real-photo demo of the
-fixed checkpoint (4b), also look at the hands; a run with `--relax_hands 0` would show the fixed model's own fingers
-(NEEDS a copy of the demo call, not written). Then larger hand crops; otherwise a thesis limitation. Low priority.
+**Next:** the 16-Oct looks at the exp6 panels and at the real-image demo (job 3581312; both in 3.2) judged the neck
+only, not the hands, and the demo set the fingers to rest (`--relax_hands 1`). A run with `--relax_hands 0` would
+show the fixed model's own fingers (NEEDS a copy of the demo call, not written). Then larger hand crops; otherwise a
+thesis limitation. Low priority.
 
-### 3.4 Children
+### 3.4 Children, and body shape on real photos
 
 **Measured:**
 - [Certain] The shape head is complete and can make a child in-sample: the 50 youngest training people (GT age 0.015)
@@ -719,6 +783,24 @@ not settled (notes, slide 10, If asked). Avoid years; compare with the holdout a
 
 **Next:** lowest priority: a 10-epoch run with its own control and the real-photo read (section 5, item 12); if
 nothing, a thesis limitation.
+
+**Open, new on 16 Oct: adult men get female-looking bodies on real photos.** Seen in the real-image demo (job
+3581312, 3.2), in v5 **and** in the fixed model, so the neck fix neither causes nor removes it.
+- [Certain for the 8 images the student sent; by eye] Adult men on the real photos get female-looking bodies:
+  breasts, narrow shoulders. Example: the male tennis players.
+- [Certain] It is not the 3DPW gender-label bug (3.5): v5 never saw 3DPW, and the exp6 fine-tune trained on AnnyOne
+  only.
+- [Certain, from the log] The demo prints the predicted phenotypes of every detection (`[shape]` lines):
+  - gender on the four photos: 0.46-0.76 (median 0.60-0.62) in both models;
+  - gender on the 8 3DPW frames: 0.32-0.73 (median 0.54-0.56).
+  - Anny's male end is 0 (3.5), so no one on the photos is predicted near the male end.
+  - The lines repeat per detection crop and are not matched to people, so these are ranges, not a count of people.
+- [Likely] These gender values are what the eye sees.
+- Cause: unknown. [Guessing] the shape head's phenotypes do not carry over from synthetic to real images. Age shows
+  the same pattern: predicted age is 0.57-0.67 on real photos (above), mid-range like gender.
+- Not checked: predicted gender on the synthetic holdout. The trace reports a per-phenotype shape error and bias
+  (`diag_holdout_trace.py:27`), so the v5 trace log 3570222 [Likely] has a gender line. Ask for it; it costs no job.
+  A small gender bias there would point to the synthetic-to-real gap. Priority: after the 3DPW labels.
 
 ### 3.5 3DPW -> Anny labels
 
@@ -786,9 +868,33 @@ What this says:
   extract step unzips only if `data/3DPW/imageFiles` does not exist yet (`slurm/data/run_3dpw_list.sh:36`), so a broken
   first unzip is never repeated [Certain about the code; the broken unzip itself is not checked]. Check command: 4c.
 
-**Next:** check the image folders, re-extract the missing ones, rebuild, re-check (4c). Then fix gender and use one
-shared frame grid for both actors (both flags are written in the branch commit `40fd436`, not on `main` yet; 4e),
-re-fit all 87 tasks into a **new** folder, rebuild, re-check (section 5, item 7).
+**Image re-extraction (16 Oct) and second rebuild (job 3581320, log pending).** The image-folder check is done:
+the image folders of the 8 sequences were re-extracted. File counts after extraction:
+
+| sequence | images | sequence | images |
+|---|---|---|---|
+| courtyard_arguing_00 | 765 | courtyard_box_00 | 1,041 |
+| courtyard_backpack_00 | 1,262 | courtyard_capoeira_00 | 435 |
+| courtyard_basketball_00 | 468 | courtyard_captureSelfies_00 | 480 -> 750 |
+| courtyard_bodyScannerMotions_00 | 1,257 | courtyard_basketball_01 (validation) | 958 |
+
+- [Certain] captureSelfies_00 was incomplete (480 of 750 files). For the other seven, the counts before extraction
+  are not in this file.
+- [Certain, arithmetic] basketball_01's 958 images give 319 every-third frames: exactly its 319 missing validation
+  labels (above).
+- Then the labels were rebuilt again, job 3581320 (log `logs/3dpw-labels-3581320.out`, not read yet).
+  - [Likely] Written into `threedpw_anny_full/labels_rebuilt` with the 4c command. Without `OUT=`, the script
+    writes into the production `threedpw_anny_full/labels` (`run_build_labels.sh:18`). The log names the folder:
+    each split's summary line ends in `-> <folder>/index_<split>.txt` (`build_threedpw_anny_labels.py:143-146`).
+    Check it first (4c).
+  - Expected [Likely]: train ~6,437 (was 4,451), validation ~2,777 (was 2,458), test 9,722 unchanged.
+  - If train stays at 4,451, missing images were not the cause (4c says what to ask next).
+- The image cause stays [Likely] until that log is read.
+
+**Next:** read the rebuild log 3581320, then re-check the rebuilt labels (4c). Then fix gender and use one shared
+frame grid for both actors. Both flags are the converter fix, written in the branch commit `40fd436` plus later
+review edits; it is under review and not on `main` yet (4e). Once it is merged: re-fit all 87 tasks into a **new**
+folder, rebuild, re-check (section 5, item 7).
 Only then test anything on 3DPW.
 
 ### 3.6 Pilot noise (read every 2-epoch result against this)
@@ -808,19 +914,25 @@ All commands run on the cluster in `/netscratch/najib/multi-hmr`, after `git pul
 `cd`.
 
 **Done on 15 Oct (no longer pending):** exp6 on v5 (job 3579014), exp6 on v10 (job 3579015), label rebuild (job
-3579266). Results in 3.2, 3.3 and 3.5. **Done early 16 Oct:** the exp6 v5 compare panels were looked at (4a; result
-in 3.2). **Still pending:** the image-folder check (4c), the real-photo demo with the fix (4b), and the x20 depth run
-(4d, never confirmed).
+3579266). Results in 3.2, 3.3 and 3.5. **Done on 16 Oct:**
+- the exp6 v5 compare panels were looked at (4a; result in 3.2);
+- the real-image demo with the fix ran (job 3581312, 4b; result in 3.2, "Real images");
+- the image-folder check is done and the 8 folders were re-extracted (4c; counts in 3.5).
+
+**Still pending:**
+- the log of the second label rebuild, job 3581320 (expected train ~6,437, validation ~2,777, test 9,722; 4c);
+- the converter fix (v2.3 flags; under review, not merged; 4e);
+- the x20 depth run (4d, never confirmed).
 
 **Status block.** `squeue -u najib` lists only queued and running jobs. This block also shows finished jobs and their
 outputs (`;` so that a missing folder does not stop the rest):
 ```
-cd /netscratch/najib/multi-hmr; sacct -u najib -S 2026-10-14 --format=JobID,JobName%28,State,Elapsed; ls -lt logs | head -20; ls results/experiments/exp1_depth_anchor/; ls -d demo_out_exp6_v5_bonefix_00001_*
+cd /netscratch/najib/multi-hmr; sacct -u najib -S 2026-10-14 --format=JobID,JobName%28,State,Elapsed; ls -lt logs | head -20; ls results/experiments/exp1_depth_anchor/; ls -l logs/3dpw-labels-3581320.out
 ```
-What to look for: job names `exp1-depth-anchor` and `demo-compare` in `sacct` (State `COMPLETED`, `FAILED`,
-`TIMEOUT`, ...); `long_pc_dist20` under `exp1_depth_anchor/`; the folders `demo_out_exp6_v5_bonefix_00001_photos` and
-`_3dpwtest` once the demo (4b) ran. If `sacct` prints an error (accounting may be off on this cluster [Guessing]), use
-the `ls` lines alone. **Resubmit a job only if both `sacct` and its output folder show nothing.** If the folder exists
+What to look for: job names `exp1-depth-anchor` and `3dpw-labels` (job 3581320) in `sacct` (State `COMPLETED`,
+`FAILED`, `TIMEOUT`, ...); `long_pc_dist20` under `exp1_depth_anchor/`; the rebuild log
+`logs/3dpw-labels-3581320.out` (read it as in 4c). If `sacct` prints an error (accounting may be off on this
+cluster [Guessing]), use the `ls` lines alone. **Resubmit a job only if both `sacct` and its output folder show nothing.** If the folder exists
 but the job failed, ask for its `.out` and `.err` before resubmitting.
 
 ### 4a. exp6 compare panels (done early 16 Oct; v5 panels seen)
@@ -830,7 +942,7 @@ in the top row (without the fix), normal width in the bottom row (correction, ze
 neck is visible. Reading, caveats and the figure `docs/figures/neck_before_after_v5.jpg`: 3.2, "Visual check".
 Nothing more is needed for the deck.
 
-Optional, low priority (the real-photo demo, 4b, matters more). List the fine-tuned checkpoint's panels and the v10
+Optional, low priority (the real-image demo, 4b, is done). List the fine-tuned checkpoint's panels and the v10
 panels (a "No such file" line only means that folder is not there):
 ```
 cd /netscratch/najib/multi-hmr && ls results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/holdout_ft/vis/; ls results/experiments/exp6_bone_fix/anny_v10_scratch_mixed_00290_n200_s0_metacarpal2_L-metacarpal2_R-metacarpal3_R/compare/
@@ -842,106 +954,78 @@ cd /netscratch/najib/multi-hmr && ls results/experiments/exp6_bone_fix/anny_s2_s
   neck and head of the model that would actually be used.
 - The 12 v10 panels (3579015:49; metacarpal correction) were not sent. Only the hands differ between their rows.
 
-### 4b. Real-photo demo of the fine-tuned checkpoint with the fix
+### 4b. Real-image demo of the fine-tuned checkpoint with the fix (done 16 Oct, job 3581312)
 
-Not run yet (still pending on 16 Oct). It is now the main open visual check of the neck (the fine-tuned checkpoint's
-holdout panels, 4a, are optional): the panels seen in 4a are synthetic and show the correction without the fine-tune.
-Four blocks, in order (or block 1 and the shorter `DEMO_MODELS` route at the end of this section).
+Ran on 16 Oct as job 3581312 (log `logs/demo-compare-3581312.out`) by the `DEMO_MODELS` route: v5 00099 next to
+`exp6_v5_bonefix_00001`, on the 4 photos and the 8 3DPW-test frames. Result, caveats and figures: 3.2, "Real
+images". Nothing more is needed for the neck.
 
-1. Copy the checkpoint under a new name (`-n`: never overwrite):
-```
-cd /netscratch/najib/multi-hmr && cp -n results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/train/checkpoints/00001.pt models/multiHMR/exp6_v5_bonefix_00001.pt && ls -l models/multiHMR/exp6_v5_bonefix_00001.pt
-```
-2. Add the model to `MODELS` in `slurm/demo/run_demo_compare.sh` (`:93-100`), right after v5, and check:
-```
-cd /netscratch/najib/multi-hmr && python - <<'EOF'
-p = "slurm/demo/run_demo_compare.sh"
-s = open(p).read()
-old = '  "anny_s2_shape_v5|00099"\n'
-new = '  "anny_s2_shape_v5|00099"\n  "exp6_v5_bonefix|00001"\n'
-assert s.count(old) == 1, "old text not found exactly once; nothing changed"
-open(p, "w").write(s.replace(old, new))
-print("changed", p)
-EOF
-bash -n slurm/demo/run_demo_compare.sh && git diff
-```
-3. After the student confirms the diff, commit and push in a separate block:
-```
-cd /netscratch/najib/multi-hmr && git add slurm/demo/run_demo_compare.sh && git commit -m "run_demo_compare.sh: add the exp6 v5 bone-fix checkpoint" && git push origin main
-```
-4. Submit:
-```
-cd /netscratch/najib/multi-hmr && sbatch --time=03:30:00 slurm/demo/run_demo_compare.sh
-```
-- Line numbers in this section are as of `64266dc` (citation key). `fbda1b4`, already on `main`, added 4 lines after
-  `MODELS` (which stays at `:93-100`), so in the script the student pulls today `:126` is `:130` and `:188` is
-  `:195`. The step-2 edit still applies: its old text occurs exactly once there too.
-- `resolve_ckpt` finds `models/multiHMR/exp6_v5_bonefix_00001.pt` (`run_demo_compare.sh:126`). `demo.py` re-applies
-  the fix saved in the checkpoint args (`demo.py:151-155`); for that model the log `logs/demo-compare-<jobid>.out`
-  should print `[load_model] bone_fix: checkpoint args (bone_fix_spec)` [Likely: the same text as in the trace,
-  3579014:82].
-- The script runs all six models on both image sets. The 2:30 limit was set for five models, hence `--time=03:30:00`
-  [Guessing; no timing log in hand].
-- Output: `demo_out_exp6_v5_bonefix_00001_photos/` and `demo_out_exp6_v5_bonefix_00001_3dpwtest/`. Compare with
-  `demo_out_anny_s2_shape_v5_00099_photos/`: neck thickness and length. Real-photo demos place bodies from the detection
-  box, so depth plays no role. Expected [Likely]: the change seen on the holdout, thin stalk -> normal width
-  (`docs/figures/neck_before_after_v5.jpg`, 3.2); if the real-photo necks stay thin, the look there has another cause.
-- The montage command printed at the end of the log still has five labels (`run_demo_compare.sh:188`). With six
-  folders `make_montage.py` stops (`:64-65`): add `'v5 + bone fix'` as the second label when running it.
-- `--relax_hands 1` stays on: fingers are set to rest. [Likely] the metacarpal1.L fix still shows, since
-  `relax_hands` is believed not to reset metacarpals (3.3); check it in the demo.
+What the log confirms [Certain]:
+- The copy `models/multiHMR/exp6_v5_bonefix_00001.pt` exists. `resolve_ckpt` found it under that name and printed
+  no "not found" warning (3581312:418-427).
+- `DEMO_MODELS` reached the job: the log has only two `MODEL:` lines (:14, :418), not the five default models.
+- The fix was re-applied from the checkpoint args (`[bone_fix] ON, 4 bone(s)`, :427, :607). v5 has none (:18,
+  :191).
+- All four output folders are `ok` (:832-837): `demo_out_anny_s2_shape_v5_00099_photos/` and `_3dpwtest/`,
+  `demo_out_exp6_v5_bonefix_00001_photos/` and `_3dpwtest/`. The job finished within the default time limit (its
+  SUMMARY is printed).
+- The montage commands printed at the end (:839-847) label each folder with its model name and run as printed
+  (login node).
 
-**Shorter route without the script edit** (`fbda1b4`, on `main`): after block 1, skip blocks 2-4 and submit
+To re-run, e.g. for the 10-epoch fine-tune of section 5, item 3: first `cp -n` its checkpoint to
+`models/multiHMR/` under a new name, then put that name in `DEMO_MODELS`. The command that ran:
 ```
 cd /netscratch/najib/multi-hmr && DEMO_MODELS="anny_s2_shape_v5|00099 exp6_v5_bonefix|00001" sbatch slurm/demo/run_demo_compare.sh
 ```
-- `DEMO_MODELS` replaces the model list (`run_demo_compare.sh:101-104` from `fbda1b4` on), so only v5 and the fixed
-  model run, with the same output folders as above; the default 2:30 limit is [Likely] enough for two models. The
-  printed montage command then labels each folder with its model name (`:192-193`), so it runs as printed.
-- [Likely] the variable reaches the demo: `sbatch` and `srun` pass the environment on by default, and the script reads
-  it inside the container. Not tried on this cluster: if the log's `MODEL:` lines list all five default models, the
-  variable did not arrive; use blocks 2-4 instead.
+- `DEMO_MODELS` replaces the model list (`run_demo_compare.sh:101-104` from `fbda1b4` on).
+- Output folders are named `demo_out_<run>_<epoch>_<set>/`. A re-run of the same model writes into the same folder,
+  so move the old one first if it must be kept.
+- The four-block route of the earlier version (edit `MODELS` in the script, commit, sbatch) is not needed.
+- Fingers: a run with `--relax_hands 0` NEEDS a copy of the demo call (3.3).
 
-### 4c. Image-folder check, then re-extract and rebuild
+### 4c. Image folders re-extracted (16 Oct); label rebuild 3581320 pending
 
-Still pending on 16 Oct (no output from the student yet). The label rebuild (job 3579266) gave the same counts as the
-old labels (3.5). Check whether the image folders of the 8 affected sequences are missing (login node, seconds).
-`courtyard_jacket_00` is a control: it has 412 labelled images (3579266:12), so its folder must have files.
+**Done on 16 Oct:**
+- The image-folder check. The first label rebuild (job 3579266) had given the same counts as the old labels (3.5).
+- The re-extraction of the image folders of the 8 affected sequences. Counts in 3.5; captureSelfies_00 went from 480
+  to 750 files.
+- A second rebuild, submitted as job 3581320. Its log `logs/3dpw-labels-3581320.out` has not been read yet.
+
+To re-count the folders (login node, seconds; `courtyard_jacket_00` is a control with 412 labelled images,
+3579266:12; the last number is the count of sequence folders, 60 if all are there, 3575369:25-27):
 ```
 cd /netscratch/najib/multi-hmr && for s in courtyard_arguing_00 courtyard_backpack_00 courtyard_basketball_00 courtyard_bodyScannerMotions_00 courtyard_box_00 courtyard_capoeira_00 courtyard_captureSelfies_00 courtyard_basketball_01 courtyard_jacket_00; do echo "$s $(ls data/3DPW/imageFiles/$s 2>/dev/null | wc -l)"; done; ls data/3DPW/imageFiles | wc -l
 ```
-- Expected [Likely]: 0 (or few) files for the first six and `courtyard_basketball_01`, a partial count for
-  `captureSelfies_00` (319 of its 401 label frames were built; 3.5), many for `courtyard_jacket_00`. The last number
-  is the count of sequence folders: 60 if all are there (24 train + 12 validation + 24 test, 3575369:25-27).
-- If all folders are full, the cause is something else (file names, for example): ask for
-  `ls data/3DPW/imageFiles/courtyard_arguing_00 | head -3` before doing anything else.
 
-If folders are missing: re-extract only those sequences. Never run so far. First check that the zip is reachable from
-this node and how its paths look (the commands below assume they start with `imageFiles/`, as the extract step in
-`slurm/data/run_3dpw_list.sh:36` implies):
-```
-cd /netscratch/najib/multi-hmr && ls -l /ds-av/public_datasets/3DPW/original/imageFiles.zip && unzip -l /ds-av/public_datasets/3DPW/original/imageFiles.zip | grep -c "imageFiles/courtyard_arguing_00/"
-```
-If `ls` says "No such file", `/ds-av` is not mounted on that node (the old jobs mounted it into the container): ask
-before going further. If the count is above 0, extract (`-n` never overwrites existing files, so the images v9/v10 used
-stay as they are):
-```
-cd /netscratch/najib/multi-hmr && unzip -n -q /ds-av/public_datasets/3DPW/original/imageFiles.zip 'imageFiles/courtyard_arguing_00/*' 'imageFiles/courtyard_backpack_00/*' 'imageFiles/courtyard_basketball_00/*' 'imageFiles/courtyard_bodyScannerMotions_00/*' 'imageFiles/courtyard_box_00/*' 'imageFiles/courtyard_capoeira_00/*' 'imageFiles/courtyard_captureSelfies_00/*' 'imageFiles/courtyard_basketball_01/*' -d data/3DPW
-```
-Run the check block again, then rebuild into the same new folder (it only held a copy of the old counts):
+**Reading the log of 3581320**, in this order:
+1. **Output folder.** Each split's summary line ends in `-> <folder>/index_<split>.txt`
+   (`build_threedpw_anny_labels.py:143-146`). It should be `threedpw_anny_full/labels_rebuilt`.
+   - [Likely] the job was submitted with the command below.
+   - Without `OUT=`, the script writes into the production `threedpw_anny_full/labels` (`run_build_labels.sh:18`):
+     the labels v9/v10 trained on. If the log shows `labels/`, stop and tell the student before anything else.
+2. **Counts.** Expected [Likely]: train ~6,437 (was 4,451), validation ~2,777 (was 2,458; +319 from
+   `courtyard_basketball_01`), test 9,722 unchanged (3575369:31, :33, :35).
+   - Crosscountry is already outside the 2,777 and stays at 0.
+   - The six train sequences and `courtyard_basketball_01` should no longer show 0 images, and captureSelfies_00
+     should show more than 319.
+   - The "unconverted tasks" list should stay empty.
+3. **If train stays at 4,451**, missing images were not the cause. Ask for
+   `ls data/3DPW/imageFiles/courtyard_arguing_00 | head -3` (file names, for example) before doing anything else.
+
+The rebuild command given in the 15-Oct version of this section (~1 min of CPU, limit 30 min):
 ```
 cd /netscratch/najib/multi-hmr && OUT=/netscratch/najib/multi-hmr/threedpw_anny_full/labels_rebuilt sbatch slurm/data/run_build_labels.sh
 ```
-- ~1 min of CPU (limit 30 min). Log `logs/3dpw-labels-<jobid>.out`. Expected [Likely]: train ~6,437 (was 4,451),
-  validation ~2,777 (was 2,458; +319 from `courtyard_basketball_01`; crosscountry is already outside the 2,777 and stays
-  at 0), test 9,722 unchanged (3575369:31, :33, :35). The "unconverted tasks" list should stay empty.
-- Then re-check the new labels (not run yet):
+If the counts match, re-check the new labels (not run yet):
 ```
 cd /netscratch/najib/multi-hmr && LABELS=threedpw_anny_full/labels_rebuilt OUT=results/diagnostics/check_3dpw_conversion_rebuilt sbatch slurm/diagnostics/check_3dpw_conversion.sh
 ```
 - Training scripts hard-code the old folder (`slurm/train/train_teacher_v9_mixed.sh:55`,
   `train_v10_scratch_mixed.sh:45`, `train_distill_vits_v8_final.sh:42`). Never overwrite `labels/`.
-- The rebuild does **not** fix gender or the missing actor; both are decided inside the fit (re-fit chain, 4e).
+- The rebuild does **not** fix gender or the missing actor; both are decided inside the fit (the converter fix and
+  the re-fit chain, 4e).
+- If a re-extraction is ever needed again, the full `unzip -n -q ... -d data/3DPW` command is in the 15-Oct copy of
+  this section (`git show 2ff8594:docs/handover.md | grep "unzip -n -q"`). `-n` never overwrites existing files.
 
 ### 4d. Depth x20 for 10 epochs (command given 14 Oct; never confirmed)
 
@@ -1096,19 +1180,22 @@ near 0 of 960; check V1 (body joints) median still ~19 mm. Training scripts read
 
 ## 5. Next steps, in priority order
 
-Analyse any new log only after the student says "done". The image-folder check (item 5) takes seconds and can go
-first on any day (section 0a).
+Analyse any new log only after the student says "done". Reading the rebuild log 3581320 (item 5) takes minutes
+and can go first on any day (section 0a).
 
 1. **exp6 panels: done (early 16 Oct).** The 12 v5 compare panels show thin-stalk necks without the correction and
    normal width with it (3.2, "Visual check"; figure `docs/figures/neck_before_after_v5.jpg`, deck slide 8). So "the
    thin neck seen in renders is the flip" can be said for the synthetic holdout renders, with the caveats there (no
    fine-tune, depth bug still in, synthetic only). Nothing left to do here.
-2. **Real photos with the fix (the next neck step; still pending).** Run the demo of the fine-tuned checkpoint with
-   the fix, `models/multiHMR/exp6_v5_bonefix_00001.pt` (4b: copy, one edit of `run_demo_compare.sh`, commit, sbatch;
-   or copy and the `DEMO_MODELS` route). Compare the neck with v5 on the same photos, and with the holdout figure.
-   This is the main open visual check of the neck (the fine-tuned checkpoint's holdout panels, 4a, are optional), and
-   the visible result the supervisor will ask for: only it can move "the thin neck on real photos is the flip" from
-   [Likely] to shown.
+2. **Real images with the fix: done (16 Oct, job 3581312).** The demo of the fine-tuned checkpoint
+   `models/multiHMR/exp6_v5_bonefix_00001.pt` next to v5, on 4 photos and 8 3DPW-test frames.
+   - Result: v5's thin, stalk-like necks have normal width with the fix [Certain for the 8 images the student sent;
+     by eye, no metric] (3.2, "Real images"; figures `docs/figures/neck_before_after_3dpw_bar.jpg` and
+     `..._bar_office.jpg`, deck slide 8).
+   - So "the thin neck on real images goes away with the fix" can be said, by eye.
+   - Still [Likely]: that the correction, not the 2-epoch fine-tune, does it.
+   - Nothing left to run for the neck. Optional: `--relax_hands 0` for the hands (3.3).
+   - The predicted gender on the holdout, for the new female-body observation (3.4), costs no job: ask for it.
 3. **Longer fine-tune with the fix.** 10 epochs, with a matched 10-epoch control without the fix (commands in 4e,
    "Longer fine-tune with the fix"). Why: at 2 epochs the evidence is only "no sign of a PVE cost" (68.8 vs 76.9
    for the control; one run, no seed, inside the noise of 3.6), and recall passed by 0.3 points (89.4 vs a limit of
@@ -1119,9 +1206,11 @@ first on any day (section 0a).
    corrected without breaking upperarm01.L between them. New behaviour behind a default-off option. Only worth it if
    v10 stays in the thesis. The chain-preserving head correction (plan :558) is [Likely] no longer needed for v5
    (head 11.2 deg after the fine-tune).
-5. **3DPW images, then rebuild.** Image-folder check (still not run on 16 Oct); if folders are missing, re-extract
-   them, rebuild into `labels_rebuilt`, re-check (4c). This would bring back the 31% missing train labels without a
-   re-fit [Likely]. The label build after the re-fit (item 7) needs the same images.
+5. **3DPW images, then rebuild.** The image check and the re-extraction of the 8 folders are done (16 Oct; counts
+   in 3.5). The second rebuild, job 3581320, has run; its log is not read yet.
+   - Read it as in 4c: output folder first, then counts against train ~6,437 / validation ~2,777 / test 9,722.
+   - If they match, re-check (4c). This would bring back the 31% missing train labels without a re-fit [Likely].
+   - The label build after the re-fit (item 7) uses the same images, so they are ready for it.
 6. **Supervisor's decision (slide 17).** Fine-tune v9 now with `--gt_center_joint person_center` and x5, or first fix
    the labels (item 7) and then fine-tune? The student proposes labels first, because 3DPW is 30% of each batch and the
    men would keep learning the wrong body. Expected from v5: size ~0.84, root ~0.5 m, cost ~2.6 mm PVE and ~1.6 recall
@@ -1147,21 +1236,48 @@ first on any day (section 0a).
    - Control arm, same script and weight: `--gt_center_joint root` (still x5), output `.../exp7_v9_depth/v9e62_root_dist5`.
    - Labels (`--mix_3dpw_labels`): slide-17 option 1 ("now") = `/netscratch/najib/multi-hmr/threedpw_anny_full/labels`
      (what v9 trained on; gender reversed, 31% of train missing) or `labels_rebuilt` once item 5 brings the missing
-     sequences back (gender still reversed; today it holds the same counts as `labels`, 3579266:67). Option 2 ("labels
-     first") = `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels` after item 7.
+     sequences back (gender still reversed; the second rebuild 3581320 should bring them back, log not read yet).
+     Option 2 ("labels first") = `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels` after item 7.
    - Time: the v9 script's comment expects ~8-10 min per 1,000-iteration epoch at batch 4
      (`train_teacher_v9_mixed.sh:16`; an estimate, never measured), so 10 epochs ~1.3-1.7 h plus evaluations. Not
      measured with 3DPW batches; the exp6 fine-tune on AnnyOne alone took 315 s per epoch (12.7 images/s,
      3579014:66). Say "about 1 to 2 hours". `--time=04:00:00`.
    - Read: trace the last checkpoint of each arm with `diag_holdout.sh` and a `TAG` (4e); root error, slope, size,
      PVE, recall vs the control. The training log's 3DPW-val numbers are against converted labels only.
-7. **3DPW labels (after the meeting, before any 3DPW claim).** Three code changes (two new default-off flags in the
-   fitter, env vars in the array job), then re-fit all 87 tasks into a new folder (`threedpw_anny_v23`), rebuild,
-   re-check: exact changes and commands in 4e ("3DPW re-fit chain"). The changes are already written in the branch
-   commit `40fd436` (still being verified, not on `main` yet): after the merge, check them, don't write them (4e).
-   The gender refit confirmed the flip only for men; check the women in the new check I1 (gender labels). If the
-   meeting moves to Monday, the re-fit (~5-6 h wall time, not measured) could start before it. Do item 5 first: the
-   label build after the re-fit skips frames without image files too.
+7. **3DPW labels: converter fix, then re-fit (after the meeting, before any 3DPW claim).**
+   - The converter fix: two new default-off flags in the fitter (gender, frame grid) and env vars in the array job.
+     It is written, in the branch commit `40fd436` plus later review edits (v2.3 flags), and is under review, not on
+     `main` yet.
+   - Once it is merged: check it, don't write it (version check in 4e). Then re-fit all 87 tasks into a new folder
+     (`threedpw_anny_v23`), rebuild, re-check. Exact commands: 4e ("3DPW re-fit chain").
+   - The gender refit confirmed the flip only for men; check the women in the new check I1 (gender labels).
+   - If the meeting moves to Monday, the re-fit (~5-6 h wall time, not measured) could start before it.
+   - The images are re-extracted (item 5), so the label build after the re-fit finds them. The builder skips frames
+     without image files.
+
+   **Then the final v9-style model: fixed v5 + fixed 3DPW labels** (after the re-fit and its re-check pass).
+   v9's recipe (v5 + 30% 3DPW-train, `slurm/train/train_teacher_v9_mixed.sh`), but starting from the fixed v5 and
+   trained on the fixed labels.
+   - **NEEDS CODE**: a copy of that script, e.g. `slurm/train/train_v11_fixed_mixed.sh`. Never edit or rerun the v9
+     script itself: it starts from v5 and writes to `anny_teacher_v9_mixed`.
+   - `CKPT=/netscratch/najib/multi-hmr/models/multiHMR/exp6_v5_bonefix_00001.pt`, the 2-epoch fixed v5. Use item 3's
+     10-epoch checkpoint instead if it has run and is no worse than its control.
+   - Keep the script's `--load_only_backbone 0` and pass no `--bone_fix`: `train.py` then inherits the checkpoint's
+     bone fix (`train.py:1008-1023`). The training log should print `[bone_fix] ON, 4 bone(s)` with "inherited from
+     --pretrained" (`bone_fix.py:161-162`).
+   - `LABELS=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels`, plus `--mask_3dpw_hands 1` (3DPW fingers are
+     rest pose).
+   - Depth: add `--gt_center_joint person_center --alpha_dist 5 --alpha_transl 5` if the supervisor agrees (item 6,
+     slide 17).
+   - A new `--save_dir` and `--name`, never `logs/anny_model/anny_teacher_v9_mixed` (item 6 says why).
+   - Length: v9 ran up to 150 epochs (`--max_iter 150000`), and the student was distilled from epoch 62. Set the length
+     from the deadline (section 10). The v9 script estimates ~8-10 min per epoch (never measured), so 60 epochs
+     would be ~8-10 h.
+   - Read the result:
+     - V1 trace (4e) and per-bone dump: neck02, head, girth;
+     - 3DPW-test against the v23 labels;
+     - the demo next to v5 + fix (4b);
+     - compare with v9 00062.
 8. **Depth slope stuck at 0.3-0.44.** Measure the training-set depth distribution properly (so far only batch means of
    ~2.5-3.2 m) and the fix run's slope on training images. Both **NEED CODE**: extend
    `scripts/experiments/measure_batch_ages.py` (it already draws real training batches and applies a copy of
@@ -1279,13 +1395,19 @@ first on any day (section 0a).
 - "3-5 NaN skips per 2,000 in every run." 1-7 per 2,000 (13-23 per 10,000).
 - "Validation after the rebuild: ~2,777 minus crosscountry." The 2,777 already excludes crosscountry.
 - "The visible long-neck look is the flip [Certain]." On 15 Oct only the measured girth / PVE_neck were shown. Since
-  16 Oct the look is shown on 12 synthetic holdout renders (exp6 panels, 3.2); on real photos it stays [Likely].
+  16 Oct the look is shown on 12 synthetic holdout renders (exp6 panels, 3.2), and by eye on 4 photos and 8
+  3DPW-test frames for the fine-tuned checkpoint (job 3581312, 3.2, "Real images"). On real images, that the
+  correction rather than the fine-tune does it stays [Likely].
 
 **Still untested [Likely] claims; keep the tag**
-- "The image folders of 8 3DPW sequences are missing on the cluster (incomplete unzip)." Check in 4c.
+- "The image folders of 8 3DPW sequences are missing on the cluster (incomplete unzip)." Re-extracted on 16 Oct;
+  captureSelfies_00 went from 480 to 750 files, so at least that one was incomplete [Certain]. Whether this brings
+  the labels back: the rebuild log 3581320 (4c).
 - "The recall drop is a cohort artefact."
-- "The thin/long-neck look in the real-photo overlays is the neck flip." Shown on the synthetic holdout renders
-  (exp6 panels, 3.2); check on real photos (4b).
+- "On real images the correction, not the 2-epoch fine-tune, removes the thin neck." The demo (job 3581312) compares
+  v5 with the fine-tuned checkpoint, so both changed. The holdout control without the fix keeps girth 0.461 (3.2).
+- "Men get female-looking bodies on real photos because of a synthetic-to-real gap in the shape head." [Guessing]
+  (3.4).
 
 ---
 
