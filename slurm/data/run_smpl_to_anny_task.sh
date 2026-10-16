@@ -36,6 +36,11 @@
 #     are the ones REFIT_FLAGS requests (scripts/data/check_refit_task.py --match_flags, in the container, ~1 min);
 #     otherwise the task FAILS: delete that .npz or use another OUT_ROOT. In the default OUT_ROOT an existing .npz is
 #     skipped without a check, as before.
+#   GPUS         GPUs for the srun step (default 1). GPUS=0 runs on CPU (smpl_to_anny.py falls back to CPU when no
+#                GPU is visible), for a CPU partition when the GPU queue is long; submit it with matching sbatch
+#                options, e.g.  GPUS=0 OUT_ROOT=... REFIT_FLAGS="..." sbatch --partition=<cpu partition> --gpus=0
+#                --cpus-per-task=8 --time=12:00:00 --array=9-10 slurm/data/run_smpl_to_anny_task.sh
+#                CPU speed is not measured yet: read the 'done: ... (N s)' line of the first task before the full array.
 # =============================================================================
 #SBATCH --job-name=smpl2anny-all
 #SBATCH --partition=A100-40GB,A100-80GB,L40S-AV,A100-RP,A100-PCI,L40S,RTXA6000,RTXB6000
@@ -57,6 +62,8 @@ DEFAULT_OUT_ROOT="/netscratch/najib/multi-hmr/threedpw_anny_full"
 OUT_ROOT="${OUT_ROOT:-${DEFAULT_OUT_ROOT}}"
 OUT_ROOT="${OUT_ROOT%/}"
 REFIT_FLAGS="${REFIT_FLAGS:-}"   # e.g. "--gender_convention anny --frame_grid shared" (v2.3)
+GPUS="${GPUS:-1}"                 # 0 = CPU only (see the header)
+if [ "${GPUS}" = "0" ]; then SRUN_GPUS=(); else SRUN_GPUS=(--gpus="${GPUS}"); fi
 if [ -n "${REFIT_FLAGS}" ] && [ "${OUT_ROOT}" = "${DEFAULT_OUT_ROOT}" ]; then
   echo "ERROR: REFIT_FLAGS='${REFIT_FLAGS}' with the default OUT_ROOT ${DEFAULT_OUT_ROOT}:"
   echo "       the old fits would be mixed with new ones. Set OUT_ROOT to a new directory,"
@@ -142,7 +149,7 @@ EOF
 fi
 
 srun -K \
-  --gpus=1 \
+  ${SRUN_GPUS[@]+"${SRUN_GPUS[@]}"} \
   --container-image=/netscratch/najib/ContainerImages/ubuntu+20.04_v4.sqsh \
   --container-mounts=/netscratch:/netscratch,/home/najib:/home/najib,/ds-av:/ds-av \
   --container-workdir="/netscratch/najib/multi-hmr" \
