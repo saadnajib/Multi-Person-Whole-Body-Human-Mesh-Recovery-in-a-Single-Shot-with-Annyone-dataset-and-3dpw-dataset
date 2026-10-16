@@ -98,6 +98,10 @@ MODELS=(
   "anny_distill_vits_v8_final|00052"
   # "anny_distill_vits_v7_mixed|00130"
 )
+# Override the list from the environment without editing this file, e.g.
+#   DEMO_MODELS="anny_s2_shape_v5|00099 exp6_v5_bonefix|00001" sbatch slurm/demo/run_demo_compare.sh
+# Each entry is run|epoch; models/multiHMR/<run>_<epoch>.pt is used first if it exists.
+if [ -n "${DEMO_MODELS:-}" ]; then read -r -a MODELS <<< "$DEMO_MODELS"; fi
 # 3DPW frames are 1080x1920 portrait; fy~1969 over the long side -> ~52 deg FOV.
 IMG_SETS=(
   "$PROJECT_ROOT/example_data|photos|55"
@@ -185,7 +189,11 @@ for set in "${IMG_SETS[@]}"; do
   IFS='|' read -r folder tag fov <<< "$set"
   echo "  python scripts/analysis/make_montage.py --out demo_montage_${tag} --folders \\"
   for n in "${NAMES[@]}"; do echo "      demo_out_${n}_${tag} \\"; done
-  echo "      --labels 'teacher v5' 'teacher v9 (+real)' 'v10 (real from start)' 'student v6c' 'student v8 (+real)'"
+  if [ -n "${DEMO_MODELS:-}" ]; then
+    printf "      --labels"; for n in "${NAMES[@]}"; do printf " '%s'" "$n"; done; echo
+  else
+    echo "      --labels 'teacher v5' 'teacher v9 (+real)' 'v10 (real from start)' 'student v6c' 'student v8 (+real)'"
+  fi
 done
 [ ${#FAILED[@]} -eq 0 ] || exit 1
 EOF
