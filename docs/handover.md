@@ -1,4 +1,4 @@
-# Handover: project state on Friday 16 October 2026 (early morning)
+# Handover: project state on Friday 16 October 2026 (morning)
 
 This file replaces the chat history. It is written for an assistant that cannot see that chat, the cluster or any
 temporary files. Everything you need is either here or in this repository. **Where this file disagrees with
@@ -13,9 +13,11 @@ lines that will go stale when the pending results arrive.
 side branch. To check a copy of this file:
 - `grep -c '^## 0a\. Tomorrow' docs/handover.md` prints `1` for the 15-Oct and later versions and `0` for every older
   one (the 14-Oct `586faad`, or the work-in-progress `c6419ce`).
-- `grep -c ALLOW_DEFAULT_FLAGS docs/handover.md` prints a number above `0` only in this version (16 Oct, after the
-  merge; it quotes the re-fit steps in 4e). `0` means an older copy, which may still call the converter fix
+- `grep -c ALLOW_DEFAULT_FLAGS docs/handover.md` prints a number above `0` only in the 16-Oct versions (after the
+  merge; they quote the re-fit steps in 4e). `0` means an older copy, which may still call the converter fix
   unmerged, the real-image demo unseen or the deck 17 slides long. Ask the student for the current file.
+- `grep -c 7,589 docs/handover.md` prints a number above `0` only in this version (16 Oct, with the result of the
+  second label rebuild, job 3581320). `0` means the earlier 16-Oct copy, which still calls that rebuild pending.
 
 The student should attach this file to the chat directly, not rely on you browsing GitHub. Download links: section 8.
 
@@ -24,14 +26,18 @@ on the holdout; 3.2, 4a). The real-image demo ran (job 3581312: v5 next to the e
 fix, on 4 photos and 8 3DPW-test frames; the student sent 8 of these 12 images). By eye, on those 8, the thin necks
 get normal width with the fix; the fixed side also had the 2-epoch fine-tune (3.2, "Real images"). Slide 8 shows a
 holdout pair and a real pair (section 9). The image folders of the 8 affected 3DPW sequences were re-extracted and a
-second label rebuild was submitted (job 3581320, log not read yet; 3.5, 4c). The converter fix and this file were
-merged into `main` (section 8).
+second label rebuild ran (job 3581320; 3.5, 4c): train 6,437 images (was 4,451), validation 2,777 (was 2,458), test
+9,722 unchanged, 18,936 in all, exactly what the current fits imply. So the missing-labels defect is fixed; the
+reversed gender and the missing actor remain until the re-fit (4e). The rebuilt labels in
+`threedpw_anny_full/labels_rebuilt` still come from the old fits: do not train on them. The converter fix and this
+file were merged into `main` (section 8).
 
 **Meeting date: open.** Planned for **Friday 16 October 2026**, with the deck `docs/supervisor_update_2026-10-16.pptx`.
 On 15 Oct (16:07) the student asked for a draft message asking the supervisor to move it to **Monday 19 October**.
 Whether it was sent is unknown; still open on the evening of 15 Oct. An earlier message to the supervisor (content
-unknown) had no reply. Ask which date holds before planning: it decides whether the result of the second label
-rebuild (job 3581320, 4c) can go into the deck first. The real-image demo is already on slide 8 (section 9).
+unknown) had no reply. Ask which date holds before planning: it decides whether the result of the 3DPW re-fit (4e)
+can go into the deck first. Already in the deck: the real-image demo (slide 8) and the label rebuild result (job
+3581320, slides 6 and 16; section 9).
 
 **Citation key** (used from section 1 on):
 - `3572482:126` = line 126 of that Slurm job's `.out` log. Job index in section 8. The student has every log; ask for
@@ -72,10 +78,11 @@ Project in brief:
   Synthetic holdout renders of the correction alone, no fine-tune (16 Oct): thin necks without it, normal width
   with it. Real images (16 Oct, job 3581312, the fine-tuned checkpoint vs v5, 4 photos + 8 3DPW-test frames, 8 of
   the 12 seen): the same, judged by eye, no metric; the fixed side also had the 2-epoch fine-tune.
-- 3DPW labels: three defects (reversed gender, a missing actor in two-person frames, missing labels). A label rebuild
-  gave the same counts; I then re-extracted the image folders of 8 sequences, and a second rebuild (job 3581320)
-  is waiting to be read. The converter fix for gender and the missing actor is in the repo (default-off flags); the
-  re-fit with it has not been run.
+- 3DPW labels: three defects (reversed gender, a missing actor in two-person frames, missing labels). Missing labels:
+  fixed on 16 Oct. Image files of 8 sequences were missing; after re-extracting them, a second rebuild (job 3581320)
+  gave train 6,437 / validation 2,777 / test 9,722 label images, exactly what the fits imply. Those labels still
+  come from the old fits (gender reversed), so I do not train on them. The converter fix for gender and the missing
+  actor is in the repo (default-off flags); the re-fit with it has not been run.
 - Fingers: flipped hand bones were a large part of the finger error (exp6 on v5: 17.3 -> 8.2 deg).
 - Children: tested, nothing helped yet. New (16 Oct): adult men on real photos get female-looking bodies, in v5 and
   in the fixed model alike; cause unknown.
@@ -83,10 +90,10 @@ Supervisor meeting: planned Fri 16 Oct; I may have asked to move it to Mon 19 Oc
 Thesis: my 13 Oct brief said a one-week deadline. Ask me the submission date and the chapter list of my draft
 before planning anything that takes more than a day.
 Finished 15 Oct: exp6 on v5 and on v10, 3DPW label rebuild. 16 Oct: the exp6 neck panels, the real-image demo with
-the fix (job 3581312), the 3DPW image re-extraction (results in handover section 3). Pending, in this order:
-(1) the log of the second label rebuild (job 3581320); (2) the 3DPW re-fit with the converter fix (steps 0-5,
-handover 4e); (3) the final model: a v9-style fine-tune from the fixed v5 with the depth fix, the bone fix and the
-fixed 3DPW labels, no script yet (handover sections 4 and 5).
+the fix (job 3581312), the 3DPW image re-extraction and the second label rebuild (job 3581320) (results in handover
+section 3). Pending, in this order: (1) the 3DPW re-fit with the converter fix (steps 0-5, handover 4e); (2) the
+final model: a v9-style fine-tune from the fixed v5 with the depth fix, the bone fix and the fixed 3DPW labels, no
+script yet (handover sections 4 and 5).
 Never confirmed: the x20 depth run (14 Oct). Ask me to run the status block from handover section 4 (squeue alone
 misses finished jobs).
 
@@ -120,14 +127,10 @@ Paste this section with section 0. Each step names the section with the details.
 
 1. Ask the student: does the meeting hold on Friday 16 Oct or Monday 19 Oct (top of file)? What is the thesis
    submission date, and which chapters does the draft have (section 10)?
-2. Status block (section 4, top), for the rebuild job 3581320 and the x20 depth run (4d, never confirmed). Resubmit
-   a job only if both `sacct` and its output folder show nothing. Analyse logs only after the student says "done".
-3. Pending (1): the log of the second label rebuild, `logs/3dpw-labels-3581320.out` (4c). Check its output folder
-   first (it must not be the production `labels/`), then compare the counts with the expected train ~6,437 /
-   validation ~2,777 / test 9,722. These add up to 18,936, the number of label images the current fits imply; the
-   converter section of `docs/experiments_plan.md` uses the same 18,936. If the counts match, run the re-check (4c).
-   This takes minutes; do it first, whichever day the meeting is.
-4. Pending (2): the 3DPW re-fit with the converter fix. The fix is on `main` (v2.3 flags, default off); there is
+2. Status block (section 4, top), for the x20 depth run (4d, never confirmed). Resubmit a job only if both `sacct`
+   and its output folder show nothing. Analyse logs only after the student says "done". (The label rebuild 3581320
+   is done and read: "Done on 16 Oct" below.)
+3. Pending (1): the 3DPW re-fit with the converter fix. The fix is on `main` (v2.3 flags, default off); there is
    nothing to write. Run steps 0-5 one at a time: start each step only after the previous one has finished, and
    steps 2 and 3 only after the step before them passed. What to check after each step: 4e ("3DPW re-fit"). On
    Friday, start it after the meeting, unless the student wants it running during the meeting; it writes to a new
@@ -154,7 +157,7 @@ Paste this section with section 0. Each step names the section with the details.
      ```
      cd /netscratch/najib/multi-hmr && L=$(FITS=/netscratch/najib/multi-hmr/threedpw_anny_v23 OUT=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels sbatch --parsable slurm/data/run_build_labels.sh) && echo "labels job ${L%%;*}" && LABELS=threedpw_anny_v23/labels FITS=threedpw_anny_v23 OUT=results/diagnostics/check_3dpw_conversion_v23 sbatch --dependency=afterok:${L%%;*} slurm/diagnostics/check_3dpw_conversion.sh
      ```
-5. Pending (3), after the re-fit and its check pass: the final model, a v9-style fine-tune from the fixed v5 with the
+4. Pending (2), after the re-fit and its check pass: the final model, a v9-style fine-tune from the fixed v5 with the
    depth fix, the bone fix and the fixed 3DPW labels (section 5, item 7). **No script or command exists for it yet**
    (NEEDS CODE). Optional before it: the longer fine-tune with the fix and its matched control (section 5, item 3;
    4e). If that run is no worse than its control, its checkpoint is the better start for the final model. Slide 17
@@ -163,25 +166,27 @@ Paste this section with section 0. Each step names the section with the details.
 
 Done on 16 Oct, nothing to ask for: the exp6 v5 compare panels (3.2, 4a); the real-image demo with the fix (job
 3581312; 3.2, 4b; figures `docs/figures/neck_before_after_3dpw_bar.jpg` and `..._bar_office.jpg`); the
-re-extraction of the 8 image folders (3.5, 4c). The demo also showed a new open issue in both models: adult men get
-female-looking bodies (3.4). Optional: a correction-only demo without the fine-tune (section 5, item 2).
+re-extraction of the 8 image folders and the second label rebuild (job 3581320: train 6,437 / validation 2,777 /
+test 9,722 label images, as expected; 3.5, 4c). Its labels still come from the old fits: do not train on them.
+The demo also showed a new open issue in both models: adult men get female-looking bodies (3.4). Optional: a
+correction-only demo without the fine-tune (section 5, item 2).
 
 If the meeting is on **Friday**:
 
-6. Check that the student's deck is the 18-slide version (section 9, "Check a copy"). A `git pull` gives it.
-7. Open the pptx in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9, 15, 16 and 17 for text that wraps one line
+5. Check that the student's deck is the 18-slide version (section 9, "Check a copy"). A `git pull` gives it.
+6. Open the pptx in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9, 15, 16 and 17 for text that wraps one line
    longer (slide 15's Wording card already ends at the card's bottom edge in the LibreOffice render).
-8. After the meeting: write the supervisor's answer to the slide-17 question into section 9. If it is "labels first"
-   (the student's proposal), go on with 0a steps 4 and 5. If it is "fine-tune v9 now", section 5, item 6 comes before
+7. After the meeting: write the supervisor's answer to the slide-17 question into section 9. If it is "labels first"
+   (the student's proposal), go on with 0a steps 3 and 4. If it is "fine-tune v9 now", section 5, item 6 comes before
    them.
 
 If the meeting is on **Monday**:
 
-6. Start 0a step 4 (the re-fit) before the meeting; its result can then go into the deck (section 9, "Results still to
+5. Start 0a step 3 (the re-fit) before the meeting; its result can then go into the deck (section 9, "Results still to
    come").
-7. Start the longer fine-tune with the fix and its matched control (section 5, item 3; 4e), if GPUs are free next to
+6. Start the longer fine-tune with the fix and its matched control (section 5, item 3; 4e), if GPUs are free next to
    the re-fit.
-8. Before the meeting: Friday steps 6-7 (deck check, PowerPoint check).
+7. Before the meeting: Friday steps 5-6 (deck check, PowerPoint check).
 
 ## 0b. Numbers at a glance
 
@@ -233,10 +238,11 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
 - Children: sampler raises children per batch 2.1% -> 9.7-11%; real photos stay at age 0.57-0.67 either way.
 - 3DPW labels: body joints 18.7 mm median (p95 24.5); surface 18.9 / 18.3 mm (lower bound). Gender reversed (men:
   19.2 -> 15.3 mm when flipped); 407 of 960 two-person images miss an actor; train 4,451 of 6,437 images labelled,
-  validation 2,458 of 2,777. Rebuild (job 3579266): the same 4,451 / 2,458 / 9,722; [Likely] image files missing.
+  validation 2,458 of 2,777. Rebuild (job 3579266): the same 4,451 / 2,458 / 9,722; cause: image files missing.
   The image folders of the 8 sequences were re-extracted on 16 Oct (captureSelfies_00: 480 -> 750 files). Second
-  rebuild, job 3581320: log pending; expected train ~6,437, validation ~2,777, test 9,722 (18,936 in all, the count
-  the current fits imply).
+  rebuild, job 3581320, into `labels_rebuilt`: train 6,437 images / 7,589 people, validation 2,777 / 3,314, test
+  9,722 / 11,850; 18,936 label files, 22,753 people, exactly what the current fits imply. Missing labels: fixed.
+  Still the old fits (gender reversed, missing actor): not for training; the re-fit (4e) is next.
 - 3DPW-test PVE, against our converted labels only (not comparable with published numbers): v5 119.1, v9 102.5,
   v10 111.5.
 
@@ -257,7 +263,8 @@ the **head** joint (`--person_center head`). 88 helper bones (toes, breasts, fac
   necks) plus 15 held-out images with no children (notes, slide 3).
 - 3DPW converted to Anny (`scripts/data/smpl_to_anny.py`, `scripts/data/build_threedpw_anny_labels.py`): labels for
   4,451 train / 2,458 validation / 9,722 test images (README :227), every third frame (README :212). Mixed into
-  v9/v10 batches at 30%.
+  v9/v10 batches at 30%. The rebuild of 16 Oct (job 3581320, `labels_rebuilt`, same old fits) has 6,437 / 2,777 /
+  9,722 (3.5).
 
 **Models** (checkpoints are not in git; cluster paths below).
 
@@ -868,8 +875,9 @@ the fingers. The label builder drops fits > 80 mm, people < 30% visible and boxe
    (13.7 -> 16.3 mm), surface closer for 27/31 (:316-317). So the fix is confirmed only for men.
 2. **Missing actor.** 407 of 960 two-person images have one valid actor without a label; all 407 because that actor was
    not fitted on that frame (per-person stride phase) (:228-229).
-3. **Missing labels.** Train has 4,451 label images where the fits give 6,437 (:31); [Likely] cause: missing image
-   files (rebuild below). Six train sequences have none:
+3. **Missing labels (fixed 16 Oct).** Train has 4,451 label images where the fits give 6,437 (:31); cause: missing
+   image files, fixed by the re-extraction and the second rebuild (below). Six train sequences have none in the old
+   labels:
    `courtyard_arguing_00`, `courtyard_backpack_00`, `courtyard_basketball_00`, `courtyard_bodyScannerMotions_00`,
    `courtyard_box_00`, `courtyard_capoeira_00`; `courtyard_captureSelfies_00` is partial, 319 of 401 (:25, :63-70).
    Validation: `courtyard_basketball_01` not built (319 images; 2,458 of 2,777; :26, :33, :89). All 162 frames of
@@ -901,13 +909,14 @@ What this says:
 - [Certain] The builder skips any frame whose image file is missing, and does not count it
   (`build_threedpw_anny_labels.py:123-125`: `if not os.path.isfile(img): continue`). The counters for the other drop
   reasons (error, visibility, box size) are 0 in train (3579266:25).
-- [Likely] The image folders of those 8 sequences (six train, captureSelfies_00, basketball_01) are missing or
-  incomplete on the cluster, from an incomplete unzip of `/ds-av/public_datasets/3DPW/original/imageFiles.zip`. The
+- [Certain since the second rebuild, below] The image folders of those 8 sequences (six train, captureSelfies_00,
+  basketball_01) were missing or incomplete on the cluster; [Likely] from an incomplete unzip of
+  `/ds-av/public_datasets/3DPW/original/imageFiles.zip`. The
   extract step unzips only if `data/3DPW/imageFiles` does not exist yet (`slurm/data/run_3dpw_list.sh:36`), so a broken
   first unzip is never repeated [Certain about the code; the broken unzip itself is not checked]. Check command: 4c.
 
-**Image re-extraction (16 Oct) and second rebuild (job 3581320, log pending).** The image-folder check is done:
-the image folders of the 8 sequences were re-extracted. File counts after extraction:
+**Image re-extraction (16 Oct) and second rebuild (job 3581320): the missing labels are back.** The image-folder
+check is done: the image folders of the 8 sequences were re-extracted. File counts after extraction:
 
 | sequence | images | sequence | images |
 |---|---|---|---|
@@ -920,23 +929,40 @@ the image folders of the 8 sequences were re-extracted. File counts after extrac
   are not in this file.
 - [Certain, arithmetic] basketball_01's 958 images give about 319-320 every-third frames (958 / 3), close to its
   319 missing validation labels (above).
-- Then the labels were rebuilt again, job 3581320 (log `logs/3dpw-labels-3581320.out`, not read yet).
-  - [Likely] Written into `threedpw_anny_full/labels_rebuilt` with the 4c command. Without `OUT=`, the script
-    writes into the production `threedpw_anny_full/labels` (`run_build_labels.sh:18`). The log names the folder:
-    each split's summary line ends in `-> <folder>/index_<split>.txt` (`build_threedpw_anny_labels.py:143-146`).
-    Check it first (4c).
-  - Expected [Likely]: train ~6,437 (was 4,451), validation ~2,777 (was 2,458), test 9,722 unchanged. Together
-    18,936: the label images the current fits imply (check I4's `expected_label_images`, as quoted in the
-    converter section of `docs/experiments_plan.md`).
-  - If train stays at 4,451, missing images were not the cause (4c says what to ask next).
-  - Do not confuse these counts with the ones expected after the re-fit (4e): the v23 labels should have fewer
-    images, ~16,900, with about the same number of labelled people, because both actors then share one image.
-- The image cause stays [Likely] until that log is read.
+- Then the labels were rebuilt again, job 3581320 (log `logs/3dpw-labels-3581320.out`, read on 16 Oct), from the
+  same old v2.2 fits (gender reversed, per-person frame grid).
+  - [Certain] Output folder `threedpw_anny_full/labels_rebuilt`: every split's summary line ends in
+    `threedpw_anny_full/labels_rebuilt/index_<split>.txt` (3581320:25, :39, :65). The production `labels/` were not
+    touched. It wrote into the same folder as 3579266 and replaced its output [Likely: same fits and builder, so
+    the 3579266 files are a subset].
+  - Counts [Certain]:
 
-**Next, in this order:** (1) read the rebuild log 3581320, then re-check the rebuilt labels (4c). (2) Re-fit with the
-converter fix, which is on `main` (v2.3: gender by Anny's convention, one shared frame grid for both actors): all 87
-tasks into a **new** folder, rebuild, re-check, steps 0-5 in 4e (section 5, item 7). (3) Only then train or test
-anything on 3DPW (the final model, section 5, item 7).
+    | split | old labels and rebuild 3579266 | rebuild 3581320 |
+    |---|---|---|
+    | train | 4,451 images, 5,183 people | 6,437 images, 7,589 people (:25) |
+    | validation | 2,458 images, 2,995 people | 2,777 images, 3,314 people (:39) |
+    | test | 9,722 images, 11,850 people | 9,722 images, 11,850 people (:65) |
+    | total | 16,631 label files, 20,028 people | 18,936 label files, 22,753 people (:67) |
+
+  - All six empty train sequences now have labels (:1-6): arguing_00 255, backpack_00 421, basketball_00 251,
+    bodyScannerMotions_00 419, box_00 347, capoeira_00 211. captureSelfies_00 319 -> 401 (:7). Validation
+    `courtyard_basketball_01` 0 -> 319 (:27). Together +1,986 train and +319 validation images: the whole gap.
+  - `outdoors_crosscountry_00` is still 0: its 162 frames are dropped by the visibility filter (:34, :39), as
+    before; they were never in the 2,777. No frame is dropped for error or box size in any split. The
+    "unconverted tasks" list is empty (:68).
+  - 18,936 is exactly check I4's `expected_label_images` for the current fits (3575369; as quoted in the converter
+    section of `docs/experiments_plan.md`).
+- [Certain] So the missing labels came from missing image files, and that defect is fixed. Gender and the missing
+  actor are not: both are decided inside the fit (the re-fit, 4e).
+- **Do not train on `labels_rebuilt`**: same old fits, gender reversed. The labels to train on come from the re-fit
+  (`threedpw_anny_v23/labels`, 4e). The re-check of `labels_rebuilt` (4c) is optional and was not run.
+- Do not confuse these counts with the ones expected after the re-fit (4e): the v23 labels should have fewer
+  images, ~16,900, with about the same number of labelled people (22,753 here), because both actors then share one
+  image.
+
+**Next, in this order:** (1) Re-fit with the converter fix, which is on `main` (v2.3: gender by Anny's convention,
+one shared frame grid for both actors): all 87 tasks into a **new** folder, rebuild, re-check, steps 0-5 in 4e
+(section 5, item 7). (2) Only then train or test anything on 3DPW (the final model, section 5, item 7).
 
 ### 3.6 Pilot noise (read every 2-epoch result against this)
 
@@ -958,16 +984,15 @@ All commands run on the cluster in `/netscratch/najib/multi-hmr`, after `git pul
 3579266). Results in 3.2, 3.3 and 3.5. **Done on 16 Oct:**
 - the exp6 v5 compare panels were looked at (4a; result in 3.2);
 - the real-image demo with the fix ran (job 3581312, 4b; result in 3.2, "Real images");
-- the image-folder check is done and the 8 folders were re-extracted (4c; counts in 3.5).
+- the image-folder check is done and the 8 folders were re-extracted (4c; counts in 3.5);
+- the second label rebuild ran (job 3581320, 4c): train 6,437 / validation 2,777 / test 9,722 label images, 18,936
+  in all, exactly what the current fits imply (3.5). Missing labels fixed; old fits, so not for training.
 
 **Still pending, in this order:**
-1. The log of the second label rebuild, job 3581320 (4c). Expected train ~6,437, validation ~2,777, test 9,722:
-   18,936 label images in all, the count the current fits imply, as in the converter section of
-   `docs/experiments_plan.md`.
-2. The 3DPW re-fit with the converter fix (v2.3 flags, on `main`): steps 0-5 in 4e, one at a time. Start each step
+1. The 3DPW re-fit with the converter fix (v2.3 flags, on `main`): steps 0-5 in 4e, one at a time. Start each step
    only after the previous one has finished, and steps 2 and 3 only after the step before them passed its checks.
    Not started.
-3. Then the final model: a v9-style fine-tune from the fixed v5 with the depth fix, the bone fix and the fixed 3DPW
+2. Then the final model: a v9-style fine-tune from the fixed v5 with the depth fix, the bone fix and the fixed 3DPW
    labels (section 5, item 7). No script or command exists for it yet (NEEDS CODE).
 
 Also open: the x20 depth run (4d; the command was given on 14 Oct, the submission was never confirmed).
@@ -975,13 +1000,12 @@ Also open: the x20 depth run (4d; the command was given on 14 Oct, the submissio
 **Status block.** `squeue -u najib` lists only queued and running jobs. This block also shows finished jobs and their
 outputs (`;` so that a missing folder does not stop the rest):
 ```
-cd /netscratch/najib/multi-hmr; sacct -u najib -S 2026-10-14 --format=JobID,JobName%28,State,Elapsed; ls -lt logs | head -20; ls results/experiments/exp1_depth_anchor/; ls -l logs/3dpw-labels-3581320.out
+cd /netscratch/najib/multi-hmr; sacct -u najib -S 2026-10-14 --format=JobID,JobName%28,State,Elapsed; ls -lt logs | head -20; ls results/experiments/exp1_depth_anchor/
 ```
-What to look for: job names `exp1-depth-anchor` and `3dpw-labels` (job 3581320) in `sacct` (State `COMPLETED`,
-`FAILED`, `TIMEOUT`, ...); `long_pc_dist20` under `exp1_depth_anchor/`; the rebuild log
-`logs/3dpw-labels-3581320.out` (read it as in 4c). If `sacct` prints an error (accounting may be off on this
-cluster [Guessing]), use the `ls` lines alone. **Resubmit a job only if both `sacct` and its output folder show
-nothing.** If the folder exists but the job failed, ask for its `.out` and `.err` before resubmitting.
+What to look for: job name `exp1-depth-anchor` in `sacct` (State `COMPLETED`, `FAILED`, `TIMEOUT`, ...);
+`long_pc_dist20` under `exp1_depth_anchor/`. (The label rebuild 3581320 is done and read, 4c.) If `sacct` prints an
+error (accounting may be off on this cluster [Guessing]), use the `ls` lines alone. **Resubmit a job only if both
+`sacct` and its output folder show nothing.** If the folder exists but the job failed, ask for its `.out` and `.err` before resubmitting.
 
 ### 4a. exp6 compare panels (done early 16 Oct; v5 panels seen)
 
@@ -1034,13 +1058,14 @@ cd /netscratch/najib/multi-hmr && DEMO_MODELS="anny_s2_shape_v5|00099 exp6_v5_bo
 - The four-block route of the earlier version (edit `MODELS` in the script, commit, sbatch) is not needed.
 - Fingers: a run with `--relax_hands 0` NEEDS a copy of the demo call (3.3).
 
-### 4c. Image folders re-extracted (16 Oct); label rebuild 3581320 pending (pending item 1)
+### 4c. Image folders re-extracted and labels rebuilt (16 Oct, job 3581320; done)
 
 **Done on 16 Oct:**
 - The image-folder check. The first label rebuild (job 3579266) had given the same counts as the old labels (3.5).
 - The re-extraction of the image folders of the 8 affected sequences. Counts in 3.5; captureSelfies_00 went from 480
   to 750 files.
-- A second rebuild, submitted as job 3581320. Its log `logs/3dpw-labels-3581320.out` has not been read yet.
+- A second rebuild, job 3581320. Its log `logs/3dpw-labels-3581320.out` was read on 16 Oct: train 6,437 /
+  validation 2,777 / test 9,722 label images, as expected (full counts in 3.5).
 
 To re-count the folders (login node, seconds; `courtyard_jacket_00` is a control with 412 labelled images,
 3579266:12; the last number is the count of sequence folders, 60 if all are there, 3575369:25-27):
@@ -1048,35 +1073,31 @@ To re-count the folders (login node, seconds; `courtyard_jacket_00` is a control
 cd /netscratch/najib/multi-hmr && for s in courtyard_arguing_00 courtyard_backpack_00 courtyard_basketball_00 courtyard_bodyScannerMotions_00 courtyard_box_00 courtyard_capoeira_00 courtyard_captureSelfies_00 courtyard_basketball_01 courtyard_jacket_00; do echo "$s $(ls data/3DPW/imageFiles/$s 2>/dev/null | wc -l)"; done; ls data/3DPW/imageFiles | wc -l
 ```
 
-**Reading the log of 3581320**, in this order:
-1. **Output folder.** Each split's summary line ends in `-> <folder>/index_<split>.txt`
-   (`build_threedpw_anny_labels.py:143-146`). It should be `threedpw_anny_full/labels_rebuilt`.
-   - [Likely] the job was submitted with the command below.
-   - Without `OUT=`, the script writes into the production `threedpw_anny_full/labels` (`run_build_labels.sh:18`):
-     the labels v9/v10 trained on. If the summary lines show `threedpw_anny_full/labels/index_...`, stop and tell
-     the student before anything else: those labels were overwritten. The 3579266 copy in `labels_rebuilt` has the
-     same counts as the old labels (3.5) [Likely the same files: same fits, same builder].
-2. **Counts.** Expected [Likely]: train ~6,437 (was 4,451), validation ~2,777 (was 2,458; +319 from
-   `courtyard_basketball_01`), test 9,722 unchanged (3575369:31, :33, :35).
-   - Crosscountry is already outside the 2,777 and stays at 0.
-   - The six train sequences and `courtyard_basketball_01` should no longer show 0 images, and captureSelfies_00
-     should show more than 319.
-   - The "unconverted tasks" list should stay empty.
-3. **If train stays at 4,451**, missing images were not the cause. Ask for
-   `ls data/3DPW/imageFiles/courtyard_arguing_00 | head -3` (file names, for example) before doing anything else.
+**What the log of 3581320 showed** (every check this section asked for passed):
+1. **Output folder** [Certain]: `threedpw_anny_full/labels_rebuilt` in every summary line (3581320:25, :39, :65;
+   the summary format is `build_threedpw_anny_labels.py:143-146`). The production `threedpw_anny_full/labels` (what
+   v9/v10 trained on; `run_build_labels.sh:18` is the default without `OUT=`) was not overwritten.
+2. **Counts** [Certain]: train 6,437 (was 4,451), validation 2,777 (was 2,458; +319 from `courtyard_basketball_01`),
+   test 9,722 unchanged (old: 3575369:31, :33, :35); 18,936 label files, 22,753 people (:67).
+   - The six train sequences and `courtyard_basketball_01` no longer show 0 images; captureSelfies_00 has 401 (was
+     319).
+   - Crosscountry stays at 0 (162 frames dropped by visibility, :34, :39); it was never in the 2,777.
+   - The "unconverted tasks" list is empty (:68).
+3. So missing image files were the cause. Nothing more to ask for.
 
 The rebuild command given in the 15-Oct version of this section (~1 min of CPU, limit 30 min):
 ```
 cd /netscratch/najib/multi-hmr && OUT=/netscratch/najib/multi-hmr/threedpw_anny_full/labels_rebuilt sbatch slurm/data/run_build_labels.sh
 ```
-If the counts match, re-check the new labels (not run yet):
+Optional re-check of the rebuilt labels (~19-20 min; not run). Not needed for the plan: the labels to train on
+come from the re-fit, whose own check is step 5 in 4e:
 ```
 cd /netscratch/najib/multi-hmr && LABELS=threedpw_anny_full/labels_rebuilt OUT=results/diagnostics/check_3dpw_conversion_rebuilt sbatch slurm/diagnostics/check_3dpw_conversion.sh
 ```
 - Training scripts hard-code the old folder (`slurm/train/train_teacher_v9_mixed.sh:55`,
   `train_v10_scratch_mixed.sh:45`, `train_distill_vits_v8_final.sh:42`). Never overwrite `labels/`.
-- The rebuild does **not** fix gender or the missing actor; both are decided inside the fit (the re-fit with the
-  converter fix, 4e).
+- The rebuild did **not** fix gender or the missing actor; both are decided inside the fit (the re-fit with the
+  converter fix, 4e). Do not train on `labels_rebuilt`.
 - If a re-extraction is ever needed again, the full `unzip -n -q ... -d data/3DPW` command is in the 15-Oct copy of
   this section (`git show 2ff8594:docs/handover.md | grep "unzip -n -q"`). `-n` never overwrites existing files.
 
@@ -1095,7 +1116,7 @@ cd /netscratch/najib/multi-hmr && ALPHA_DIST=20 ALPHA_TRANSL=20 MAX_ITER=10000 R
 - Use x20 in a v9 fine-tune only if it clearly beats x5 on root error and size with PVE and recall no worse.
   Otherwise keep x5.
 
-### 4e. Command cookbook, and the 3DPW re-fit (pending item 2)
+### 4e. Command cookbook, and the 3DPW re-fit (pending item 1)
 
 All from `/netscratch/najib/multi-hmr` after `git pull`. **NEEDS CODE** = a change must be made first (section 2,
 "Working without repo access"); the file and function are named.
@@ -1157,7 +1178,7 @@ cd /netscratch/najib/multi-hmr && SUMMARY_ONLY=1 RUN=anny_s2_shape_v5_00099_n200
 cd /netscratch/najib/multi-hmr && SUMMARY_ONLY=1 RUN=anny_v10_scratch_mixed_00290_n200_s0_metacarpal2_L-metacarpal2_R-metacarpal3_R bash slurm/experiments/exp6_bone_fix.sh
 ```
 
-**3DPW re-fit with the converter fix: steps 0-5 (pending item 2; section 5, item 7).** The commands are copied
+**3DPW re-fit with the converter fix: steps 0-5 (pending item 1; section 5, item 7).** The commands are copied
 unchanged from `docs/experiments_plan.md`, section "3DPW converter fix (v2.3 flags)" (`plan :593-843`), which also
 gives the background, the guards, the runtime estimate and the full pass criteria. What is on `main`:
 - `scripts/data/smpl_to_anny.py` v2.3 has two new flags, `--gender_convention` (default `makehuman` = old: men 1.0;
@@ -1244,8 +1265,8 @@ running jobs, so a job it no longer shows has ended. Analyse each log only after
   18.9 / 18.3 mm). Men should improve; women may lose ~2-3 mm in V1.
 - Label counts: ~16,200-18,936 label images, about 16,900 (train ~5,900, validation ~2,650, test ~8,300), with about
   22,753 labelled people. Read this against the 18,936 the old fits imply (the upper bound, and what the rebuild
-  3581320 should give, 4c), not against the old index's 16,631. **Fewer images** than 18,936 with about the same
-  people is expected, not a loss: on one shared grid both actors of a two-person sequence sit on the same image
+  3581320 gave, with 22,753 people; 3.5), not against the old index's 16,631. **Fewer images** than 18,936 with
+  about the same people is expected, not a loss: on one shared grid both actors of a two-person sequence sit on the same image
   instead of on two.
 
 **Using the v23 labels.** The training and 3DPW evaluation scripts set
@@ -1260,10 +1281,10 @@ the baseline on v23 first.
 
 ## 5. Next steps, in priority order
 
-Analyse any new log only after the student says "done". The pending chain, in order (section 4, 0a steps 3-5):
-(1) the rebuild log 3581320 (item 5; minutes, can go first on any day); (2) the 3DPW re-fit, steps 0-5 in 4e
-(item 7); (3) the final model (end of item 7; no script yet). Item 3 can run before (3), or next to (2) if GPUs are
-free. Item 6 depends on the supervisor's answer to slide 17.
+Analyse any new log only after the student says "done". The pending chain, in order (section 4, 0a steps 3-4):
+(1) the 3DPW re-fit, steps 0-5 in 4e (item 7); (2) the final model (end of item 7; no script yet). Item 3 can run
+before (2), or next to (1) if GPUs are free. Item 6 depends on the supervisor's answer to slide 17. The label
+rebuild (item 5) is done.
 
 1. **exp6 panels: done (early 16 Oct).** The 12 v5 compare panels show thin-stalk necks without the correction and
    normal width with it (3.2, "Visual check"; figure `docs/figures/neck_before_after_v5.jpg`, deck slide 8). So "the
@@ -1294,10 +1315,12 @@ free. Item 6 depends on the supervisor's answer to slide 17.
    corrected without breaking upperarm01.L between them. New behaviour behind a default-off option. Only worth it if
    v10 stays in the thesis. The chain-preserving head correction (plan :558) is [Likely] no longer needed for v5
    (head 11.2 deg after the fine-tune).
-5. **3DPW images, then rebuild.** The image check and the re-extraction of the 8 folders are done (16 Oct; counts
-   in 3.5). The second rebuild was submitted as job 3581320; its log is not read yet (pending item 1).
-   - Read it as in 4c: output folder first, then counts against train ~6,437 / validation ~2,777 / test 9,722.
-   - If they match, re-check (4c). This would bring back the 31% missing train labels without a re-fit [Likely].
+5. **3DPW images, then rebuild: done (16 Oct).** The image check and the re-extraction of the 8 folders are done
+   (counts in 3.5). The second rebuild, job 3581320, gave train 6,437 / validation 2,777 / test 9,722 label images,
+   18,936 in all, exactly what the current fits imply (3.5, 4c): the 31% missing train labels are back.
+   - Written into `threedpw_anny_full/labels_rebuilt` from the old fits: gender still reversed, the second actor
+     still missing. Do not train on it; the re-fit (item 7) is next.
+   - The re-check of `labels_rebuilt` (4c) is optional and not run.
    - The label build after the re-fit (item 7) uses the same images, so they are ready for it.
 6. **Supervisor's decision (slide 17).** Fine-tune v9 now with `--gt_center_joint person_center` and x5, or first fix
    the labels (item 7) and then fine-tune? The student proposes labels first, because 3DPW is 30% of each batch and the
@@ -1323,16 +1346,16 @@ free. Item 6 depends on the supervisor's answer to slide 17.
      a folder (`train.py:400-410`), so a run written there deletes checkpoints (its own low epochs, or old v9 ones).
    - Control arm, same script and weight: `--gt_center_joint root` (still x5), output `.../exp7_v9_depth/v9e62_root_dist5`.
    - Labels (`--mix_3dpw_labels`): slide-17 option 1 ("now") = `/netscratch/najib/multi-hmr/threedpw_anny_full/labels`
-     (what v9 trained on; gender reversed, 31% of train missing) or `labels_rebuilt` once item 5 brings the missing
-     sequences back (gender still reversed; the second rebuild 3581320 should bring them back, log not read yet).
-     Option 2 ("labels first") = `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels` after item 7.
+     (what v9 trained on; gender reversed, 31% of train missing). `labels_rebuilt` has that 31% back (job 3581320,
+     item 5), but from the same old fits (gender reversed, second actor missing): do not train on it; the re-fit is
+     next. Option 2 ("labels first") = `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels` after item 7.
    - Time: the v9 script's comment expects ~8-10 min per 1,000-iteration epoch at batch 4
      (`train_teacher_v9_mixed.sh:16`; an estimate, never measured), so 10 epochs ~1.3-1.7 h plus evaluations. Not
      measured with 3DPW batches; the exp6 fine-tune on AnnyOne alone took 315 s per epoch (12.7 images/s,
      3579014:66). Say "about 1 to 2 hours". `--time=04:00:00`.
    - Read: trace the last checkpoint of each arm with `diag_holdout.sh` and a `TAG` (4e); root error, slope, size,
      PVE, recall vs the control. The training log's 3DPW-val numbers are against converted labels only.
-7. **3DPW labels: re-fit with the converter fix (pending item 2; after the meeting, before any 3DPW claim).**
+7. **3DPW labels: re-fit with the converter fix (pending item 1; after the meeting, before any 3DPW claim).**
    - The converter fix is on `main` (v2.3): two default-off flags in the fitter (`--gender_convention anny`,
      `--frame_grid shared`), `OUT_ROOT` / `REFIT_FLAGS` and three guards in the array job, and the post-check
      `scripts/data/check_refit_task.py` (`docs/experiments_plan.md`, section "3DPW converter fix (v2.3 flags)").
@@ -1341,10 +1364,10 @@ free. Item 6 depends on the supervisor's answer to slide 17.
      check task, its post-check, all 87 tasks into `threedpw_anny_v23`, then the labels and the conversion check.
    - The gender refit confirmed the flip only for men; check the women in the new check I1 (gender labels).
    - If the meeting moves to Monday, the re-fit (~5-6 h wall time, not measured) could start before it.
-   - The images are re-extracted (item 5), so the label build after the re-fit finds them. The builder skips frames
-     without image files.
+   - The images are re-extracted (item 5; the rebuild 3581320 found all of them), so the label build after the
+     re-fit finds them. The builder skips frames without image files.
 
-   **Then the final model (pending item 3): a v9-style fine-tune from the fixed v5, with the depth fix, the bone fix
+   **Then the final model (pending item 2): a v9-style fine-tune from the fixed v5, with the depth fix, the bone fix
    and the fixed 3DPW labels** (after the re-fit and its check pass). **No script or command exists for it yet
    (NEEDS CODE).** It is v9's recipe (v5 + 30% 3DPW-train, `slurm/train/train_teacher_v9_mixed.sh`), but starting
    from the fixed v5 and trained on the fixed labels, with the depth fix on.
@@ -1480,10 +1503,10 @@ free. Item 6 depends on the supervisor's answer to slide 17.
   the train split; the 3.2% overall is only WARN.
 - "The label builder ran before all fits finished, so a rebuild recovers the missing labels." Wrong: the rebuild
   (job 3579266) gives the same counts (train 4,451, validation 2,458, test 9,722; :25, :39, :65), and its "unconverted
-  tasks" list is empty (:68), so all fits exist. [Likely] cause: the builder skips frames without an image file
+  tasks" list is empty (:68), so all fits exist. Cause: the builder skips frames without an image file
   (`build_threedpw_anny_labels.py:123-125`), and the image folders of 8 sequences were incomplete on the cluster. They
-  were re-extracted 16 Oct (captureSelfies_00: 480 -> 750 files); whether that brings the labels back is the second
-  rebuild, job 3581320 (3.5, 4c).
+  were re-extracted 16 Oct (captureSelfies_00: 480 -> 750 files), and the second rebuild (job 3581320) then gave
+  train 6,437, validation 2,777, test 9,722, exactly what the fits imply (3.5).
 
 **Numbers and workflow (corrected while checking this file against the logs)**
 - "Job 3571601 is an earlier sampler run." It is measurement only (`SKIP_TRAIN=1`, 3571601:54): age index and batch
@@ -1503,9 +1526,9 @@ free. Item 6 depends on the supervisor's answer to slide 17.
   stays [Likely].
 
 **Still untested claims; keep the tag**
-- "The image folders of 8 3DPW sequences are missing on the cluster (incomplete unzip)." Re-extracted on 16 Oct;
-  captureSelfies_00 went from 480 to 750 files, so at least that one was incomplete [Certain]. Whether this brings
-  the labels back: the rebuild log 3581320 (4c).
+- "The image files were missing because of an incomplete unzip." That they were missing is now shown: after the
+  re-extraction the rebuild 3581320 gives all 18,936 expected label images (3.5) [Certain]. The unzip as the cause
+  stays [Likely]: captureSelfies_00 had 480 of 750 files; for the other seven there is no count from before.
 - "The recall drop is a cohort artefact."
 - "On real images the correction, not the 2-epoch fine-tune, removes the thin neck." The demo (job 3581312) compares
   v5 with the fine-tuned checkpoint, so both changed. The holdout control without the fix keeps girth 0.461 (3.2).
@@ -1527,8 +1550,8 @@ Trust this file over these. Fix them when there is time (one commit per doc).
 - :119 "No improvement is claimed until its holdout trace has been re-run" (it has).
 - :126 "Future work (not measured)" (both measured, both null). :128 "Nothing from them has been measured yet."
 - :211-214 fit description omits the reversed gender and the per-person stride.
-- :227 "4,451 train / 2,458 validation" without the expected 6,437 / 2,777, and without the cause: a rebuild gave the
-  same counts (3579266), [Likely] image files missing.
+- :227 "4,451 train / 2,458 validation" without the cause (image files missing on the cluster) and without the
+  rebuild of 16 Oct (job 3581320, `labels_rebuilt`, old fits): 6,437 / 2,777 / 9,722 (3.5).
 - :312-325 3DPW-val column needs the converted-label caveat. :331 v4_restpose reading ignores the neck flip / girth 0.46.
 - :36-80 layout omits `bone_fix.py`, `scripts/diagnostics`, `scripts/experiments`, `slurm/diagnostics`,
   `slurm/experiments`, `docs/deck_src`. :243 "x4" is effectively x2.41 (boost renormalisation).
@@ -1607,8 +1630,8 @@ need not be read one by one. (`a01eb5b`, the real-image figures, is a normal com
 - the section "3DPW converter fix (v2.3 flags)" of `docs/experiments_plan.md`, the source of the re-fit steps in 4e.
 
 **Getting this file.** On the cluster: `cd /netscratch/najib/multi-hmr && git pull`. Then
-`grep -c '^## 0a\. Tomorrow' docs/handover.md` must print `1`, and `grep -c ALLOW_DEFAULT_FLAGS docs/handover.md` a
-number above `0` (top of file). To give it to ChatGPT, download
+`grep -c '^## 0a\. Tomorrow' docs/handover.md` must print `1`, and `grep -c ALLOW_DEFAULT_FLAGS docs/handover.md` and
+`grep -c 7,589 docs/handover.md` each a number above `0` (top of file). To give it to ChatGPT, download
 `https://raw.githubusercontent.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/main/docs/handover.md`
 (save the page as `handover.md`) and attach it. The deck (18 slides) is at
 `https://raw.githubusercontent.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/main/docs/supervisor_update_2026-10-16.pptx`.
@@ -1637,7 +1660,7 @@ number above `0` (top of file). To give it to ChatGPT, download
 | 3579015 | exp6_bone_fix | exp6 on v10: metacarpal2.L/2.R/3.R, no training; PASS (:86) |
 | 3579266 | 3dpw-labels | label rebuild into `threedpw_anny_full/labels_rebuilt`: the same counts as the old labels (:25, :39, :65, :67). Log name `logs/3dpw-labels-3579266.out` (dash, not underscore) |
 | 3581312 | demo-compare | real-image demo: v5 00099 vs `exp6_v5_bonefix_00001` (the exp6 fine-tuned checkpoint; `[bone_fix] ON, 4 bone(s)` from its args, :427, :607), `DEMO_MODELS` route, 4 photos + 8 3DPW-test frames. By eye, on the 8 of these 12 images the student sent: thin necks with v5, normal width with the fix (the fixed side also had the 2-epoch fine-tune; 3.2). Log name `logs/demo-compare-3581312.out` |
-| 3581320 | 3dpw-labels | second label rebuild, after the image folders of 8 sequences were re-extracted on 16 Oct. Files per folder after extraction: courtyard_arguing_00 765, backpack_00 1,262, basketball_00 468, bodyScannerMotions_00 1,257, box_00 1,041, capoeira_00 435, captureSelfies_00 480 -> 750, basketball_01 958. Log `logs/3dpw-labels-3581320.out` not read yet; expected train ~6,437, validation ~2,777, test 9,722 (4c) |
+| 3581320 | 3dpw-labels | second label rebuild, after the image folders of 8 sequences were re-extracted on 16 Oct. Files per folder after extraction: courtyard_arguing_00 765, backpack_00 1,262, basketball_00 468, bodyScannerMotions_00 1,257, box_00 1,041, capoeira_00 435, captureSelfies_00 480 -> 750, basketball_01 958. Into `threedpw_anny_full/labels_rebuilt`, from the old v2.2 fits. Result: train 6,437 images / 7,589 people (:25), validation 2,777 / 3,314 (:39; crosscountry still 0, its 162 frames dropped by visibility, :34), test 9,722 / 11,850 (:65); 18,936 label files, 22,753 people (:67), exactly what the fits imply; "unconverted tasks" empty (:68). Missing labels fixed; gender and missing actor not. Log name `logs/3dpw-labels-3581320.out` |
 
 **Experiments, one line each:** exp1 depth anchor (placement much better, slope not, likely cost; rule failed);
 exp2 children sampler (null); exp3 global head loss (null); exp4 fingers crop + region-norm (both null); exp5
@@ -1661,7 +1684,8 @@ epochs with the fix" when shown (same for `neck_before_after_3dpw_bar.jpg`; slid
 `docs/deck_src/README.md`. No setup beyond `cd docs/deck_src && npm ci && node build.js`, on a machine with node >= 18
 and internet access for `npm ci` (probably the student's laptop; the cluster may lack node). Checked on 15 Oct: the
 rebuild gives the same slides, theme, media and layouts as the published pptx, and byte-identical notes. The notes
-and the pptx on `main` were rebuilt from the current `build.js` on 16 Oct (~05:05) and match it. Notes are generated
+and the pptx in `docs/` were rebuilt from the current `build.js` on 16 Oct (~11:40 UTC, with the label rebuild
+result on slides 6 and 16 and in notes 6, 16 and 17) and match it. Notes are generated
 from `build.js`; never edit the `.md` alone.
 
 **Before the meeting** (whichever date holds): open the pptx once in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9,
@@ -1671,13 +1695,14 @@ LibreOffice render.
 
 **Check a copy** (after `git pull`; the pptx itself must also be opened once):
 ```
-cd /netscratch/najib/multi-hmr && unzip -l docs/supervisor_update_2026-10-16.pptx | grep -c 'ppt/slides/slide[0-9]*\.xml$'; grep -c "before and after the fix" docs/deck_src/build.js; grep -c runForBus docs/supervisor_talk_notes_2026-10-16.md; grep -o "check pending\|image folders will show it\|I will check, re-extract and rebuild\|check is still to do\|I have not checked that yet\|empty or short" docs/deck_src/build.js | wc -l
+cd /netscratch/najib/multi-hmr && unzip -l docs/supervisor_update_2026-10-16.pptx | grep -c 'ppt/slides/slide[0-9]*\.xml$'; grep -c "before and after the fix" docs/deck_src/build.js; grep -c runForBus docs/supervisor_talk_notes_2026-10-16.md; grep -o "check pending\|image folders will show it\|I will check, re-extract and rebuild\|check is still to do\|I have not checked that yet\|empty or short\|3581320 pending\|3581320, is pending" docs/deck_src/build.js | wc -l
 ```
 The current deck prints `18`, `2`, `1`, `0` (18 slides; slide 8's title and its notes; the slide 8 "If asked" line on
-the four unseen demo images; no line that still calls the image check undone). Anything else is an older copy: ask
-the student to `git pull` again. If no current copy can be had before the meeting, hand-edit the pptx in PowerPoint
-from the slide list below (slide text and speaker notes), then port the changes into `build.js` after the meeting and
-rebuild, so the `.md` notes match again.
+the four unseen demo images; no line that still calls the image check undone or the label rebuild pending; the
+earlier 16-Oct copy prints `7` here). Anything else is an older copy: ask the student to `git pull` again. If no
+current copy can be had before the meeting, hand-edit the pptx in PowerPoint from the slide list below (slide text
+and speaker notes), then port the changes into `build.js` after the meeting and rebuild, so the `.md` notes match
+again.
 
 **Slides** (current titles; quotes from `build.js`, which is the reference if a wording here differs):
 1. Multi-HMR with Anny: what this week found (agenda). "Neck: two bones turned half a turn; a pilot fix passes (one
@@ -1692,9 +1717,10 @@ rebuild, so the `.md` notes match again.
    "possibly" in `build.js` (in the slide 4 card and in the slide 4 `N()` notes).
 5. 3DPW to Anny: how the labels are made.
 6. 3DPW labels: joints and surface pass, three defects. "Labels missing" bullet: "6 train sequences, part of
-   captureSelfies_00, val basketball_01. Images re-extracted; second rebuild job 3581320 pending." The notes give the
-   3579266 counts, say the old guess "the builder ran before the fits finished" is wrong, and give the re-extraction
-   (captureSelfies_00 480 -> 750 files) and the pending rebuild.
+   captureSelfies_00, val basketball_01 (image files missing). Fixed 16 Oct: train 4,451 → 6,437, val 2,458 →
+   2,777." The notes give the 3579266 counts, say the old guess "the builder ran before the fits finished" is wrong,
+   and give the re-extraction (captureSelfies_00 480 -> 750 files) and the 3581320 result (train 6,437, validation
+   2,777, test 9,722; old fits, gender still reversed, not trained on before the re-fit).
 7. Neck: two half-turned bones, and a pilot fix. Table v5 before | fix, no training | fix + 2-epoch fine-tune |
    control (no fix): neck02 175.6 / 4.5 / 4.7 / 175.7 deg, head 177.9 / 12.4 / 11.2 / 177.9, neck thickness 0.46 /
    1.00 / 1.00 / 0.46, neck-skin error 27.3 / 10.8 / 10.7 / 27.9 mm, body PVE 70.5 / 71.3 / 68.8 / 76.9, head
@@ -1743,9 +1769,9 @@ rebuild, so the `.md` notes match again.
 16. Still open, and what I test next (7 items). Item 1, "Bone flips: confirm the pilot fix": "Neck: a longer run;
     real images by eye only (slide 8). v10's left arm: two-sided fix, not built yet." Item 3: "No result yet for the
     ×20 run at 10 epochs." Item 5: "Both v5 and the depth fix miss them (4 of 12 holdout renders): not the fix.
-    Likely detection; not counted." Item 7, "3DPW labels: three defects (slide 6)": "Images of the missing sequences
-    re-extracted 16 Oct; second rebuild job 3581320 pending. Then gender (m → 0, f → 1), one shared frame grid,
-    re-fit all 87 tasks, rebuild, re-check. Proposed: only then use 3DPW." Notes: "the 8 real images I have seen so
+    Likely detection; not counted." Item 7, "3DPW labels: three defects (slide 6)": "Missing labels fixed 16 Oct
+    (images re-extracted; train 4,451 → 6,437 images). Then gender (m → 0, f → 1), one shared frame grid, re-fit
+    all 87 tasks, rebuild, re-check. Proposed: only then use 3DPW." Notes: "the 8 real images I have seen so
     far".
 17. What I claim today, and what I do not (+ the question to the supervisor). Claimed: "in one pilot run, a fixed
     correction plus a 2-epoch fine-tune restores the neck and passes the fine-tune checks"; two flipped hand bones
@@ -1763,13 +1789,12 @@ rebuild (or hand-edit the pptx as above).
 
 | result | slide text | speaker notes | what changes |
 |---|---|---|---|
-| label rebuild 3581320 (4c; pending item 1) | 6 ("Labels missing": "... second rebuild job 3581320 pending."), 16 item 7 (first sentence) | 6 (main and If asked, "Missing labels"), 16 (main and If asked, "3DPW labels"), 17 (If asked, "3DPW labels") | the rebuilt train / validation / test counts (expected ~6,437 / ~2,777 / 9,722); if train stays at 4,451, that the image cause is ruled out (4c) |
-| 3DPW re-fit and the v23 check (4e; pending item 2) | 6 (the gender and two-person defects), 16 item 7 ("Then gender ..., re-fit all 87 tasks, rebuild, re-check."), 17 (question box) | 6 (If asked, "Gender"), 16 (main: "Then gender, frame grid and a re-fit of all 87 tasks, before any 3DPW test."; If asked: "about 40 GPU hours ... 5 to 6 hours with 8 GPUs", and "otherwise old and new fits would mix without a warning", which is already out of date: since v2.3 the task script refuses instead of mixing, 4e), 17 (If asked, "Option 2") | check I1 / I3 results, the v23 label counts (expected ~16,900 images), the measured runtime |
+| 3DPW re-fit and the v23 check (4e; pending item 1) | 6 (the gender and two-person defects), 16 item 7 ("Then gender ..., re-fit all 87 tasks, rebuild, re-check."), 17 (question box) | 6 (If asked, "Gender"), 16 (main: "Then gender, frame grid and a re-fit of all 87 tasks, before any 3DPW test."; If asked: "about 40 GPU hours ... 5 to 6 hours with 8 GPUs", and "otherwise old and new fits would mix without a warning", which is already out of date: since v2.3 the task script refuses instead of mixing, 4e), 17 (If asked, "Option 2") | check I1 / I3 results, the v23 label counts (expected ~16,900 images), the measured runtime |
 | the other four demo images (runForBus, sitOnStairs, fencing frames, one photo) | none | 8 (If asked: "I have looked at 8 of these 12 images so far ..."), 16 (main: "the 8 real images I have seen so far"; If asked: "I have looked at 8 of these 12 images so far"), 17 (If asked: "in the 8 of its 12 images I have seen") | how many of the 12 show normal necks with the fix |
 | longer fine-tune with the fix (4e; section 5, item 3) | 7 ("Next:" line), 16 item 1 ("a longer run") | 7 (If asked), 16 (main: "I still need a longer run") | neck02, head, girth, global head, PVE, recall at 10 epochs against the 10-epoch control |
 | `long_pc_dist20` (4d) | 13 (table note), 16 item 3 ("No result yet for the ×20 run at 10 epochs.") | 13 (main), 16 (If asked), 17 (If asked: "Five, not twenty, because ...") | root error, size, slope, PVE, recall of x20 for 10 epochs next to x5 for 10 epochs |
 | the supervisor's answer (slide 17) | 16 item 7 ("Proposed: only then use 3DPW."), 17 (question box) | 16, 17 | record it in the paragraph below |
-| the final model's start, if option 2 is chosen (section 5, item 7; pending item 3) | 17 (question box: "Fine-tune v9 ... with the fixed targets and depth ×5? Or first fix gender and frame grid, re-fit all 3DPW tasks, then fine-tune?") | 17 (If asked: "Option 1", with "75.0 at epoch 62, the planned start" and "about 1 to 2 hours"; "Option 2"; "Bone flips in v9 and v10", with a bone fix "estimated on v9 first") | that the final model starts from the fixed v5 (`exp6_v5_bonefix_00001`) and inherits its bone fix; its length, set from the deadline |
+| the final model's start, if option 2 is chosen (section 5, item 7; pending item 2) | 17 (question box: "Fine-tune v9 ... with the fixed targets and depth ×5? Or first fix gender and frame grid, re-fit all 3DPW tasks, then fine-tune?") | 17 (If asked: "Option 1", with "75.0 at epoch 62, the planned start" and "about 1 to 2 hours"; "Option 2"; "Bone flips in v9 and v10", with a bone fix "estimated on v9 first") | that the final model starts from the fixed v5 (`exp6_v5_bonefix_00001`) and inherits its bone fix; its length, set from the deadline |
 
 **The question on slide 17:** fine-tune v9 now (fixed targets, depth loss x5), or first fix the 3DPW labels, re-fit,
 then fine-tune? The student proposes the second. Record the supervisor's answer here after the meeting.
