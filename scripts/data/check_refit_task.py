@@ -21,8 +21,9 @@ Validity (3DPW campose_valid + the converter's NaN filter) comes from the sequen
 --seq_root/<split>/<seq>.pkl, or the pkl_path saved in the .npz), else from the valid_mask a v2.3 .npz saves.
 
 EXIT CODE: 0 = every new .npz follows the expected conventions; 1 = at least one violation (listed as 'VIOLATION');
-2 = bad input (no files, unreadable .npz). (--match_flags has its own codes, see USAGE.) Joint-error changes are reported, never graded (women's joint error can
-rise a little with the correct gender: check 3575369's refit test gave 13.7 -> 16.3 mm for them).
+2 = bad input (no files, unreadable .npz); --match_flags has its own codes (see USAGE). Joint-error changes are
+reported, never graded (women's joint error can rise a little with the correct gender: check 3575369's refit test gave
+13.7 -> 16.3 mm for them).
 
 USAGE
   # one sequence in the cluster layout (old fits optional):
