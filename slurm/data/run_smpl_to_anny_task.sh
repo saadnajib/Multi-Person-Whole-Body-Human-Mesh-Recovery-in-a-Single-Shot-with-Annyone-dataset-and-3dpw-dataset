@@ -20,6 +20,16 @@
 # 40-frame settings gave 15.8 mm): run the array with --array=<its line>, and
 # check the PER-JOINT table in its log is still ~16-20 mm. If it is worse,
 # raise WARM_ITERS / REFINE_ITERS.
+#
+# ENVIRONMENT OVERRIDES (defaults = the v2.2 run that made threedpw_anny_full):
+#   OUT_ROOT     fits directory (default /netscratch/najib/multi-hmr/threedpw_anny_full)
+#   REFIT_FLAGS  extra smpl_to_anny.py flags, appended to the call (default empty)
+# v2.3 refit (gender in Anny's convention + one frame grid for both actors), into a NEW directory:
+#   OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 \
+#   REFIT_FLAGS="--gender_convention anny --frame_grid shared" \
+#   sbatch --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
+# Array index = line number - 1 of threedpw_tasks.txt. A non-empty REFIT_FLAGS with the default
+# OUT_ROOT is refused: existing .npz files are skipped, so old and new fits would mix silently.
 # =============================================================================
 #SBATCH --job-name=smpl2anny-all
 #SBATCH --partition=A100-40GB,A100-80GB,L40S-AV,A100-RP,A100-PCI,L40S,RTXA6000,RTXB6000
@@ -37,7 +47,16 @@ mkdir -p /netscratch/najib/multi-hmr/logs
 TASKS="/netscratch/najib/multi-hmr/configs/threedpw_tasks.txt"
 EXTRACT_DIR="/netscratch/najib/multi-hmr/data/3DPW"
 SMPL_MODEL="/netscratch/najib/multi-hmr/models/smpl/SMPL_NEUTRAL.pkl"
-OUT_ROOT="/netscratch/najib/multi-hmr/threedpw_anny_full"
+DEFAULT_OUT_ROOT="/netscratch/najib/multi-hmr/threedpw_anny_full"
+OUT_ROOT="${OUT_ROOT:-${DEFAULT_OUT_ROOT}}"
+OUT_ROOT="${OUT_ROOT%/}"
+REFIT_FLAGS="${REFIT_FLAGS:-}"   # e.g. "--gender_convention anny --frame_grid shared" (v2.3)
+if [ -n "${REFIT_FLAGS}" ] && [ "${OUT_ROOT}" = "${DEFAULT_OUT_ROOT}" ]; then
+  echo "ERROR: REFIT_FLAGS='${REFIT_FLAGS}' with the default OUT_ROOT ${DEFAULT_OUT_ROOT}:"
+  echo "       the old fits would be mixed with new ones. Set OUT_ROOT to a new directory,"
+  echo "       e.g. OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23"
+  exit 1
+fi
 
 # ---- conversion settings ----------------------------------------------------
 STRIDE=3                      # 1 = every image; 3 = every third (10 fps)
@@ -54,6 +73,7 @@ LINE=$(sed -n "$((TASK_ID + 1))p" "${TASKS}")
 read -r SPLIT SEQ PERSON NFRAMES <<< "${LINE}"
 OUT="${OUT_ROOT}/${SPLIT}/${SEQ}_p${PERSON}.npz"
 echo "task ${TASK_ID}: ${SPLIT}/${SEQ} person ${PERSON} (${NFRAMES} frames) -> ${OUT}"
+echo "extra flags (REFIT_FLAGS): '${REFIT_FLAGS}'"
 
 if [ -f "${OUT}" ]; then
   echo "already converted - skipping"; exit 0
@@ -75,7 +95,7 @@ python scripts/data/smpl_to_anny.py \\
   --max_frames 1000000 --frame_stride ${STRIDE} \\
   --iters ${ITERS} --warm_iters ${WARM_ITERS} --refine_iters ${REFINE_ITERS} \\
   --free_phenotypes "${FREE_PHENOTYPES}" --set_phenotypes "${SET_PHENOTYPES}" \\
-  --shared_shape 1 --quiet 1
+  --shared_shape 1 --quiet 1 ${REFIT_FLAGS}
 RC=\$?
 if [ \$RC -eq 0 ] && [ -f "${OUT}.tmp.npz" ]; then
   mv "${OUT}.tmp.npz" "${OUT}"

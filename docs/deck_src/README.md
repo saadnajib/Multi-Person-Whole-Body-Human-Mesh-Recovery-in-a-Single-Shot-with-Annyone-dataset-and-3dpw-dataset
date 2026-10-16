@@ -1,9 +1,9 @@
 # Deck source: supervisor update, 16 October 2026
 
-`build.js` builds the 17-slide deck `docs/supervisor_update_2026-10-16.pptx` and its speaker notes
-`docs/supervisor_talk_notes_2026-10-16.md`. It is the script that made the published files on 15 Oct 2026, with two
-lines changed so that it runs outside the machine it was first built on (line 2 loads `./apply_theme.js`; line 70 finds
-the figures through `__dirname`).
+`build.js` builds the 18-slide deck `docs/supervisor_update_2026-10-16.pptx` and its speaker notes
+`docs/supervisor_talk_notes_2026-10-16.md`. It is the script that made the published files (on 15 Oct 2026, and the
+18-slide update on 16 Oct), with two lines changed so that it runs outside the machine it was first built on (line 2
+loads `./apply_theme.js`; line 70 finds the figures through `__dirname`).
 
 Files here:
 - `build.js`: the whole deck (layouts, slides, speaker notes) written with pptxgenjs, plus two post-processing steps.
@@ -32,7 +32,7 @@ byte-identical to `docs/supervisor_talk_notes_2026-10-16.md`.
 ## What `build.js` does when it runs
 
 1. Writes `supervisor_update.pptx` into the current folder.
-2. Calls `applyTheme("supervisor_update.pptx", THEME)` (`build.js:453`, from `apply_theme.js`): writes the deck's 12
+2. Calls `applyTheme("supervisor_update.pptx", THEME)` (`build.js:499`, from `apply_theme.js`): writes the deck's 12
    theme colours (theme "MeshDiag": dark `1B2233`, accent `0E7C86`, orange `E8792B`, green `3BA55D`, red `C0392B`,
    grey `7B8794`, yellow `F4C95D`; fonts Calibri; the object is `THEME` at `build.js:4-5`) into
    `ppt/theme/theme1.xml`, replacing the Office palette that pptxgenjs always writes there. Many shapes use scheme
@@ -49,8 +49,8 @@ soffice --headless --convert-to pdf supervisor_update.pptx
 pdftoppm -jpeg -r 80 supervisor_update.pdf slide
 ```
 
-LibreOffice wraps text slightly differently from PowerPoint. Slides 5, 6 and 16 are the tightest; check them in
-PowerPoint.
+LibreOffice wraps text slightly differently from PowerPoint. Slides 5, 6 and 17 are the tightest; check them in
+PowerPoint (`docs/handover.md` section 9 lists every slide to check).
 
 ## Publish
 
@@ -60,9 +60,8 @@ cp supervisor_talk_notes.md ../supervisor_talk_notes_2026-10-16.md
 ```
 
 Small edits (a number, a word) are faster directly in PowerPoint, e.g. a result that arrives just before the meeting
-(`docs/handover.md` section 9 lists which slides change for which result, and the lines that are already stale). Then
-the `.md` notes and `build.js` drift from the pptx: port the same edits into `build.js` afterwards, rebuild, and say so
-in the commit message.
+(`docs/handover.md` section 9 lists which slides change for which result). Then the `.md` notes and `build.js` drift
+from the pptx: port the same edits into `build.js` afterwards, rebuild, and say so in the commit message.
 
 ## History: how it was built the first time
 

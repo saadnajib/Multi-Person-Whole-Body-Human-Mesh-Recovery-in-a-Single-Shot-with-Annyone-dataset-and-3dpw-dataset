@@ -1,5 +1,5 @@
 """
-SMPL -> Anny parameter conversion for 3DPW.   (v2.2 - whole-dataset conversion)
+SMPL -> Anny parameter conversion for 3DPW.   (v2.3 - v2.2 plus two opt-in fixes)
 
 WHAT THIS DOES
 --------------
@@ -29,6 +29,37 @@ Optimisation is STAGED, which matters a lot for convergence:
     Stage 2  + body joint rotations
     Stage 3  + shape phenotypes  (shape last: it is the weakest signal and will
              otherwise absorb pose error by deforming the body)
+
+WHAT CHANGED IN v2.3 (after the label check, job 3575369)
+---------------------------------------------------------
+Two measured bugs, each fixed behind a flag whose DEFAULT reproduces v2.2 bit
+for bit, so the labels v7-v10 were trained on can still be rebuilt exactly:
+
+  1. GENDER WAS REVERSED (--gender_convention). v2.2 set the gender phenotype
+     to 1.0 for a 3DPW 'm' and 0.0 for an 'f' (MakeHuman's convention). Anny's
+     is the other way round: 0 = male, 1 = female (anny model_data.py
+     gender=['male', 'female']; shape_distribution.py 'gender <= 0.5 -> boys';
+     job 3575369 measured the rest stature 1.753 m at 0 vs 1.632 m at 1). Every
+     3DPW man was fitted with a female body and every woman with a male one.
+     The check's refit with the flipped value lowered the joint error for 72 of
+     73 men (median 19.2 -> 15.3 mm).
+       --gender_convention makehuman  (default) m -> 1.0, f -> 0.0  = v2.2
+       --gender_convention anny                 m -> 0.0, f -> 1.0  = correct
+  2. TWO ACTORS ON DIFFERENT FRAMES (--frame_grid). v2.2 applied the frame
+     stride inside each person's OWN valid-frame list, so after an invalid gap
+     the two actors of a sequence sat on different phases of the stride: 407
+     of 960 sampled two-person label images had a valid actor without a label,
+     all 'not fitted'.
+       --frame_grid per_person  (default) valid_idx[::stride]            = v2.2
+       --frame_grid shared      valid frames with frame % stride == 0, i.e.
+                                one absolute grid (0, 3, 6, ...) for every
+                                person: both actors are fitted on the same
+                                images wherever both are valid
+     A person valid from frame 0 without gaps gets the same frames either way.
+  Each .npz now also records gender_convention, frame_grid, frame_stride,
+  max_frames, gender_value and valid_mask (the per-frame validity used), and
+  says version '2.3'. The label builder and the check read none of these
+  version-gated: they look up keys by name.
 
 WHAT CHANGED IN v2.2 (after the 4-scene v2.1 run, job 3455549)
 ----------------------------------------------------------------
@@ -109,7 +140,8 @@ describing anyone. v2 attacks that from several sides:
      out by a factor of 3-10.
 
   3. SHAPE: 3DPW tells us the gender, so gender is FIXED from the .pkl
-     (--fix_gender 1), and only the phenotypes that move the skeleton are fit
+     (--fix_gender 1; which value a man gets is set by --gender_convention,
+     see v2.3), and only the phenotypes that move the skeleton are fit
      (--free_phenotypes age,height,proportions). Joints carry no information
      about weight, muscle, cup size, firmness or ethnicity; letting the
      optimiser move them only lets it hide skeleton error in them (v1: weight
@@ -146,15 +178,21 @@ There is no SMPL equivalent of Anny's phenotypes to map from. SMPL's shape
 space is 10 abstract PCA "betas"; Anny's 11 phenotypes (gender, age, muscle,
 weight, height, proportions, cupsize, firmness, african, asian, caucasian) are
 semantic. Gender comes from 3DPW; age/height/proportions are fit to the
-joints; the rest stay neutral. (MakeHuman convention, which Anny inherits:
-gender 0 = female, 1 = male; age 0.5 = 25 y, 1.0 = 90 y.)
+joints; the rest stay neutral. GENDER: Anny's convention is 0 = MALE,
+1 = FEMALE (anny model_data.py gender=['male', 'female']; rest stature 1.753 m
+at 0 vs 1.632 m at 1, job 3575369). v2.2 and earlier assumed the reverse
+(MakeHuman-style 0 = female, 1 = male) and wrote men as 1.0; that is still the
+default (--gender_convention makehuman) only so old fits stay reproducible.
+Use --gender_convention anny for correct labels. Age 0.5 = 25 y, 1.0 = 90 y.
 
 THE NaN BUG (job 3409031) AND ITS FIX
 --------------------------------------
 Every frame came back NaN from iteration 1 of stage 1: the 6D rotation was
 initialised with a degenerate pair of columns. Fixed in fit_frame (indices 0
 and 3). 3DPW also has invalid frames ('campose_valid' false / NaN values);
-find_valid_frames() filters those before the stride is applied.
+find_valid_frames() filters those before the stride is applied (--frame_grid
+says whether the stride runs within each person's valid frames or on one
+absolute grid shared by all people of the sequence).
 
 USAGE
     python smpl_to_anny.py --list_bones                              # inspect names
@@ -162,6 +200,8 @@ USAGE
                                                                      # rest skeletons side by side
     python smpl_to_anny.py --pkl <3dpw.pkl> --smpl_model_path <SMPL_NEUTRAL.pkl> \\
                            --out fit.npz --max_frames 40 --frame_stride 25
+    # v2.3 fixes (new labels; never write them over the old fits directory):
+    python smpl_to_anny.py ... --gender_convention anny --frame_grid shared
 """
 
 import argparse
@@ -227,6 +267,30 @@ SMPL_TO_ANNY = {
 # joints, so the joint fit cannot determine it - it stays neutral.
 DEFAULT_FREE_PHENOTYPES = 'height,proportions'
 DEFAULT_SET_PHENOTYPES = 'age=0.55'   # AnnyOne mean adult age; joints cannot measure adult age
+
+# Anny gender phenotype value for a 3DPW 'm' / 'f' (v2.3, see the docstring).
+# 'anny' is Anny's own convention (0 = male, 1 = female); 'makehuman' is the
+# REVERSED value v2.2 wrote, kept as the default only to reproduce old fits.
+GENDER_CONVENTIONS = {
+    'makehuman': {'m': 1.0, 'f': 0.0},
+    'anny':      {'m': 0.0, 'f': 1.0},
+}
+GENDER_CONVENTION_TEXT = {
+    'makehuman': "m -> 1.0, f -> 0.0: the v2.2 value, REVERSED for Anny (Anny: 0 = male, 1 = female); "
+                 "kept only to reproduce old fits",
+    'anny':      "m -> 0.0, f -> 1.0: Anny's own convention (model_data.py gender=['male', 'female'])",
+}
+FRAME_GRIDS = ('per_person', 'shared')
+
+
+def gender_phenotype_value(gender, convention='makehuman'):
+    """Anny 'gender' phenotype value for a 3DPW gender 'm' / 'f' under
+    `convention` ('makehuman' = v2.2 default, 'anny' = correct)."""
+    if convention not in GENDER_CONVENTIONS:
+        raise ValueError(f"unknown gender convention {convention!r}; choose from {sorted(GENDER_CONVENTIONS)}")
+    if gender not in ('m', 'f'):
+        raise ValueError(f"3DPW gender must be 'm' or 'f', got {gender!r}")
+    return GENDER_CONVENTIONS[convention][gender]
 
 
 def build_anny():
@@ -734,15 +798,46 @@ def mesh_bbox(anny_model, r, trans_smpl, P, K, img_w, img_h, device):
 # ---------------------------------------------------------------------------
 # 3DPW helpers
 # ---------------------------------------------------------------------------
-def find_valid_frames(seq, person, T, max_frames, frame_stride, verbose=True):
+def select_frames(valid, max_frames, frame_stride, frame_grid='per_person'):
+    """Frame indices to fit from a per-frame validity mask [T] bool.
+
+    per_person (v2.2, default): the stride runs WITHIN this person's valid
+        frames (valid_idx[::stride]), so the grid starts at the person's first
+        valid frame and shifts after every invalid gap. Two actors of one
+        sequence can therefore land on different images.
+    shared (v2.3): one absolute grid for every person of the sequence: the
+        valid frames with frame % stride == 0. Two actors are fitted on the
+        same images wherever both are valid.
+    Either way at most max_frames frames, the first ones in time. (With a
+    binding max_frames the two actors' LAST frames can still differ under
+    'shared', because each person's cap counts its own valid frames; the
+    whole-dataset run uses max_frames 1000000, which never binds.)
+    """
+    if frame_grid not in FRAME_GRIDS:
+        raise ValueError(f"unknown frame grid {frame_grid!r}; choose from {FRAME_GRIDS}")
+    if int(frame_stride) < 1:
+        raise ValueError(f"frame_stride must be >= 1, got {frame_stride}")
+    valid_idx = np.where(np.asarray(valid, dtype=bool))[0]
+    if frame_grid == 'shared':
+        picked = valid_idx[valid_idx % int(frame_stride) == 0][:max_frames]
+    else:
+        picked = valid_idx[::frame_stride][:max_frames]
+    return picked.tolist()
+
+
+def find_valid_frames(seq, person, T, max_frames, frame_stride, verbose=True,
+                      frame_grid='per_person', return_mask=False):
     """Return up to max_frames frame indices that are safe to fit.
 
     3DPW marks per-frame validity in 'campose_valid' (occlusion / failed
     tracking produce garbage or NaN pose values). Filter on that flag AND on
     an explicit NaN check of the pose / translation / joint arrays, since not
     every 3DPW variant's validity flag catches every bad frame. The stride is
-    applied WITHIN the valid set, so invalid stretches at the start of a
-    sequence do not eat the sample.
+    applied to the valid set only, so invalid stretches at the start of a
+    sequence do not eat the sample; frame_grid says how (see select_frames):
+    'per_person' (default, v2.2) within this person's valid frames, 'shared'
+    on the absolute grid frame % stride == 0.
+    return_mask=True returns (frames, valid [T] bool) instead.
     """
     poses = np.asarray(seq['poses'][person])
     trans = np.asarray(seq['trans'][person]) if 'trans' in seq else np.zeros((T, 3))
@@ -769,11 +864,10 @@ def find_valid_frames(seq, person, T, max_frames, frame_stride, verbose=True):
         print(f"  {n_valid}/{T} frames valid "
               f"(campose_valid + NaN filter); {T - n_valid} excluded")
     if n_valid == 0:
-        return []
+        return ([], valid) if return_mask else []
 
-    valid_idx = np.where(valid)[0]
-    picked = valid_idx[::frame_stride][:max_frames]
-    return picked.tolist()
+    picked = select_frames(valid, max_frames, frame_stride, frame_grid)
+    return (picked, valid) if return_mask else picked
 
 
 def read_gender(seq, person):
@@ -793,7 +887,7 @@ def read_gender(seq, person):
     return 'm' if g[0] == 'm' else ('f' if g[0] == 'f' else None)
 
 
-def main():
+def build_parser():
     ap = argparse.ArgumentParser()
     ap.add_argument('--list_bones', action='store_true',
                     help='print all Anny bone names and exit')
@@ -807,7 +901,12 @@ def main():
     ap.add_argument('--max_frames', type=int, default=4)
     ap.add_argument('--frame_stride', type=int, default=50,
                     help='3DPW is video; skip frames (within the VALID set) so '
-                         'the fitted set is varied')
+                         'the fitted set is varied; how, see --frame_grid')
+    ap.add_argument('--frame_grid', type=str, default='per_person', choices=list(FRAME_GRIDS),
+                    help="per_person (default, = v2.2): the stride runs within THIS person's valid "
+                         "frames, so after an invalid gap two actors of a sequence fall on different "
+                         "images. shared (v2.3 fix): valid frames with frame %% frame_stride == 0, one "
+                         "absolute grid for every person, so both actors are fitted on the same images")
     ap.add_argument('--smpl_model_path', type=str, default='',
                     help='path to SMPL_NEUTRAL.pkl (required for --target smpl; with '
                          '--target gt it is used only for the rest-pose mapping check)')
@@ -822,7 +921,12 @@ def main():
     ap.add_argument('--pose_reg', type=float, default=1e-4,
                     help='pull of non-root rotations towards identity (0 = off = v1)')
     ap.add_argument('--fix_gender', type=int, default=1, choices=[0, 1],
-                    help="1: set Anny's gender phenotype from the 3DPW gender (m->1, f->0)")
+                    help="1: set Anny's gender phenotype from the 3DPW gender (value per "
+                         "--gender_convention)")
+    ap.add_argument('--gender_convention', type=str, default='makehuman', choices=sorted(GENDER_CONVENTIONS),
+                    help="value --fix_gender 1 writes. makehuman (default, = v2.2): m -> 1.0, f -> 0.0, "
+                         "which is REVERSED for Anny. anny (v2.3 fix): m -> 0.0, f -> 1.0, Anny's own "
+                         "convention (0 = male, 1 = female)")
     ap.add_argument('--free_phenotypes', type=str, default=DEFAULT_FREE_PHENOTYPES,
                     help="comma list of phenotypes the optimiser may move, or 'all' "
                          "(v1 behaviour). Gender is added automatically if it is not fixed.")
@@ -854,7 +958,11 @@ def main():
                     default='pelvis,left_hip,right_hip,spine1,spine2,spine3,neck,left_collar,right_collar',
                     help="SMPL joints fitted as virtual points head+offset (rest-pose measured); "
                          "'' = none (v2 behaviour)")
-    args = ap.parse_args()
+    return ap
+
+
+def main():
+    args = build_parser().parse_args()
 
     device = args.device if torch.cuda.is_available() else 'cpu'
     print(f"device: {device}")
@@ -929,11 +1037,15 @@ def main():
     gender = read_gender(seq, person)
     print(f"  {n_people} subject(s); using person {person}, gender {gender!r}; {T} frames total")
 
-    frames = find_valid_frames(seq, person, T, args.max_frames, args.frame_stride)
+    frames, valid_mask = find_valid_frames(seq, person, T, args.max_frames, args.frame_stride,
+                                           frame_grid=args.frame_grid, return_mask=True)
     if not frames:
         print("\nABORT: no valid frames found in this sequence (all NaN / "
               "campose_valid=False). Try a different .pkl.")
         sys.exit(1)
+    print(f"  frame grid: {args.frame_grid} (stride {args.frame_stride}; "
+          + ("valid frames with frame % stride == 0, shared by every person of the sequence)"
+             if args.frame_grid == 'shared' else "within this person's own valid frames, = v2.2)"))
     print(f"  fitting frames: {frames}")
 
     # ---- targets -----------------------------------------------------------
@@ -1003,17 +1115,20 @@ def main():
         print(f"ERROR: unknown phenotype(s) in --free_phenotypes: {sorted(unknown)}; "
               f"choose from {pheno_labels}"); sys.exit(1)
     gender_fixed = False
+    gender_value = float('nan')                   # the fixed value; NaN = gender not fixed
     if 'gender' in pheno_labels:
         if args.fix_gender and gender in ('m', 'f'):
-            shape_init[pheno_labels.index('gender')] = 1.0 if gender == 'm' else 0.0
+            gender_value = gender_phenotype_value(gender, args.gender_convention)
+            shape_init[pheno_labels.index('gender')] = gender_value
             free_names.discard('gender')
             gender_fixed = True
             print(f"  gender phenotype fixed at {shape_init[pheno_labels.index('gender')]:.1f} "
-                  f"from 3DPW gender {gender!r} (MakeHuman convention 0=female, 1=male - "
-                  f"if the rendered body is the wrong sex, that convention is wrong: "
-                  f"use --fix_gender 0)")
+                  f"from 3DPW gender {gender!r} (--gender_convention {args.gender_convention}: "
+                  f"{GENDER_CONVENTION_TEXT[args.gender_convention]})")
         else:
             free_names.add('gender')
+            print(f"  gender phenotype FREE (fitted): --fix_gender {args.fix_gender}, 3DPW gender {gender!r}; "
+                  f"--gender_convention {args.gender_convention} not applied")
     free_mask = np.array([n in free_names for n in pheno_labels], dtype=bool)
     print(f"  free phenotypes: {[n for n in pheno_labels if n in free_names]}; "
           f"fixed: {[(n, round(float(shape_init[i]), 2)) for i, n in enumerate(pheno_labels) if n not in free_names]}")
@@ -1155,10 +1270,18 @@ def main():
              smpl_idx=np.array(smpl_idx), anny_idx=np.array(anny_idx),
              offset_joints=np.array(sorted(SMPL_JOINT_NAMES[i] for i in offsets)),
              joint_offsets_local=np.stack([offsets.get(i, np.zeros(3, np.float32)) for i in smpl_idx]),
-             free_bones=args.free_bones, version='2.2',
+             free_bones=args.free_bones, version='2.3',
              tight_bbox=bboxes, visible_frac=visible, img_size=np.array([img_w, img_h]),
              pkl_path=os.path.abspath(args.pkl),
-             anny_bone_names=np.array([bone_of[i] for i in smpl_idx]))
+             anny_bone_names=np.array([bone_of[i] for i in smpl_idx]),
+             # v2.3: the two conventions this file was made with, plus what is needed to
+             # re-check them (scripts/data/check_refit_task.py)
+             gender_convention=args.gender_convention,
+             gender_value=np.float32(gender_value),
+             frame_grid=args.frame_grid,
+             frame_stride=int(args.frame_stride),
+             max_frames=int(args.max_frames),
+             valid_mask=np.asarray(valid_mask, dtype=bool))
     print(f"saved -> {args.out}")
 
 
