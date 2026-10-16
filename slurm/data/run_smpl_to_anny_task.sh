@@ -44,6 +44,8 @@
 #   CONDA_ENV    conda env activated by slurm/env.sh (default multihmr = PyTorch 2.0.1+cu117: sm_37-sm_86 only, so it
 #                fails on H100/H200 with "no kernel image"). CONDA_ENV=multihmr_cu121 (a clone of multihmr with
 #                PyTorch 2.1.2+cu121) also runs on H100/H200. B200 and RTXB6000 (Blackwell) work with neither.
+#   PY_VENV      lighter alternative to a cloned env: a venv with --system-site-packages on top of CONDA_ENV that
+#                holds only PyTorch 2.1.2+cu121, e.g. PY_VENV=/netscratch/najib/venv_cu121 (runs on H100/H200 too).
 # =============================================================================
 #SBATCH --job-name=smpl2anny-all
 #SBATCH --partition=A100-40GB,A100-80GB,L40S-AV,A100-RP,A100-PCI,L40S,RTXA6000,RTXB6000
@@ -67,6 +69,7 @@ OUT_ROOT="${OUT_ROOT%/}"
 REFIT_FLAGS="${REFIT_FLAGS:-}"   # e.g. "--gender_convention anny --frame_grid shared" (v2.3)
 GPUS="${GPUS:-1}"                 # 0 = CPU only (see the header)
 CONDA_ENV="${CONDA_ENV:-multihmr}"   # conda env for the converter (slurm/env.sh); multihmr_cu121 = PyTorch with sm_90 for H100/H200
+PY_VENV="${PY_VENV:-}"               # optional venv on top of CONDA_ENV (slurm/env.sh), e.g. /netscratch/najib/venv_cu121
 if [ "${GPUS}" = "0" ]; then SRUN_GPUS=(); else SRUN_GPUS=(--gpus="${GPUS}"); fi
 if [ -n "${REFIT_FLAGS}" ] && [ "${OUT_ROOT}" = "${DEFAULT_OUT_ROOT}" ]; then
   echo "ERROR: REFIT_FLAGS='${REFIT_FLAGS}' with the default OUT_ROOT ${DEFAULT_OUT_ROOT}:"
@@ -108,7 +111,7 @@ if [ -f "${OUT}" ]; then
   echo "already converted - checking that it was made with the requested flags"
   COMMAND=$(cat <<EOF
 set -uo pipefail
-export CONDA_ENV="${CONDA_ENV}"
+export CONDA_ENV="${CONDA_ENV}" PY_VENV="${PY_VENV}"
 source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 python scripts/data/check_refit_task.py --match_flags "${OUT}" --refit_flags="${REFIT_FLAGS}"
 RC=\$?
@@ -124,7 +127,7 @@ EOF
 else
 COMMAND=$(cat <<EOF
 set -uo pipefail
-export CONDA_ENV="${CONDA_ENV}"
+export CONDA_ENV="${CONDA_ENV}" PY_VENV="${PY_VENV}"
 source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 patch
 mkdir -p "${OUT_ROOT}/${SPLIT}"
 [ -f "${SMPL_MODEL}" ] || { echo "ERROR: SMPL model missing: ${SMPL_MODEL}"; exit 1; }

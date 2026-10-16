@@ -9,6 +9,11 @@ SCRATCH="/netscratch/najib"
 # conda
 source "$SCRATCH/miniconda3/etc/profile.d/conda.sh"
 conda activate "${CONDA_ENV:-multihmr}"   # CONDA_ENV overrides, e.g. multihmr_cu121 for H100/H200 (sm_90)
+# PY_VENV: a venv made with --system-site-packages on top of that env (e.g. /netscratch/najib/venv_cu121 with
+# PyTorch 2.1.2+cu121 for H100/H200); its packages take precedence, everything else comes from the conda env.
+if [ -n "${PY_VENV:-}" ]; then   # activate scripts may read unset variables: relax `set -u` while sourcing
+  case $- in *u*) set +u; source "${PY_VENV}/bin/activate"; set -u ;; *) source "${PY_VENV}/bin/activate" ;; esac
+fi
 
 # caches on scratch (home directory is over quota)
 export HF_HOME="$SCRATCH/hf_cache"
