@@ -8,7 +8,7 @@ SCRATCH="/netscratch/najib"
 
 # conda
 source "$SCRATCH/miniconda3/etc/profile.d/conda.sh"
-conda activate multihmr
+conda activate "${CONDA_ENV:-multihmr}"   # CONDA_ENV overrides, e.g. multihmr_cu121 for H100/H200 (sm_90)
 
 # caches on scratch (home directory is over quota)
 export HF_HOME="$SCRATCH/hf_cache"
