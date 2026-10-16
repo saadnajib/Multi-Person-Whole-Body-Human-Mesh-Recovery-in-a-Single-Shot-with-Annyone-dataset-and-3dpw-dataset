@@ -592,13 +592,13 @@ used for estimation. A model fine-tuned with `--bone_fix` keeps the fix in its a
 
 ### 3DPW converter fix (v2.3 flags)
 
-A label fix, not a training experiment. `scripts/data/smpl_to_anny.py` v2.3, `slurm/data/run_smpl_to_anny_task.sh`
-and this section are in the WIP commits `40fd436` and `b05c7ef` on `claude/gallant-dijkstra-bnlowv`, not on `main`.
-`scripts/data/check_refit_task.py` and `slurm/data/run_check_refit_task.sh` are new. `.gitignore`'s `data/` line also
-matched `scripts/data/` and `slurm/data/`, so a plain `git add -A` left these two out. `!scripts/data/` and
-`!slurm/data/` now follow that line; the `*.npz`, `*.pkl` and `__pycache__/` rules still apply inside both folders.
-Commit the `.gitignore` change in the same commit as the two files, or add them with `git add -f`. Step 0 below checks
-the cluster copy.
+A label fix, not a training experiment. The converter work (from commit `40fd436` on): `scripts/data/smpl_to_anny.py`
+v2.3, `slurm/data/run_smpl_to_anny_task.sh`, the new `scripts/data/check_refit_task.py` and
+`slurm/data/run_check_refit_task.sh`, the `.gitignore` exceptions and this section. Use it from `main` on GitHub;
+nothing has to be merged, committed or force-added by hand.
+(`.gitignore`'s `data/` line also matched `scripts/data/` and `slurm/data/`;
+`!scripts/data/` and `!slurm/data/` now follow it, and the `*.npz`, `*.pkl` and `__pycache__/` rules still apply inside
+both folders.) Step 0 below checks that the cluster copy has it.
 
 **What was wrong (measured by `check_3dpw_conversion` job 3575369 on `threedpw_anny_full/labels`, converter md5
 `f502c8b2`).**
@@ -637,7 +637,9 @@ still be rebuilt.
 - A person valid from frame 0 with no gap gets the same frames under both grids.
 - `run_smpl_to_anny_task.sh` reads two environment variables:
   - `OUT_ROOT` (default `threedpw_anny_full`, unchanged) sets the fits directory.
-  - `REFIT_FLAGS` (default empty) is appended to the `smpl_to_anny.py` call.
+  - `REFIT_FLAGS` (default empty) is appended to the `smpl_to_anny.py` call. It should contain only the two new
+    flags: it comes last, so it would also override the script's `--frame_stride`, `--max_frames` or `--fix_gender`,
+    and the skip check below compares only `gender_convention` and `frame_grid`.
 
   An existing `.npz` is never refitted, so three guards keep fits made with different flags out of one directory:
   - A non-empty `REFIT_FLAGS` with the default `OUT_ROOT` is refused.
@@ -659,17 +661,19 @@ still be rebuilt.
   also shows the joint error mean/median of the old vs new fits. It exits 1 on a convention violation; error changes
   are reported, not graded.
 
-**Commands, in order** (on the cluster):
+**Commands, in order** (on the cluster). Run them one at a time: each step starts only after the previous one has
+finished (and, for steps 2 and 3, passed). `sbatch` prints the job id; `squeue -u najib` lists only queued and running
+jobs, so a job it no longer shows has ended.
 
-0. First merge the branch into `main`, with the two new files and `.gitignore` committed (or the two files added with
-   `git add -f`). Then check the cluster copy:
+0. After that merge, update the cluster copy and check it (no branch to merge, nothing to add):
    ```
    cd /netscratch/najib/multi-hmr && git pull && grep -c REFIT_FLAGS slurm/data/run_smpl_to_anny_task.sh; grep -c gender_convention scripts/data/smpl_to_anny.py; grep -c ALLOW_DEFAULT_FLAGS slurm/data/run_smpl_to_anny_task.sh; ls scripts/data/check_refit_task.py slurm/data/run_check_refit_task.sh
    ```
-   Go on only if all three numbers are above `0` and both files are listed. The old task script ignores `OUT_ROOT`
-   and `REFIT_FLAGS`, and all 87 `.npz` files exist in `threedpw_anny_full`. So with the old script, commands 1 and 3
-   print `already converted - skipping` and exit 0 for every task without fitting anything, and command 4 then
-   builds from an empty `threedpw_anny_v23`.
+   Go on only if all three numbers are above `0` and both files are listed; otherwise the merge has not reached
+   `main` yet, so wait and run the line again. The old task script ignores `OUT_ROOT` and `REFIT_FLAGS`, and all 87
+   `.npz` files exist in `threedpw_anny_full`. So with the old script, commands 1 and 3 print
+   `already converted - skipping` and exit 0 for every task without fitting anything, and command 4 then builds from
+   an empty `threedpw_anny_v23`.
 1. One check task: `courtyard_captureSelfies_00`, train, array indices 9 (p0) and 10 (p1), i.e. lines 10-11.
    - Two actors of mixed gender: its 40 sampled images in 3575369 had one labelled person each with label gender
      mean 0.60, so 24 images of the man and 16 of the woman.
@@ -677,23 +681,41 @@ still be rebuilt.
    ```
    cd /netscratch/najib/multi-hmr && OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --array=9-10 slurm/data/run_smpl_to_anny_task.sh
    ```
-   Check `logs/smpl2anny-all-<jobid>_9.out` and `_10.out`:
+   Wait until `squeue -u najib` no longer lists this job and both logs, `logs/smpl2anny-all-<jobid>_9.out` and
+   `_10.out`, contain a `done: ...` line (a `FAILED` or `ERROR` line instead = stop here). If the job is gone from `squeue` but a
+   log has no `done:` line, Slurm killed it (time limit, memory, node): read `logs/smpl2anny-all-<jobid>_9.err` /
+   `_10.err` or run `sacct -j <jobid>`, and stop. Then check in each log:
    - `extra flags (REFIT_FLAGS): '--gender_convention anny --frame_grid shared'` and `frame grid: shared`.
    - The gender line shows 0.0 for the man and 1.0 for the woman.
-   - The per-joint table is still ~16-20 mm.
+   - The converter's summary line `fitted N frames; joint error mean X mm, max Y mm` gives X at about 16-20 mm. In
+     3575369's I4 the v2.2 train sequences had per-sequence medians of 13.7-20.3 mm (`courtyard_captureSelfies_00`
+     18.8 mm). The man may come out lower, the woman ~2 mm higher (see I1).
+   - Do not grade the PER-JOINT table against 16-20 mm. It is never flat: pelvis, hips, neck and shoulders sit at
+     ~27-38 mm by rig definition (I4 pooled table: pelvis 28.4, hips 33.9/37.9, neck 27.6, shoulders 35.5/28.7 mm
+     mean). Only a row far above its I4 value is a warning.
    - `done: ... (N s)` gives the measured s/frame: N divided by the fitted frames.
 2. Post-check of that sequence (CPU, seconds). It compares against the old fits in `threedpw_anny_full` by default.
+   Submit it only after both step-1 tasks have finished (see above). Earlier, it stops with `ERROR: no new .npz ...`
+   (exit 2) or checks only one actor.
    ```
    cd /netscratch/najib/multi-hmr && SPLIT=train SEQ=courtyard_captureSelfies_00 sbatch slurm/data/run_check_refit_task.sh
    ```
-   It passes when:
+   It passes when (`logs/check-refit-<jobid>.out`):
    - the log ends with `RESULT: PASS` and the job exits 0;
    - `[p0+p1] NEW: ... both valid in 3DPW but only one fitted: 0/N`, while the `OLD` line shows a large share;
-   - the man's label value is ~0.0001 and the woman's ~0.9999;
-   - the man's paired joint error is lower than the old one (the woman's may rise ~2 mm, see I1).
-3. All 87 tasks. Tasks 9 and 10 are skipped because their `.npz` already exist and record the same flags (the log
-   says `already converted with the requested flags - skipping`). A task to redo must have its `.npz` deleted first.
-   A task whose existing `.npz` records other flags fails instead of skipping (see the guards above).
+   - the man's label value is ~0.0001 and the woman's ~0.9999 (`[pK] gender: 3DPW 'm', label value median ...`);
+   - also expected, NOT a gate (the script does not grade it): the man's joint error is lower than before (the
+     woman's may rise ~2 mm, see I1). If it is not lower, note it and continue; report it. Read the paired line first,
+     `[pK] joint error mean/median, M frames fitted by both: old ... -> new ...`. The old per-person grid put the two
+     actors on different stride phases, so an actor may share only a few frames with the new `frame % 3 == 0` grid,
+     or none (`[pK] no frame fitted by both runs`). If M is small (under ~30) or the line is missing, use the
+     unpaired per-person means instead: `[pK] joint error mean/median, all fitted frames: old ... -> new ...`,
+     which is always printed.
+3. All 87 tasks. Submit only after step 2 passed. Never submit it while the step-1 job is still queued or running:
+   tasks 9 and 10 would find no `.npz` yet and refit the same people again, both jobs writing the same
+   `<seq>_p<k>.npz.tmp.npz`. Tasks 9 and 10 are skipped because their `.npz` already exist and record the same flags
+   (the log says `already converted with the requested flags - skipping`). A task to redo must have its `.npz`
+   deleted first. A task whose existing `.npz` records other flags fails instead of skipping (see the guards above).
    ```
    cd /netscratch/najib/multi-hmr && OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
    ```
@@ -701,8 +723,12 @@ still be rebuilt.
    - `ls /netscratch/najib/multi-hmr/threedpw_anny_v23/*/*_p*.npz | wc -l` should give 87.
    - Optionally, `cd /netscratch/najib/multi-hmr && SEQ=all sbatch slurm/data/run_check_refit_task.sh` should print
      PASS for every sequence.
-4. Labels (CPU, ~1 min), submitted in one block with step 5.
-5. The conversion check on v23 (~17 min; 997 s for 3575369). It waits for the label job (`--dependency=afterok`).
+4. Labels (CPU, ~1 min), submitted in one block with step 5, only after the step-3 array has finished and the count
+   above is 87.
+5. The conversion check on v23, ~19-20 min. 3575369 took 997 s on the 52 sequences of the old index; the v23 labels
+   cover 59 (the six train sequences and `courtyard_basketball_01` added), i.e. ~2,360 sampled images and ~118
+   people in the I1 refits, still well inside the 1 h 30 min limit. It waits for the label job
+   (`--dependency=afterok`).
    It must not start earlier: it only tests that `index_*.txt` exists, and the builder writes `index_train.txt`
    before the other splits are done. Keep `OUT=` on the check, otherwise it overwrites the 3575369 results.
    ```
@@ -727,6 +753,16 @@ still be rebuilt.
 - The check run (tasks 9-10, ~230 frames each) takes ~25 min.
 
 **Pass criteria (v23 check vs 3575369).**
+- OVERALL: expect `OVERALL (V0-V5): FAIL` again, as in 3575369 (train FAIL from V4e, test FAIL from V4c). That is
+  not a failed refit.
+  - Expected to change: I1 (label gender 'm' ~0, 'f' ~1, men's flip gain gone) and I3 (unlabelled valid actors ~0
+    apart from builder filters), plus the I4 versions and the label counts (below).
+  - Not expected to change: V4c limb ratios (forearm 0.879, thigh 1.119 overall; FAIL in test, WARN in validation)
+    and V4e people with a joint > 100 mm (train 0.052 FAIL, overall 0.032 WARN). The flags do not target them, so
+    they should stay about the same. Test V4c may improve if it is linked to the gender bug (test has only men, all
+    labelled with the female body; possible, not shown), and train V4e sits right on the 0.05 line. A move in either
+    direction is not a refit failure. OVERALL FAIL is the likely result; WARN would be good news.
+  - Judge the refit by I1, I3, I4, the label counts and V1-V3 as listed below.
 - I1:
   - Label gender 'm' 0.000 and 'f' 1.000; the probe still says male end = 0.
   - Men's refit flip gain is gone: median gain ≤ 0 and a flip-better share well below 0.5 (was +3.4 mm and 0.99).
@@ -754,7 +790,8 @@ still be rebuilt.
   - With I3's one-sided shares (train 41%, validation 26%, test 48%), about 16,900: train ~5,900 (old index 4,451),
     validation ~2,650, test ~8,300. So more than 16,631 is expected, not a failure.
   - Labelled people (person-frames) stay about v2.2's 22,753, which is ~2,700 more than the old index held.
-- V4d stature ratio (0.972) may move, since men now get the taller male body. This is informational.
+- V4d stature ratio (0.972, PASS) is a graded V check (PASS band 0.95-1.05) and feeds OVERALL. It may move, since
+  men now get the taller male body, but should stay PASS.
 
 **Models.** v7-v10 were trained and 3DPW-evaluated on `threedpw_anny_full/labels`, and they are unaffected until a
 model is retrained or re-evaluated on v23.
