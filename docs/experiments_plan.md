@@ -590,6 +590,167 @@ used for estimation. A model fine-tuned with `--bone_fix` keeps the fix in its a
   continue (default with TRAIN=1). `SUMMARY_ONLY=1 RUN=<v10 run>` without CKPT takes the v10 baseline from
   `bone_fix.json`; without `source.ckpt` it stops unless TAG or CKPT is given.
 
+### 3DPW converter fix (v2.3 flags)
+
+A label fix, not a training experiment. `scripts/data/smpl_to_anny.py` v2.3 and `slurm/data/run_smpl_to_anny_task.sh`
+are in the working tree (and in the WIP commit `40fd436`). `scripts/data/check_refit_task.py` and
+`slurm/data/run_check_refit_task.sh` are new. `.gitignore` has `data/`, so these two need `git add -f`.
+
+**What was wrong (measured by `check_3dpw_conversion` job 3575369 on `threedpw_anny_full/labels`, converter md5
+`f502c8b2`).**
+1. *The gender was reversed.* `smpl_to_anny.py` v2.2 wrote 1.0 for a 3DPW 'm' and 0.0 for an 'f' (MakeHuman
+   convention). Anny uses 0 = male, 1 = female: `model_data.py` has `gender=['male','female']`, and
+   `shape_distribution.py` has `gender <= 0.5 -> boys`. The I1 probe agrees: rest stature is 1.753 m at 0 vs
+   1.632 m at 1, shoulders 0.369 vs 0.308 m. Label values were 'm' 1.000 (1,801 sampled people) and 'f' 0.000 (734).
+   I1 refit test (104 people, label refitted with g and with 1-g):
+   - Men (73): joint error label/same/flip 19.0/19.2/15.3 mm, so the flip was lower for 72 of 73 (median gain
+     3.4 mm). The surface was also better with the flip (18.6 → 17.4 mm, 93% of people).
+   - Women (31): joint error 13.7/13.7/16.3 mm, so the flip was lower for only 26%. The surface was better with the
+     flip (17.0 → 16.2 mm, 87%).
+   So the joints confirm the reversal only for men. For women only the surface and Anny's code support it.
+2. *Two actors were fitted on different frames.* `find_valid_frames` applied the stride (3) inside each person's own
+   valid-frame list. After an invalid gap, the two actors of a sequence therefore sat on different phases of the
+   stride. I3 found 407 of 960 sampled two-person images with a valid actor and no label (train 115/280,
+   validation 42/160, test 250/520). All of them were 'not fitted'; 0 were dropped by a builder filter. I4 shows the
+   same pattern per sequence: `courtyard_captureSelfies_00` has 457 person-frames on 401 images (only 56 images with
+   both actors), and `courtyard_rangeOfMotions_00` has 399 on 316. `courtyard_giveDirections_00` has no gaps and shows
+   566 on 283, i.e. both actors on every image.
+
+**The flags.** The defaults reproduce v2.2 bit for bit (tested, see below), so the labels v7-v10 were trained on can
+still be rebuilt.
+
+| flag (`smpl_to_anny.py`) | default = v2.2 | fix |
+|---|---|---|
+| `--gender_convention` | `makehuman`: m → 1.0, f → 0.0 | `anny`: m → 0.0, f → 1.0 (`gender_phenotype_value`, `:286`) |
+| `--frame_grid` | `per_person`: `valid_idx[::stride]` | `shared`: the valid frames with `frame % stride == 0`, one absolute grid for every person (`select_frames`, `:801`) |
+
+- The log line now names the convention and the value, e.g. `gender phenotype fixed at 0.0 from 3DPW gender 'm'
+  (--gender_convention anny: m -> 0.0, f -> 1.0: Anny's own convention ...)`. A second line prints the frame grid.
+- Each `.npz` also stores `gender_convention`, `frame_grid`, `frame_stride`, `max_frames`, `gender_value` and
+  `valid_mask` (the per-frame validity used), and says `version='2.3'`. The label builder (`load_fit`) and
+  `check_3dpw_conversion.py` look keys up by name and only print the version, so they accept 2.3. Both were tested on
+  v2.3 files.
+- A person valid from frame 0 with no gap gets the same frames under both grids.
+- `run_smpl_to_anny_task.sh` reads two environment variables:
+  - `OUT_ROOT` (default `threedpw_anny_full`, unchanged) sets the fits directory.
+  - `REFIT_FLAGS` (default empty) is appended to the `smpl_to_anny.py` call.
+
+  A non-empty `REFIT_FLAGS` with the default `OUT_ROOT` is refused, because existing `.npz` files are skipped and old
+  and new fits would mix. Array index = line − 1 of `configs/threedpw_tasks.txt`, so the 87 tasks are 0-86.
+- `run_build_labels.sh` (`FITS`/`IMAGES`/`OUT`) and `check_3dpw_conversion.sh` (`LABELS`/`FITS`/`OUT`) could already
+  point at another root, so they are unchanged.
+- `check_refit_task.py` checks one sequence or all of them. It compares the gender value with the 3DPW gender and the
+  convention, checks the frame grid, and counts frames where both actors are valid in 3DPW but only one is fitted. It
+  also shows the joint error mean/median of the old vs new fits. It exits 1 on a convention violation; error changes
+  are reported, not graded.
+
+**Commands, in order** (on the cluster):
+1. One check task: `courtyard_captureSelfies_00`, train, array indices 9 (p0) and 10 (p1), i.e. lines 10-11.
+   - Two actors of mixed gender: its 40 sampled images in 3575369 had one labelled person each with label gender
+     mean 0.60, so 24 images of the man and 16 of the woman.
+   - It is the strongest stride-phase case (56 of 401 images with both actors).
+   ```
+   cd /netscratch/najib/multi-hmr && OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --array=9-10 slurm/data/run_smpl_to_anny_task.sh
+   ```
+   Check `logs/smpl2anny-all-<jobid>_9.out` and `_10.out`:
+   - `extra flags (REFIT_FLAGS): '--gender_convention anny --frame_grid shared'` and `frame grid: shared`.
+   - The gender line shows 0.0 for the man and 1.0 for the woman.
+   - The per-joint table is still ~16-20 mm.
+   - `done: ... (N s)` gives the measured s/frame: N divided by the fitted frames.
+2. Post-check of that sequence (CPU, seconds). It compares against the old fits in `threedpw_anny_full` by default.
+   ```
+   cd /netscratch/najib/multi-hmr && SPLIT=train SEQ=courtyard_captureSelfies_00 sbatch slurm/data/run_check_refit_task.sh
+   ```
+   It passes when:
+   - the log ends with `RESULT: PASS` and the job exits 0;
+   - `[p0+p1] NEW: ... both valid in 3DPW but only one fitted: 0/N`, while the `OLD` line shows a large share;
+   - the man's label value is ~0.0001 and the woman's ~0.9999;
+   - the man's paired joint error is lower than the old one (the woman's may rise ~2 mm, see I1).
+3. All 87 tasks. Tasks 9 and 10 are skipped because their `.npz` already exist; a task to redo must have its `.npz`
+   deleted first.
+   ```
+   cd /netscratch/najib/multi-hmr && OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
+   ```
+   When the array is finished:
+   - `ls /netscratch/najib/multi-hmr/threedpw_anny_v23/*/*_p*.npz | wc -l` should give 87.
+   - Optionally, `cd /netscratch/najib/multi-hmr && SEQ=all sbatch slurm/data/run_check_refit_task.sh` should print
+     PASS for every sequence.
+4. Labels (CPU, ~1 min):
+   ```
+   cd /netscratch/najib/multi-hmr && FITS=/netscratch/najib/multi-hmr/threedpw_anny_v23 OUT=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels sbatch slurm/data/run_build_labels.sh
+   ```
+5. The conversion check on v23. Set `OUT`, otherwise the 3575369 results are overwritten. Took ~17 min (997 s) for
+   3575369.
+   ```
+   cd /netscratch/najib/multi-hmr && LABELS=threedpw_anny_v23/labels FITS=threedpw_anny_v23 OUT=results/diagnostics/check_3dpw_conversion_v23 sbatch slurm/diagnostics/check_3dpw_conversion.sh
+   ```
+
+**Runtime (estimated, not measured).** Each frame costs about 260 Anny forward+backward passes: pass 1 warm-started
+20+80+60, pass 2 100 refine, plus a few forwards and the bounding box.
+- 3575369's I1 refit ran 104×2 refits of 160 iterations in 678 s, i.e. ≤ 20 ms per iteration including its surface
+  metrics.
+- v2.1 measured 11 s for 480 iterations, i.e. 23 ms per iteration. The task script estimates ~6 s/frame.
+- So 5.3-6 s/frame. The v2.2 run fitted 22,915 frames (I4). The shared grid keeps about n_valid/3 frames per person,
+  as before, so the count stays about the same.
+- Total: ~34-38 GPU-h, plus 87 start-ups of ~1-2 min, i.e. ~35-41 GPU-h. With `%8` that is ~5-6 h of wall time if 8
+  GPUs are free.
+- The longest single tasks are `outdoors_parcours_00` (~544 frames, ~50 min) and `downtown_bus_00` (~425 per person,
+  ~40 min), well under the 4 h limit.
+- The check run (tasks 9-10, ~230 frames each) takes ~25 min.
+
+**Pass criteria (v23 check vs 3575369).**
+- I1:
+  - Label gender 'm' 0.000 and 'f' 1.000; the probe still says male end = 0.
+  - Men's refit flip gain is gone: median gain ≤ 0 and a flip-better share well below 0.5 (was +3.4 mm and 0.99).
+  - Women: expect the mirror of 3575369 (on joints, the flip about 2-3 mm better; on the surface, worse). The joints
+    never confirmed the female end for women, so this is reported, not graded.
+- I3: 'valid actor unlabelled' ~0 of the two-person images (was 407/960), and 'not fitted' ~0. The remainder should
+  be builder drops (error > 80 mm, visible < 0.3, box < 40 px) or frames the converter's NaN filter removes even
+  though `campose_valid` is true.
+- V1/V2/V3 not worse than 3575369, allowing ~1 mm because the seeded sample is drawn from a different index:
+  - V1 body median 18.7 / p95 24.5 mm;
+  - V2 medians 18.9 / 18.3 mm;
+  - V3 Anny − raw 1.8 mm2d.
+
+  Men should improve. Women may lose ~2-3 mm in V1 (refit test 13.7 → 16.3 mm), and train holds the all-female
+  climbing/slalom/freestyle sequences, so read V1 train (20.2, WARN) per gender in `per_person.csv`.
+- I4: 87 npz, `versions` {'2.3': 87}, and label images expected = indexed for every sequence (the images were
+  re-extracted).
+- Expect fewer label images than 16,631 (both actors on one image instead of one each on two) with about the same
+  number of labelled people.
+- V4d stature ratio (0.972) may move, since men now get the taller male body. This is informational.
+
+**Models.** v7-v10 were trained and 3DPW-evaluated on `threedpw_anny_full/labels`, and they are unaffected until a
+model is retrained or re-evaluated on v23. `train_teacher_v9_mixed.sh:55`, `train_distill_vits_v8_final.sh:42`,
+`train_v10_scratch_mixed.sh:45` and `run_eval_3dpw*.sh` hard-code that path, so nothing reads v23 until `LABELS` is
+changed. 3DPW numbers measured against the old labels cannot be compared with numbers against v23; re-evaluate the
+baseline on v23 first. The old labels stay reproducible: with the default flags and no `OUT_ROOT`, the task script
+writes the v2.2 fits.
+
+**Verified offline** (`scratchpad/convfix`, 83 + 21 + 1 checks, CPU, real Anny 0.6.1, synthetic 3DPW data; the
+numpy-only scripts also under Python 3.9 + numpy 1.24):
+- Frame selection over 9,600 random (validity pattern, stride, max_frames) cases:
+  - `per_person` equals HEAD's `find_valid_frames`.
+  - `shared` frames lie on `frame % stride == 0`, are valid, number ≤ max_frames, and are identical for both actors
+    wherever both are valid.
+  - `check_refit_task.py`'s validity mask equals the converter's.
+- Gender values for both conventions and genders. HEAD's 26 argparse defaults are unchanged, and there are exactly
+  two new options.
+- End to end (`main()` twice on a 2-actor sequence):
+  - HEAD and the new defaults give bit-identical `.npz` files in every key but `version` (31 of 32; 2.2 → 2.3,
+    plus the six new keys) and identical label pkls.
+  - `anny`+`shared` gives the man 0.0001 and the woman 0.9999, and both actors share all 10 both-valid grid images.
+    The old grid shared 3 of 17.
+  - The builder accepts v2.3 files under Python 3.9.
+- `check_refit_task.py` passes v23 fits and fails default-flag fits (13 violations), v2.2 fits, a doctored gender and
+  a dropped frame.
+- `run_smpl_to_anny_task.sh` with fake sbatch/srun/python:
+  - Defaults give the same python call as HEAD, with output in `threedpw_anny_full`.
+  - The env overrides add the flags and write into the new root; resubmitting skips.
+  - The guard refuses `REFIT_FLAGS` with the old root.
+  - Indices 9/10 map to captureSelfies p0/p1 and 86 to the last task.
+- `run_check_refit_task.sh` exits 0 / 1 as expected. `bash -n` passes on all touched scripts.
+
 ## 3. Verified in code
 
 Readers' facts. Line numbers refer to `89db760`, whose `.py` files are identical to `0d8ef72`. The experiment

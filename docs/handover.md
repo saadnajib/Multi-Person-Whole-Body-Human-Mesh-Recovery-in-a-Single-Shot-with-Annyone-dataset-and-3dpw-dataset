@@ -19,8 +19,10 @@ on you browsing GitHub. Download links: section 8.
 4a) and the deck grew to 18 slides (new slide 8, section 9). In this version
 `grep -c neck_before_after_v5 docs/handover.md` prints a number above `0`; `0` means the 15-Oct evening copy, which
 still calls the panels unseen. This version is **not on `main` yet**: it is on the branch
-`claude/gallant-dijkstra-bnlowv` as WIP commits (`5e9f416`, `04bb679`, later ones possible) and reaches `main` only
-once the branch is merged. Until then a `git pull` of `main` gives the evening copy (section 8).
+`claude/gallant-dijkstra-bnlowv` as WIP commits (`5e9f416`, `04bb679`, `40fd436`; later ones possible) and reaches
+`main` only once the branch is merged, by the Claude Code session that made these commits, not by you or the student
+(section 8). Until then a `git pull` of `main` gives the evening copy, and the branch download links in section 8 are
+the only way to get this version and the 18-slide deck. `40fd436` also carries the 3DPW converter flags (4e).
 
 **Meeting date: open.** Planned for **Friday 16 October 2026**, with the deck `docs/supervisor_update_2026-10-16.pptx`.
 On 15 Oct (16:07) the student asked for a draft message asking the supervisor to move it to **Monday 19 October**.
@@ -31,9 +33,13 @@ check (section 4) can go into the deck first.
 **Citation key** (used from section 1 on):
 - `3572482:126` = line 126 of that Slurm job's `.out` log. Job index in section 8. The student has every log; ask for
   one when you need to check a number.
-- `README :L` = `README.md`; `notes :L` = `docs/supervisor_talk_notes_2026-10-16.md`; `plan :L` =
-  `docs/experiments_plan.md`; `findings` = `docs/diagnostics_findings.md`.
-- `file.py:L` = that file in the repo. All line numbers are as of `64266dc`.
+- `README :L` = `README.md`; `plan :L` = `docs/experiments_plan.md`; `findings` = `docs/diagnostics_findings.md`.
+- `notes, slide N` = the speaker notes of slide N in `docs/supervisor_talk_notes_2026-10-16.md`, 18-slide numbering;
+  "If asked" = that slide's second part. The notes are cited by slide, not by line: their line numbers moved with
+  every rebuild. In the 17-slide copy on `main` (until the merge, section 8), slides 9-18 are one lower (section 9).
+- `file.py:L` = that file in the repo. All line numbers are as of `64266dc`, unless a commit is named next to them.
+  Of the files cited by line, `main` (`fbda1b4`) has changed only `slurm/demo/run_demo_compare.sh` since (4b); the
+  branch also changes the two 3DPW converter files (`40fd436`, 4e).
 
 ---
 
@@ -114,9 +120,11 @@ If the meeting is on **Friday**:
 
 6. Check that the student's deck is the 16-Oct version: 18 slides, the neck figure on slide 8 (section 9, check
    commands). A `git pull` of `main` does not give it: `main` holds the 17-slide evening deck (`2ff8594`) until the
-   branch `claude/gallant-dijkstra-bnlowv` is merged. Before that, the 18-slide pptx comes from the branch (download
-   link in section 8). If neither is possible, hand-edit the pptx in PowerPoint with the lists in section 9.
-7. Open the pptx in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9, 16 and 17 for text that wraps one line longer.
+   branch `claude/gallant-dijkstra-bnlowv` is merged (who and when: section 8). Until then the branch download link in
+   section 8 is the only way to get the 18-slide pptx; do not wait for the merge. If the link fails too, hand-edit the
+   pptx in PowerPoint with the lists in section 9.
+7. Open the pptx in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9, 15, 16 and 17 for text that wraps one line
+   longer (slide 15's Wording card already ends at the card's bottom edge in the LibreOffice render).
 8. After the meeting: write the supervisor's answer to the slide-17 question into section 9.
 
 If the meeting is on **Monday**:
@@ -124,11 +132,14 @@ If the meeting is on **Monday**:
 6. If the image check shows missing folders: re-extract them, rebuild the labels, re-check (4c).
 7. Start the longer fine-tune with the fix and its matched control (section 5, item 3; 4e).
 8. Start the 3DPW re-fit, which needs ~5-6 h of wall time (not measured): three code changes, then the commands in 4e
-   ("3DPW re-fit chain"; NEEDS CODE). Re-extract the images first (step 6): the label build after the re-fit needs
-   them too.
+   ("3DPW re-fit chain"). The three changes are already written, in the branch commit `40fd436` (still being
+   verified, not on `main` yet): run the version check in 4e first. After the merge, check them, don't write them;
+   before it, 4e says what to do. Re-extract the images first (step 6): the label build after the re-fit needs them
+   too.
 9. Before the meeting: Friday steps 6-7 (deck check, PowerPoint check). If the real-photo demo (step 4) has run,
-   add v5 next to v5 + fix on the same photo to slide 8 (next to the holdout figure) or a backup slide (section 9,
-   table).
+   put v5 next to v5 + fix on the same photo into the deck: replace the 579863 pair on slide 8 with it, or add it as
+   appendix slide 19 after the backup, which needs no renumbering. Slide 8 has no room beside the holdout panels
+   (section 9, table).
 
 ## 0b. Numbers at a glance
 
@@ -191,7 +202,7 @@ the **head** joint (`--person_center head`). 88 helper bones (toes, breasts, fac
 - AnnyOne: 579,960 synthetic 1280x1280 renders. Indices 0-579,859 are training. The last 100 (579,860-579,959,
   `--val_anny_n 100`) are the **holdout**. It has no children.
 - Diagnostic manifest `results/diagnostics/manifest.json`: 40 training images (adults, children, visible hands, hard
-  necks) plus 15 held-out images with no children (notes :13).
+  necks) plus 15 held-out images with no children (notes, slide 3).
 - 3DPW converted to Anny (`scripts/data/smpl_to_anny.py`, `scripts/data/build_threedpw_anny_labels.py`): labels for
   4,451 train / 2,458 validation / 9,722 test images (README :227), every third frame (README :212). Mixed into
   v9/v10 batches at 30%.
@@ -282,8 +293,8 @@ mention it in the thesis as a known issue.
   (`scripts/diagnostics/README.md:32`).
 - **trace panels** = the images the trace saves under `<output folder>/vis/`: GT next to the model's predictions, each
   drawn where the model places it in 3D. They show the depth bug; the real-photo demos do not.
-- **restart cost** = what 2 more epochs of fine-tuning v5 cost with nothing changed: ~2.4 mm PVE (notes :61). This is
-  why each pilot is read against its own control arm, not against v5.
+- **restart cost** = what 2 more epochs of fine-tuning v5 cost with nothing changed: ~2.4 mm PVE (notes, slide 14, If
+  asked). This is why each pilot is read against its own control arm, not against v5.
 - **matched people**: GT people paired with a detection by the greedy 2D matcher of `train.py`; every mean is over
   them. Recall = matched / GT people.
 - **tokens**: 14-px patches of the 672-px input (48 x 48 grid). **HPH**: Multi-HMR's cross-attention head.
@@ -322,8 +333,9 @@ mention it in the thesis as a known issue.
 
 **Repository.** github.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset
 (public), branch `main`, HEAD `fbda1b4` on 16 Oct (code as of `64266dc`, the 15-Oct handover and deck, the neck
-figure and the `DEMO_MODELS` option; section 8) plus, once the branch is merged, this 16-Oct file and the 18-slide
-deck (see the top). The cluster copy is updated with `git pull`. Raw files can be read at
+figure and the `DEMO_MODELS` option; section 8) plus, once the branch is merged (who and when: section 8), this
+16-Oct file, the 18-slide deck and the converter flags of `40fd436` (see the top; 4e). The cluster copy is updated
+with `git pull`. Raw files can be read at
 `raw.githubusercontent.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/main/`
 followed by the path (e.g. `.../main/train.py`), if your tools can fetch URLs; otherwise ask the student to paste.
 
@@ -334,7 +346,7 @@ followed by the path (e.g. `.../main/train.py`), if your tools can fetch URLs; o
 | `scripts/diagnostics/compute_bone_fix.py` | exp6: estimates one correction rotation per flipped bone |
 | `scripts/diagnostics/check_3dpw_conversion.py` | end-to-end check of the 3DPW->Anny labels |
 | `scripts/experiments/` | exp summaries (`exp5_neck_summary.py`, `exp6_bone_fix_summary.py`), `measure_batch_ages.py`, `measure_hand_px.py`, `build_age_index.py` |
-| `scripts/data/smpl_to_anny.py` | the SMPL->Anny fitter (gender bug at :1008) |
+| `scripts/data/smpl_to_anny.py` | the SMPL->Anny fitter (gender bug at :1008 on `main`; the branch commit `40fd436` adds `--gender_convention` and `--frame_grid`, 4e) |
 | `scripts/data/build_threedpw_anny_labels.py` | fits -> per-image label files |
 | `slurm/experiments/exp1..exp6_*.sh` | one job script per experiment; the header of each explains why, what, how to read |
 | `slurm/diagnostics/*.sh` | `diag_holdout.sh`, `diag_neck_bones.sh`, `check_3dpw_conversion.sh`, others |
@@ -393,13 +405,17 @@ GitHub; you cannot (next paragraph).
 2. Give each change as ONE copy-paste block, run in `/netscratch/najib/multi-hmr`, that makes the change and checks
    it. For an edit, a Python heredoc that replaces an exact old text and refuses if it does not match exactly once
    (safer than a hand-written diff). For a new file, a full-file heredoc (`cat > path <<'EOF'`). Worked example,
-   the first change of the 3DPW re-fit (section 5, item 7; section 4e):
+   the first change of the 3DPW re-fit (section 5, item 7; section 4e). On `main` it is still to make; the branch
+   commit `40fd436` already has it (4e). After the merge the old text is gone and the block refuses, which is right
+   (4e: check, don't write). Keep the `\n` at both ends of `old`: without them it also matches inside `40fd436`'s
+   line `DEFAULT_OUT_ROOT="..."`, the assert passes, and the edited script then refuses every re-fit, even into a
+   new folder. Anchor every short old text this way.
    ```
    cd /netscratch/najib/multi-hmr && python - <<'EOF'
    p = "slurm/data/run_smpl_to_anny_task.sh"
    s = open(p).read()
-   old = 'OUT_ROOT="/netscratch/najib/multi-hmr/threedpw_anny_full"'
-   new = 'OUT_ROOT="${OUT_ROOT:-/netscratch/najib/multi-hmr/threedpw_anny_full}"'
+   old = '\nOUT_ROOT="/netscratch/najib/multi-hmr/threedpw_anny_full"\n'
+   new = '\nOUT_ROOT="${OUT_ROOT:-/netscratch/najib/multi-hmr/threedpw_anny_full}"\n'
    assert s.count(old) == 1, "old text not found exactly once; nothing changed"
    open(p, "w").write(s.replace(old, new))
    print("changed", p)
@@ -453,8 +469,8 @@ What this says:
 - [Certain] The fix moves the root: 0.53-0.73 m in all five fix runs vs 1.11-1.44 m in both controls. Size goes from
   0.59-0.66 to 0.78-0.87. The head now lands within 7-10 px (v5: 64.5 px).
 - [Certain] Near vs far is still not separated: slope 0.30 with the switch alone, 0.38-0.44 with a stronger depth loss.
-  Predictions are pulled toward ~2.5-2.9 m; cause unknown (notes :53, :55). Holdout people are at 1.92 m on average
-  (README :114).
+  Predictions are pulled toward ~2.5-2.9 m; cause unknown (notes, slide 13, and its If asked). Holdout people are at
+  1.92 m on average (README :114).
 - [Certain] By its own success rule exp1 **failed**: every run, controls included, prints
   `PVE <= 71.5 and recall >= 89.2: NO` (e.g. 3572482:150). The rule's slope clause prints `yes` for x5, x20,
   x5-10-epoch and even the 2-epoch control (3572418:76, 3572483:81, 3572482:150, 3571599:73), because it only asks
@@ -470,7 +486,7 @@ What this says:
 - [Certain] v9 and v10 carry the same bug (table above). [Likely] the ViT-S students too (same training code; not
   measured).
 - In 4 of 12 rendered holdout images both v5 and the fix miss people very close to the camera [Likely detection; not
-  counted] (notes :49).
+  counted] (notes, slide 12).
 
 **Refuted / do not use:** "depth error 1.08 -> 0.39 m" (signed `root dz`, 3572482:126); size 0.67 for v5 (an older
 statistic in the findings doc and the exp1 script's "baseline(findings)" column; the trace's own value is 0.63).
@@ -654,7 +670,7 @@ the fine-tune the v5 head is already under 15 deg, so [Likely] it is no longer n
   (124.8, 3571960:294) because the model never saw such a camera.
 - exp4b, region-normalised rotation loss: 17.5 deg vs 17.4 for its control (3571959:316; 3571960:314). It cut the
   hands' share of the rotation loss from ~70% (with the x4 hand boost) to 33%, so it is a rebalance, not an
-  upweighting (notes :35). The earlier x4 hand boost (v4) did not help either.
+  upweighting (notes, slide 9, If asked). The earlier x4 hand boost (v4) did not help either.
 - v5's `metacarpal1.L` is flipped 180 deg (3.2). `--relax_hands` does not reset metacarpals, so [Likely] the bent left
   index base is visible in the demos.
 
@@ -690,14 +706,14 @@ fixed checkpoint (4b), also look at the hands; a run with `--relax_hands 0` woul
     (3571955:169-170; 3571956:164-165). Inside noise; no effect.
   - real photos, five small people (skeletal height 0.6-1.14 m): predicted age 0.57-0.67 with the sampler and in the
     control, 0.60-0.67 for v5 (diag_cropK jobs 3572419, 3572420, 3569949, lines 7, 10, 13, 58, 70). The holdout adults
-    sit mostly at 0.4-0.8 (notes :39).
+    sit mostly at 0.4-0.8 (notes, slide 10).
   - both arms print "ADULT REGRESSION" (adult PVE 75.1 / 74.9 vs 70.5): that is the restart cost of any fine-tune,
     not the sampler.
 - The 3DPW labels fix age at 0.55 for everyone (3575369:232), so mixing 3DPW adds no child signal.
 
 **Age scale** [Likely]: by Anny's own calibration, age 0.10 ~ 2 y, 0.3 ~ 7 y, 0.5 ~ 12.7 y, 0.55 ~ 13.6 y, 0.67 ~ 16 y
 (linear between Anny's anchors). The labels in our code assume 0.33 = 11 y and 0.67 = 25 y. Which one AnnyOne follows is
-not settled (notes :41). Avoid years; compare with the holdout adults instead.
+not settled (notes, slide 10, If asked). Avoid years; compare with the holdout adults instead.
 
 **Verdict so far:** no effect from a 2-epoch sampler. [Guessing] a synthetic-to-real gap plus an old-age bias.
 
@@ -749,7 +765,7 @@ I1-I4), unrelated to the V0-V4 evaluation settings of section 1. It comes from: 
 forearm 0.879, thigh 1.119 overall, failing only in the test split (train passes with 0.965 / 1.035) (:214-215, :335);
 and check V4e (people with a joint over 100 mm), 5.2% in train = FAIL there, 3.2% overall = WARN (:218, :337). Cause
 of the test-split limb ratios: unknown. All checked test people are men labelled 1, so a link to the gender defect is
-possible, not shown (notes :27).
+possible, not shown (notes, slide 6, If asked: Limb lengths).
 
 **Label rebuild (job 3579266): the same counts, so it did not recover the missing labels.** Output
 `threedpw_anny_full/labels_rebuilt` (b395a10):
@@ -771,7 +787,8 @@ What this says:
   first unzip is never repeated [Certain about the code; the broken unzip itself is not checked]. Check command: 4c.
 
 **Next:** check the image folders, re-extract the missing ones, rebuild, re-check (4c). Then fix gender and use one
-shared frame grid for both actors, re-fit all 87 tasks into a **new** folder, rebuild, re-check (section 5, item 7).
+shared frame grid for both actors (both flags are written in the branch commit `40fd436`, not on `main` yet; 4e),
+re-fit all 87 tasks into a **new** folder, rebuild, re-check (section 5, item 7).
 Only then test anything on 3DPW.
 
 ### 3.6 Pilot noise (read every 2-epoch result against this)
@@ -780,8 +797,8 @@ The exp3 control (3571958) and exp4 control (3571960) are identical configs. The
 68.7; 3571958:104, 3571960:320), 1.9 deg global head (13.6 vs 11.7) and 0.8 recall points. Over six 2-epoch v5-recipe
 arms: PVE 68.7-76.3, recall 88.6-90.2, global head 11.3-13.7 (`docs/experiments_plan.md:413-419`). So one pilot
 resolves only ~10 mm PVE, ~3 deg, ~2 recall points. `train.py` sets no random seed (the trace's `--seed` only picks
-which training images exp6 samples). Restarting a fine-tune alone costs ~2.4 mm (notes :61). The exp5 L1 control, which is
-also exp6's control, sits just above that range (PVE 76.9, 3573521:98).
+which training images exp6 samples). Restarting a fine-tune alone costs ~2.4 mm (notes, slide 14, If asked). The exp5
+L1 control, which is also exp6's control, sits just above that range (PVE 76.9, 3573521:98).
 
 ---
 
@@ -1003,9 +1020,37 @@ cd /netscratch/najib/multi-hmr && SUMMARY_ONLY=1 RUN=anny_s2_shape_v5_00099_n200
 cd /netscratch/najib/multi-hmr && SUMMARY_ONLY=1 RUN=anny_v10_scratch_mixed_00290_n200_s0_metacarpal2_L-metacarpal2_R-metacarpal3_R bash slurm/experiments/exp6_bone_fix.sh
 ```
 
-3DPW re-fit chain (section 5, item 7). **NEEDS CODE** first, three changes. Both fitter fixes go behind default-off
-flags (the brief's rule, section 10): the old labels that v9/v10 trained on must stay reproducible, and the new
-behaviour is switched on only by the v2 re-fit command below.
+3DPW re-fit chain (section 5, item 7). Three code changes first. Both fitter fixes go behind default-off flags (the
+brief's rule, section 10): the old labels that v9/v10 trained on must stay reproducible, and the new behaviour is
+switched on only by the re-fit command below.
+
+**The three changes are already written**, in commit `40fd436` on the branch `claude/gallant-dijkstra-bnlowv`
+(converter v2.3; WIP, still being verified, not on `main` yet; who merges: section 8). First check which version the
+student has:
+```
+cd /netscratch/najib/multi-hmr && git pull && grep -c "gender_convention" scripts/data/smpl_to_anny.py; grep -c "REFIT_FLAGS" slurm/data/run_smpl_to_anny_task.sh
+```
+- **Two numbers above `0`** (the branch is merged): steps 1-3 below become "check, don't write". Do not write
+  anything; run this check instead (`grep`, not `--help`: the fitter imports torch at the top):
+  ```
+  cd /netscratch/najib/multi-hmr && python -m py_compile scripts/data/smpl_to_anny.py && bash -n slurm/data/run_smpl_to_anny_task.sh && grep -n "add_argument('--gender_convention'\|add_argument('--frame_grid'\|^REFIT_FLAGS=\|^OUT_ROOT=" scripts/data/smpl_to_anny.py slurm/data/run_smpl_to_anny_task.sh
+  ```
+  The names are the ones used in the commands below (`--gender_convention makehuman|anny`,
+  `--frame_grid per_person|shared`, `OUT_ROOT`, `REFIT_FLAGS`). Three differences from the plan in steps 1-3:
+  `find_valid_frames` takes `frame_grid=` (not `shared_grid=`) and calls a new `select_frames`; the job script
+  refuses a non-empty `REFIT_FLAGS` with the default `OUT_ROOT`; each new `.npz` records `gender_convention`,
+  `frame_grid` and `version` `2.3`. Lines at `40fd436`: `run_smpl_to_anny_task.sh:50-59`
+  and `:98`; `smpl_to_anny.py:801` (`select_frames`), `:828`, `:890-961` (argparse), `:1040`, `:1121` (gender).
+- **`0` and `0`** (`main` before the merge): the changes are still to make there. If the re-fit can wait for the
+  merge, waiting saves the work. If not, make them as in steps 1-3 (line numbers as of `64266dc`, which `main` still
+  has for these two files); the commands further down work with either version. Changes written anew on `main`
+  touch the same lines as `40fd436`, so the later merge of the branch will conflict in these two files: tell the
+  student, so that whoever merges knows.
+- A post-check of a re-fit (`scripts/data/check_refit_task.py`, `slurm/data/run_check_refit_task.sh`) was being
+  written in the same session; it is **not** in `40fd436`. Use it only if
+  `git ls-files scripts/data/check_refit_task.py` lists it (new files under `scripts/data/` and `slurm/data/` are
+  hidden by the `data/` line in `.gitignore` and need `git add -f`).
+
 1. `slurm/data/run_smpl_to_anny_task.sh`:
    - `:40`: make `OUT_ROOT` overridable (the worked example in section 2). Without it the array writes into the old
      folder and skips every person that already has a file.
@@ -1026,21 +1071,22 @@ behaviour is switched on only by the v2 re-fit command below.
 Checks: `python -m py_compile scripts/data/smpl_to_anny.py`, `bash -n slurm/data/run_smpl_to_anny_task.sh`, `git diff`.
 
 Then validate on one task first (the script header asks for this, `run_smpl_to_anny_task.sh:19-22`): its log must show
-the gender value 0.0 for a man and the per-joint error still ~16-20 mm.
+the gender value 0.0 for a man and the per-joint error still ~16-20 mm. With the `40fd436` version the log also prints
+`extra flags (REFIT_FLAGS): '--gender_convention anny --frame_grid shared'` and `frame grid: shared`.
 ```
-cd /netscratch/najib/multi-hmr && OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_full_v2 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --array=0 slurm/data/run_smpl_to_anny_task.sh
+cd /netscratch/najib/multi-hmr && OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --array=0 slurm/data/run_smpl_to_anny_task.sh
 ```
 If it looks right, the rest (fits ~40 GPU hours by the script's own 6 s/frame estimate, ~5-6 h wall time with 8 at
 once; not measured; task 0 is skipped because its file exists):
 ```
-cd /netscratch/najib/multi-hmr && OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_full_v2 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
+cd /netscratch/najib/multi-hmr && OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
 ```
 Logs `logs/smpl2anny-all-<arrayjobid>_<task>.out`. When all 87 are done:
 ```
-cd /netscratch/najib/multi-hmr && FITS=/netscratch/najib/multi-hmr/threedpw_anny_full_v2 OUT=/netscratch/najib/multi-hmr/threedpw_anny_full_v2/labels sbatch slurm/data/run_build_labels.sh
+cd /netscratch/najib/multi-hmr && FITS=/netscratch/najib/multi-hmr/threedpw_anny_v23 OUT=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels sbatch slurm/data/run_build_labels.sh
 ```
 ```
-cd /netscratch/najib/multi-hmr && LABELS=threedpw_anny_full_v2/labels FITS=threedpw_anny_full_v2 OUT=results/diagnostics/check_3dpw_conversion_v2 sbatch slurm/diagnostics/check_3dpw_conversion.sh
+cd /netscratch/najib/multi-hmr && LABELS=threedpw_anny_v23/labels FITS=threedpw_anny_v23 OUT=results/diagnostics/check_3dpw_conversion_v23 sbatch slurm/diagnostics/check_3dpw_conversion.sh
 ```
 Pass: check I1 (gender labels) shows men 0.000 / women 1.000; check I3 (unlabelled actors) "valid actor unlabelled"
 near 0 of 960; check V1 (body joints) median still ~19 mm. Training scripts read `threedpw_anny_full/labels`
@@ -1079,7 +1125,7 @@ first on any day (section 0a).
 6. **Supervisor's decision (slide 17).** Fine-tune v9 now with `--gt_center_joint person_center` and x5, or first fix
    the labels (item 7) and then fine-tune? The student proposes labels first, because 3DPW is 30% of each batch and the
    men would keep learning the wrong body. Expected from v5: size ~0.84, root ~0.5 m, cost ~2.6 mm PVE and ~1.6 recall
-   points (notes :77). **The v9 fine-tune script does not exist yet (NEEDS CODE).** Recipe:
+   points (notes, slide 17, If asked: Option 1). **The v9 fine-tune script does not exist yet (NEEDS CODE).** Recipe:
    - Copy the training call of `slurm/train/train_teacher_v9_mixed.sh` (it has the 3DPW mix flags), into a new
      script, e.g. `slurm/experiments/exp7_v9_depth.sh`. Do **not** reuse `exp1_depth_anchor.sh`: it trains on AnnyOne
      only, so `CKPT=v9` would silently drop the 30% 3DPW. Do not run `train_teacher_v9_mixed.sh` itself: it starts
@@ -1102,7 +1148,7 @@ first on any day (section 0a).
    - Labels (`--mix_3dpw_labels`): slide-17 option 1 ("now") = `/netscratch/najib/multi-hmr/threedpw_anny_full/labels`
      (what v9 trained on; gender reversed, 31% of train missing) or `labels_rebuilt` once item 5 brings the missing
      sequences back (gender still reversed; today it holds the same counts as `labels`, 3579266:67). Option 2 ("labels
-     first") = `/netscratch/najib/multi-hmr/threedpw_anny_full_v2/labels` after item 7.
+     first") = `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels` after item 7.
    - Time: the v9 script's comment expects ~8-10 min per 1,000-iteration epoch at batch 4
      (`train_teacher_v9_mixed.sh:16`; an estimate, never measured), so 10 epochs ~1.3-1.7 h plus evaluations. Not
      measured with 3DPW batches; the exp6 fine-tune on AnnyOne alone took 315 s per epoch (12.7 images/s,
@@ -1110,10 +1156,12 @@ first on any day (section 0a).
    - Read: trace the last checkpoint of each arm with `diag_holdout.sh` and a `TAG` (4e); root error, slope, size,
      PVE, recall vs the control. The training log's 3DPW-val numbers are against converted labels only.
 7. **3DPW labels (after the meeting, before any 3DPW claim).** Three code changes (two new default-off flags in the
-   fitter, one env var in the array job), then re-fit all 87 tasks into a new folder, rebuild, re-check: exact changes
-   and commands in 4e ("3DPW re-fit chain"). The gender refit confirmed the flip only for men; check the women in the
-   new check I1 (gender labels). If the meeting moves to Monday, the re-fit (~5-6 h wall time, not measured) could
-   start before it. Do item 5 first: the label build after the re-fit skips frames without image files too.
+   fitter, env vars in the array job), then re-fit all 87 tasks into a new folder (`threedpw_anny_v23`), rebuild,
+   re-check: exact changes and commands in 4e ("3DPW re-fit chain"). The changes are already written in the branch
+   commit `40fd436` (still being verified, not on `main` yet): after the merge, check them, don't write them (4e).
+   The gender refit confirmed the flip only for men; check the women in the new check I1 (gender labels). If the
+   meeting moves to Monday, the re-fit (~5-6 h wall time, not measured) could start before it. Do item 5 first: the
+   label build after the re-fit skips frames without image files too.
 8. **Depth slope stuck at 0.3-0.44.** Measure the training-set depth distribution properly (so far only batch means of
    ~2.5-3.2 m) and the fix run's slope on training images. Both **NEED CODE**: extend
    `scripts/experiments/measure_batch_ages.py` (it already draws real training batches and applies a copy of
@@ -1325,19 +1373,30 @@ Trust this file over these. Fix them when there is time (one commit per doc).
 |---|---|
 | 5e9f416 | WIP: 16-Oct update of this file (the neck panels seen) |
 | 04bb679 | WIP: new slide 8 (neck figure), 18-slide deck, notes and pptx; this file |
+| 40fd436 | WIP: 3DPW converter v2.3, still being verified: `--gender_convention` and `--frame_grid` in `smpl_to_anny.py` (default = old behaviour), `OUT_ROOT` / `REFIT_FLAGS` overrides and a refusal guard in `run_smpl_to_anny_task.sh` (4e); slide 8 laid out in one row; this file, deck README, notes, pptx |
 
 The 15-Oct **evening** update of this file (exp6 and rebuild results; jobs 3579014, 3579015, 3579266) and the deck
 update made with it (`docs/deck_src/build.js`, the notes, the pptx; section 9) are on `main` as `2ff8594`. The
-**16-Oct** update (this version of the file and the 18-slide deck) is on the branch as WIP `04bb679` (and `5e9f416`;
-later edits of this file may follow there as further commits), marked "not for main yet". It reaches `main` only once
+**16-Oct** update (this version of the file, the 18-slide deck and the converter flags) is on the branch as WIP
+`5e9f416`, `04bb679` and `40fd436` (later commits may follow), marked "not for main yet". It reaches `main` only once
 the branch is merged.
+
+**Who merges, and when.** The Claude Code session that made these commits, the only one with push access (you cannot
+push; the student does not use branches; section 2). It moves `main` up to the branch once its verification is done
+[Likely: every earlier WIP commit reached `main` that way, each within about 1.5 hours: `bd7cfa3` -> `637dc5c`,
+`d902e00` -> `81dbdcb`, `c6419ce` -> `64ac9e3`; `main` has a straight history]. When: not known; it may not happen
+before the meeting. Until it does, the branch links below are the only way to get the 16-Oct file and the 18-slide
+deck. Do not wait for the merge to get them, nor for the demo (4b runs on `main`); for the converter, 4e says what to
+do on either version. Neither you nor the student merges the branch. Whoever merges also updates this file's "until
+the merge" lines (top, 0a step 6, sections 2, 4e, 8, 9).
 
 **Getting this file.** On the cluster: `cd /netscratch/najib/multi-hmr && git pull`, then
 `grep -c '^## 0a\. Tomorrow' docs/handover.md` must print `1`, and `grep -c 3579014 docs/handover.md` must print a number
 above `0` (the evening version; `0` = the afternoon version). Until the branch is merged, that `main` copy is the
 evening version: `grep -c neck_before_after_v5 docs/handover.md` prints `0` there. To give it to ChatGPT, download
 `https://raw.githubusercontent.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/main/docs/handover.md`
-(save the page as `handover.md`) and attach it. Until the merge, take the 16-Oct version from the branch instead:
+(save the page as `handover.md`) and attach it. Until the merge, take the 16-Oct version from the branch instead (the
+only way to get it then):
 `https://raw.githubusercontent.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/refs/heads/claude/gallant-dijkstra-bnlowv/docs/handover.md`,
 and the 18-slide deck from
 `https://raw.githubusercontent.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/refs/heads/claude/gallant-dijkstra-bnlowv/docs/supervisor_update_2026-10-16.pptx`
@@ -1393,8 +1452,9 @@ since `64ac9e3`, the evening version since `2ff8594`. The 16-Oct (18-slide) vers
 links). Notes are generated from `build.js`; never edit the `.md` alone.
 
 **Before the meeting** (whichever date holds): open the pptx once in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9,
-16 and 17 for text that wraps one line longer (they were only rendered with LibreOffice; slide 8 is new on 16 Oct, and
-all the others but 5 changed in the 15-Oct evening update).
+15, 16 and 17 for text that wraps one line longer (they were only rendered with LibreOffice; slide 8 is new on 16 Oct;
+slide 15's Wording card changed on 16 Oct, and in the LibreOffice render its last line already ends at the card's
+bottom edge; all the others but 5 changed in the 15-Oct evening update).
 
 **Slide numbers moved on 16 Oct.** A new slide 8 (the neck figure) sits right after the neck slide, so every slide
 from the old 8 on moved up by one: fingers 8 -> 9, children 9 -> 10, the hidden bug 10 -> 11, depth figure 11 -> 12,
@@ -1437,18 +1497,24 @@ against `build.js` at `2ff8594`; if a wording here differs, `build.js` is the re
 **16-Oct update (18 slides), after the student sent the exp6 compare panels (3.2, "Visual check").**
 - New slide 8, "Neck: before and after the correction", right after the neck slide: the four panels of
   `docs/figures/neck_before_after_v5.jpg` (holdout images 579862 and 579863), cropped on the slide (the pptx holds the
-  file once, unchanged) and laid out in one row, before | after per image, under header bars "Before (v5)" (red) and
-  "After (correction)" (teal); the figure's own small labels are cropped off. The hand bones are also corrected,
-  hands not judged, hence the caption's "On the neck, only ..."; the caption gives the thickness 0.46 -> 1.00 as the
-  100-image holdout value. A "Limits:" line gives the caveats of 3.2: the correction without the fine-tune (head
+  file once, unchanged) and laid out in one row, before | after per image, under two-line header bars "Before (v5) /
+  as trained" (red) and "After (correction) / no training" (teal; on slide 7 teal marks the fine-tuned fix, so the
+  second line says these panels are not the fine-tuned model); the figure's own small labels are cropped off. Yellow
+  rings mark three necks (579862: both people; 579863: the blue person). The hand bones are also corrected, hands not
+  judged, hence the caption's "On the neck, only ..."; the caption gives the thickness 0.46 -> 1.00 as the 100-image
+  holdout value. A "Limits:" line gives the caveats of 3.2: the correction without the fine-tune (head
   direction 19.1 deg against 12.0 for v5; 14.4 after the fine-tune), v5 base so the bodies are still drawn too small
-  (the depth bug), real photos not checked yet.
+  (the depth bug), real photos not checked yet. The notes say the panels match the thickness (judged by eye, not
+  measured on them), and their "If asked" part answers why the hands differ too (two hand bones turned back, not
+  judged; slide 9).
 - Slides 7, 16 and 17 and their notes (and the slide 2 notes) said the renders were not looked at yet ("renders not
   yet viewed", "I have not looked at them"); in the 16-Oct version they say what the renders are, the correction
   alone with no training (slide 16 item 1: "(slide 8: no training)"; slide 7: "Holdout renders of the fix with no
-  training: next slide"), and that real photos are still open. Slide 15's Wording card names only the README and the
-  findings as still carrying last week's neck story (section 7). Slide cross-references in the text and notes follow
-  the new numbering. Exact wording: `build.js`.
+  training: next slide"), and that real photos are still open. Slide 15's Wording card and its notes (changed on 16
+  Oct; until then "README, findings and handover") name the README and the findings as still carrying last week's
+  neck story. That is narrower than section 7, which also lists the plan's neck lines (`plan :150-152`, the refuted
+  exp3 redundant-chain hypothesis; `:252`, "Leading hypothesis [Likely]"). The slide is left as it is. Slide
+  cross-references in the text and notes follow the new numbering. Exact wording: `build.js`.
 If your copy does not say this, hand-edit the pptx in PowerPoint with these lists (slide text and speaker notes; for
 slide 8, insert the figure with its caveats), then port the changes into `build.js` after the meeting and rebuild, so
 the `.md` notes match again.
@@ -1482,7 +1548,7 @@ in `build.js` at `2ff8594`; the exp6 panels, which became slide 8 on 16 Oct.)
 
 | result | slides to change | what changes |
 |---|---|---|
-| real-photo demo with the fix (4b) | 8 (next to the holdout figure) or a backup slide; 7 and 16 (item 1), and the notes of 2, 7, 8, 16, 17 | v5 next to v5 + fix on the same photo. If the neck widens there too: "the thin neck on real photos is the flip" moves from likely to shown; if not, say so on slide 8 |
+| real-photo demo with the fix (4b) | 8 (replace the 579863 pair with the real-photo pair, and update its caption and "Limits:" line) or a new appendix slide 19 after the backup (no renumbering); 7 and 16 (item 1), and the notes of 2, 7, 8, 16, 17. Slide 8 has no room beside the holdout panels (the row is 9.0 in wide, captions and "Limits:" fill it down to just above the footer); a new slide right after 8 would renumber every later slide again | v5 next to v5 + fix on the same photo. If the neck widens there too: "the thin neck on real photos is the flip" moves from likely to shown; if not, say so on slide 8 |
 | image check + rebuild after re-extraction (4c) | 6, 16 (item 7), and the notes of 6, 16, 17 | the rebuilt train / validation / test counts (expected ~6,437 / ~2,777 / 9,722) |
 | longer fine-tune with the fix (4e) | 7, 16 (item 1) | neck02, head, girth, global head, PVE, recall at 10 epochs against the 10-epoch control |
 | `long_pc_dist20` | 13 (table note), 16 (item 3, "No result yet for the ×20 run") | root error, size, slope, PVE, recall of x20 10 epochs next to x5 10 epochs |

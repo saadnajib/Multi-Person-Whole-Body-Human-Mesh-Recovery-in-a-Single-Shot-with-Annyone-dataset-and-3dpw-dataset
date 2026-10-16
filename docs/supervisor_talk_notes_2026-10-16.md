@@ -41,7 +41,9 @@ If asked: After the fine-tune, neck02 is 4.7 degrees and the thickness 1.00. The
 
 ## Slide 8: Neck: before and after the correction
 
-These are two of the twelve holdout images. For each image, the left panel is v5 as trained and the right panel is the same model with the correction, no training; on the neck, only neck02 and the head are turned back. Look at the necks: on the left they are thin stalks, on the right they have normal width. That is the thickness 0.46 to 1.00 on slide 7, measured over all 100 holdout images. All twelve images show this wherever a neck is visible. Three limits. Without fine-tuning the head points 19 degrees off, against 12 before; the fine-tune brings it to 14. The bodies are still too small; that is the depth bug. Real photos are not checked yet.
+These are two of the twelve holdout images. For each image, the left panel is v5 as trained and the right panel is the same model with the correction, no training; on the neck, only neck02 and the head are turned back. Look at the necks, ringed in yellow: on the left they are thin stalks, on the right they have normal width. This matches the thickness 0.46 to 1.00 on slide 7, measured over all 100 holdout images. All twelve images show this wherever a neck is visible. Three limits. Without fine-tuning the head points 19 degrees off, against 12 before; the fine-tune brings it to 14. The bodies are still too small; that is the depth bug. Real photos are not checked yet.
+
+If asked: the same correction also turns back two hand bones, so the hands differ too; I have not judged them (slide 9).
 
 ## Slide 9: Fingers: about half the error was two flipped bones
 

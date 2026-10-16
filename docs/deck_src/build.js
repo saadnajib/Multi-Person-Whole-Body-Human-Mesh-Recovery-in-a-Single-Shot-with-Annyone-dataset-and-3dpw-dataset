@@ -255,28 +255,38 @@ N(s, "Neck: two half-turned bones, and a pilot fix", "In all eight v5-line check
 // correction; top row holdout 579862, bottom row 579863. Here the four panels are cropped out of that one file (srcRect,
 // so the pptx holds the file once and unchanged) and laid out in one row, before | after per image: all four panels get
 // the same height, about 1.36 times the size they had in the 2 x 2 grid. The baked-in label strip (y 0-44) is cropped
-// off; slide-level header bars replace it, in the red / teal of the depth figures on slides 12 and 18.
+// off; slide-level header bars replace it, in the red / teal of the depth figures on slides 12 and 18. Each bar has a
+// second line, "as trained" / "no training": teal marks the fine-tuned fix on slide 7, and these After panels are not it.
 // Panel pixel boxes, measured from the file, inset 1 px against JPEG fringe: top row x 0-619 / 634-1253, y 50-569;
 // bottom row x 64-554 / 698-1188, y 584-1103.
+// Yellow rings mark the necks (centres measured from the file, left column; the right column is the same + 634 px in x):
+// 579862 blue person (155, 232) and orange person (480, 335), 579863 blue person (343, 714). 579863's orange person bends
+// the head forward, so the neck is foreshortened there and gets no ring.
 s = pres.addSlide({ masterName: "LIGHT", sectionTitle: "Findings" });
 s.addText("Neck: before and after the correction", { placeholder: "title" });
 {
   const NECK_PX = { w: 1254, h: 1118 };
   const panels = [{ img: "579862", after: false, box: [1, 51, 618, 518] }, { img: "579862", after: true, box: [635, 51, 618, 518] },
                   { img: "579863", after: false, box: [65, 585, 489, 518] }, { img: "579863", after: true, box: [699, 585, 489, 518] }];
-  const gIn = 0.06, gOut = 0.3, barH = 0.34, x0 = 0.5, barY = 1.2;      // gap inside a pair, gap between the pairs
+  const gIn = 0.06, gOut = 0.3, barH = 0.5, x0 = 0.5, barY = 1.2;       // gap inside a pair, gap between the pairs
   const sc = (9.0 - 2 * gIn - gOut) / panels.reduce((a, p) => a + p.box[2], 0);   // in per px: the row is 9.0 in wide
-  const ph = 518 * sc, imgY = barY + barH;                               // 2.01 in tall, ends at 3.55
+  const ph = 518 * sc, imgY = barY + barH;                               // 2.01 in tall, ends at 3.71
+  const necks = { "579862": [[155, 232], [480, 335]], "579863": [[343, 714]] }, ringD = 0.26;
   let x = x0;
   const pairX = {};
   panels.forEach((p, i) => {
     const [bx, by, bw, bh] = p.box, w = bw * sc;
     if (!p.after) pairX[p.img] = x;
-    s.addText(p.after ? "After (correction)" : "Before (v5)", { x, y: barY, w, h: barH, fontSize: 16, bold: true, color: THEME.colors.lt1, fill: { color: p.after ? THEME.colors.accent1 : THEME.colors.accent4 }, align: "center", valign: "middle", margin: 0, isTextBox: true, objectName: "neck header " + i });
+    s.addText([{ text: p.after ? "After (correction)" : "Before (v5)", options: { fontSize: 16, bold: true, breakLine: true } },
+               { text: p.after ? "no training" : "as trained", options: { fontSize: 12 } }],
+      { x, y: barY, w, h: barH, color: THEME.colors.lt1, fill: { color: p.after ? THEME.colors.accent1 : THEME.colors.accent4 }, align: "center", valign: "middle", margin: 0, isTextBox: true, objectName: "neck header " + i });
     s.addImage({ path: FIG_DIR + "neck_before_after_v5.jpg", x, y: imgY, w: NECK_PX.w * sc, h: NECK_PX.h * sc,
       sizing: { type: "crop", x: bx * sc, y: by * sc, w, h: bh * sc },
       altText: "Holdout image " + p.img + (p.after ? ", with the correction on neck02 and the head, no training: normal neck width" : ", v5 as trained: thin neck"),
       objectName: "figure neck_before_after_v5.jpg " + p.img + (p.after ? " after" : " before") });
+    necks[p.img].forEach(([nx, ny], k) => s.addShape(pres.ShapeType.ellipse, {
+      x: x + (nx + (p.after ? 634 : 0) - bx) * sc - ringD / 2, y: imgY + (ny - by) * sc - ringD / 2, w: ringD, h: ringD,
+      line: { color: THEME.colors.accent6, width: 2 }, objectName: "neck ring " + p.img + (p.after ? " after " : " before ") + k }));
     x += w + (p.after ? gOut : gIn);
   });
   const pairW = { "579862": 2 * 618 * sc + gIn, "579863": 2 * 489 * sc + gIn };
@@ -293,7 +303,7 @@ s.addText("Neck: before and after the correction", { placeholder: "title" });
              { text: "Bodies are still too small here (separate depth bug). Real photos not checked yet." }],
     { x: x0, y: imgY + ph + 0.84, w: 9.0, h: 0.4, fontSize: 11, color: C.text2, margin: 0, isTextBox: true, valign: "top", objectName: "neck figure footnote" });
 }
-N(s, "Neck: before and after the correction", "These are two of the twelve holdout images. For each image, the left panel is v5 as trained and the right panel is the same model with the correction, no training; on the neck, only neck02 and the head are turned back. Look at the necks: on the left they are thin stalks, on the right they have normal width. That is the thickness 0.46 to 1.00 on slide 7, measured over all 100 holdout images. All twelve images show this wherever a neck is visible. Three limits. Without fine-tuning the head points 19 degrees off, against 12 before; the fine-tune brings it to 14. The bodies are still too small; that is the depth bug. Real photos are not checked yet.");
+N(s, "Neck: before and after the correction", "These are two of the twelve holdout images. For each image, the left panel is v5 as trained and the right panel is the same model with the correction, no training; on the neck, only neck02 and the head are turned back. Look at the necks, ringed in yellow: on the left they are thin stalks, on the right they have normal width. This matches the thickness 0.46 to 1.00 on slide 7, measured over all 100 holdout images. All twelve images show this wherever a neck is visible. Three limits. Without fine-tuning the head points 19 degrees off, against 12 before; the fine-tune brings it to 14. The bodies are still too small; that is the depth bug. Real photos are not checked yet.\n\nIf asked: the same correction also turns back two hand bones, so the hands differ too; I have not judged them (slide 9).");
 
 // 9 fingers. Before: 3571960 (predicted 17.3, rest pose 15.1, crop 17.2), 3571959 (region-norm 17.5 vs 17.4).
 // Bone fix: exp6_bone_fix_3579014 SUMMARY, row "rot fingers": baseline 17.3, zero-training 8.2, fine-tuned 8.3
