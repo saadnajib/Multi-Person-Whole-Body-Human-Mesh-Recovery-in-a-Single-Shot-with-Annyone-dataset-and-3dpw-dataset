@@ -14,8 +14,11 @@ in `docs/figures/`. A `git pull` on the cluster gets all of it. **Not in `93c4ed
 `slurm/experiments/exp7_final_model.sh` and the change to `slurm/eval/run_eval_3dpw_test.sh` it needs (the
 `EVAL_LABELS` and `MODEL_ENTRY` overrides; 4e, "Using the v23 labels"), both drafted on 17 Oct, not yet reviewed or
 committed (section 5, item 7; they go into one commit, 0a step 6); also the 17-Oct versions of this file and of the
-speaker notes (the `3589270` check below). After a `git pull`, `ls slurm/experiments/exp7_final_model.sh` and
-`grep -c EVAL_LABELS slurm/eval/run_eval_3dpw_test.sh` (above `0`) show whether both have arrived. To check a copy
+speaker notes (the `3589270` check below); and, from the evening of 17 Oct, the deck rebuild with the corrected
+children slide (section 9) and the default-off flag `--mask_3dpw_shape` (`loss.py`, `train.py`, exp7's
+`MASK_3DPW_SHAPE`; added by another session, uncommitted when this was written; 3.4). After a `git pull`,
+`ls slurm/experiments/exp7_final_model.sh` and `grep -c EVAL_LABELS slurm/eval/run_eval_3dpw_test.sh` (above `0`)
+show whether both have arrived; `grep -c mask_3dpw_shape loss.py` (above `0`) shows the mask. To check a copy
 of this file:
 - `grep -c '^## 0a\. Tomorrow' docs/handover.md` prints `1` for the 15-Oct and later versions and `0` for every older
   one (the 14-Oct `586faad`, or the work-in-progress `c6419ce`).
@@ -27,8 +30,11 @@ of this file:
 - `grep -c 3589270 docs/handover.md` prints a number above `0` in the 17-Oct versions (the re-fit test, job
   3589270, and the H100 route). `0` means a 16-Oct copy: it still calls the re-fit test unrun, plans every job on the
   old GPUs and leaves the meeting date open.
-- `grep -c 3590385 docs/handover.md` prints a number above `0` only in this version (17 Oct, later: the first full
-  re-fit, 51 of 87 done, 36 failed on the V100 nodes gifu/glendale, and the rerun command in 0a, step 4).
+- `grep -c 3590385 docs/handover.md` prints a number above `0` in the later 17-Oct versions (17 Oct, later: the
+  first full re-fit, 51 of 87 done, 36 failed on the V100 nodes gifu/glendale, and the rerun command in 0a, step 4).
+- `grep -c 'Relative Human' docs/handover.md` prints a number above `0` only in this version (17 Oct, evening: the
+  children diagnosis corrected, the ranked plan, the 3DPW shape mask; 3.4, section 5 item 12). `0` means an older
+  copy: it still counts the "five small people" as children predicted as adults, which is wrong.
 
 The student should attach this file to the chat directly, not rely on you browsing GitHub. Download links: section 8.
 
@@ -56,8 +62,19 @@ file were merged into `main` (section 8).
   frame grid; ~4.4 s per frame. Full re-fit job 3590385: 51 of 87 done, 36 failed on the V100 nodes gifu/glendale
   and are rerun without them (0a, step 4). Not run yet: the post-checks, labels and check, the final model (0a).
 
+**What happened on the evening of 17 Oct** (this version; details in 3.4 and section 5, item 12):
+- The children evidence was re-checked. The "five small people (skeletal height 0.6-1.14 m)" are mostly adults,
+  crouching or seated [Likely, by eye]. The one real child in our photos (a boy) is predicted as an adult body
+  [Certain, log]. The shape head regresses to the training median, in the synthetic tails and on real photos.
+- A ranked plan: measure on Relative Human (real photos with age groups) first; then a limitation (Path A) or
+  BEV-style weak labels (Path B, 1-2 weeks of code after exp7). Both are for the supervisor on Monday (0a, step 8).
+- Another session added `--mask_3dpw_shape` (default off; exp7 env `MASK_3DPW_SHAPE`, default 0). On or off in exp7
+  is a Monday decision (3.4).
+- Deck: slide 10 (children) corrected, slides 14 and 16 and notes 8, 10, 14, 16, 17 made consistent (section 9).
+
 **Meeting date: Monday 19 October 2026** (the student, 17 Oct), with the deck `docs/supervisor_update_2026-10-16.pptx`
-(18 slides; slides unchanged since 16 Oct, speaker notes updated 17 Oct, section 9). Already in the deck: the
+(18 slides; slides unchanged since 16 Oct except slides 10, 14 and 16, changed on the evening of 17 Oct with the
+children correction; speaker notes updated 17 Oct, section 9). Already in the deck: the
 real-image demo (slide 8), the label rebuild result (job 3581320, slides 6 and 16) and, in the notes only, the re-fit
 test (job 3589270). If the full re-fit and its check finish before the meeting, their result can go in (section 9,
 "Results still to come"); otherwise the student says that they are running or queued.
@@ -111,8 +128,11 @@ Project in brief:
   Full re-fit (87 tasks, job 3590385, 17 Oct): 51 done; the 36 that landed on two V100 nodes failed in under a
   minute (a node problem, not the data) and are being rerun without those nodes.
 - Fingers: flipped hand bones were a large part of the finger error (exp6 on v5: 17.3 -> 8.2 deg).
-- Children: tested, nothing helped yet. New (16 Oct): adult men on real photos get female-looking bodies, in v5 and
-  in the fixed model alike; cause unknown.
+- Children: open. The shape head regresses to the training median, in the synthetic tails and on real photos (age,
+  gender, height). The one real child in my photos (a boy) is predicted as an adult; the "five small people" I used
+  before are mostly crouching adults. A 2-epoch age-balanced sampler pilot was inconclusive. Adult men on real photos
+  get female-looking bodies (gender near the median 0.6; male = 0): the same failure. Plan: measure on Relative Human
+  first, then limitation or BEV-style weak labels. A default-off 3DPW shape mask exists (decision for the final model).
 Supervisor meeting: Monday 19 Oct.
 Cluster: the queue for the old GPUs (V100, A100, RTX3090, RTXA6000, L40S) was estimated at 22-26 Oct. The H100/H200
 run only the 3DPW converter, through a small venv with PyTorch 2.1.2 (PY_VENV). Training, demo and evaluation need my
@@ -230,16 +250,31 @@ reported. The four pending items are steps 3-6, in this order.
      not a cancel-and-resubmit to start sooner, so it duplicates nothing (section 10).
    - Optional before it: the longer fine-tune with the fix and its control (section 5, item 3); it trains too, so the
      same queue.
-7. Before the meeting: check that the deck is the 18-slide version with the 17-Oct notes (section 9, "Check a
-   copy"). Open the pptx in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9, 15, 16 and 17 for text that wraps one
-   line longer (slide 15's Wording card already ends at the card's bottom edge in the LibreOffice render).
+   - New on the evening of 17 Oct: `MASK_3DPW_SHAPE` (default `0` = old behaviour; `1` passes `--mask_3dpw_shape 1`
+     to both arms and adds `_shpmask` to the run names). Leave it at `0` until the supervisor decides (step 8; 3.4;
+     section 5, item 7).
+7. Before the meeting: check that the deck is the 18-slide version with the 17-Oct notes and the corrected slide 10
+   (section 9, "Check a copy"). Open the pptx in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9, 10, 14, 15, 16 and
+   17 for text that wraps one line longer (slide 15's Wording card already ends at the card's bottom edge in the
+   LibreOffice render; slides 10, 14 and 16 were re-rendered on 17 Oct evening and fit). Optional, no GPU: start the
+   Relative Human download (Google Drive link in the README of https://github.com/Arthur151/Relative_Human; section 5,
+   item 12, step 1), so the evaluation can start after the meeting.
 8. In the meeting: the deck as it is. On 3DPW: the re-fit test (notes 6, 16, 17) and whether the full re-fit is
    done, running or queued (say which; never call the labels fixed before the v23 check passed). On training: it
    waits for the v23 labels and for the old GPUs (4f). Slide 17 describes the fine-tune as one of v9 epoch 62; the
    final model of step 6 starts from v5 00099 with v5's bone fix, so the student should say so if option 2 is chosen
    (note 17, "Option 2", now says it; section 5, item 7). Also say whether the final model is queued (by default it
-   is not: step 6).
-9. After the meeting: write the supervisor's answer to the slide-17 question into section 9. "Labels first" (the
+   is not: step 6). On children (slide 10 and its notes; 3.4), three points:
+   - Children are a measured open problem. The shape head regresses to the training median, in the synthetic tails
+     and on real photos. Oversampling synthetic children is unproven (2-epoch pilot inconclusive) and has no
+     mechanism for real photos.
+   - The one real child in our photos is predicted as an adult (age 0.60 = the training median; height phenotype
+     0.48). The earlier "five small people" were mostly crouching or seated adults.
+   - Proposal: measure on Relative Human first, then decide between a limitation (Path A) and BEV-style weak labels
+     (Path B, 1-2 weeks of code, after exp7). The 3DPW shape mask exists, default off; on or off in exp7 is a
+     decision (with it on, exp7's 3DPW-test PVE can move for a reason unrelated to the depth and bone fixes).
+9. After the meeting: write the supervisor's answers into section 9: the slide-17 question, the children path (A or
+   B) and `MASK_3DPW_SHAPE` on or off (if on, update section 5, item 7 and note 17 too). "Labels first" (the
    student's proposal): finish steps 3-5, then submit the final model (step 6). "Fine-tune v9 now": section 5, item 6
    comes first and the final model is not submitted (or is cancelled, if it was queued early; step 6); item 6 trains
    too, so it also waits for the old GPUs. Steps 3-5 go on either way: they do not train, and option 2 needs them.
@@ -248,11 +283,14 @@ Done on 16 Oct, nothing to ask for: the exp6 v5 compare panels (3.2, 4a); the re
 3581312; 3.2, 4b; figures `docs/figures/neck_before_after_3dpw_bar.jpg` and `..._bar_office.jpg`); the
 re-extraction of the 8 image folders and the second label rebuild (job 3581320: train 6,437 / validation 2,777 /
 test 9,722 label images, as expected; 3.5, 4c). Its labels still come from the old fits: do not train on them.
-The demo also showed a new open issue in both models: adult men get female-looking bodies (3.4). Optional: a
-correction-only demo without the fine-tune (section 5, item 2).
+The demo also showed a new open issue in both models: adult men get female-looking bodies (3.4; since 17 Oct
+evening: the same pull to the median as age). Optional: a correction-only demo without the fine-tune (section 5,
+item 2).
 
 Done on 17 Oct: the re-fit test (job 3589270; 0b, 4e step 1) and the H100 route for the converter (4f). The full
 re-fit (job 3590385) made 51 of 87 fits; the 36 that ran on the V100 nodes gifu/glendale failed and are rerun (0a, 4).
+Evening: the children re-check, the ranked plan and the corrected slide 10 (3.4; section 5, item 12; section 9);
+the `--mask_3dpw_shape` flag by another session (uncommitted when this was written).
 
 ## 0b. Numbers at a glance
 
@@ -291,7 +329,12 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   and `office_phoneCall_00` frame 440. Figures `docs/figures/neck_before_after_3dpw_bar.jpg` and
   `..._bar_office.jpg`. The two columns also differ by the 2-epoch fine-tune.
 - Both demo models, real photos: adult men get female-looking bodies. The log's predicted gender is 0.46-0.76 on
-  the photos (median 0.60-0.62), and Anny's male end is 0 (3.4). Cause unknown [Guessing: a synthetic-to-real gap].
+  the photos (median 0.60-0.62), and Anny's male end is 0 (3.4). It is the shape head's pull to the training median
+  [Certain, log]; the cause of the pull (synthetic-to-real gap or the loss) is not ranked (3.4).
+- Shape head on real photos (all 299 `[shape]` lines of demo 3581312; ~30 distinct people, nearly all adults):
+  median gender 0.59, age 0.61, height 0.50 = the training medians 0.588 / 0.601 / 0.500 (3569948:8-18) [Certain].
+  Proportions ~0.82 (training 0.725) and weight 0.59 (0.506): fixed offsets. On synthetic data the same pull shows in
+  both tails: holdout GT age 0.6-0.8 -> 0.57 (3570222:89); in-sample babies 0.015 -> 0.10 (3569950:61).
 - exp6 on v10 (job 3579015, no training, metacarpal2.L/2.R/3.R): PASS. PVE 74.1 -> 69.9, PA-PVE 55.6 -> 51.1,
   fingers 32.0 -> 17.8 deg; global head 12.9 and recall 89.0 unchanged. The PVE drop is certain only for these 100
   images (no training, so no run-to-run noise); [Likely] on other images. shoulder01.L (166) and upperarm02.L (180)
@@ -301,7 +344,10 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   images; not corrected).
 - Fingers: predicted 17.3 deg vs 15.1 at rest pose; with the exp6 fix 8.2; test-time crop 17.2; region-norm loss 17.5
   vs 17.4 (control).
-- Children: sampler raises children per batch 2.1% -> 9.7-11%; real photos stay at age 0.57-0.67 either way.
+- Children: sampler raises children per batch 2.1% -> 9.7-11%; 2-epoch pilot inconclusive (10 in-sample children
+  PVE 48.5 vs 53.1 control; baby age floor 0.100 -> 0.102). Real photos: the one real child (the boy in
+  `360_F_392252267...jpg`) gets age 0.60, height phenotype 0.48, an adult rest body [Certain, log]. The old "five
+  small people, age 0.57-0.67" were mostly crouching or seated adults [Likely, by eye]: not child evidence (3.4).
 - 3DPW labels: body joints 18.7 mm median (p95 24.5); surface 18.9 / 18.3 mm (lower bound). Gender reversed (men:
   19.2 -> 15.3 mm when flipped); 407 of 960 two-person images miss an actor; train 4,451 of 6,437 images labelled,
   validation 2,458 of 2,777. Rebuild (job 3579266): the same 4,451 / 2,458 / 9,722; cause: image files missing.
@@ -430,7 +476,8 @@ mention it in the thesis as a known issue.
   `=== exp1_depth_anchor SUMMARY ...`): PVE, recall and the other headline numbers, plus the script's own success rule.
 - **pelvis px** (column in 3.1) = PLACEMENT's `root px`: 2D distance in pixels between predicted and true root (pelvis).
 - **skeletal height** = head joint (skull base) to the mean ankle joint, about 25 cm less than stature
-  (`scripts/diagnostics/README.md:32`).
+  (`scripts/diagnostics/README.md:32`). `diag_crop_camera.py:136-141` measures it on the **posed** body, so crouching
+  or sitting shortens it: it is not body size (3.4). The rest-pose value is computed there (:141) but not printed.
 - **trace panels** = the images the trace saves under `<output folder>/vis/`: GT next to the model's predictions, each
   drawn where the model places it in 3D. They show the depth bug; the real-photo demos do not.
 - **restart cost** = what 2 more epochs of fine-tuning v5 cost with nothing changed: ~2.4 mm PVE (notes, slide 14, If
@@ -514,6 +561,7 @@ followed by the path (e.g. `.../main/train.py`), if your tools can fetch URLs; o
 | `--alpha_global_rot`, `--global_rot_bones` | train.py | exp3 loss on global head/neck03/wrist orientation |
 | `--rotmat_region_norm 1` | train.py | exp4 rotation loss averaged per body region |
 | `--mask_3dpw_hands 1` | train.py | ignore 3DPW finger labels (they are rest pose). Use in any mixed fine-tune |
+| `--mask_3dpw_shape 1` | loss.py, train.py | new 17 Oct evening (another session; uncommitted when this was written): no shape L1 on the 8 converter constants (age, muscle, weight, cupsize, firmness, african, asian, caucasian) for 3DPW-Anny people; gender, height, proportions stay. Default 0. exp7: `MASK_3DPW_SHAPE` (3.4) |
 | `--rotmat_loss geodesic` | train.py | exp5 geodesic rotation loss (default `l1`) |
 | `--bone_fix <json>` | train.py, trace, demo.py | exp6 constant correction `R <- R·C` for listed bones; saved into checkpoint args |
 | `--dump_bones 1`, `--dump_bone_names all` | trace | per-bone error table (verdicts FLIP_TWIST, FLIP_SWING, ...) |
@@ -886,31 +934,115 @@ thesis limitation. Low priority.
 
 ### 3.4 Children, and body shape on real photos
 
-**Measured:**
-- [Certain] The shape head is complete and can make a child in-sample: the 50 youngest training people (GT age 0.015)
-  are predicted at 0.10 (3571955:174-175).
-- [Certain] Natural batches: 2.1-2.3% of supervised people have age < 0.3 (3571955:154; 3571956:149; 3571601:35).
-  The balanced sampler (`--age_balance 1`, child fraction 0.25) raises this to 9.7-11.1%; batches without a child
+**Corrected on the evening of 17 Oct.** Earlier copies (and `findings :222-223`) used "five small people (skeletal
+height 0.6-1.14 m), predicted age 0.57-0.67" as real children predicted as adults. That is wrong: most of them are
+adults. This section replaces that reading. The plan is in section 5, item 12.
+
+**In short:**
+- [Certain] The shape head regresses to the training median. It shows in both tails of the synthetic data and,
+  strongest, on real photos. Children and the female-looking men (below) are the same failure.
+- [Certain, log] The one real child in our photos (a boy) is predicted as an adult body.
+- [Certain] Oversampling synthetic children is unproven at 2 epochs. [Likely] It has no mechanism for real photos.
+- The evidence cannot rank the cause: synthetic-to-real gap, or "L1 through a sigmoid + rare children". Say so.
+
+**The real-photo measurement, corrected:**
+- [Likely, by eye; two independent reads of the photos] `example_data/360_F_392252267...jpg` holds one standing boy,
+  a crouching woman and a crouching man. The WhatsApp photo has no child; its "small" people (diag_cropK lines 58 and
+  70) are a seated man and cut-off adults. The boy is the only child among the ~20 people in `example_data`.
+- [Certain, code] The "skeletal height" in `diag_crop_camera.py:136-141` is measured on the posed body
+  (`best['j3d']`). Crouching or sitting shortens it. The script computes rest joints (:141) but prints no rest stature.
+- [Certain, log] Their height phenotype is 0.47-0.56 (3569949, 3572419, 3572420, lines 7-71): adult rest bodies
+  ([Likely] about 1.75 m stature).
+- [Certain, log] The boy is predicted at age 0.60, height phenotype 0.48: an adult rest body.
+- So "five small people, age 0.57-0.67" says nothing about children. The old item-12 read ("compare the five small
+  people's ages") cannot show a child effect.
+
+**The real-photo collapse** (all 299 `[shape]` lines of demo 3581312):
+- [Certain] Median predicted gender 0.59, age 0.61, height 0.50. The training medians are 0.588 / 0.601 / 0.500
+  (diag_pheno 3569948:8-18).
+- [Certain] Proportions sit at ~0.82 (training 0.725) and weight at 0.59 (training 0.506): fixed offsets, not the
+  median. `model.py:205-207` already notes the proportions offset.
+- [Certain] The 299 lines are 2 checkpoints x 12 images x one line per crop: about 30 distinct people, nearly all
+  adults, each counted several times. So a narrower spread (std) than AnnyOne is **not** evidence: an adult sample
+  must have a narrower age spread than AnnyOne, which holds babies and old people. Only the gender spread is: 14% of
+  the lines are below 0.5 although men dominate the frames.
+
+**The same pull on synthetic data:**
+- [Certain] Holdout people with GT age 0.6-0.8 (mean 0.67, n = 53) are predicted at 0.57 (3570222:89).
+- [Certain] In-sample babies (the 50 youngest training people, GT age 0.015) are predicted at 0.10 (3571955:174-175).
+  The head reaches the right size by trading: height -0.25, gender abs error 0.23 (3569950:61,76).
+- [Certain] Near the mode the head is accurate: gender bias -0.008 / abs error 0.068, age bias -0.015 / 0.037
+  (3570222:75). But the holdout has nobody under age 0.513 (3569948:33), so "accurate on synthetic" holds only there.
+- So the cause cannot be ranked between the synthetic-to-real gap and the loss (L1 through a sigmoid, plus rarity).
+  Do not call it "mainly a domain gap".
+
+**The shape head and its loss** [Certain, code]:
+- `decshape = nn.Linear(1024, 11)` (`model.py:620`), then `torch.sigmoid` (`model.py:462`). Zero logits give 0.5.
+- L1 on the post-sigmoid values, summed over the 11 dims, mean over people (`loss.py:272-276`, as before the 17-Oct
+  mask edit), times `alpha_shape` 20. `--shape_weights` is one weight per phenotype, never per person.
+- [Certain, maths] L1 regresses to the median when the image cues are weak. The gradient through the sigmoid is
+  s(1-s): 0.25 at s = 0.5, 0.015 at s = 0.015. [Likely] That is part of why babies floor at 0.10.
+- No per-person shape mask existed before `--mask_3dpw_shape` (below).
+
+**How Anny makes a child** [Certain: anny 0.6.1 code, and a scratch probe in rest pose]:
+- Age blends five shapes, newborn / baby / child / young / old, at anchors `linspace(-1/3, 1, 5)`: age 0 = baby,
+  0.333 = child, 0.667 = young, 1 = old. Values are clamped to the anchor range, so newborn needs age < 0, which a
+  sigmoid can never give.
+- The child shape change happens below about age 0.4-0.5. From 0.67 to 1.0, stature and body ratios are almost flat.
+- The child cue is narrow shoulders relative to the head, not stature: shoulder width / head width is 2.24 at age 0.1
+  and 3.00 at age 0.6 (height 0.5).
+- "Small height + age 0.6" is a short, broad-shouldered adult. The smallest body at age 0.6 is 1.22 m.
+- The proportions phenotype cannot make a child: 0 -> 1 at age 0.6 moves leg/stature by only -0.016.
+
+**Age scales.** Three disagree; do not quote years:
+- [Certain] `diag_common.py:526-527` and `train.py:1604`: 1/3 = 11 y, 2/3 = 25 y.
+- [Certain] `build_manifest.py:6` (MakeHuman slider): 0.19 = 11 y, 0.5 = 25 y.
+- [Certain] Anny's calibration (`data/shape_calibration/boys.pth`): age 0 / 0.05 / 0.215 / 0.415 / 0.67 / 0.77 /
+  0.83 / 1.0 = 0 / 1 / 4 / 11 / 16 / 18 / 64 / 110 years.
+- [Likely] AnnyOne does not follow Anny's calibration: under it, 60.8% of AnnyOne people would be under 16.
+- Use body terms instead: below ~0.4-0.5 is child-shaped on any scale, so `--age_balance_child_age 0.3` selects
+  clearly child-shaped bodies [Certain, probe].
+- [Certain] AnnyOne ages: 1.06% < 0.2, 2.53% < 0.3, 4.45% < 0.4; median 0.601; 41% in 0.5-0.6 (3569948:9,27,32,35).
+
+**The sampler (exp2)** [Certain]:
+- Natural batches: 2.1-2.3% of supervised people have age < 0.3 (3571955:154; 3571956:149; 3571601:35). The
+  balanced sampler (`--age_balance 1`, child fraction 0.25) raises this to 9.7-11.1%; batches without a child
   82.5-84.5% -> 36.0-43.0%; images with a child ~5-6% -> 23.0-25.4% (3571955:154-156; 3571956:149-151;
   3571601:49-51).
-- [Certain] 2-epoch pilot (job 3571955) vs control (3571956, sampler off):
+- 2-epoch pilot (job 3571955) vs control (3571956, sampler off):
   - manifest children (n = 10, in-sample): PVE 48.5 vs 53.1, age bias 0.078 vs 0.085; v5 baseline 47.8 / 0.078
-    (3571955:169-170; 3571956:164-165). Inside noise; no effect.
-  - real photos, five small people (skeletal height 0.6-1.14 m): predicted age 0.57-0.67 with the sampler and in the
-    control, 0.60-0.67 for v5 (diag_cropK jobs 3572419, 3572420, 3569949, lines 7, 10, 13, 58, 70). The holdout adults
-    sit mostly at 0.4-0.8 (notes, slide 10).
-  - both arms print "ADULT REGRESSION" (adult PVE 75.1 / 74.9 vs 70.5): that is the restart cost of any fine-tune,
-    not the sampler.
-- The 3DPW labels fix age at 0.55 for everyone (3575369:232), so mixing 3DPW adds no child signal.
+    (3571955:169-170; 3571956:164-165). 4.6 mm in the sampler's favour at n = 10: inconclusive, not null.
+  - the in-sample baby floor did not move (0.100 -> 0.102; 3571955:174-175), after only 2 epochs = 8,000 images at
+    lr 1e-5 with all but 4 backbone blocks frozen (3571955:3).
+  - both arms print "ADULT REGRESSION" (adult PVE 75.1 / 74.9 vs 70.5): the restart cost of any fine-tune.
+- Verdict: **unproven at 2 epochs**, not "cannot work". [Likely] no mechanism for real photos. Low priority.
 
-**Age scale** [Likely]: by Anny's own calibration, age 0.10 ~ 2 y, 0.3 ~ 7 y, 0.5 ~ 12.7 y, 0.55 ~ 13.6 y, 0.67 ~ 16 y
-(linear between Anny's anchors). The labels in our code assume 0.33 = 11 y and 0.67 = 25 y. Which one AnnyOne follows is
-not settled (notes, slide 10, If asked). Avoid years; compare with the holdout adults instead.
+**3DPW labels and body shape:**
+- [Certain] The converter fits only height and proportions. Gender comes from 3DPW metadata (correct only in v2.3).
+  Age 0.55 and 0.5 on muscle, weight, cupsize, firmness, african, asian, caucasian are constants
+  (`run_smpl_to_anny_task.sh:94-95`; `smpl_to_anny.py:1101-1124`; 3575369:232).
+- [Certain] The shape L1 trains every 3DPW person toward these constants at full per-person weight.
+- [Likely] Share: 3DPW is ~30% of the images in a mixed batch, but 3DPW images hold ~1.2 people vs 2.73 for AnnyOne
+  (3571601:21), so ~16% of supervised people.
+- [Certain] The v3d / v2d mesh terms carry the same neutral body: prepare_gt builds the 3DPW GT mesh from these values
+  (`train.py:163-170`).
+- [Likely] 3DPW PVE rewards the neutral body: it is computed against those neutral-body GT meshes
+  (`train.py:~647-662`). [Guessing] Part of v9's 3DPW gain (102.5 vs 119.1) may come from that.
+- [Certain] Not the root cause: v5 never saw 3DPW and shows the same real-photo pull. 3DPW has no children.
 
-**Verdict so far:** no effect from a 2-epoch sampler. [Guessing] a synthetic-to-real gap plus an old-age bias.
+**`--mask_3dpw_shape` (new on the evening of 17 Oct; another session; uncommitted when this was written):**
+- What: with `1`, people tagged `has_hand_labels 0` (3DPW-Anny) get no shape L1 on the 8 constants. Gender, height
+  and proportions stay supervised. AnnyOne people are unchanged. It reuses the `HandLabelFlag` tag.
+- Default `0`. In exp7: env `MASK_3DPW_SHAPE` (default `0`; `1` adds `_shpmask` to the run names and requires the
+  `[loss] mask_3dpw_shape:` line in `train.log`). Check that it arrived: `grep -c mask_3dpw_shape loss.py`.
+- [Certain] It adds no child signal. The v3d / v2d mesh terms still carry the neutral body.
+- On or off in exp7 is a **Monday decision** (0a, step 8). Caveat: with it on, exp7's 3DPW-test PVE can move for a
+  reason unrelated to the depth and bone fixes, and it compares worse against the neutral-body GT. If on: re-evaluate
+  the baselines with the 8 phenotypes neutralised at inference (`model.neutral_phenotype_names`, `model.py:470-477`)
+  or caveat the number; update section 5, item 7 and note 17.
 
-**Next:** lowest priority: a 10-epoch run with its own control and the real-photo read (section 5, item 12); if
-nothing, a thesis limitation.
+**Next:** section 5, item 12. In one line: measure on Relative Human first, then the supervisor picks a limitation
+(Path A) or BEV-style weak labels (Path B, 1-2 weeks of code, after exp7).
 
 **Open, new on 16 Oct: adult men get female-looking bodies on real photos.** Seen in the real-image demo (job
 3581312, 3.2), in v5 **and** in the fixed model, so the neck fix neither causes nor removes it.
@@ -924,11 +1056,11 @@ nothing, a thesis limitation.
   - Anny's male end is 0 (3.5), so no one on the photos is predicted near the male end.
   - The lines repeat per detection crop and are not matched to people, so these are ranges, not a count of people.
 - [Likely] These gender values are what the eye sees.
-- Cause: unknown. [Guessing] the shape head's phenotypes do not carry over from synthetic to real images. Age shows
-  the same pattern: predicted age is 0.57-0.67 on real photos (above), mid-range like gender.
-- Not checked: predicted gender on the synthetic holdout. The trace reports a per-phenotype shape error and bias
-  (`diag_holdout_trace.py:27`), so the v5 trace log 3570222 [Likely] has a gender line. Ask for it; it costs no job.
-  A small gender bias there would point to the synthetic-to-real gap. Priority: after the 3DPW labels.
+- [Certain] The pull to the median above: on all 299 lines the median gender is 0.59, the training median 0.588.
+  The cause of the pull is not ranked (above).
+- Read on 17 Oct (no job): on the synthetic holdout gender is accurate near the mode, bias -0.008 / abs error 0.068
+  (3570222:75). That alone does not prove a synthetic-to-real gap: the holdout has no young tail (nobody under
+  0.513), and its 0.6-0.8 bucket already regresses (above).
 
 ### 3.5 3DPW -> Anny labels
 
@@ -1679,6 +1811,13 @@ run before (4). Item 6 depends on the supervisor's answer to slide 17. The label
    - Labels: `LABELS` defaults to `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels`. The script refuses labels
      under `threedpw_anny_full` and fits not made with `--gender_convention anny --frame_grid shared`. Plus
      `--mask_3dpw_hands 1` (3DPW fingers are rest pose).
+   - 3DPW shape mask (new on the evening of 17 Oct, another session; uncommitted when this was written):
+     `MASK_3DPW_SHAPE`, default `0` = unmasked, as all earlier runs. `1` passes `--mask_3dpw_shape 1` to both arms
+     (fix and control stay matched) and adds `_shpmask` to the run names, so a masked run never shares a folder with
+     an unmasked one. On or off is a Monday decision (0a, step 8; 3.4). The default keeps this item, note 17 and the
+     script in step. If the supervisor picks `1`: pass `MASK_3DPW_SHAPE=1` to both submit commands below, read the
+     3DPW-test PVE with the caveat in 3.4 (it can move for a reason unrelated to the two fixes), and update this item
+     and note 17.
    - Length: **10 epochs by default** (`EPOCHS=10`, 1,000 iterations each; `--time` 5 h by the script's formula).
      Longer only with `EPOCHS=` set from the deadline (section 10), e.g. `EPOCHS=30` (`--time` 11 h). v9 ran up to 150
      epochs, and the student was distilled from epoch 62. [Guessing] ~6-10 min per epoch with 3DPW batches (never
@@ -1724,7 +1863,59 @@ run before (4). Item 6 depends on the supervisor's answer to slide 17. The label
     CODE**: `train.py` has no seed at all. Add `--seed` (default -1 = off, old behaviour) and, at the top of `main()`
     (`train.py:899`), seed `random`, `numpy` and `torch`, and give the training DataLoader a seeded generator.
 11. **People very close to the camera.** Count misses (4 of 12 rendered holdout images, v5 and the depth fix).
-12. **Children (lowest priority).** The exp2 script's own gate says not to run longer (`exp2_children.sh:38`; both
+12. **Children: measure first (ranked plan, evening of 17 Oct; diagnosis in 3.4).** Nothing fixes children before
+    Monday [Certain: the repo has no labelled real children, and nothing trains before the meeting]. What the
+    supervisor gets: the corrected diagnosis, the plan, and two decisions (the children path; the 3DPW mask in exp7).
+    In order:
+    1. **Relative Human (RH) val evaluation: the thesis number.**
+       - Data [Certain, RH repo]: 24,814 people: 1,534 babies, 2,720 kids, 1,067 teens, 19,493 adults. Labels per
+         person: age group (0 adult, 1 teen, 2 kid, 3 baby, -1 unknown), gender (0 male, the same direction as Anny),
+         depth layer, boxes, 2D pose. Download: the Google Drive link in the README of
+         https://github.com/Arthur151/Relative_Human. No license file [Certain]; evaluation-only use in a thesis is
+         low risk [Guessing]. Image count and archive size not verified.
+       - Metric: mean predicted Anny age per group; child-vs-adult AUC of predicted age; gender accuracy (prediction
+         < 0.5 = male); per-group recall next to them. Multi-HMR at 672 px misses small people, so an AUC over
+         detected people alone is biased [Likely].
+       - NEEDS CODE: match detections to RH boxes by IoU, then the report [Guessing: 1-2 code days]; inference only
+         [Guessing: under 2 GPU-hours, old GPUs, so the queue]. Start the download now (0a, step 7); numbers after
+         Monday.
+    2. **Fix our own real-photo read** (prerequisite for anything "by eye"). NEEDS CODE [Guessing: half a day]: in
+       `diag_crop_camera.py`, print rest-pose stature (rest joints exist at :141) and shoulder width / head width on
+       the rest mesh; match the `[shape]` lines (`demo.py:484-493`) to people. Rides the next diag run.
+    3. **The 3DPW shape mask:** default off; on or off for exp7 is a Monday decision (3.4; item 7).
+    4. **Limitation paragraph** (writing only): the median pull in both synthetic tails and on real photos (gender,
+       age, height; proportions and weight at offsets), cause not ranked; the one real child predicted as an adult;
+       ~2% children in AnnyOne batches; the sampler unproven at 2 epochs; 3DPW-Anny labels carry a neutral body on 8
+       of 11 phenotypes, so 3DPW PVE does not measure body shape [Likely]. It goes in the thesis in any case, with
+       step 1's number if that ran.
+    5. **Anny-Fit, for figures only** (https://github.com/naver/anny-fit; NAVER, the group behind Anny; non-commercial
+       license [Certain]). A test-time refit of Multi-HMR's Anny predictions. Qwen2.5-VL reads age group and gender
+       from head crops; the answers map to baby 0, toddler 0.1, kid 0.33, teen 0.5, adult 0.66, senior 0.999 (male 0,
+       female 1) and serve as init and as a squared loss, weight 10 (`configs/demo/multihmr.yaml`) [Certain, code].
+       The paper claims a 40.7 mm per-joint gain on toddlers over Multi-HMR [Likely]. The VLM needs a recent
+       torch/transformers; our env is torch 2.0.1 [Certain]; several days, environment-dependent [Guessing]. A
+       post-process, not the thesis contribution.
+    6. **Path B: weak age-group supervision from RH, BEV-style.** Only if the supervisor makes children a goal, and
+       after exp7.
+       - BEV [Certain, ROMP code]: age bands with zero loss inside; the adult term is a point target alpha^2, because
+         alpha 0 is the adult body in SMPL+A; age loss weight 4000; RH 16% of samples.
+       - For Anny the adult band must be an interval, about [0.6, 1.0], not a point: a point would pull 78% of RH
+         people (adults) to one value, the median attractor again [Likely]. The baby band ends at 0 (no newborn).
+       - Cost [Likely]: 1-2 weeks of code and tests before the first GPU-hour. Every GT target comes from
+         prepare_gt's Anny FK of the GT pose (`train.py:132-255`); an RH person has none. So: a second target path
+         (2D keypoint -> heatmap / offset), validity masks in 8 loss terms, and a collate that tolerates missing keys
+         (`bedlam.py:413`: np.stack raises KeyError and the batch is dropped).
+    7. **10-epoch sampler run** (low priority; unproven, not "cannot work"): commands below.
+    8. **AGORA kids** (257 child scans, non-commercial, synthetic, so not the real-photo gap): future work.
+    9. **Pseudo-labels for 3DPW age** (MiVOLO, Apache-2.0 code): future work. 3DPW has no children, so no child
+       signal.
+
+    Papers (numbers came through search summaries, arXiv was blocked: [Likely]): BEV https://arxiv.org/abs/2112.08274
+    (code https://github.com/Arthur151/ROMP, data https://github.com/Arthur151/Relative_Human; AGORA child mesh error
+    125.9 with the weak labels, 146.0 without); Anny-Fit https://arxiv.org/abs/2605.04728; Anny
+    https://arxiv.org/abs/2511.03589; AionHMR https://arxiv.org/abs/2512.05259.
+
+    Step 7, the sampler run. The exp2 script's own gate says not to run longer (`exp2_children.sh:38`; both
     pilots print "ADULT REGRESSION ... do not run longer", 3571955:183, 3571956:178). Running it anyway is a deliberate
     override: the control fails the same gate, so the gate measures the restart cost, not the sampler [Likely]. Run
     both arms (default `GT_CENTER=root`, i.e. without the depth fix):
@@ -1734,15 +1925,18 @@ run before (4). Item 6 depends on the supervisor's answer to slide 17. The label
     ```
     cd /netscratch/najib/multi-hmr && AGE_BALANCE=0 MAX_ITER=10000 RUN=long_control sbatch --time=05:00:00 slurm/experiments/exp2_children.sh
     ```
-    Then the real-photo read on both final checkpoints (the real target; `TAG` needed, section 2):
+    Then the real-photo read on both final checkpoints (`TAG` needed, section 2):
     ```
     cd /netscratch/najib/multi-hmr && CKPT=/netscratch/najib/multi-hmr/results/experiments/exp2_children/long_balanced/train/checkpoints/00009.pt TAG=long_balanced_00009 sbatch slurm/diagnostics/diag_crop_camera.sh
     ```
     ```
     cd /netscratch/najib/multi-hmr && CKPT=/netscratch/najib/multi-hmr/results/experiments/exp2_children/long_control/train/checkpoints/00009.pt TAG=long_control_00009 sbatch slurm/diagnostics/diag_crop_camera.sh
     ```
-    Compare the five small people's ages with 0.57-0.67. **Fingers:** train on larger hand crops (no script). If
-    neither moves, both become thesis limitations.
+    Read: step 1's RH metric when it exists. On `example_data` only the boy in `360_F_392252267...jpg` is a child;
+    the other "small" people are crouching or seated adults (3.4), so do not compare their ages.
+
+    **Fingers:** train on larger hand crops (no script). If neither children (after step 1) nor fingers move, both
+    become thesis limitations.
 13. **Docs and thesis.** Fix the stale lines in section 7; thesis draft 74 -> 70.5 mm (V1; the draft is outside the
     repo).
 14. **Lower priority:** v10 shape drift (only epochs 290-293 traced). First list what exists (only the last 10 epochs
@@ -1750,7 +1944,8 @@ run before (4). Item 6 depends on the supervisor's answer to slide 17. The label
     `ls /netscratch/najib/multi-hmr/models/multiHMR/ | grep v10`; then trace each with `diag_holdout.sh` (4e).
     Students' depth bug (not measured); output-neutral fix of the 6D init (only matters for new heads; plan :931);
     geodesic loss with `--amp 1` untested; why crosscountry_00 counts as not visible; test-split limb ratios and lost
-    head turn; repeat the overfit test with the depth fix; Anny age calibration.
+    head turn; repeat the overfit test with the depth fix; Anny age calibration (partly answered on 17 Oct: three
+    scales in the code, and [Likely] AnnyOne does not follow Anny's own calibration; 3.4).
 
 ---
 
@@ -1797,10 +1992,27 @@ run before (4). Item 6 depends on the supervisor's answer to slide 17. The label
   drop is 9.1 deg.
 
 **Children**
-- Quoting ages in years ("0.3 ~ 11 y", "0.55 ~ 20 y", "0.5 ~ 18 y"). Do not quote years at all: the code's anchors
-  (0.33 = 11 y, 0.67 = 25 y) and Anny's calibration (0.3 ~ 7 y, 0.55 ~ 13.6 y) disagree, and which one AnnyOne uses
-  is not settled (3.4). Compare predicted ages with the holdout adults instead.
+- Quoting ages in years ("0.3 ~ 11 y", "0.55 ~ 20 y", "0.5 ~ 18 y"). Do not quote years at all: the code uses three
+  scales (0.33 = 11 y and 0.67 = 25 y; the MakeHuman slider 0.19 = 11 y and 0.5 = 25 y; Anny's calibration 0.3 ~ 7 y,
+  0.55 ~ 13.6 y), and [Likely] AnnyOne does not follow Anny's calibration (3.4). Use body terms (child-shaped below
+  ~0.4-0.5).
 - "11% children in batches." Measured 9.7-11.1% depending on the run; 9.9% in the measurement job 3571601.
+- "Five small people (skeletal height 0.6-1.14 m) are real children predicted at adult ages 0.57-0.67." Mostly
+  crouching or seated adults [Likely, by eye]: the skeletal height is measured on the posed body
+  (`diag_crop_camera.py:136-141`), and their height phenotype is 0.47-0.56. The one real child, the boy in
+  `360_F_392252267...jpg`, gets age 0.60 [Certain, log] (3.4).
+- "On real photos the head outputs the training median for every one of the 11 phenotypes." Only gender, age and
+  height; proportions (~0.82 vs 0.725) and weight (0.59 vs 0.506) sit at fixed offsets (3.4).
+- "The real-photo spread is 3-4x narrower than training (age std 0.050 vs 0.161), so the head collapsed." The 299
+  lines are ~30 people, nearly all adults, each counted several times: not evidence. Only the gender spread is.
+- "The head is accurate on synthetic images, so the cause is the synthetic-to-real gap." It is accurate only near the
+  mode; it regresses in both synthetic tails (3570222:89; 3569950:61,76). The cause is not ranked (3.4).
+- "Age-balanced sampling cannot fix it; the pilot changed nothing." Unproven at 2 epochs: 48.5 vs 53.1 mm at n = 10 is
+  inconclusive; only the in-sample baby floor did not move (0.100 -> 0.102).
+- "Use BEV's bands for Anny, adult as a point target." BEV's adult target is a point because alpha 0 is the adult body
+  in SMPL+A. In Anny adults span ~0.6-1.0, so the adult band must be an interval (section 5, item 12).
+- "RH weak labels cost 3-5 code days." 1-2 weeks: an RH person has none of the 3D targets prepare_gt builds (item 12).
+- "3DPW people are 30% of the shape supervision." 30% of images, ~16% of supervised people (3.4).
 
 **3DPW labels**
 - "48% of two-person images miss an actor." Measured 42% (407/960).
@@ -1853,7 +2065,8 @@ run before (4). Item 6 depends on the supervisor's answer to slide 17. The label
   v5 with the fine-tuned checkpoint, so both changed. The holdout control without the fix keeps girth 0.461 (3.2).
   Test: the optional correction-only demo (section 5, item 2).
 - "Men get female-looking bodies on real photos because of a synthetic-to-real gap in the shape head." [Guessing]
-  (3.4).
+  The pull to the training median is measured [Certain, 3.4]; that the gap rather than the loss (L1 through a
+  sigmoid, plus rarity) causes it is not separated.
 
 ---
 
@@ -1881,7 +2094,10 @@ Trust this file over these. Fix them when there is time (one commit per doc).
 - :184 "Origin: supervision". :186-188 "no long neck in the parameters" (neck02 half-turn). :189-193 redundant chain.
 - :196-197 "[Likely] long-neck look from the depth defect" (refuted). :201 "under-trained".
 - :216-217 "1/3 ~ 11 y", "0.55 ~ 20 y". :251 "root depth error 1.08 m" (signed; absolute 1.21 m).
-- :270-280 "What to do before Friday" (all stale). No neck-flip section, no 3DPW check.
+- :222-223 "skeletal heights 0.62-0.99 m ... small adult ... the failure users see": those short skeletal heights are
+  posed bodies of mostly crouching or seated adults, not small people (3.4).
+- :270-280 "What to do before Friday" (all stale; :279 "oversample age < 0.4" is now step 7 of section 5, item 12).
+  No neck-flip section, no 3DPW check.
 
 **`docs/experiments_plan.md`**
 - :8-9 and :991-997 "Nothing in this plan has been run." (The section "3DPW converter fix (v2.3 flags)", :593-843,
@@ -1899,8 +2115,9 @@ Trust this file over these. Fix them when there is time (one commit per doc).
 - No results section for exp1-exp5 (use section 3 here).
 
 **`docs/experiments/exp2_children.md`**
-- :3-5 "no number here comes from running the experiment" (pilot ran, null). :18 "0.5 = about 18 y". :104-105 age-anchor
-  question answered (Anny calibration).
+- :3-5 "no number here comes from running the experiment" (pilot ran; inconclusive at 2 epochs). :18 "0.5 = about
+  18 y". :104-105 age-anchor question: the anchors are `linspace(-1/3, 1, 5)` [Certain, anny 0.6.1]; the years stay
+  open (three scales; [Likely] AnnyOne does not follow Anny's calibration; 3.4).
 
 **Others**
 - `scripts/diagnostics/README.md:9` "written and syntax-checked, not yet executed" (all E1-E4 ran).
@@ -1911,7 +2128,8 @@ Trust this file over these. Fix them when there is time (one commit per doc).
 - `slurm/data/run_smpl_to_anny_task.sh` header: "~6 s/frame", "a 1000-frame sequence takes ~35 min" (measured 17 Oct:
   ~4.4 s per frame on an H100, 4e).
 - Deck and notes: up to date (18 slides, rebuilt from `build.js` on 16 Oct; notes 6, 16 and 17 rebuilt on 17 Oct with
-  the re-fit test). Section 9 lists the slides, how to check a copy, and the lines that go stale when the pending
+  the re-fit test; slides 10, 14, 16 and notes 8, 10, 14, 16, 17 rebuilt on the evening of 17 Oct with the children
+  correction). Section 9 lists the slides, how to check a copy, and the lines that go stale when the pending
   results arrive.
 
 ---
@@ -1968,7 +2186,9 @@ give it to ChatGPT, download
 
 | job | log name | what |
 |---|---|---|
-| 3570222 | diag_holdout | v5 00099 trace: headline V1 70.5 |
+| 3570222 | diag_holdout | v5 00099 trace: headline V1 70.5; shape bias gender -0.008 / abs 0.068, age -0.015 / 0.037 (:75); GT age 0.6-0.8 predicted 0.57 (:89) |
+| 3569948 | diag_pheno | AnnyOne phenotype distribution: training medians gender 0.588, age 0.601, height 0.500 (:8-18); no holdout person under age 0.513 (:33) |
+| 3569950 | diag_young | the 50 youngest training people: age 0.015 -> 0.10, height -0.25, gender abs error 0.23 (:61, :76) |
 | 3571596 | diag_holdout | v5 re-trace: root 1.21 m, size 0.63 |
 | 3571794 | diag_holdout | v10 00290 trace |
 | 3571963, 3571964 | diag_holdout | v9 epoch 62, epoch 149 |
@@ -1978,7 +2198,7 @@ give it to ChatGPT, download
 | 3571597 | diag_holdout | failed: v9 00062 not under `logs/anny_model/anny_teacher_v9_mixed/checkpoints/` |
 | 3571601 | exp2_children | measurement only (`SKIP_TRAIN=1`): age index + batch-age measurement, natural 2.14% -> balanced 9.91% (:35, :49-51); no training |
 | 3571955, 3571956 | exp2_children | sampler pilot, control |
-| 3572419, 3572420, 3569949 | diag_cropK | real-photo ages: exp2 pilot, control, v5 |
+| 3572419, 3572420, 3569949 | diag_cropK | real-photo ages: exp2 pilot, control, v5. Its "small" people are mostly crouching or seated adults (posed skeletal height); only the boy in `360_F_392252267...jpg` is a child: age 0.60, height phenotype 0.48 (3.4) |
 | 3571957, 3571958 | exp3_neck_global_rot | pilot, control |
 | 3571959, 3571960 | exp4_fingers | region-norm pilot; control + crop trace + hand size |
 | 3573518, 3573519 | diag_neck_bones | per-bone dumps: v5, v9 e149, v10, long_pc_dist5; lineage v2/v3/v4 |
@@ -1994,7 +2214,7 @@ give it to ChatGPT, download
 | 3589270 | smpl2anny-all | the re-fit test (4e, step 1), v2.3 flags, through `PY_VENV` on serv-3341 (an H100 node). Task 9 = woman p0 (its `.err` names job 3589271), task 10 = man p1 (job 3589270). Man gender 0.0, mean / max 14.3 / 15.8 mm, 231 frames, 1,013 s; woman 1.0, 15.5 / 34.5 mm, 226 frames, 978 s; one shared frame grid; ~4.4 s per frame. Logs `logs/smpl2anny-all-3589270_9.out`, `_10.out` |
 
 **Experiments, one line each:** exp1 depth anchor (placement much better, slope not, likely cost; rule failed);
-exp2 children sampler (null); exp3 global head loss (null); exp4 fingers crop + region-norm (both null); exp5
+exp2 children sampler (inconclusive at 2 epochs); exp3 global head loss (null); exp4 fingers crop + region-norm (both null); exp5
 geodesic loss (flip did not move); exp6 bone correction (v5: flip removed and neck girth back after a 2-epoch
 fine-tune with the fix, fine-tuned PASS, zero-training FAIL on global head, no sign of a PVE cost; real images by
 eye, 8 of 12 images seen: neck normal width with the fix, job 3581312; v10: three metacarpals fixed without
@@ -2020,24 +2240,38 @@ result on slides 6 and 16 and in notes 6, 16 and 17), and again on 17 Oct after 
 sentence on the re-fit test (job 3589270) in notes 6, 16 and 17; later on 17 Oct, the measured re-fit time (about 28
 GPU hours at 4.4 s per frame, 3.5 to 4 hours on 8 free H100s) in place of the old 40-GPU-hour estimate in notes 16
 and 17, and in note 17 ("Option 2") the final model's start (v5 with v5's bone fix, 10 epochs, with a control).
-The slides are unchanged: every slide, layout, media and theme part of the 17-Oct pptx is byte-identical to the
-16-Oct one; only `notesSlide6/16/17.xml`, the timestamps and the random section IDs differ. Notes are
-generated from `build.js`; never edit the `.md` alone.
+The slides were unchanged until then: every slide, layout, media and theme part of the morning 17-Oct pptx is
+byte-identical to the 16-Oct one; only `notesSlide6/16/17.xml`, the timestamps and the random section IDs differ.
+**Evening of 17 Oct, the children correction** (3.4): rebuilt again from `build.js`; against the morning pptx only
+`slide10.xml`, `slide14.xml`, `slide16.xml`, `notesSlide8/10/14/16/17.xml`, the timestamps and the section IDs
+differ [Certain, part-by-part diff]. Slide 10: the right stat tile "0.57–0.67 / predicted age of 5 small people in
+real photos ..." is now "0.60 / predicted age of the one real child in our photos: the training median, an adult
+body"; the left tile says "unproven after 2 epochs" instead of "no effect"; the bullets say "inconclusive" (48.5 vs
+53.1 mm, baby floor 0.10), "Diagnosis: ... falls back to the training median ... Domain gap or loss: not yet
+separable" and "three different scales". Slide 14, children row: "Inconclusive after 2 epochs: 10 training children
+48.5 vs 53.1 mm." Slide 16, item 6: "Children: measure on Relative Human first. Fingers: check the bone-fix hands,
+then larger crops." Notes: 10 rewritten (main part and "If asked"); 8 (the men: gender near the training median, the
+same pull as age); 14 and 16 (children inconclusive; Relative Human first; the 10-epoch run a low-priority option);
+17 ("Both options": the default-off 3DPW shape mask, a decision for the meeting). Slides 10, 14 and 16 were rendered
+with LibreOffice and fit in the same space as before. Notes are generated from `build.js`; never edit the `.md`
+alone.
 
-**Before the meeting** (Monday 19 Oct): open the pptx once in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9,
-15, 16 and 17 for text that wraps one line longer. They were only rendered with LibreOffice. Slide 8's header bars
+**Before the meeting** (Monday 19 Oct): open the pptx once in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9, 10,
+14, 15, 16 and 17 for text that wraps one line longer. They were only rendered with LibreOffice. Slide 8's header bars
 have an 11-pt second line sized to fit the bar; slide 15's Wording card already ends at the card's bottom edge in the
 LibreOffice render.
 
 **Check a copy** (after `git pull`; the pptx itself must also be opened once):
 ```
-cd /netscratch/najib/multi-hmr && unzip -l docs/supervisor_update_2026-10-16.pptx | grep -c 'ppt/slides/slide[0-9]*\.xml$'; grep -c "before and after the fix" docs/deck_src/build.js; grep -c runForBus docs/supervisor_talk_notes_2026-10-16.md; grep -o "check pending\|image folders will show it\|I will check, re-extract and rebuild\|check is still to do\|I have not checked that yet\|empty or short\|3581320 pending\|3581320, is pending" docs/deck_src/build.js | wc -l; grep -c "14.3 millimetres" docs/supervisor_talk_notes_2026-10-16.md; grep -c "28 GPU hours" docs/supervisor_talk_notes_2026-10-16.md; grep -c "one shared frame grid; the full re-fit" docs/supervisor_talk_notes_2026-10-16.md
+cd /netscratch/najib/multi-hmr && unzip -l docs/supervisor_update_2026-10-16.pptx | grep -c 'ppt/slides/slide[0-9]*\.xml$'; grep -c "before and after the fix" docs/deck_src/build.js; grep -c runForBus docs/supervisor_talk_notes_2026-10-16.md; grep -o "check pending\|image folders will show it\|I will check, re-extract and rebuild\|check is still to do\|I have not checked that yet\|empty or short\|3581320 pending\|3581320, is pending" docs/deck_src/build.js | wc -l; grep -c "14.3 millimetres" docs/supervisor_talk_notes_2026-10-16.md; grep -c "28 GPU hours" docs/supervisor_talk_notes_2026-10-16.md; grep -c "one shared frame grid; the full re-fit" docs/supervisor_talk_notes_2026-10-16.md; grep -c "one real child" docs/supervisor_talk_notes_2026-10-16.md
 ```
-The current deck prints `18`, `2`, `1`, `0`, `3`, `2`, `3` (18 slides; slide 8's title and its notes; the slide 8 "If
-asked" line on the four unseen demo images; no line that still calls the image check undone or the label rebuild
+The current deck prints `18`, `2`, `1`, `0`, `3`, `2`, `3`, `1` (18 slides; slide 8's title and its notes; the slide 8
+"If asked" line on the four unseen demo images; no line that still calls the image check undone or the label rebuild
 pending, where the earlier 16-Oct copy prints `7`; the re-fit test sentence in notes 6, 16 and 17, where the 16-Oct
 notes print `0`; the measured re-fit time in notes 16 and 17, where older copies print `0`; the re-fit test sentence of notes 6, 16
-and 17 with "one shared frame grid", where the earlier 17-Oct copy, which said "the same frames", prints `0`).
+and 17 with "one shared frame grid", where the earlier 17-Oct copy, which said "the same frames", prints `0`; the
+corrected slide-10 notes, where every copy before the evening of 17 Oct prints `0` and still has the wrong "0.57–0.67,
+5 small people" tile).
 Anything else is an
 older copy: ask the student to `git pull` again. If no
 current copy can be had before the meeting, hand-edit the pptx in PowerPoint from the slide list below (slide text
@@ -2093,26 +2327,39 @@ again.
        real images." The demo log shows the fix on for four bones;
      - "I have looked at 8 of these 12 images so far; the other four, the runForBus, sitOnStairs and fencing frames
        and one photo, not yet.";
-     - the female-looking bodies on men in both models: not the 3DPW gender defect (v5 never saw 3DPW), cause
-       unknown, a guess (3.4);
+     - the female-looking bodies on men in both models: not the 3DPW gender defect (v5 never saw 3DPW); since the
+       evening of 17 Oct: "predicted gender near the training median, about 0.6, while Anny's male end is 0: the
+       same pull to the median as for age (slide 10)", cause not settled (3.4);
      - bodies still small or misplaced in depth in both models, and a figure in a painting detected as a person;
      - the hands differ too (two hand bones turned back) and were not judged (slide 9);
      - all twelve holdout panels show the thin neck and its fix wherever a neck is visible.
 9. Fingers: about half the error was two flipped bones. 17.3 deg before, 8.3 with the fix after the fine-tune (8.2
    with no training), 15.1 at rest pose before the fix. The notes give the v10 metacarpal result (PVE 74.1 -> 69.9,
    fingers 32.0 -> 17.8).
-10. Children: child-like in training, adult on real photos.
+10. Children: child-like in training, adult on real photos. Corrected on the evening of 17 Oct (3.4). Tiles: "2% →
+    10% / children in supervised training with the balanced sampler: unproven after 2 epochs"; "0.10 / predicted age
+    of training babies; true 0.015"; "0.60 / predicted age of the one real child in our photos: the training median,
+    an adult body" (was "0.57–0.67 / 5 small people", wrong: mostly crouching adults). Main notes: the median pull,
+    the five were mostly crouching or seated adults, the one real child predicted as an adult, the sampler
+    inconclusive, the proposal (Relative Human first, then limitation or BEV-style weak labels), the default-off 3DPW
+    shape mask as a decision. "If asked": posed skeletal height, the 299-line medians, why the spread is not read,
+    both synthetic tails, cause not ranked, Anny's child cue (shoulders vs head), three age scales, RH counts and
+    metric, the 3DPW constants and the PVE caveat, Anny-Fit.
 11. The hidden bug: head anchored, pelvis targeted.
 12. Depth fix: bodies drawn much closer to true size (figure 579862).
 13. Depth fix: much better size, near vs far still weak (table). Note: "No control was run at ×5 or ×20."
-14. Four experiments: results (+ noise floor).
+14. Four experiments: results (+ noise floor). Children row since the evening of 17 Oct: "Inconclusive after 2
+    epochs: 10 training children 48.5 vs 53.1 mm." (was "No effect ... real photos unchanged"); main notes "Neck and
+    fingers: no measurable effect. Children: inconclusive after two epochs".
 15. Corrections made, and still to make. The Wording card names the README and the findings as still carrying last
     week's neck story. That is narrower than section 7, which also lists the plan's neck lines (`plan :150-152`,
     `:252`); the slide is left as it is.
 16. Still open, and what I test next (7 items). Item 1, "Bone flips: confirm the pilot fix": "Neck: a longer run;
     real images by eye only (slide 8). v10's left arm: two-sided fix, not built yet." Item 3: "No result yet for the
     ×20 run at 10 epochs." Item 5: "Both v5 and the depth fix miss them (4 of 12 holdout renders): not the fix.
-    Likely detection; not counted." Item 7, "3DPW labels: three defects (slide 6)": "Missing labels fixed 16 Oct
+    Likely detection; not counted." Item 6, "Children and fingers" (since the evening of 17 Oct): "Children: measure
+    on Relative Human first. Fingers: check the bone-fix hands, then larger crops." (was "10-epoch sampler run; ...";
+    the notes keep that run as a low-priority option). Item 7, "3DPW labels: three defects (slide 6)": "Missing labels fixed 16 Oct
     (images re-extracted; train 4,451 → 6,437 images). Then gender (m → 0, f → 1), one shared frame grid, re-fit
     all 87 tasks, rebuild, re-check. Proposed: only then use 3DPW." Notes: "the 8 real images I have seen so
     far". Since 17 Oct the main notes add the re-fit test (man 14.3 mm with the correct gender, woman 15.5, one
@@ -2131,7 +2378,8 @@ again.
     "Option 2" line of the notes adds the re-fit test (man 14.3 mm with the correct gender, both on one shared frame
     grid, full re-fit not run), the measured re-fit time (about 28 GPU hours, 3.5 to 4 hours on 8 free H100s) and the
     final model's start (v5 with v5's bone fix and the depth fix, 10 epochs, next to a control without the two
-    fixes; not run yet).
+    fixes; not run yet). Since the evening of 17 Oct the "Both options" line adds the default-off 3DPW shape mask
+    ("on or off is a decision for today (slide 10)") and its 3DPW-error caveat.
 18. Backup: before and after, holdout image 579860.
 
 **Results still to come: the lines they make stale.** When a result arrives, edit these lines in `build.js` and
@@ -2144,10 +2392,16 @@ rebuild (or hand-edit the pptx as above).
 | longer fine-tune with the fix (4e; section 5, item 3) | 7 ("Next:" line), 16 item 1 ("a longer run") | 7 (If asked), 16 (main: "I still need a longer run") | neck02, head, girth, global head, PVE, recall at 10 epochs against the 10-epoch control |
 | `long_pc_dist20` (4d) | 13 (table note), 16 item 3 ("No result yet for the ×20 run at 10 epochs.") | 13 (main), 16 (If asked), 17 (If asked: "Five, not twenty, because ...") | root error, size, slope, PVE, recall of x20 for 10 epochs next to x5 for 10 epochs |
 | the supervisor's answer (slide 17) | 16 item 7 ("Proposed: only then use 3DPW."), 17 (question box) | 16, 17 | record it in the paragraph below |
+| the supervisor's children decisions (Path A or B; `MASK_3DPW_SHAPE` on or off) | 16 item 6 | 10 (main: "My proposal ..."; "Separately, a new flag ..."), 17 (If asked, "Both options") | record both in the paragraph below; if the mask is on, section 5, item 7 and note 17 |
+| Relative Human evaluation (section 5, item 12, step 1) | 10 (right tile and "Diagnosis" bullet), 16 item 6 | 10 (main and If asked), 16 | per-group mean predicted age, child-vs-adult AUC, gender accuracy, per-group recall |
 | the final model's start, if option 2 is chosen (section 5, item 7; pending item 4) | 17 (question box: "Fine-tune v9 ... with the fixed targets and depth ×5? Or first fix gender and frame grid, re-fit all 3DPW tasks, then fine-tune?") | 17 (If asked: "Option 1", with "75.0 at epoch 62, the planned start" and "about 1 to 2 hours"; "Option 2"; "Bone flips in v9 and v10", with a bone fix "estimated on v9 first") | note 17 "Option 2" says it since 17 Oct: v5 00099 with v5's bone fix JSON and the depth fix, 10 epochs (exp7 default), next to a control. Still to come: the review of the exp7 draft (if it changes the start or the length, change note 17), the supervisor's answer, the length if the deadline allows more than 10 epochs |
 
 **The question on slide 17:** fine-tune v9 now (fixed targets, depth loss x5), or first fix the 3DPW labels, re-fit,
 then fine-tune? The student proposes the second. Record the supervisor's answer here after the meeting.
+
+**The children decisions (slide 10; 3.4; section 5, item 12):** (1) Path A (Relative Human measurement, then a
+limitation) or Path B (A plus BEV-style weak labels, 1-2 weeks of code after exp7); the student proposes measuring
+first. (2) `MASK_3DPW_SHAPE` on or off in exp7 (default off). Record both answers here after the meeting.
 
 ---
 
