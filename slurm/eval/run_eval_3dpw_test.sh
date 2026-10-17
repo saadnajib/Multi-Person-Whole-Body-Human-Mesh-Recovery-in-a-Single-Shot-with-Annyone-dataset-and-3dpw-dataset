@@ -8,6 +8,17 @@
 #   sbatch run_eval_3dpw_test.sh              # all models
 #   sbatch --array=3 run_eval_3dpw_test.sh    # just one of them (0-based index)
 #
+# Optional environment overrides (unset = the behaviour above, unchanged):
+#   EVAL_LABELS=<labels root>  3DPW-Anny labels to evaluate against (default threedpw_anny_full/labels),
+#                            e.g. /netscratch/najib/multi-hmr/threedpw_anny_v23/labels. Deliberately NOT called LABELS,
+#                            so a LABELS exported in the shell (exp7 uses one) never switches this script silently.
+#                            With other labels, the run name gets __<labels folder> appended (e.g.
+#                            evaltest_teacher_v5_synthetic__threedpw_anny_v23), so the old evaltest_<name> folders stay.
+#   MODEL_ENTRY="ckpt|head_dim|backbone|label"   evaluate this one model instead of the list
+#                            (only array task 0 runs it: submit with --array=0)
+#   EVAL_LABELS=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels MODEL_ENTRY="/netscratch/najib/multi-hmr/models/multiHMR/anny_teacher_v9_mixed_00062.pt|0|dinov2_vitl14|teacher_v9_e62" sbatch --array=0 run_eval_3dpw_test.sh
+# Scores against different labels cannot be compared with each other. The log prints the labels used.
+#
 # 3DPW-test (all 9,722 converted images, every third frame of the 24 test
 # sequences) is used ONLY here, after every training decision was taken on
 # the validation split. The 13-20 mm conversion residual is a floor on it.
@@ -43,7 +54,12 @@ MODELS=(
 #   "$P/models/multiHMR/anny_v10_scratch_mixed_*.pt|0|dinov2_vitl14|model_v10_scratch_mixed"
 
 TASK="${SLURM_ARRAY_TASK_ID:-0}"
-ENTRY="${MODELS[$TASK]:-}"
+if [ -n "${MODEL_ENTRY:-}" ]; then
+  [ "$TASK" = 0 ] || { echo "MODEL_ENTRY is set: only array task 0 evaluates it; task $TASK exits"; exit 0; }
+  ENTRY="$MODEL_ENTRY"
+else
+  ENTRY="${MODELS[$TASK]:-}"
+fi
 [ -n "$ENTRY" ] || { echo "ERROR: no model at array index $TASK (${#MODELS[@]} entries)"; exit 1; }
 IFS='|' read -r CKPT_PAT HEAD_DIM BACKBONE LABEL <<< "$ENTRY"
 
@@ -58,7 +74,15 @@ echo "task $TASK: $LABEL  ->  $CKPT_ARG  (head_dim $HEAD_DIM, $BACKBONE)"
 RUN_NAME="$LABEL"
 # >>> HOW MANY TEST SAMPLES (100 = exactly the untrained holdout) <<<
 TEST_N=100
-LABELS="/netscratch/najib/multi-hmr/threedpw_anny_full/labels"
+DEFAULT_LABELS="/netscratch/najib/multi-hmr/threedpw_anny_full/labels"
+LABELS="${EVAL_LABELS:-$DEFAULT_LABELS}"
+LABELS="${LABELS%/}"
+EVAL_NAME="evaltest_${LABEL}"
+if [ "$LABELS" != "$DEFAULT_LABELS" ]; then
+  LTAG=$(basename "$LABELS"); [ "$LTAG" = labels ] && LTAG=$(basename "$(dirname "$LABELS")")
+  EVAL_NAME="${EVAL_NAME}__${LTAG}"
+fi
+echo "labels: $LABELS   run name: $EVAL_NAME"
 VAL_3DPW_SPLIT="test"
 VAL_3DPW_N=0        # 0 = all 9,722 test images
 
@@ -69,7 +93,7 @@ source /netscratch/najib/multi-hmr/slurm/env.sh   # conda, caches, cd, DINOv2 pa
 
 CKPT="${CKPT_ARG}"
 [ -f "\$CKPT" ] || { echo "ERROR: checkpoint not found: \$CKPT"; exit 1; }
-echo "Evaluating \$CKPT on the last ${TEST_N} AnnyOne samples and ${VAL_3DPW_N} 3DPW-${VAL_3DPW_SPLIT} images"
+echo "Evaluating \$CKPT on the last ${TEST_N} AnnyOne samples and ${VAL_3DPW_N} 3DPW-${VAL_3DPW_SPLIT} images (0 = all) of ${LABELS}"
 [ -f "${LABELS}/index_${VAL_3DPW_SPLIT}.txt" ] || { echo "ERROR: no 3DPW labels at ${LABELS}"; exit 1; }
 grep -q "mix_3dpw_labels" train.py || { echo "ERROR: train.py lacks apply_mixed_data_fix.py"; exit 1; }
 
@@ -97,7 +121,7 @@ python train.py \\
     --use_anny_shape 1 \\
     --mask_helper_joints_train 1 \\
     --save_dir /netscratch/najib/multi-hmr/logs/anny_model \\
-    --name evaltest_${LABEL}
+    --name ${EVAL_NAME}
 EOF
 )
 
