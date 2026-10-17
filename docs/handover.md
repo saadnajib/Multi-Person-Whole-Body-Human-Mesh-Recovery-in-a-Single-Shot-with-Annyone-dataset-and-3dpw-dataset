@@ -7,19 +7,16 @@ this file** (section 7 lists the outdated lines). The deck `docs/supervisor_upda
 the speaker notes `docs/supervisor_talk_notes_2026-10-16.md` match this file. Section 9 lists the slides and the
 lines that will go stale when the pending results arrive.
 
-**Which version you have.** All code this file describes is on GitHub `main` up to `93c4eda` (night of 16-17
-Oct): the 3DPW converter fix (v2.3 flags and the re-fit post-check, 4e) and the options that run the converter on
-H100/H200 (`GPUS`, `CONDA_ENV`, `PY_VENV`, 4f); also the 18-slide deck with its source `docs/deck_src/` and the figures
-in `docs/figures/`. A `git pull` on the cluster gets all of it. **Not in `93c4eda`:** the final-model script
-`slurm/experiments/exp7_final_model.sh` and the change to `slurm/eval/run_eval_3dpw_test.sh` it needs (the
-`EVAL_LABELS` and `MODEL_ENTRY` overrides; 4e, "Using the v23 labels"), both drafted on 17 Oct, not yet reviewed or
-committed (section 5, item 7; they go into one commit, 0a step 6); also the 17-Oct versions of this file and of the
-speaker notes (the `3589270` check below); and, from the evening of 17 Oct, the deck rebuild with the corrected
-children slide (section 9) and the default-off flag `--mask_3dpw_shape` (`loss.py`, `train.py`, exp7's
-`MASK_3DPW_SHAPE`; added by another session, uncommitted when this was written; 3.4). After a `git pull`,
-`ls slurm/experiments/exp7_final_model.sh` and `grep -c EVAL_LABELS slurm/eval/run_eval_3dpw_test.sh` (above `0`)
-show whether both have arrived; `grep -c mask_3dpw_shape loss.py` (above `0`) shows the mask. To check a copy
-of this file:
+**Which version you have.** All code this file describes is on GitHub `main` as of the evening of 17 Oct
+(`a0926fd` and the docs commit after it): the 3DPW converter fix (v2.3 flags and the re-fit post-check, 4e); the
+options that run the converter on H100/H200 (`GPUS`, `CONDA_ENV`, `PY_VENV`, 4f); the final-model script
+`slurm/experiments/exp7_final_model.sh` together with the `MODEL_ENTRY` / `EVAL_LABELS` overrides of
+`slurm/eval/run_eval_3dpw_test.sh` it needs (`b188b63`; section 5, item 7; never run); the default-off flag
+`--mask_3dpw_shape` (`loss.py`, `train.py`, exp7's `MASK_3DPW_SHAPE`; `a0926fd`; 3.4); the 18-slide deck with its
+source `docs/deck_src/`, the figures in `docs/figures/` and the corrected children slide (section 9). A `git pull` on
+the cluster gets all of it. After the pull, `ls slurm/experiments/exp7_final_model.sh`,
+`grep -c EVAL_LABELS slurm/eval/run_eval_3dpw_test.sh` (above `0`) and `grep -c mask_3dpw_shape loss.py` (above `0`)
+confirm the three. To check a copy of this file:
 - `grep -c '^## 0a\. Tomorrow' docs/handover.md` prints `1` for the 15-Oct and later versions and `0` for every older
   one (the 14-Oct `586faad`, or the work-in-progress `c6419ce`).
 - `grep -c ALLOW_DEFAULT_FLAGS docs/handover.md` prints a number above `0` only in the 16-Oct and later versions (after
@@ -68,8 +65,8 @@ file were merged into `main` (section 8).
   [Certain, log]. The shape head regresses to the training median, in the synthetic tails and on real photos.
 - A ranked plan: measure on Relative Human (real photos with age groups) first; then a limitation (Path A) or
   BEV-style weak labels (Path B, 1-2 weeks of code after exp7). Both are for the supervisor on Monday (0a, step 8).
-- Another session added `--mask_3dpw_shape` (default off; exp7 env `MASK_3DPW_SHAPE`, default 0). On or off in exp7
-  is a Monday decision (3.4).
+- Another session added `--mask_3dpw_shape` (default off; exp7 env `MASK_3DPW_SHAPE`, default 0; commit `a0926fd`,
+  not on `main` yet). On or off in exp7 is a Monday decision (3.4).
 - Deck: slide 10 (children) corrected, slides 14 and 16 and notes 8, 10, 14, 16, 17 made consistent (section 9).
 
 **Meeting date: Monday 19 October 2026** (the student, 17 Oct), with the deck `docs/supervisor_update_2026-10-16.pptx`
@@ -227,11 +224,10 @@ reported. The four pending items are steps 3-6, in this order.
 6. Pending (4): the final model (section 5, item 7): a fine-tune of v5 00099 with v5's bone fix, the depth fix and
    the v23 labels, 10 epochs, plus its matched control (`ARM=control`). It trains, so it needs the normal env and
    **only the old GPUs** (4f): expect days in the queue.
-   - Sunday: its script `slurm/experiments/exp7_final_model.sh` is a draft (untracked, not reviewed, not in
-     `93c4eda`). Check it against section 5, item 7 (start checkpoint, bone fix, epochs, control arm; item 7 now
-     follows the script's defaults, so pick one start if the review changes it). Review the uncommitted change to
-     `slurm/eval/run_eval_3dpw_test.sh` with it: exp7's test evaluation calls that script with `MODEL_ENTRY` and
-     `EVAL_LABELS` (exp7, end of the script), and the committed version (`93c4eda`) ignores both, so it would
+   - Sunday: its script `slurm/experiments/exp7_final_model.sh` is on `main` (`b188b63`, never run). Check it against section 5, item 7 (start checkpoint, bone fix, epochs, control arm; item 7 now
+     follows the script's defaults, so pick one start if the review changes it). The change to
+     `slurm/eval/run_eval_3dpw_test.sh` is in the same commit: exp7's test evaluation calls that script with `MODEL_ENTRY` and
+     `EVAL_LABELS` (exp7, end of the script), and the older version (`93c4eda`) ignored both, so it would
      evaluate the first model of its list (v5 00099) against the old labels in `threedpw_anny_full` and print those
      numbers in exp7's log [Certain, from the two scripts]. exp7's header (prerequisite 4) also asks for both on
      `main`. So commit the two files together, in one commit, push it to `main`, and `git pull` on the cluster.
@@ -290,7 +286,7 @@ item 2).
 Done on 17 Oct: the re-fit test (job 3589270; 0b, 4e step 1) and the H100 route for the converter (4f). The full
 re-fit (job 3590385) made 51 of 87 fits; the 36 that ran on the V100 nodes gifu/glendale failed and are rerun (0a, 4).
 Evening: the children re-check, the ranked plan and the corrected slide 10 (3.4; section 5, item 12; section 9);
-the `--mask_3dpw_shape` flag by another session (uncommitted when this was written).
+the `--mask_3dpw_shape` flag by another session (commit `a0926fd`, not on `main` yet).
 
 ## 0b. Numbers at a glance
 
@@ -561,7 +557,7 @@ followed by the path (e.g. `.../main/train.py`), if your tools can fetch URLs; o
 | `--alpha_global_rot`, `--global_rot_bones` | train.py | exp3 loss on global head/neck03/wrist orientation |
 | `--rotmat_region_norm 1` | train.py | exp4 rotation loss averaged per body region |
 | `--mask_3dpw_hands 1` | train.py | ignore 3DPW finger labels (they are rest pose). Use in any mixed fine-tune |
-| `--mask_3dpw_shape 1` | loss.py, train.py | new 17 Oct evening (another session; uncommitted when this was written): no shape L1 on the 8 converter constants (age, muscle, weight, cupsize, firmness, african, asian, caucasian) for 3DPW-Anny people; gender, height, proportions stay. Default 0. exp7: `MASK_3DPW_SHAPE` (3.4) |
+| `--mask_3dpw_shape 1` | loss.py, train.py | new 17 Oct evening (another session; commit `a0926fd`, not on `main` yet): no shape L1 on the 8 converter constants (age, muscle, weight, cupsize, firmness, african, asian, caucasian) for 3DPW-Anny people; gender, height, proportions stay. Default 0. exp7: `MASK_3DPW_SHAPE` (3.4) |
 | `--rotmat_loss geodesic` | train.py | exp5 geodesic rotation loss (default `l1`) |
 | `--bone_fix <json>` | train.py, trace, demo.py | exp6 constant correction `R <- R·C` for listed bones; saved into checkpoint args |
 | `--dump_bones 1`, `--dump_bone_names all` | trace | per-bone error table (verdicts FLIP_TWIST, FLIP_SWING, ...) |
@@ -1030,7 +1026,7 @@ adults. This section replaces that reading. The plan is in section 5, item 12.
   (`train.py:~647-662`). [Guessing] Part of v9's 3DPW gain (102.5 vs 119.1) may come from that.
 - [Certain] Not the root cause: v5 never saw 3DPW and shows the same real-photo pull. 3DPW has no children.
 
-**`--mask_3dpw_shape` (new on the evening of 17 Oct; another session; uncommitted when this was written):**
+**`--mask_3dpw_shape` (new on the evening of 17 Oct; another session; commit `a0926fd`, not on `main` yet):**
 - What: with `1`, people tagged `has_hand_labels 0` (3DPW-Anny) get no shape L1 on the 8 constants. Gender, height
   and proportions stay supervised. AnnyOne people are unchanged. It reuses the `HandLabelFlag` tag.
 - Default `0`. In exp7: env `MASK_3DPW_SHAPE` (default `0`; `1` adds `_shpmask` to the run names and requires the
@@ -1217,7 +1213,7 @@ checks.
 2. The full re-fit, 87 tasks, through `PY_VENV` with `--time=02:00:00` (4e, step 3; 4f).
 3. Labels and the conversion check on v23 (4e, steps 4-5).
 4. The final model: a v9-style fine-tune of v5 with its bone fix, the depth fix and the v23 labels (section 5,
-   item 7). Script drafted, not reviewed: `slurm/experiments/exp7_final_model.sh` (not in `93c4eda`). It trains, so
+   item 7). Script: `slurm/experiments/exp7_final_model.sh` (on `main` since `b188b63`; never run). It trains, so
    old GPUs only (4f). Submit it after the meeting, if the supervisor picks labels first (0a, step 6).
 
 Also open: the x20 depth run (4d; the command was given on 14 Oct, the submission was never confirmed).
@@ -1780,10 +1776,9 @@ run before (4). Item 6 depends on the supervisor's answer to slide 17. The label
 
    **Then the final model (pending item 4): a v9-style fine-tune of v5 with the depth fix, the bone fix and the
    fixed 3DPW labels** (after the re-fit and its check pass). **Script: `slurm/experiments/exp7_final_model.sh`**,
-   drafted on 17 Oct by another session: untracked, not reviewed, not committed, not in `93c4eda`, never run. Read its
-   header before the student submits it. Its test evaluation needs the uncommitted change to
-   `slurm/eval/run_eval_3dpw_test.sh` (`MODEL_ENTRY`, `EVAL_LABELS`; 4e, "Using the v23 labels"): commit the two in
-   one commit (0a, step 6), never exp7 alone. Before submitting, check the four prerequisites in its header: its
+   written on 17 Oct, on `main` since `b188b63` together with the `MODEL_ENTRY` / `EVAL_LABELS` change to
+   `slurm/eval/run_eval_3dpw_test.sh` it needs (4e, "Using the v23 labels"); never run. Read its header before the
+   student submits it. Before submitting, check the four prerequisites in its header: its
    guards check the labels and the fits, but not the `--seq all` post-check (4e, step 3), which the student runs by
    hand. This item follows the script's defaults (chosen on 17 Oct so that this file, note 17 and the script say the
    same thing). If the review changes a default, change it here and in note 17 too.
@@ -1811,7 +1806,7 @@ run before (4). Item 6 depends on the supervisor's answer to slide 17. The label
    - Labels: `LABELS` defaults to `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels`. The script refuses labels
      under `threedpw_anny_full` and fits not made with `--gender_convention anny --frame_grid shared`. Plus
      `--mask_3dpw_hands 1` (3DPW fingers are rest pose).
-   - 3DPW shape mask (new on the evening of 17 Oct, another session; uncommitted when this was written):
+   - 3DPW shape mask (new on the evening of 17 Oct, another session; commit `a0926fd`, not on `main` yet):
      `MASK_3DPW_SHAPE`, default `0` = unmasked, as all earlier runs. `1` passes `--mask_3dpw_shape 1` to both arms
      (fix and control stay matched) and adds `_shpmask` to the run names, so a masked run never shares a folder with
      an unmasked one. On or off is a Monday decision (0a, step 8; 3.4). The default keeps this item, note 17 and the
@@ -2078,7 +2073,7 @@ Trust this file over these. Fix them when there is time (one commit per doc).
 - :114 "numbers look normal while the overlays look wrong" (real-photo demos use box placement).
 - :115 whole neck row (weak supervision, redundant chain, long neck = depth defect).
 - :116 "Under-trained" (a guess; missing the crop/region-norm nulls, the flipped hand bones and the exp6 result).
-- :117 "about 11 years", "0.55 (about 20 years)" (code anchors); exp2 null missing.
+- :117 "about 11 years", "0.55 (about 20 years)" (code anchors); exp2 result (inconclusive at 2 epochs) missing.
 - :119 "No improvement is claimed until its holdout trace has been re-run" (it has).
 - :126 "Future work (not measured)" (both measured, both null). :128 "Nothing from them has been measured yet."
 - :211-214 fit description omits the reversed gender and the per-person stride.
