@@ -1004,3 +1004,37 @@ changes were checked only with `py_compile`, `bash -n` and pure-python or stubbe
 extrapolated from one throughput measurement. The success criteria say what a measurement would show, not what
 it will show. No experiment here is claimed to improve the model until its pilot and the fixed traces have run
 and been read against the control arm.
+
+## Relative Human evaluation (children, gender on real photos)
+
+**What it measures** (docs/handover.md 3.4, section 5 item 12.1). On Relative Human (RH) real photos, labelled per
+person with an age group (adult / teen / kid / baby) and gender: the model runs once per whole image, as the plain
+demo.py path does (672 px, fov 55, det_thresh 0.3, nms 3). Each detection's box comes from its projected vertices.
+Detections are matched one-to-one to RH people by IoU (greedy, >= 0.3) against `bbox_wb` (whole body) when the
+person has one, else `bbox`. Per group it reports: recall, mean and median predicted Anny age, the fraction below
+`--child_thr` 0.45 (child-shaped), mean height and proportions, and gender accuracy (prediction < 0.5 = male). It also
+reports the child-vs-adult AUC of predicted age (kid + baby against adult). The script is
+`scripts/diagnostics/eval_relative_human.py`; the predictions are cached per image under `<out>/pred/`.
+
+**Commands**
+```
+sbatch --array=0-1 slurm/diagnostics/eval_relative_human.sh            # 0 = v5 00099, 1 = exp6 fine-tuned v5 (own bone fix)
+SPLIT=test sbatch --array=0-1 slurm/diagnostics/eval_relative_human.sh  # test split (1,836 images)
+N=20 sbatch --array=0 slurm/diagnostics/eval_relative_human.sh          # smoke test
+python scripts/diagnostics/eval_relative_human.py --score_only --out results/diagnostics/relative_human_val_anny_s2_shape_v5_00099 --iou 0.5 --child_thr 0.35
+```
+Outputs: `summary.txt` (also in the log, `[rh]` lines) and `per_person.csv` (every RH person, matched or not, with
+the 11 phenotypes and the predicted box).
+
+**How to read it**
+- A working model puts the kid and baby mean age clearly below the adult mean, with AUC well above 0.5. AUC ~0.5
+  means age carries no child signal. Given the median pull (3.4), expect every group near 0.6.
+- Always quote recall next to it. Multi-HMR at 672 px misses small people, and the AUC covers detected people only,
+  so a low kid or baby recall biases it.
+- Gender: read the overall accuracy and the per-group accuracy against the male / female mean predictions. 3.4
+  predicts men pulled towards 0.59.
+- `--child_thr` and `--iou` are reading choices. Re-score with `--score_only` (no GPU) to show that the conclusion
+  does not depend on them.
+
+**License**: the RH repository (https://github.com/Arthur151/Relative_Human) has no license file. Use it for
+evaluation only: no training, and do not redistribute the images.

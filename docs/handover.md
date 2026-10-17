@@ -253,8 +253,10 @@ reported. The four pending items are steps 3-6, in this order.
    (section 9, "Check a copy"). Open the pptx in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9, 10, 14, 15, 16 and
    17 for text that wraps one line longer (slide 15's Wording card already ends at the card's bottom edge in the
    LibreOffice render; slides 10, 14 and 16 were re-rendered on 17 Oct evening and fit). Optional, no GPU: start the
-   Relative Human download (Google Drive link in the README of https://github.com/Arthur151/Relative_Human; section 5,
-   item 12, step 1), so the evaluation can start after the meeting.
+   Relative Human download: **done 17 Oct** (`/netscratch/najib/data/Relative_Human/RelativeHuman/`, 8,741 images,
+   zip verified; labels for 5,218 train / 635 val / 1,836 test images). The evaluation script and its job exist
+   (section 5, item 12, step 1); submit the job after the meeting, or let it queue: `sbatch --array=0-1
+   slurm/diagnostics/eval_relative_human.sh` from the repo root (old GPUs only).
 8. In the meeting: the deck as it is. On 3DPW: the re-fit test (notes 6, 16, 17) and whether the full re-fit is
    done, running or queued (say which; never call the labels fixed before the v23 check passed). On training: it
    waits for the v23 labels and for the old GPUs (4f). Slide 17 describes the fine-tune as one of v9 epoch 62; the
@@ -1867,11 +1869,22 @@ run before (4). Item 6 depends on the supervisor's answer to slide 17. The label
          person: age group (0 adult, 1 teen, 2 kid, 3 baby, -1 unknown), gender (0 male, the same direction as Anny),
          depth layer, boxes, 2D pose. Download: the Google Drive link in the README of
          https://github.com/Arthur151/Relative_Human. No license file [Certain]; evaluation-only use in a thesis is
-         low risk [Guessing]. Image count and archive size not verified.
+         low risk [Guessing]. **Downloaded 17 Oct** to `/netscratch/najib/data/Relative_Human/RelativeHuman/` (1.1 GB
+         zip, `unzip -t` clean, 8,741 images; `{train,val,test}_annots.npz` with 5,218 / 635 / 1,836 labelled images;
+         boxes are `[x1, y1, x2, y2]` pixels, confirmed from RH's `demo.py` crop code).
        - Metric: mean predicted Anny age per group; child-vs-adult AUC of predicted age; gender accuracy (prediction
          < 0.5 = male); per-group recall next to them. Multi-HMR at 672 px misses small people, so an AUC over
          detected people alone is biased [Likely].
-       - NEEDS CODE: match detections to RH boxes by IoU, then the report [Guessing: 1-2 code days]; inference only
+       - CODE WRITTEN 17 Oct (not yet run on a GPU or on the real data; CPU test of matching/AUC/stats passes):
+         `scripts/diagnostics/eval_relative_human.py` and `slurm/diagnostics/eval_relative_human.sh`
+         (`docs/experiments_plan.md`, section "Relative Human evaluation"). Array index 0 = v5 00099, index 1 = the
+         exp6 fine-tuned checkpoint with its own bone fix. Command, repo root: `sbatch --array=0-1
+         slurm/diagnostics/eval_relative_human.sh`; smoke test `N=20 sbatch --array=0 ...`; `SPLIT=test` for the test
+         split (may need more than the 2-hour limit; the job is resumable, cached predictions are skipped). Output
+         `results/diagnostics/relative_human_<split>_<tag>/summary.txt` (lines start `[rh]`) and `per_person.csv`;
+         re-score without a GPU: `python scripts/diagnostics/eval_relative_human.py --score_only --out <OUT> --iou 0.5`.
+         Boxes come from the projected predicted mesh; fov 55 as in the demo [Guessing: RH has no intrinsics]; no EXIF
+         rotation handling [Guessing: could misalign a few photos]. Inference only
          [Guessing: under 2 GPU-hours, old GPUs, so the queue]. Start the download now (0a, step 7); numbers after
          Monday.
     2. **Fix our own real-photo read** (prerequisite for anything "by eye"). NEEDS CODE [Guessing: half a day]: in
