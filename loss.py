@@ -6,6 +6,11 @@ import contextlib
 import torch
 from argparse import ArgumentParser
 
+# --mask_3dpw_shape: the phenotypes scripts/data/smpl_to_anny.py never fits (run_smpl_to_anny_task.sh: free
+# height,proportions, age=0.55; every other phenotype starts and stays at 0.5), so in 3DPW-Anny labels they are
+# constants, not labels. gender (3DPW metadata), height and proportions (fitted) are labels and are not listed.
+THREEDPW_CONSTANT_PHENOTYPES = ('age', 'muscle', 'weight', 'cupsize', 'firmness', 'african', 'asian', 'caucasian')
+
 def _neg_loss(pred, gt):
   '''
   Code modified from: https://github.com/xingyizhou/CenterNet/blob/4c50fd3a46bdf63dbf2082c5cbb3458d39579e6c/src/lib/models/losses.py#L42
@@ -81,6 +86,9 @@ class Loss(torch.nn.Module):
         # --mask_3dpw_hands: [1, 163, 1, 1] mask of the bones whose 3DPW-origin rotations are converter
         # placeholders (configure_hand_label_mask). None = every bone of every person is supervised, as before.
         self.hand_label_mask = None
+        # --mask_3dpw_shape: [1, 11] mask of the phenotypes whose 3DPW-origin values are converter constants
+        # (configure_shape_label_mask). None = every phenotype of every person is supervised, as before.
+        self.shape_label_mask = None
         # --shape_weights: per-phenotype multipliers on the L1 shape error [1, 11].
         # None (default, or all ones) = the original unweighted sum, byte-for-byte.
         self.shape_weights = None
@@ -244,6 +252,45 @@ class Loss(torch.nn.Module):
         flag = y['has_hand_labels'].reshape(-1, 1, 1, 1).to(like.device).to(like.dtype)
         return 1.0 - (1.0 - flag) * self.hand_label_mask.to(like.device).to(like.dtype)
 
+    def configure_shape_label_mask(self, pheno_labels):
+        """--mask_3dpw_shape: the phenotypes whose 3DPW-origin values are not labels.
+
+        scripts/data/smpl_to_anny.py fits only height and proportions, takes gender from the 3DPW metadata and
+        keeps age at 0.55 and every other phenotype at 0.5; the label builder and datasets/threedpw_anny.py copy
+        anny_shape unchanged, so prepare_gt cannot tell these constants from AnnyOne labels. The per-person flag
+        has_hand_labels (1 AnnyOne, 0 3DPW) switches THREEDPW_CONSTANT_PHENOTYPES off in the shape L1 for the people
+        tagged 0. The dims are found by name in the body model's phenotype_labels, so another order cannot mask the
+        wrong ones. Only mixed runs have such people and tag them, so the flag is refused without --mix_3dpw_labels.
+        """
+        if not str(getattr(self.parser_args, 'mix_3dpw_labels', '') or '').strip():
+            raise ValueError("--mask_3dpw_shape 1 needs --mix_3dpw_labels: without 3DPW-Anny people nothing is masked, "
+                             "and only mixed runs tag every human with has_hand_labels")
+        labels = list(pheno_labels)
+        missing = [n for n in THREEDPW_CONSTANT_PHENOTYPES if n not in labels]
+        if missing:
+            raise ValueError(f"--mask_3dpw_shape: phenotype(s) {missing} not found in the body model's "
+                             f"phenotype_labels {labels}")
+        m = torch.tensor([1.0 if n in THREEDPW_CONSTANT_PHENOTYPES else 0.0 for n in labels], dtype=torch.float32)
+        self.shape_label_mask = m.reshape(1, -1)
+        masked = [n for n in labels if n in THREEDPW_CONSTANT_PHENOTYPES]
+        kept = [n for n in labels if n not in THREEDPW_CONSTANT_PHENOTYPES]
+        print(f"[loss] mask_3dpw_shape: {len(masked)} of {len(labels)} phenotypes ({', '.join(masked)}) are not "
+              f"supervised (shape L1) for people with has_hand_labels 0 (3DPW-Anny converter constants: age 0.55, "
+              f"the rest 0.5); {', '.join(kept)} stay supervised; people tagged 1 (AnnyOne) unchanged; the masked "
+              f"entries are zeroed, the sum over phenotypes and mean over people stay (no reweighting)", flush=True)
+
+    def _shape_label_keep(self, y, like):
+        """[N, D] factor: 0 on the shape_label_mask phenotypes of people whose labels are converter constants."""
+        if 'has_hand_labels' not in y:
+            raise ValueError("--mask_3dpw_shape 1 but the batch has no has_hand_labels: the HandLabelFlag dataset "
+                             "wrapper was not applied (train.py tags both datasets only for --train_data AnnyOne "
+                             "with --mix_3dpw_labels)")
+        flag = y['has_hand_labels'].reshape(-1, 1).to(like.device).to(like.dtype)
+        if flag.shape[0] != like.shape[0]:
+            raise ValueError(f"--mask_3dpw_shape: has_hand_labels holds {flag.shape[0]} people, the shape term "
+                             f"{like.shape[0]}")
+        return 1.0 - (1.0 - flag) * self.shape_label_mask[:, :like.shape[1]].to(like.device).to(like.dtype)
+
     def forward(self, y_hat, y, epoch=None, img_size=None):
         
         # Detection
@@ -273,6 +320,9 @@ class Loss(torch.nn.Module):
         shape_err = (y_hat['shape'][:,:shape_dim] - y['shape'][:,:shape_dim]).abs()
         if self.shape_weights is not None:
             shape_err = shape_err * self.shape_weights[:, :shape_dim].to(shape_err.device).to(shape_err.dtype)
+        if self.shape_label_mask is not None:
+            # zero entries only: the sum over phenotypes and the mean over all people stay, so no kept dim is reweighted
+            shape_err = shape_err * self._shape_label_keep(y, shape_err)
         reg_shape = shape_err.sum(-1).mean(0)
         reg_dist = (y_hat['dist_postprocessed'].squeeze() - y['dist_postprocessed']).abs().mean(0)
         reg_transl = (y_hat['transl'] - y['transl']).abs().sum(-1).mean(0)
@@ -416,6 +466,14 @@ class Loss(torch.nn.Module):
                                  'metacarpal bones of people tagged 0 are left out of the rotmat and global_rot terms '
                                  '(their 3DPW rotations are the identity the SMPL->Anny converter never fits). 0 = '
                                  'unchanged: 3DPW identity fingers are supervised as ground truth in mixed runs.')
+        # Unfitted phenotypes of 3DPW-origin people are converter constants (see configure_shape_label_mask).
+        parser.add_argument('--mask_3dpw_shape', type=int, default=0, choices=[0, 1],
+                            help='1 (needs --mix_3dpw_labels): every human is tagged has_hand_labels (1 AnnyOne, 0 '
+                                 '3DPW-Anny) and the shape L1 of people tagged 0 is zeroed on age, muscle, weight, '
+                                 'cupsize, firmness, african, asian and caucasian (constants the SMPL->Anny converter '
+                                 'never fits: age 0.55, the rest 0.5); gender, height and proportions stay supervised. '
+                                 'The v3d/v2d mesh terms still carry the neutral 3DPW body. 0 = unchanged: 3DPW people '
+                                 'are pulled toward the constants in mixed runs.')
         # Per-bone rotation distance of the rotmat / global_rot terms (see geodesic_rad).
         parser.add_argument('--rotmat_loss', type=str, default='l1', choices=['l1', 'geodesic'],
                             help="per-bone distance in the rotmat term (and the global_rot term): 'l1' = sum of the "

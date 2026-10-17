@@ -121,6 +121,10 @@
 #   TASKS (configs/threedpw_tasks.txt), TABLE_ONLY (0), IGNORE_PLAIN_SBATCH (0).
 #   Alternative start (handover item 7): CKPT=/netscratch/najib/multi-hmr/models/multiHMR/exp6_v5_bonefix_00001.pt
 #   BONE_FIX=inherit (the exp6 fine-tuned checkpoint, its own fix inherited). Default here: v5 00099 + the same JSON.
+#   MASK_3DPW_SHAPE (0; 1 = --mask_3dpw_shape 1 in both arms, RUN gets _shpmask, step 1 requires the train.log line
+#   "[loss] mask_3dpw_shape:"): 3DPW people lose the shape L1 on the 8 converter constants (age 0.55, muscle ...
+#   caucasian 0.5). It adds no child signal, the v3d/v2d mesh terms still carry the neutral body, and the 3DPW-test
+#   PVE is computed against neutral-body GT meshes, so a masked model can score worse there.
 #
 # RUNTIME (realistic, from the logs):
 #   [Certain] this recipe on AnnyOne alone: 328-339 s per 1,000-iteration epoch, 11.8-12.2 images/s (long_pc_dist5,
@@ -187,6 +191,9 @@ N_ITERS="${N_ITERS:-1000}"
 posint EPOCHS "${EPOCHS}"; posint N_ITERS "${N_ITERS}"
 MAX_ITER=$(( EPOCHS * N_ITERS ))
 ITER_TAG=""; [ "${N_ITERS}" = 1000 ] || ITER_TAG="_it${N_ITERS}"   # in the default RUN names: test runs get their own folder
+MASK_3DPW_SHAPE="${MASK_3DPW_SHAPE:-0}"
+case "${MASK_3DPW_SHAPE}" in 0|1) ;; *) echo "ERROR: MASK_3DPW_SHAPE=${MASK_3DPW_SHAPE} (0|1)"; exit 1 ;; esac
+SHAPE_TAG=""; [ "${MASK_3DPW_SHAPE}" = 1 ] && SHAPE_TAG="_shpmask"   # masked runs never share an unmasked run's folder
 LABELS="${LABELS:-${REPO}/threedpw_anny_v23/labels}"
 LABELS="$(abs "${LABELS%/}")"
 FITS="$(abs "${FITS:-$(dirname "${LABELS}")}")"
@@ -195,14 +202,14 @@ if [ "${ARM}" = fix ]; then
   ALPHA_DIST="${ALPHA_DIST:-5}"
   ALPHA_TRANSL="${ALPHA_TRANSL:-5}"
   BONE_FIX="${BONE_FIX:-results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/bone_fix.json}"
-  RUN="${RUN:-v5_pc_dist${ALPHA_DIST}_bonefix_v23_e${EPOCHS}${ITER_TAG}}"
+  RUN="${RUN:-v5_pc_dist${ALPHA_DIST}_bonefix_v23_e${EPOCHS}${ITER_TAG}${SHAPE_TAG}}"
 else
   GT_CENTER=root
   ALPHA_DIST="${ALPHA_DIST:-1}"
   ALPHA_TRANSL="${ALPHA_TRANSL:-1}"
   BONE_FIX="${BONE_FIX:-none}"
   [ "${BONE_FIX}" = none ] || { echo "ERROR: ARM=control runs without a bone fix; BONE_FIX=${BONE_FIX}"; exit 1; }
-  RUN="${RUN:-v5_root_dist${ALPHA_DIST}_nofix_v23_e${EPOCHS}${ITER_TAG}}"
+  RUN="${RUN:-v5_root_dist${ALPHA_DIST}_nofix_v23_e${EPOCHS}${ITER_TAG}${SHAPE_TAG}}"
 fi
 LR="${LR:-1e-5}"
 MIX_RATIO="${MIX_RATIO:-0.3}"
@@ -215,7 +222,7 @@ N_VIS="${N_VIS:-12}"
 N_LABEL_CHECK="${N_LABEL_CHECK:-300}"
 MANIFEST="${MANIFEST:-results/diagnostics/manifest.json}"
 PARTITIONS="${PARTITIONS:-A100-40GB,A100-80GB,A100-PCI,A100-RP,L40S,L40S-AV,RTXA6000,RTXA6000-AV}"
-CONTROL_RUN="${CONTROL_RUN:-results/experiments/exp7_final_model/v5_root_dist1_nofix_v23_e${EPOCHS}${ITER_TAG}}"
+CONTROL_RUN="${CONTROL_RUN:-results/experiments/exp7_final_model/v5_root_dist1_nofix_v23_e${EPOCHS}${ITER_TAG}${SHAPE_TAG}}"
 CHECK_ONLY="${CHECK_ONLY:-0}"
 DRY_RUN="${DRY_RUN:-0}"
 OVERWRITE="${OVERWRITE:-0}"
@@ -235,6 +242,8 @@ case "${BONE_FIX}" in
 esac
 BF_ABS="${BONE_FIX}"; case "${BF_ABS}" in none|inherit) ;; *) BF_ABS="$(abs "${BF_ABS}")" ;; esac
 HANDS_ARG=""; [ "${MASK_3DPW_HANDS}" = 1 ] && HANDS_ARG="--mask_3dpw_hands 1"
+SHAPE_ARG=""; SHAPE_GREP=""
+[ "${MASK_3DPW_SHAPE}" = 1 ] && { SHAPE_ARG="--mask_3dpw_shape 1"; SHAPE_GREP='|^\[loss\] mask_3dpw_shape:'; }
 
 # ---------------------------------------------------------------- python checks (shared by both modes)
 # Label + bone-fix check. Standard library + NumPy; run on the login node (submit mode) and inside the job.
@@ -746,7 +755,7 @@ TRAIN_CMD="python train.py \\
     --gt_center_joint ${GT_CENTER} --alpha_dist ${ALPHA_DIST} --alpha_transl ${ALPHA_TRANSL} --debug_anchor 2 \\
     \${EXCL_ARG} ${BONE_FIX_ARG} \\
     --mix_3dpw_labels ${LABELS} --mix_3dpw_ratio ${MIX_RATIO} --mix_3dpw_split train \\
-    --val_3dpw_split validation --val_3dpw_n ${VAL_3DPW_N} ${HANDS_ARG} \\
+    --val_3dpw_split validation --val_3dpw_n ${VAL_3DPW_N} ${HANDS_ARG} ${SHAPE_ARG} \\
     --batch_size 4 --num_workers 12 --n_iters_per_epoch ${N_ITERS} --max_iter ${MAX_ITER} \\
     --learning_rate ${LR} --lr_decay_every 30 --lr_decay_gamma 0.5 --amp 0 --tf32 1 \\
     --eval_freq ${EVAL_FREQ} --nb_max_ckpt ${NB_MAX_CKPT} --log_freq 50 \\
@@ -765,7 +774,7 @@ eval "\${TRAIN_CMD}" > "${OUT}/train.log" 2>&1 \\
     || { echo "ERROR: training failed; tail of ${OUT}/train.log:"; tail -n 40 "${OUT}/train.log"; exit 1; }
 echo "training wall time: \$(( \$(date +%s) - T0 )) s (startup + ${EPOCHS} epochs + evaluations)"
 tr '\r' '\n' < "${OUT}/train.log" > "${OUT}/train_lines.log"
-grep -E "^\[bone_fix\]|^\[mixed\]|^Loaded .*3DPW-Anny|^3DPW-Anny val|^\[age_balance\]|^\[loss\] joint weights|^\[loss\] mask_3dpw_hands" "${OUT}/train_lines.log" || true
+grep -E "^\[bone_fix\]|^\[mixed\]|^Loaded .*3DPW-Anny|^3DPW-Anny val|^\[age_balance\]|^\[loss\] joint weights|^\[loss\] mask_3dpw_hands${SHAPE_GREP}" "${OUT}/train_lines.log" || true
 echo "--- anchor check, first 2 batches (consistent targets keep pred offset_y in [-0.5, 0.5])"
 grep -E "^\[debug_anchor\]" "${OUT}/train_lines.log" | head -n 40 || echo "  (no debug_anchor lines)"
 echo "--- throughput and in-training evaluation (V0; AnnyOne holdout and 3DPW-val against v23; cohort follows --gt_center_joint)"
@@ -777,6 +786,9 @@ MISSING=""
 grep -qE "^\[mixed\] training on" "${OUT}/train_lines.log" || MISSING="\${MISSING} '[mixed] training on' (no 3DPW in the batches);"
 if [ "${MASK_3DPW_HANDS}" = 1 ] && ! grep -qE "^\[loss\] mask_3dpw_hands" "${OUT}/train_lines.log"; then
   MISSING="\${MISSING} '[loss] mask_3dpw_hands' (3DPW placeholder fingers supervised);"
+fi
+if [ "${MASK_3DPW_SHAPE}" = 1 ] && ! grep -qE "^\[loss\] mask_3dpw_shape:" "${OUT}/train_lines.log"; then
+  MISSING="\${MISSING} '[loss] mask_3dpw_shape:' (3DPW converter-constant phenotypes supervised);"
 fi
 if [ "${ARM}" = fix ]; then
   NB_EXP=""

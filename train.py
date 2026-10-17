@@ -209,8 +209,8 @@ class Trainer(object):
                 gt_rotmats_final.reshape(-1, 3, 3)
             ).reshape(nhv, 163, 3)
             target['shape'] = shape_vec  # ✅ real phenotype GT (zeros if --use_anny_shape 0)
-            # --mask_3dpw_hands: per-person flag (1 AnnyOne, 0 3DPW-Anny) added by the HandLabelFlag dataset
-            # wrapper; sliced by idx_vis below like every other target and read by loss.py.
+            # --mask_3dpw_hands / --mask_3dpw_shape: per-person flag (1 AnnyOne, 0 3DPW-Anny) added by the HandLabelFlag
+            # dataset wrapper; sliced by idx_vis below like every other target and read by loss.py.
             if 'has_hand_labels' in y:
                 target['has_hand_labels'] = y['has_hand_labels'][idx_h[0], idx_h[1]].reshape(nhv).to(self.device)
             has_smplx_params = 0
@@ -872,8 +872,9 @@ def build_age_balance_sampler(args, train_dataset, full_dataset):
 
 
 class HandLabelFlag(torch.utils.data.Dataset):
-    """--mask_3dpw_hands: tags every human of the wrapped dataset with has_hand_labels (1 = AnnyOne, whose pkls
-    carry fitted finger rotations; 0 = 3DPW-Anny, whose converter left every phalanx and metacarpal at identity).
+    """--mask_3dpw_hands / --mask_3dpw_shape: tags every human of the wrapped dataset with has_hand_labels, i.e. the
+    label origin (1 = AnnyOne, whose pkls carry fitted finger rotations and phenotypes; 0 = 3DPW-Anny, whose converter
+    left every phalanx and metacarpal at identity and 8 of the 11 phenotypes at constants). Both masks read it.
     The collate stacks any ndarray human key, so the flag reaches prepare_gt without a collate change; the
     wrapped dataset's attributes (pkl_files, name, split) stay reachable for the samplers and evaluate()."""
 
@@ -1124,6 +1125,10 @@ def main(args):
                                    model.hand_bone_mask.reshape(-1).tolist(), active_mask=active)
     if int(getattr(args, 'mask_3dpw_hands', 0)):
         loss.configure_hand_label_mask(list(model.body_model.bone_labels))
+    # --mask_3dpw_shape: the phenotypes whose 3DPW labels are converter constants, by name (refused without
+    # --mix_3dpw_labels, before any data is loaded).
+    if int(getattr(args, 'mask_3dpw_shape', 0)):
+        loss.configure_shape_label_mask(list(model.body_model.phenotype_labels))
 
     # ---------------- KNOWLEDGE DISTILLATION SETUP ----------------
     # --distill_teacher_ckpt turns this run into student training: `model` above
@@ -1322,7 +1327,10 @@ def main(args):
                 traceback.print_exc()
                 raise
 
-            if int(getattr(args, 'mask_3dpw_hands', 0)):
+            # both label masks read the per-person flag; AnnyOne and 3DPW-Anny are always wrapped together (a human
+            # key present on only some humans fails the collate's np.stack)
+            tag_label_origin = int(getattr(args, 'mask_3dpw_hands', 0)) or int(getattr(args, 'mask_3dpw_shape', 0))
+            if tag_label_origin:
                 train_dataset = HandLabelFlag(train_dataset, 1.0)   # AnnyOne pkls carry real finger rotations
 
             # Subset the dataset if --train_n is set
@@ -1352,8 +1360,8 @@ def main(args):
                     raise ValueError("--mix_3dpw_split test: never train on the 3DPW test split")
                 real_dataset = ThreeDPWAnny(args.mix_3dpw_labels, split=args.mix_3dpw_split,
                                             img_size=args.img_size)
-                if int(getattr(args, 'mask_3dpw_hands', 0)):
-                    real_dataset = HandLabelFlag(real_dataset, 0.0)   # converter identity fingers are not labels
+                if tag_label_origin:
+                    real_dataset = HandLabelFlag(real_dataset, 0.0)   # converter fingers / constant phenotypes
                 n_syn, n_real = len(train_dataset), len(real_dataset)
                 if n_real == 0:
                     raise RuntimeError(f"no 3DPW labels found under {args.mix_3dpw_labels}/{args.mix_3dpw_split}")

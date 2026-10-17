@@ -841,6 +841,15 @@ numpy-only scripts also under Python 3.9 + numpy 1.24):
   still are.
 - `run_check_refit_task.sh` exits 0 / 1 as expected. `bash -n` passes on all touched scripts.
 
+**Unfitted phenotypes in mixed runs (`--mask_3dpw_shape`, default 0; exp7 `MASK_3DPW_SHAPE`, default 0).** v2.3 still
+fits only height and proportions and takes gender from the 3DPW metadata; age stays at 0.55 and muscle, weight, cupsize,
+firmness, african, asian and caucasian at 0.5, and the shape L1 trains every 3DPW person toward these constants. With
+`--mask_3dpw_shape 1` (refused without `--mix_3dpw_labels`) the shape L1 of people tagged `has_hand_labels` 0 is zero
+on those 8 phenotypes, found by name; gender, height, proportions and every AnnyOne person stay supervised. Limits: it
+adds no child signal (3DPW has no children); the v3d/v2d mesh terms still carry the neutral body, because the 3DPW GT
+mesh is built from the constants; and the 3DPW-test PVE is computed against the same neutral-body GT meshes, so a
+masked model can score worse there.
+
 ## 3. Verified in code
 
 Readers' facts. Line numbers refer to `89db760`, whose `.py` files are identical to `0d8ef72`. The experiment
