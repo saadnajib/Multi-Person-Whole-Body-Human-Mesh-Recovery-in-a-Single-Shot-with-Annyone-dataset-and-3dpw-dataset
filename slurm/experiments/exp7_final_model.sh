@@ -87,7 +87,9 @@
 #   NOT in the default list: V100-32GB and RTX3090. [Guessing] this recipe never ran there (batch 4, fp32, ViT-L at
 #   672): V100 has no TF32 and may be ~3x slower (10 epochs + trace + the ~9.7k-image test evaluation could pass 5 h;
 #   a timeout loses the trace and the test evaluation), and RTX3090 (24 GB) may run out of memory. Both had the same
-#   22-26 Oct queue estimate as the others, so leaving them out costs little. To add them anyway:
+#   22-26 Oct queue estimate as the others, so leaving them out costs little. Also, in the v2.3 refit (job 3590385)
+#   every task on the V100 nodes gifu and glendale died in <1 min with an argparse error (cause unknown; [Guessing]
+#   the same could hit this job there). To add them anyway:
 #   PARTITIONS=A100-40GB,A100-80GB,A100-PCI,A100-RP,L40S,L40S-AV,RTXA6000,RTXA6000-AV,V100-32GB,RTX3090 TIME=08:00:00
 #
 # USAGE (repo root on the cluster, /netscratch/najib/multi-hmr):

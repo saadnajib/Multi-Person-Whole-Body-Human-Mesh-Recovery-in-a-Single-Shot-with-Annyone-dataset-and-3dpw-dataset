@@ -24,9 +24,11 @@ of this file:
   unmerged, the real-image demo unseen or the deck 17 slides long. Ask the student for the current file.
 - `grep -c 7,589 docs/handover.md` prints a number above `0` in the second 16-Oct version and later (with the result
   of the second label rebuild, job 3581320). `0` means the earlier 16-Oct copy, which still calls that rebuild pending.
-- `grep -c 3589270 docs/handover.md` prints a number above `0` only in this version (17 Oct: the re-fit test, job
+- `grep -c 3589270 docs/handover.md` prints a number above `0` in the 17-Oct versions (the re-fit test, job
   3589270, and the H100 route). `0` means a 16-Oct copy: it still calls the re-fit test unrun, plans every job on the
   old GPUs and leaves the meeting date open.
+- `grep -c 3590385 docs/handover.md` prints a number above `0` only in this version (17 Oct, later: the first full
+  re-fit, 51 of 87 done, 36 failed on the V100 nodes gifu/glendale, and the rerun command in 0a, step 4).
 
 The student should attach this file to the chat directly, not rely on you browsing GitHub. Download links: section 8.
 
@@ -51,7 +53,8 @@ file were merged into `main` (section 8).
   3DPW converter only; training, demo and evaluation stay in `multihmr` on the old GPUs.
 - With it the re-fit test (4e, step 1) ran on an H100 node, job 3589270 [Certain, logs]: the man now gets gender 0.0
   (old fits: 1.0 [Likely], 0b) and a mean joint error of 14.3 mm; the woman 1.0 and 15.5 mm; both on one shared
-  frame grid; ~4.4 s per frame. Not run yet: its post-check, the full re-fit, labels and check, the final model (0a).
+  frame grid; ~4.4 s per frame. Full re-fit job 3590385: 51 of 87 done, 36 failed on the V100 nodes gifu/glendale
+  and are rerun without them (0a, step 4). Not run yet: the post-checks, labels and check, the final model (0a).
 
 **Meeting date: Monday 19 October 2026** (the student, 17 Oct), with the deck `docs/supervisor_update_2026-10-16.pptx`
 (18 slides; slides unchanged since 16 Oct, speaker notes updated 17 Oct, section 9). Already in the deck: the
@@ -105,7 +108,8 @@ Project in brief:
   come from the old fits (gender reversed), so I do not train on them. The converter fix for gender and the missing
   actor is in the repo (default-off flags). Re-fit test on one two-person sequence (17 Oct, job 3589270, H100): the
   man now gets gender 0.0 and 14.3 mm mean joint error, the woman 1.0 and 15.5 mm, both on one shared frame grid.
-  Its post-check and the full re-fit (87 tasks) have not run yet.
+  Full re-fit (87 tasks, job 3590385, 17 Oct): 51 done; the 36 that landed on two V100 nodes failed in under a
+  minute (a node problem, not the data) and are being rerun without those nodes.
 - Fingers: flipped hand bones were a large part of the finger error (exp6 on v5: 17.3 -> 8.2 deg).
 - Children: tested, nothing helped yet. New (16 Oct): adult men on real photos get female-looking bodies, in v5 and
   in the fixed model alike; cause unknown.
@@ -172,14 +176,23 @@ reported. The four pending items are steps 3-6, in this order.
    ```
    cd /netscratch/najib/multi-hmr && conda activate multihmr && python scripts/data/check_refit_task.py --seq courtyard_captureSelfies_00 --split train --new_root /netscratch/najib/multi-hmr/threedpw_anny_v23 --old_root /netscratch/najib/multi-hmr/threedpw_anny_full --seq_root /netscratch/najib/multi-hmr/data/3DPW/sequenceFiles --expect_gender_convention anny --expect_frame_grid shared
    ```
-4. Pending (2): the full re-fit, all 87 tasks, through the venv on H100/H200 and the old GPUs, 2-hour limit (4e,
-   step 3; 4f). Only after step 3 passed. Tasks 9 and 10 are skipped (their `.npz` have the same flags).
+4. Pending (2): the full re-fit. **First run 17 Oct, job 3590385** [Certain, the student's `sacct` and check loop]:
+   51 of 87 fits done (tasks 9 and 10 skipped as planned, 18 s each). The other 36 tasks all FAILED after 33-40 s,
+   every one on the two V100-32GB nodes `gifu` (16) and `glendale` (20); all 51 that worked ran on other nodes
+   (H200-AV serv-3312: 36, A100-PCI serv-3315: 7, RTX3090 serv-9216/9218: 4, RTXA6000-AV serv-9224: 3, H200
+   serv-3346: 1). The error, in `logs/smpl2anny-all-3590385_21.err`: `smpl_to_anny.py: error: unrecognized
+   arguments:` followed only by blanks; the `.out` ends `FAILED (rc=2)`. Same script and flags worked on every other
+   node, so the cause is those two nodes [Certain]; how is unknown ([Guessing] the command reaches Python differently
+   there, e.g. the `\` line breaks become literal blanks). Failed tasks leave no `.npz`, so a rerun refits them.
+   Rerun of only the 36 failed tasks, V100-32GB dropped and both nodes excluded, 3-hour limit (the longest task
+   that worked took 1 h 10 min, task 70):
    ```
-   cd /netscratch/najib/multi-hmr && PY_VENV=/netscratch/najib/venv_cu121 OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --partition=H100,H100-PCI,H100-RP,H200,H200-PCI,H200-AV,A100-40GB,A100-80GB,A100-PCI,A100-RP,L40S,L40S-AV,RTX3090,RTXA6000,RTXA6000-AV,V100-32GB --gpus=1 --time=02:00:00 --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
+   cd /netscratch/najib/multi-hmr && PY_VENV=/netscratch/najib/venv_cu121 OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --partition=H100,H100-PCI,H100-RP,H200,H200-PCI,H200-AV,A100-40GB,A100-80GB,A100-PCI,A100-RP,L40S,L40S-AV,RTX3090,RTXA6000,RTXA6000-AV --exclude=gifu,glendale --gpus=1 --time=03:00:00 --array=21-30,41,42,49,53-64,66,72,73,77,79-81,83-86%12 slurm/data/run_smpl_to_anny_task.sh
    ```
-   [Likely] ~3.5-4 h if 8 H100/H200 GPUs stay free (from the measured ~4.4 s per frame; the longest task [Likely]
-   ~45 min, at most ~55 min; 4e, step 3). Done when 87 `.npz` exist and no task is missing (the check loop in 4e,
-   step 3), and the post-check of every sequence ends with `RESULT: PASS` (4e, step 3; required before step 6).
+   Missing before the rerun: 21-30, 41, 42, 49, 53-64, 66, 72, 73, 77, 79-81, 83-86 (mostly the long `downtown_*`
+   test sequences). Done when the missing-task check of 4e, step 3 prints nothing and counts 87, and the post-check
+   of every sequence ends with `RESULT: PASS` (4e, step 3; required before step 6). Never use V100-32GB for jobs
+   that pass `PY_VENV` (4f).
 5. Pending (3): labels and the conversion check on v23 (4e, steps 4-5), after step 4 is complete. Do not
    `sbatch slurm/data/run_build_labels.sh`: it asks for a GPU on the old partitions only (`:4-5`), so the label
    build (NumPy only, ~1 min) and everything after it would wait in the 22-26 Oct queue [Certain for the script;
@@ -238,7 +251,8 @@ test 9,722 label images, as expected; 3.5, 4c). Its labels still come from the o
 The demo also showed a new open issue in both models: adult men get female-looking bodies (3.4). Optional: a
 correction-only demo without the fine-tune (section 5, item 2).
 
-Done on 17 Oct: the re-fit test (job 3589270; 0b, 4e step 1) and the H100 route for the converter (4f).
+Done on 17 Oct: the re-fit test (job 3589270; 0b, 4e step 1) and the H100 route for the converter (4f). The full
+re-fit (job 3590385) made 51 of 87 fits; the 36 that ran on the V100 nodes gifu/glendale failed and are rerun (0a, 4).
 
 ## 0b. Numbers at a glance
 
@@ -295,7 +309,7 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   rebuild, job 3581320, into `labels_rebuilt`: train 6,437 images / 7,589 people, validation 2,777 / 3,314, test
   9,722 / 11,850; 18,936 label files, 22,753 people, exactly what the current fits imply. Missing labels: fixed.
   Still the old fits (gender reversed, missing actor): not for training. The re-fit test ran (next bullet); the full
-  re-fit is not submitted yet.
+  re-fit (job 3590385) made 51 of 87 fits, the other 36 failed on two V100 nodes and are rerun (0a, step 4).
 - 3DPW re-fit test (converter v2.3, `--gender_convention anny --frame_grid shared`; job 3589270; train
   `courtyard_captureSelfies_00`; node serv-3341, an H100, through `PY_VENV`) [Certain, logs]:
   - man (p1, task 10): gender 0.0 (old fits 1.0 [Likely]); joint error mean 14.3 / max 15.8 mm; 231 frames; 1,013 s;
@@ -1356,7 +1370,7 @@ running jobs, so a job it no longer shows has ended. Analyse each log only after
    Tasks 9 and 10 are skipped, because their `.npz` exist with the same flags (`already converted with the requested
    flags - skipping`). A task to redo needs its `.npz` deleted first.
    ```
-   cd /netscratch/najib/multi-hmr && PY_VENV=/netscratch/najib/venv_cu121 OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --partition=H100,H100-PCI,H100-RP,H200,H200-PCI,H200-AV,A100-40GB,A100-80GB,A100-PCI,A100-RP,L40S,L40S-AV,RTX3090,RTXA6000,RTXA6000-AV,V100-32GB --gpus=1 --time=02:00:00 --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
+   cd /netscratch/najib/multi-hmr && PY_VENV=/netscratch/najib/venv_cu121 OUT_ROOT=/netscratch/najib/multi-hmr/threedpw_anny_v23 REFIT_FLAGS="--gender_convention anny --frame_grid shared" sbatch --partition=H100,H100-PCI,H100-RP,H200,H200-PCI,H200-AV,A100-40GB,A100-80GB,A100-PCI,A100-RP,L40S,L40S-AV,RTX3090,RTXA6000,RTXA6000-AV --exclude=gifu,glendale --gpus=1 --time=02:00:00 --array=0-86%8 slurm/data/run_smpl_to_anny_task.sh
    ```
    - Time [an estimate from the measured 4.4 s per frame]: the longest task is [Likely] `downtown_windowShopping_00`
      p0, 608 fitted frames in the old fits (3575369:121), so ~45 min on an H100. The two-person sequences have fewer
@@ -1368,6 +1382,9 @@ running jobs, so a job it no longer shows has ended. Analyse each log only after
      V100 or RTX3090 could pass 2 h; it then ends `TIMEOUT` without an `.npz` (the file is written only at the end).
      Resubmit only that index (`--array=` with its number, `--time=04:00:00`) after the array has finished.
    - B200 and RTXB6000 are left out on purpose: no PyTorch build here has code for them (task script header).
+   - V100-32GB is left out, and its nodes `gifu` and `glendale` excluded: in the first full run (job 3590385) all
+     36 tasks that landed there failed within 40 s (argparse: `unrecognized arguments:` with only blanks), while
+     all 51 elsewhere worked [Certain]. The rerun of those 36 is in 0a, step 4.
    Logs `logs/smpl2anny-all-<arrayjobid>_<task>.out`. When the array has left `squeue`, this lists every task without
    an `.npz` (its array index first) and then counts the `.npz`, which must be 87:
    ```
@@ -1413,7 +1430,7 @@ running jobs, so a job it no longer shows has ended. Analyse each log only after
    - **Step 5: the conversion check**, through the venv, so it can use the H100/H200. The check imports torch, Anny,
      smplx and scipy, not xformers or torchvision [Likely, from its imports; never run in the venv]:
      ```
-     cd /netscratch/najib/multi-hmr && PY_VENV=/netscratch/najib/venv_cu121 LABELS=threedpw_anny_v23/labels FITS=threedpw_anny_v23 OUT=results/diagnostics/check_3dpw_conversion_v23 sbatch --partition=H100,H100-PCI,H100-RP,H200,H200-PCI,H200-AV,A100-40GB,A100-80GB,A100-PCI,A100-RP,L40S,L40S-AV,RTX3090,RTXA6000,RTXA6000-AV,V100-32GB --gpus=1 --time=01:30:00 slurm/diagnostics/check_3dpw_conversion.sh
+     cd /netscratch/najib/multi-hmr && PY_VENV=/netscratch/najib/venv_cu121 LABELS=threedpw_anny_v23/labels FITS=threedpw_anny_v23 OUT=results/diagnostics/check_3dpw_conversion_v23 sbatch --partition=H100,H100-PCI,H100-RP,H200,H200-PCI,H200-AV,A100-40GB,A100-80GB,A100-PCI,A100-RP,L40S,L40S-AV,RTX3090,RTXA6000,RTXA6000-AV --exclude=gifu,glendale --gpus=1 --time=01:30:00 slurm/diagnostics/check_3dpw_conversion.sh
      ```
      Unlike the task script, `check_3dpw_conversion.sh` does not write `PY_VENV` into its container command; it
      relies on Slurm passing the submit environment into the job and the container [Likely]. So check in its `.err`
@@ -1467,6 +1484,11 @@ the baseline on v23 first. Exceptions:
 - `sinfo -s` at 16:42 (times CEST): every partition fully allocated, including the CPU partition `batch` (216 of 216
   CPUs busy), so the CPU option `GPUS=0` (`4c2113b`) did not help. That night the H100/H200 jobs started within minutes:
   3587852 at 00:33, about 13 minutes after its command was given; 3589270 at 01:49, within about two minutes.
+- **V100 nodes `gifu` and `glendale`** [Certain, job 3590385]: every refit task there died in 33-40 s with
+  `smpl_to_anny.py: error: unrecognized arguments:` and only blanks after it; the same tasks run elsewhere (H200,
+  A100, RTX3090, RTXA6000) worked. Cause unknown ([Guessing] the multi-line `bash -c` command arrives changed on those
+  nodes). Leave V100-32GB out of every `--partition` list and add `--exclude=gifu,glendale`, at least for jobs with
+  `PY_VENV`; [Guessing] training jobs may hit the same, which is one more reason exp7 leaves V100 out.
 - Time limits (`sinfo -s`): H100, H100-RP, H100-PCI, H200, H200-PCI, H200-AV, B200 and RTXB6000 1 day; V100, A100-40GB,
   A100-80GB, A100-PCI, RTX3090, RTXA6000, L40S and `batch` 3 days; A100-RP, RTXA6000-AV and L40S-AV unlimited.
 
