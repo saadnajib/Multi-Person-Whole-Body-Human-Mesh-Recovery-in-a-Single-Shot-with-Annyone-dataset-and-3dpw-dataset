@@ -3,8 +3,8 @@
 This file replaces the chat history. It is written for an assistant that cannot see that chat, the cluster or any
 temporary files. Everything you need is either here or in this repository. **Where this file disagrees with
 `README.md`, `docs/diagnostics_findings.md`, `docs/experiments_plan.md` or `docs/experiments/exp2_children.md`, trust
-this file** (section 7 lists the outdated lines). The deck `docs/supervisor_update_2026-10-16.pptx` (19 slides since
-the evening of 18 Oct) and the speaker notes `docs/supervisor_talk_notes_2026-10-16.md` match this file. Section 9
+this file** (section 7 lists the outdated lines). The deck `docs/supervisor_update_2026-10-16.pptx` (20 slides since
+midday on 18 Oct) and the speaker notes `docs/supervisor_talk_notes_2026-10-16.md` match this file. Section 9
 lists the slides and the lines that will go stale when the pending results arrive.
 
 **Which version you have.** All code this file describes is on GitHub `main` as of the evening of 17 Oct
@@ -13,9 +13,9 @@ options that run the converter on H100/H200 (`GPUS`, `CONDA_ENV`, `PY_VENV`, 4f)
 `slurm/experiments/exp7_final_model.sh` together with the `MODEL_ENTRY` / `EVAL_LABELS` overrides of
 `slurm/eval/run_eval_3dpw_test.sh` it needs (`b188b63`; section 5, item 7; ran 18 Oct, jobs 3611333 / 3611336 /
 3611339); the default-off flag `--mask_3dpw_shape` (`loss.py`, `train.py`, exp7's `MASK_3DPW_SHAPE`; `a0926fd`;
-3.4); the deck (18 slides then; 19 since the evening of 18 Oct, section 9) with its source `docs/deck_src/`, the
+3.4); the deck (18 slides then; 20 now, section 9) with its source `docs/deck_src/`, the
 figures in `docs/figures/` and the corrected children slide (section 9). A `git pull` on the cluster gets all of it
-(the 18-Oct evening deck and this file only once the student commits them). After the pull, `ls slurm/experiments/exp7_final_model.sh`,
+(the current deck and this file only once the student commits them). After the pull, `ls slurm/experiments/exp7_final_model.sh`,
 `grep -c EVAL_LABELS slurm/eval/run_eval_3dpw_test.sh` (above `0`) and `grep -c mask_3dpw_shape loss.py` (above `0`)
 confirm the three. To check a copy of this file:
 - `grep -c '^## 0a\. Tomorrow' docs/handover.md` prints `1` for the 15-Oct and later versions and `0` for every older
@@ -38,9 +38,13 @@ confirm the three. To check a copy of this file:
   3611336 / 3611339, 0a step 6; the deck updated, section 9).
   `0` means an older copy: it still rests the children claim on one boy in our own photos, calls the RH evaluation
   and the v23 check not run, and has the "0.60 / one real child" tile on slide 10.
-- `grep -c '728 mm' docs/handover.md` prints a number above `0` only in this version (18 Oct evening: the exp7
+- `grep -c '728 mm' docs/handover.md` prints a number above `0` in the 18-Oct evening version and later (the exp7
   results, jobs 3611336 / 3611339; the 19-slide deck with the final-model slide 16; 0a step 6, section 5 item 7,
   section 9). `0` means an older copy: it still calls exp7 queued or running and the deck 18 slides long.
+- `grep -c '121.8' docs/handover.md` prints a number above `0` only in this version (18 Oct, midday: the v23
+  comparison, jobs 3612073 / 3612074 / 3612075, and the real-photo slide, demo job 3612078; the 20-slide deck; 0a
+  step 6, section 5 item 7, section 9). `0` means an older copy: it still calls the 3DPW-test re-evaluations of v5,
+  v9 and exp6 pending, has no demo of the final model and a 19-slide deck.
 
 The student should attach this file to the chat directly, not rely on you browsing GitHub. Download links: section 8.
 
@@ -76,7 +80,7 @@ file were merged into `main` (section 8).
   BEV-style weak labels (Path B, 1-2 weeks of code after exp7). Both are for the supervisor on Monday (0a, step 8).
 - `--mask_3dpw_shape` added (default off; exp7 env `MASK_3DPW_SHAPE`, default 0; commit `a0926fd`, on `main`). The
   first exp7 run (18 Oct) uses it off; a mask-on run is a possible follow-up (3.4).
-- Deck: slide 10 (children) corrected, slides 14 and 17 and notes 8, 10, 14, 17, 18 made consistent (section 9).
+- Deck: slide 10 (children) corrected, slides 14 and 18 and notes 8, 10, 14, 18, 19 made consistent (section 9).
 
 **What happened on 18 Oct** (all in this version; details in 3.4, 3.5, 0a and section 8):
 - The full 3DPW re-fit is complete [Certain, logs]: the rerun job 3602813 (36 tasks, no V100) finished, 87 fits;
@@ -94,7 +98,7 @@ file were merged into `main` (section 8).
 - exp7 (the final model) passed its `CHECK_ONLY` guards and was submitted (the student wants it before Monday
   16:00): 3611333 smoke test, 3611336 fix arm, 3611339 control arm, all queued on A100 / L40S / RTXA6000;
   `MASK_3DPW_SHAPE=0` (0a, step 6).
-- Deck: slides 1, 6, 10, 14, 17, 18 and notes 1, 6, 8, 10, 14, 17, 18 updated with these results (section 9).
+- Deck: slides 1, 6, 10, 14, 18, 19 and notes 1, 6, 8, 10, 14, 18, 19 updated with these results (section 9).
 
 **What happened on the evening of 18 Oct** (this version; details in 0a step 6, section 5 item 7, 3.1-3.3, 9):
 - exp7, the final model, finished both arms [Certain, `logs/exp7_final_model_3611336.out` and `_3611339.out`]:
@@ -106,29 +110,56 @@ file were merged into `main` (section 8).
 - [Certain] PA-PVE 56.4 -> 50.3 (the best of every model so far); PVE 77.4 -> 73.7 (inside noise); recall 89.0 ->
   87.0 (v5 90.2: a real cost).
 - [Certain] 3DPW test on the v23 labels: PVE 91.5 -> 89.0, PA-PVE 59.7 -> 57.6 (3611339:215-220, 3611336:224-229).
-  v5, v9 e62 and exp6 on v23: pending (the student is submitting the re-evaluations; 0a step 6).
-- Deck: new slide 16 "Final model: all fixes together, with a control"; the old slides 16-18 are now 17-19; slides
-  1, 7, 9, 13, 14, 17, 18 and ten notes updated; footer and byline 19 Oct (section 9).
+  v5, v9 e62 and exp6 on v23: pending then; done at midday (next block).
+- Deck: new slide 16 "Final model: all fixes together, with a control"; the old slides 16-18 became 17-19 (today's
+  18-20); slides 1, 7, 9, 13, 14, 18, 19 and ten notes updated; footer and byline 19 Oct (section 9).
+
+**What happened at midday on 18 Oct, after the exp7 results** (this version; details in 0a step 6, section 5 item 7,
+3.4 and section 9):
+- The three 3DPW-test re-evaluations on the v23 labels ran [Certain, `logs/eval-test3dpw-3612073_0.out` (v5),
+  `_3612074_0.out` (v9 e62), `_3612075_0.out` (exp6)]: `slurm/eval/run_eval_3dpw_test.sh`, 8,190 images, all three
+  on serv-3335 from 09:20, 13-14 min each, so the 20-min limit held. PVE / PA-PVE: v5 121.8 / 72.0, v9 e62 95.5 /
+  62.9, exp6 (the 2-epoch neck pilot) 120.2 / 68.7; with the exp7 arms: control 91.5 / 59.7, final model 89.0 / 57.6
+  (3612073:117-124, 3612074:117-124, 3612075:118-125).
+- [Certain] The final model is the best model on our 3DPW-Anny test labels: 89.0 vs 95.5 for v9, the previous best
+  (it trained on the old reversed-gender labels and is tested on the corrected ones, like every model), and 121.8
+  for v5. It also finds more 3DPW people than v9 (recall 99 vs 94).
+- [Certain] Most of the v5 -> final gain comes from training on 3DPW at all (control 91.5); the fixes add 2.5 mm PVE
+  and 2.1 PA-PVE on top. [Likely] Their other gains (neck, fingers, depth) barely show in a pelvis-aligned PVE.
+- The old-label numbers (v9 102.5, v5 119.1) are retired; only v23 numbers are compared now.
+- Demo of the final model next to v5, job 3612078 [Certain, `logs/demo-compare-3612078.out`]: the bone fix applied
+  from the checkpoint args; 4 photos + 8 3DPW-test frames; montages made on the login node; figure
+  `docs/figures/final_model_real_photos.jpg`. By eye [Likely]: men now get male bodies (flat chest, broader
+  shoulders) on most images; women stay female; bodies a little larger. Unchanged [Certain, by eye]: the boy is still
+  an adult body, placement offsets, ghost bodies on half-visible people, hard poses. The log's predicted gender
+  spreads out (v5 0.32-0.76, final 0.05-0.99), but it cannot confirm the direction the eye sees (3.4).
+- Not run yet: the Relative Human evaluation of the final model, its gender and children number (command in 0a,
+  step 6). Until then gender is "by eye".
+- Deck: new slide 17 "Final model on real photos: v5 vs final (by eye)"; slide 16's v5 cell now 121.8 and a 3DPW line
+  under its table; slide 19's claims; notes 1, 8, 16, 17, 18, 19; the old slides 17-19 are now 18-20; 20 slides
+  (section 9).
 
 **Meeting date: Monday 19 October 2026, 16:00** (the student), with the deck `docs/supervisor_update_2026-10-16.pptx`
-(19 slides; slides 10, 14 and 17 changed on the evening of 17 Oct with the children correction; slides 1, 6, 10, 14,
-17 and 18 and notes 1, 6, 8, 10, 14, 17 and 18 changed on 18 Oct with the results above; on the evening of 18 Oct the
-final-model slide 16 was added and slides 1, 7, 9, 13, 14, 17 and 18 and notes 1, 7, 9, 10, 12, 13, 14, 17 and 18
+(20 slides; slides 10, 14 and 18 changed on the evening of 17 Oct with the children correction; slides 1, 6, 10, 14,
+18 and 19 and notes 1, 6, 8, 10, 14, 18 and 19 changed on 18 Oct with the results above; on the evening of 18 Oct the
+final-model slide 16 was added and slides 1, 7, 9, 13, 14, 18 and 19 and notes 1, 7, 9, 10, 12, 13, 14, 18 and 19
+changed; at midday on 18 Oct the real-photo slide 17 was added and slides 16 and 19 and notes 1, 8, 16, 18 and 19
 changed; section 9). In the deck: the real-image demo (slide 8), the re-fit and the v23 conversion check (slide 6,
-notes 6, 17, 18), the Relative Human result (slide 10, notes 10, 14, 17) and the final model (slide 16; notes 7, 9,
-12, 13, 14, 17, 18).
+notes 6, 18, 19), the Relative Human result (slide 10, notes 10, 14, 18), the final model (slide 16; notes 7, 9,
+12, 13, 14, 18, 19) and the final model on real photos (slide 17; notes 8, 16, 19).
 
 **Citation key** (used from section 1 on):
 - `3572482:126` = line 126 of that Slurm job's `.out` log. Job index in section 8. The student has every log; ask for
   one when you need to check a number.
 - `README :L` = `README.md`; `plan :L` = `docs/experiments_plan.md`; `findings` = `docs/diagnostics_findings.md`.
-- `notes, slide N` = the speaker notes of slide N in `docs/supervisor_talk_notes_2026-10-16.md` (19 slides);
+- `notes, slide N` = the speaker notes of slide N in `docs/supervisor_talk_notes_2026-10-16.md` (20 slides);
   "If asked" = that slide's second part. The notes are cited by slide, not by line: their line numbers moved with
   every rebuild. Copies from before 16 Oct had 17 slides: the neck before/after slide (now 8) was added on 16 Oct.
-  Copies from before the evening of 18 Oct had 18 slides: the final-model slide (now 16) was added then. So an
-  18-slide copy's slides 16-18 are today's 17-19; a 17-slide copy's slides 8-14 are today's 9-15 and its 15-17
-  today's 17-19. This file uses today's numbers, also for history; literal pptx part names (`slide16.xml`, ...)
-  in section 9 keep the numbering of their own version.
+  The 18-slide copies (16-18 Oct) lack the final-model slide (now 16), added in the exp7 version ("the evening of 18
+  Oct"). The 19-slide copies (that exp7 version) lack the real-photo slide (now 17), added at midday on 18 Oct, after
+  it. So a 19-slide copy's slides 17-19 are today's 18-20; an 18-slide copy's slides 16-18 are today's 18-20; a
+  17-slide copy's slides 8-14 are today's 9-15 and its 15-17 today's 18-20. This file uses today's numbers, also for
+  history; literal pptx part names (`slide16.xml`, ...) in section 9 keep the numbering of their own version.
 - `file.py:L` = that file in the repo. Line numbers are as of `64266dc`, unless a commit is named next to them. Of
   the files cited by line, only these have changed on `main` since: `slurm/demo/run_demo_compare.sh` (`fbda1b4`, 4b;
   cited "at `fbda1b4`"); the two 3DPW converter files `scripts/data/smpl_to_anny.py` and
@@ -161,8 +192,12 @@ Project in brief:
   all models), recall 89.0 -> 87.0 (v5 90.2: a real cost), root error 1402 -> 728 mm (v5 1208), size 0.59 -> 0.78,
   depth slope 0.28 -> 0.42 (still far from 1), neck02 175.8 -> 4.8 deg, neck girth 0.46 -> 1.00, fingers 17.4 -> 8.3
   deg, global head 13.0 -> 13.1 (v5 12.0). 3DPW test (v23 labels, 8,190 images): PVE 91.5 -> 89.0, PA-PVE 59.7 ->
-  57.6. v5, v9 e62 and exp6 on the v23 labels: re-evaluations submitted 18 Oct evening, pending. One run per arm,
-  no seed (pilot noise ~7.6 mm PVE, ~2 recall points). Shape mask off, so children unchanged by design.
+  57.6. Same labels and script (jobs 3612073-3612075): v5 121.8 / 72.0, v9 e62 (the old best; trained on the old
+  labels) 95.5 / 62.9, exp6 120.2 / 68.7. So the final model is the best on our 3DPW-Anny labels and finds more
+  people than v9 (recall 99 vs 94); most of the gain is training on 3DPW at all (control 91.5), the fixes add 2.5 mm.
+  The old-label numbers (v9 102.5, v5 119.1) are retired. One run per arm, no seed (pilot noise ~7.6 mm PVE, ~2
+  recall points). Shape mask off: children unchanged; on real photos most men now get male bodies, judged by eye
+  only (demo job 3612078); the final model's Relative Human number is not run yet.
 - Neck: two bones are turned half a turn in every v5-line model. exp6 (a fixed correction at the network output,
   then a 2-epoch fine-tune) turns them back, and the neck gets its thickness back (girth 0.46 -> 1.00). Without the
   fine-tune the head points worse. One run, no seed: no sign of a PVE cost, but no proven PVE gain either.
@@ -199,8 +234,9 @@ the v23 labels, their conversion check (job 3611284: WARN, the three defects fix
 (job 3611285). Done 18 Oct (handover 0a step 6, section 5 item 7): the final model (exp7): a v9-style fine-tune of
 v5 with its bone fix, the depth fix and the v23 labels, 10 epochs, next to a control without the two fixes
 (slurm/experiments/exp7_final_model.sh): smoke test 3611333 PASS, fix arm 3611336, control 3611339; no 3DPW shape
-mask (MASK_3DPW_SHAPE=0); results above. Submitted 18 Oct evening: the 3DPW-test re-evaluations of v5, v9 e62 and
-exp6 on the v23 labels. If the supervisor picks "fine-tune v9 now" on Monday, that is a new run (handover 5, item 6).
+mask (MASK_3DPW_SHAPE=0); results above. Done 18 Oct too: the 3DPW-test re-evaluations of v5, v9 e62 and exp6 on
+the v23 labels (jobs 3612073-3612075; numbers above) and a demo of the final model next to v5 (job 3612078). Not
+run yet: the Relative Human evaluation of the final model. If the supervisor picks "fine-tune v9 now" on Monday, that is a new run (handover 5, item 6).
 Never confirmed: the x20 depth run (14 Oct). Ask me to run the status block from handover section 4 (squeue alone
 misses finished jobs).
 
@@ -230,17 +266,18 @@ answer. It overrides the other docs in the repo.
 
 ## 0a. Tomorrow (Sunday 18 Oct) and the meeting on Monday 19 Oct, in order
 
-**State on Sunday 18 Oct, evening (this version):** steps 3-6 are done: the full re-fit (87 fits, post-check PASS),
+**State on Sunday 18 Oct, midday (this version):** steps 3-6 are done: the full re-fit (87 fits, post-check PASS),
 the v23 labels and their conversion check (job 3611284: WARN, the three 15-Oct defects fixed; 3.5), the Relative
-Human evaluation (jobs 3611285_0/_1; 3.4) and the final model, exp7 (smoke test 3611333 PASS, fix arm 3611336,
-control 3611339; result in step 6 and in section 5, item 7). The deck shows it on the new slide 16 (section 9).
-Left before Monday: the three 3DPW-test re-evaluations on the v23 labels (v5, v9 e62, exp6; the student is
-submitting them; step 6), optionally a demo of the final model (step 6), and step 7 (open the deck once).
+Human evaluation (jobs 3611285_0/_1; 3.4), the final model, exp7 (smoke test 3611333 PASS, fix arm 3611336,
+control 3611339; result in step 6 and in section 5, item 7), the three 3DPW-test re-evaluations on the v23 labels
+(jobs 3612073-3612075: final model 89.0, v9 95.5, v5 121.8 mm PVE) and a demo of the final model (job 3612078). The
+deck shows them on slides 16 and 17 (section 9). Left before Monday: optionally the Relative Human evaluation of
+the final model (step 6) and step 7 (open the deck once).
 
 Paste this section with section 0. Each step names the section with the details.
 
-1. Ask the student: the thesis submission date and the draft's chapters (section 10); and the state of the three
-   3DPW-test re-evaluations on v23 (v5, v9 e62, exp6; step 6; status block, step 2). Ask for that output before
+1. Ask the student: the thesis submission date and the draft's chapters (section 10); and whether the Relative
+   Human evaluation of the final model was submitted (step 6; status block, step 2). Ask for that output before
    giving the next step.
 2. Status block (section 4, top), for the x20 depth run (4d, never confirmed) and for anything of steps 3-6 already
    submitted. **Never cancel or resubmit a queued job** (section 10); resubmit only if both `sacct` and the output
@@ -303,24 +340,43 @@ Paste this section with section 0. Each step names the section with the details.
    `results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10/train/checkpoints/00009.pt` (the bone fix is in
    its saved args and re-applied on load, 3611336:169). Outputs in that run folder: `train.log`, `settings.txt`,
    `holdout_ft/`, `compare.json`.
-   **Pending next, in order:**
-   - The 3DPW-test re-evaluations of v5 00099, v9 e62 and exp6 on the v23 labels; the student is submitting them.
-     The command is in the header of `exp7_final_model.sh` (:164), one job each, `--array=0`:
+   **Done after it (18 Oct, from 09:20):**
+   - The 3DPW-test re-evaluations of v5 00099, v9 e62 and exp6 on the v23 labels: **DONE** [Certain,
+     `logs/eval-test3dpw-3612073_0.out` (v5), `logs/eval-test3dpw-3612074_0.out` (v9 e62),
+     `logs/eval-test3dpw-3612075_0.out` (exp6)]. All three ran on serv-3335 and took 13-14 min for the 8,190 images,
+     so the 20-min limit held. Each log names the v23 labels (:2 and its `Loaded 8190 3DPW-Anny labels` line); run names
+     `evaltest_teacher_v5__threedpw_anny_v23`, `evaltest_teacher_v9_e62__threedpw_anny_v23` and
+     `evaltest_exp6_v5_bonefix__threedpw_anny_v23` under `logs/anny_model/`. exp6 applied its bone fix from its args
+     (3612075:10). PVE / PA-PVE / MPJPE: v5 121.8 / 72.0 / 126.9, v9 e62 95.5 / 62.9 / 94.8, exp6 120.2 / 68.7 / 124.8
+     (3612073:117-124, 3612074:117-124, 3612075:118-125). Table and reading: 0b (last bullet) and section 5, item 7.
+     The slide-16 cell for v5 says 121.8 (was "pending"). The command, for the record (header of
+     `exp7_final_model.sh`, :164):
      ```
      cd /netscratch/najib/multi-hmr && for M in "logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt|teacher_v5" "models/multiHMR/anny_teacher_v9_mixed_00062.pt|teacher_v9_e62" "models/multiHMR/exp6_v5_bonefix_00001.pt|exp6_v5_bonefix"; do EVAL_LABELS=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels MODEL_ENTRY="/netscratch/najib/multi-hmr/${M%%|*}|0|dinov2_vitl14|${M##*|}" sbatch --array=0 slurm/eval/run_eval_3dpw_test.sh; done
      ```
-     Logs `logs/eval-test3dpw-<jobid>_0.out`. Read `pve` and `pa_pve` of `threedpw_anny-test-1`, and check that the log
-     names the v23 labels. Then fill the v5 cell of the slide-16 table (now "pending") and section 5, item 7. [Guessing]
-     8,190 images may not fit the script's 20-min limit (`#SBATCH --time=00:20:00`); if a job ends `TIMEOUT`, resubmit
-     only that one, with `--time=01:00:00` added to its `sbatch`.
-   - Optional: a demo of the final model next to v5 (4 photos and 8 3DPW-test frames; necks by eye). Copy the
-     checkpoint under the name the demo looks for (`models/multiHMR/<run>_<epoch>.pt`, `run_demo_compare.sh:102-103`),
-     then the 4b route:
+   - The demo of the final model next to v5: **DONE**, job 3612078 [Certain, `logs/demo-compare-3612078.out`]. The
+     checkpoint was copied to `models/multiHMR/exp7_v5_final_00009.pt`; the log prints `[load_model] bone_fix:
+     checkpoint args (bone_fix_spec)` and `[bone_fix] ON, 4 bone(s)` for the second model (:424, :427). Outputs
+     `demo_out_anny_s2_shape_v5_00099_photos/`, `..._3dpwtest/`, `demo_out_exp7_v5_final_00009_photos/`,
+     `..._3dpwtest/`; montages `demo_montage_photos/` and `demo_montage_3dpwtest/`, made on the login node with
+     `scripts/analysis/make_montage.py` (the commands are printed at the end of the log, :815-823). Figure for the
+     deck (slide 17): `docs/figures/final_model_real_photos.jpg` (tennis photo, `downtown_walking_00`,
+     `downtown_runForBus_00`; v5 left, final model right). What changed and what did not: 3.4, "Final model, by
+     eye". The command, for the record:
      ```
      cd /netscratch/najib/multi-hmr && cp -n results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10/train/checkpoints/00009.pt models/multiHMR/exp7_v5_final_00009.pt && DEMO_MODELS="anny_s2_shape_v5|00099 exp7_v5_final|00009" sbatch slurm/demo/run_demo_compare.sh
      ```
-     Its log must print `[bone_fix] ON, 4 bone(s)` for the second model [Likely: the same load path as the exp6 demo,
-     3581312:424-427].
+   **Pending next:**
+   - Optional before Monday: the Relative Human evaluation of the final model, the same evaluation as 3611285
+     (gender accuracy, the children's age, recall). It runs the model, so the old GPUs (the script's partition list;
+     2-h limit, `eval_relative_human.sh:17`):
+     ```
+     cd /netscratch/najib/multi-hmr && MODEL=/netscratch/najib/multi-hmr/models/multiHMR/exp7_v5_final_00009.pt sbatch --array=0 slurm/diagnostics/eval_relative_human.sh
+     ```
+     `BONE_FIX` stays empty, so the checkpoint's own fix is applied (`eval_relative_human.sh:39`). Log
+     `logs/eval_rh_<jobid>_0.out`; output `results/diagnostics/relative_human_val_exp7_v5_final_00009/`. Read the
+     `[rh]` table and the gender-accuracy line as in 3611285_0:23-31. Until it has run, gender is "by eye" (slide 17).
+     If the accuracy comes out far below 0.5, check the direction before anything else (3.4, "Final model, by eye").
    - Then Monday (steps 7-9).
    History: **RUNNING 18 Oct** (morning). Fix arm 3611336 started ~05:28 on serv-3315 (A100-PCI); control 3611339
    still queued. **Smoke test 3611333 PASSED** [Certain, logs/exp7_final_model_3611333.out]: label check PASS inside the
@@ -369,7 +425,7 @@ Paste this section with section 0. Each step names the section with the details.
      ```
    - Overtaken on 18 Oct (submitted before the meeting, above). The plan was: **Submit it after the meeting**, if the
      supervisor picks "labels first" (step 9) and step 5's check passed; then once, and leave it queued (commands in
-     section 5, item 7). Submitting it on Sunday would answer the slide-18 question for the supervisor.
+     section 5, item 7). Submitting it on Sunday would answer the slide-19 question for the supervisor.
    - If the student wants it queued before the meeting anyway (to gain queue time; [Guessing] about a day), say so
      plainly at the meeting. If the supervisor then picks option 1, cancelling it is allowed: it is a change of plan,
      not a cancel-and-resubmit to start sooner, so it duplicates nothing (section 10).
@@ -378,23 +434,26 @@ Paste this section with section 0. Each step names the section with the details.
    - New on the evening of 17 Oct: `MASK_3DPW_SHAPE` (default `0` = old behaviour; `1` passes `--mask_3dpw_shape 1`
      to both arms and adds `_shpmask` to the run names). Leave it at `0` until the supervisor decides (step 8; 3.4;
      section 5, item 7).
-7. Before the meeting: check that the deck is the 19-slide version with the final-model slide 16 (its table says
-   "pending" for v5's 3DPW test; section 9, "Check a copy"). Open the pptx in PowerPoint and check slides 1, 2, 5, 6,
-   7, 8, 9, 10, 13, 14, 15, 16, 17 and 18 for text that wraps one line longer (slide 15's Wording card already ends at
-   the card's bottom edge in the LibreOffice render; slides 1, 7, 9, 13, 14, 16, 17 and 18 were re-rendered on the
-   evening of 18 Oct and fit). The
+7. Before the meeting: check that the deck is the 20-slide version with the final-model slide 16 (its table shows
+   121.8 for v5's 3DPW test) and the real-photo slide 17 (section 9, "Check a copy"). Open the pptx in PowerPoint and
+   check slides 1, 2, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18 and 19 for text that wraps one line longer (slide
+   15's Wording card already ends at the card's bottom edge in the LibreOffice render; slides 1, 7, 9, 13, 14, 18 and
+   19 were re-rendered on the evening of 18 Oct and slides 16-19 again at midday, and fit; slide 16's lines under the
+   table and slide 19's fifth claim line are full). The
    Relative Human download (**done 17 Oct**, `/netscratch/najib/data/Relative_Human/RelativeHuman/`, 8,741 images,
    zip verified; labels for 5,218 train / 635 val / 1,836 test images) and the val evaluation (**done 18 Oct**, jobs
    3611285_0/_1; 3.4) need nothing more before the meeting. The test split (`SPLIT=test sbatch --array=0-1
    slurm/diagnostics/eval_relative_human.sh`, old GPUs only) is optional.
 8. In the meeting: the deck as it is. On 3DPW: the re-fit is done and the v23 labels passed their conversion check
-   (WARN, old labels FAIL; slide 6, notes 6, 17, 18): the three defects are fixed and confirmed by the check. On
+   (WARN, old labels FAIL; slide 6, notes 6, 18, 19): the three defects are fixed and confirmed by the check. On
    training: the final model is done (slide 16; step 6; section 5, item 7). Say it as the slide does: all fixes hold
    against the control [Certain]; PA-PVE 50.3 is the best so far [Certain]; recall is 2 points below the control and
    3.2 below v5, a real cost [Certain]; PVE is inside the noise; the depth slope is still 0.42; 3DPW test 89.0 vs
-   91.5 for the control, v5 / v9 on the same labels pending (never quote the old 119.1 / 102.5 next to 89.0). Slide
-   18's question box says "Chosen: ... then fine-tune v5 (done 18 Oct: slide 16)"; note 18, "Option 1", still
-   describes the v9 fine-tune in case the supervisor asks for it. Shape mask off in the final model. On children
+   91.5 for the control, 95.5 for v9 and 121.8 for v5, all on the corrected labels: the best on our 3DPW-Anny labels
+   [Certain], mostly from training on 3DPW at all, the fixes add 2.5 mm [Certain]; never quote the retired 119.1 /
+   102.5. On real photos (slide 17): most men look male now, by eye only [Likely]; the Relative Human number for the
+   final model is not run yet (step 6). Slide 19's question box says "Chosen: ... then fine-tune v5 (done 18 Oct:
+   slide 16)"; note 19, "Option 1", still describes the v9 fine-tune in case the supervisor asks for it. Shape mask off in the final model. On children
    (slide 10 and its notes; 3.4), three points:
    - Children are now measured on real photos with labels: Relative Human val (jobs 3611285_0/_1; 3.4). Real
      children get adult age: kids 0.61, babies 0.62 vs adults 0.63; child-vs-adult AUC 0.61, near chance. The model
@@ -407,8 +466,8 @@ Paste this section with section 0. Each step names the section with the details.
    - Decision: a limitation (Path A) or BEV-style weak labels from RH train (Path B, 1-2 weeks of code, after exp7).
      The 3DPW shape mask exists, default off; on or off in exp7 is a decision (with it on, exp7's 3DPW-test PVE can
      move for a reason unrelated to the depth and bone fixes).
-9. After the meeting: write the supervisor's answers into section 9: the slide-18 question, the children path (A or B)
-   and `MASK_3DPW_SHAPE` on or off (if on, update section 5, item 7 and note 18 too, and rerun exp7 with
+9. After the meeting: write the supervisor's answers into section 9: the slide-19 question, the children path (A or B)
+   and `MASK_3DPW_SHAPE` on or off (if on, update section 5, item 7 and note 19 too, and rerun exp7 with
    `MASK_3DPW_SHAPE=1`: new run names with `_shpmask`). "Labels first" (the student's choice): done, the final model
    (step 6). "Fine-tune v9 now": section 5, item 6 is then a new run (it trains, so the old GPUs); the final model
    stays the v5 result. Steps 3-6 are done either way (18 Oct).
@@ -418,7 +477,7 @@ Done on 16 Oct, nothing to ask for: the exp6 v5 compare panels (3.2, 4a); the re
 re-extraction of the 8 image folders and the second label rebuild (job 3581320: train 6,437 / validation 2,777 /
 test 9,722 label images, as expected; 3.5, 4c). Its labels still come from the old fits: do not train on them.
 The demo also showed a new open issue in both models: adult men get female-looking bodies (3.4; since 17 Oct
-evening: the same pull to the median as age). Optional: a correction-only demo without the fine-tune (section 5,
+evening: the same pull to the median as age; since 18 Oct the final model gives most men male bodies, by eye, 3.4). Optional: a correction-only demo without the fine-tune (section 5,
 item 2).
 
 Done on 17 Oct: the re-fit test (job 3589270; 0b, 4e step 1) and the H100 route for the converter (4f). The full
@@ -431,8 +490,11 @@ sequences, `logs/check_refit_all_v23.log`; men 19.0 -> 14.7 mm, women 15.0 -> 15
 0; 3.5); the v23 labels (16,694 images / 22,749 people; 3.5); their conversion check (job 3611284: OVERALL WARN, old
 labels FAIL; the three defects fixed; 3.5); the Relative Human evaluation (jobs 3611285_0 = v5, _1 = exp6: real
 children read as short adults, AUC 0.61, height 0.45 / 0.39 vs 0.51, gender no signal, recall 47%; 3.4); the deck
-(slides 1, 6, 10, 14, 17, 18 and seven notes; section 9). In the evening: the final model, exp7 (smoke test 3611333
-PASS, fix arm 3611336, control 3611339; section 5, item 7), and the 19-slide deck with its slide 16 (section 9).
+(slides 1, 6, 10, 14, 18, 19 and seven notes; section 9). In the evening: the final model, exp7 (smoke test 3611333
+PASS, fix arm 3611336, control 3611339; section 5, item 7), and the 19-slide deck with its slide 16 (section 9). At
+midday: the three 3DPW-test re-evaluations on v23 (jobs 3612073-3612075; section 5, item 7), the demo of the final
+model (job 3612078; figure `docs/figures/final_model_real_photos.jpg`; 3.4) and the 20-slide deck with the
+real-photo slide 17 (section 9).
 
 ## 0b. Numbers at a glance
 
@@ -481,6 +543,10 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   [Certain, log]; the cause of the pull (synthetic-to-real gap or the loss) is not ranked (3.4). Measured since 18 Oct
   on Relative Human val (932 people with known gender; children bullet below): mean predicted gender men 0.535,
   women 0.551, accuracy 0.465: no gender signal on real photos [Certain, 3611285_0:30].
+- The final model on real photos (demo job 3612078, 18 Oct; v5 next to it, the same 12 images): most men now get
+  male bodies, women stay female, bodies a little larger [Likely, by eye]; the boy, placement offsets, ghost bodies
+  and hard poses unchanged [Certain, by eye]. Its `[shape]` lines: gender 0.05-0.99 (median 0.90), v5 0.32-0.76
+  (median 0.59) [Certain, log]; the direction is not confirmed by the log (3.4). Relative Human number: not run yet.
 - Shape head on real photos (all 299 `[shape]` lines of demo 3581312; ~30 distinct people, nearly all adults):
   median gender 0.59, age 0.61, height 0.50 = the training medians 0.588 / 0.601 / 0.500 (3569948:8-18) [Certain].
   Proportions ~0.82 (training 0.725) and weight 0.59 (0.506): fixed offsets. On synthetic data the same pull shows in
@@ -547,11 +613,24 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
 
   The three 15-Oct defects are fixed. Still WARN/FAIL: limb ratios (V4c) and people with a joint > 100 mm (V4e,
   mostly hips): Anny-vs-SMPL proportion limits, not label bugs [Likely] (3.5).
-- 3DPW-test PVE, against our converted labels only (not comparable with published numbers): v5 119.1, v9 102.5,
-  v10 111.5. All against the old labels; re-evaluate on v23 before comparing with exp7 (4e, "Using the v23 labels").
-  On the v23 labels (8,190 images) [Certain, 3611336:224-229, 3611339:215-220]: final model PVE 89.0 / PA-PVE 57.6 /
-  MPJPE 88.3; its control 91.5 / 59.7 / 90.9. v5, v9 e62 and exp6 on v23: pending (submitted 18 Oct evening). Never
-  put the old-label numbers next to these.
+- 3DPW-test PVE, against our converted labels only (not comparable with published numbers). Old labels, retired
+  since 18 Oct (never next to v23 numbers): v5 119.1, v9 102.5, v10 111.5. On the v23 labels, all with
+  `slurm/eval/run_eval_3dpw_test.sh` (V0, helper bones unmasked), the same 8,190 images [Certain, logs]:
+
+  | model (job) | 3DPW PVE | PA-PVE | MPJPE | precision % | recall % | AnnyOne test-100: PVE / PA-PVE / recall |
+  |---|---|---|---|---|---|---|
+  | v5 00099 (3612073) | 121.8 | 72.0 | 126.9 | 54.0 | 100.0 | 74.3 / 57.5 / 90 |
+  | v9 e62 (3612074) | 95.5 | 62.9 | 94.8 | 73.0 | 94.0 | 78.5 / 57.4 / 89 |
+  | exp6 neck pilot (3612075; bone fix from its args) | 120.2 | 68.7 | 124.8 | 53.0 | 100.0 | 72.7 / 55.0 / 89 |
+  | exp7 control (3611339) | 91.5 | 59.7 | 90.9 | 62.0 | 99.0 | 81.2 / 60.6 / 89 |
+  | final model (3611336) | **89.0** | **57.6** | **88.3** | 64.0 | 99.0 | 77.5 / 54.4 / 87 |
+
+  Lines: 3612073:25-32 and :117-124; 3612074 the same; 3612075:26-33 and :118-125; 3611339:209-220; 3611336:218-229.
+  The AnnyOne column is the same script's last-100 AnnyOne test (V0, unmasked), not the V1 holdout above.
+  [Certain] The final model is the best on these labels (6.5 mm better than v9) and finds more 3DPW people than v9
+  (recall 99 vs 94). [Certain] Most of the v5 -> final gain is training on 3DPW at all (control 91.5); the fixes add
+  2.5 mm PVE and 2.1 PA-PVE. [Likely] Precision is low for every model partly because 3DPW labels only the actors,
+  not the bystanders (section 5, item 7).
 
 ---
 
@@ -575,17 +654,18 @@ the **head** joint (`--person_center head`). 88 helper bones (toes, breasts, fac
 
 **Models** (checkpoints are not in git; cluster paths below).
 
-| name | what | AnnyOne holdout V1 PVE (job:line) | 3DPW-test PVE / PA-PVE* |
-|---|---|---|---|
-| v5 = `anny_s2_shape_v5` epoch 99 | ViT-L, synthetic only. Reference for every diagnostic | **70.5** (3570222:40) | 119.1 / 68.8 |
-| v9 = `anny_teacher_v9_mixed` epochs 62, 149 | v5 + 30% 3DPW-train. Teacher of the final student | 75.0 / 77.0 (3571963:40, 3571964:40) | 102.5 / 62.7 |
-| v10 = `anny_v10_scratch_mixed` epoch 290 | ViT-L. Despite "scratch": DINOv2 backbone from NAVER's `multiHMR_672_L_anny` + fresh heads (`train_v10_scratch_mixed.sh:3-8`), last 4 blocks trainable, 30% 3DPW from the start | 74.1 (3571794:40) | 111.5 / 76.2 |
-| students v6c, v8 final | ViT-S distilled | not traced | 139.5 / 88.0, 123.6 / 81.2 |
-| final model = exp7 fix arm `v5_pc_dist5_bonefix_v23_e10` epoch 9 (18 Oct) | v5 00099 + bone fix + depth fix, 10 epochs, 30% 3DPW-train on v23; control `v5_root_dist1_nofix_v23_e10` | 73.7, control 77.4 (3611336:191, 3611339:182) | not in this column: measured on the v23 labels (section 5, item 7) |
+| name | what | AnnyOne holdout V1 PVE (job:line) | 3DPW-test PVE / PA-PVE, old labels* | 3DPW-test PVE / PA-PVE, v23 labels (job) |
+|---|---|---|---|---|
+| v5 = `anny_s2_shape_v5` epoch 99 | ViT-L, synthetic only. Reference for every diagnostic | **70.5** (3570222:40) | 119.1 / 68.8 | 121.8 / 72.0 (3612073) |
+| v9 = `anny_teacher_v9_mixed` epochs 62, 149 | v5 + 30% 3DPW-train. Teacher of the final student | 75.0 / 77.0 (3571963:40, 3571964:40) | 102.5 / 62.7 | e62: 95.5 / 62.9 (3612074); e149 not run |
+| v10 = `anny_v10_scratch_mixed` epoch 290 | ViT-L. Despite "scratch": DINOv2 backbone from NAVER's `multiHMR_672_L_anny` + fresh heads (`train_v10_scratch_mixed.sh:3-8`), last 4 blocks trainable, 30% 3DPW from the start | 74.1 (3571794:40) | 111.5 / 76.2 | not run |
+| students v6c, v8 final | ViT-S distilled | not traced | 139.5 / 88.0, 123.6 / 81.2 | not run |
+| final model = exp7 fix arm `v5_pc_dist5_bonefix_v23_e10` epoch 9 (18 Oct) | v5 00099 + bone fix + depth fix, 10 epochs, 30% 3DPW-train on v23; control `v5_root_dist1_nofix_v23_e10` | 73.7, control 77.4 (3611336:191, 3611339:182) | not run | **89.0 / 57.6** (3611336:224-229); control 91.5 / 59.7 (3611339:215-220) |
 
-\* The four numbers in this column are against the OLD labels (before the 18-Oct re-fit); never put them next to the
-final model's v23 numbers (0b above; section 5, item 7). v5, v9 e62 and exp6 on v23: pending (0a, step 6).
-Quoted in the header of `slurm/demo/run_demo_compare.sh:5-9`, which names neither the method nor the epochs.
+\* The old-labels column is against the labels before the 18-Oct re-fit; it is retired: never put it next to the v23
+numbers. The v23 column comes from `run_eval_3dpw_test.sh` on the same 8,190 images for every model (full table with
+MPJPE, precision, recall and the exp6 neck pilot, 120.2 / 68.7: 0b, last bullet; reading: section 5, item 7).
+The old-label numbers are quoted in the header of `slurm/demo/run_demo_compare.sh:5-9`, which names neither the method nor the epochs.
 [Likely] they come from `slurm/eval/run_eval_3dpw_test.sh`: `train.py --eval_only 1` (`evaluate()`, V0, unmasked) on
 "all 9,722 converted images, every third frame of the 24 test sequences" (`:11-12`); its model list has v9 00062 and
 v10 00299 (`:36`, `:40`), as does `run_demo_compare.sh:93-98`. No log of that run is in the chat. The scores are
@@ -1179,6 +1259,8 @@ adults. This section replaces that reading. The plan is in section 5, item 12.
 - [Certain, log] The one real child in our own photos (a boy) is predicted as an adult body; RH agrees.
 - [Certain] Oversampling synthetic children is unproven at 2 epochs. [Likely] It has no mechanism for real photos.
 - The evidence cannot rank the cause: synthetic-to-real gap, or "L1 through a sigmoid + rare children". Say so.
+- [Likely, by eye] The final model (exp7, 18 Oct; demo job 3612078) gives most men male bodies on real photos; the
+  boy stays an adult body; its Relative Human number is not run yet (end of this section, "Final model, by eye").
 
 **Relative Human result (18 Oct; jobs 3611285_0 and _1)** [Certain, from the job logs `logs/eval_rh_3611285_0.out`
 and `logs/eval_rh_3611285_1.out`]:
@@ -1316,7 +1398,8 @@ Reading:
 - [Certain] The v3d / v2d mesh terms carry the same neutral body: prepare_gt builds the 3DPW GT mesh from these values
   (`train.py:163-170`).
 - [Likely] 3DPW PVE rewards the neutral body: it is computed against those neutral-body GT meshes
-  (`train.py:~647-662`). [Guessing] Part of v9's 3DPW gain (102.5 vs 119.1) may come from that.
+  (`train.py:~647-662`). [Guessing] Part of v9's 3DPW gain (old labels 102.5 vs 119.1; v23 labels 95.5 vs 121.8)
+  may come from that.
 - [Certain] Not the root cause: v5 never saw 3DPW and shows the same real-photo pull. 3DPW has no children.
 
 **`--mask_3dpw_shape` (new on the evening of 17 Oct; commit `a0926fd`, on `main`):**
@@ -1329,7 +1412,7 @@ Reading:
   6). Caveat: with it on, exp7's 3DPW-test PVE can move for a reason unrelated to the depth and bone fixes, and it
   compares worse against the neutral-body GT. If on: re-evaluate the baselines with the 8 phenotypes neutralised at
   inference (`model.neutral_phenotype_names`, `model.py:470-477`) or caveat the number; update section 5, item 7 and
-  note 18.
+  note 19.
 
 **Next:** section 5, item 12. In one line: Relative Human is measured (above, 18 Oct); the supervisor picks a
 limitation (Path A) or BEV-style weak labels from RH train (Path B, 1-2 weeks of code, after exp7). The 3DPW shape
@@ -1355,6 +1438,36 @@ Oct** (Relative Human, above): gender carries no signal on real photos.
 - Read on 17 Oct (no job): on the synthetic holdout gender is accurate near the mode, bias -0.008 / abs error 0.068
   (3570222:75). That alone does not prove a synthetic-to-real gap: the holdout has no young tail (nobody under
   0.513), and its 0.6-0.8 bucket already regresses (above).
+
+**Final model, by eye (18 Oct; demo job 3612078, v5 00099 next to the final model, 4 photos + 8 3DPW-test frames,
+12 images; figure `docs/figures/final_model_real_photos.jpg`, deck slide 17):**
+- [Certain, log] The final model applies its bone fix from the checkpoint args (3612078:424, :427).
+- [Likely, by eye] Men now get male bodies, flat chest and broader shoulders: 3 of the 4 men on the tennis photo (the
+  oldest, pink, still looks female-ish), both men in `downtown_walking_00`, `office_phoneCall_00`, `flat_guitar_01`,
+  the seated man in the WhatsApp photo. Women stay female (the stage photo, `downtown_weeklyMarket_00`). Bodies look
+  a little larger (holdout size ratio 0.63 -> 0.78, section 5, item 7).
+- [Certain, by eye] Unchanged: the boy in the garden photo (`360_F_392252267...jpg`) is still an adult body; the
+  placement offsets (`downtown_bar_00`, `outdoors_fencing_01`); ghost bodies on half-visible people (green in
+  `downtown_walking_00` in the final model, yellow in the stage photo in both); hard poses (guitar, seated) poor in
+  both.
+- [Certain, log] The gender spread opened up. All `[shape]` lines of the 12 images (148 for v5, 127 for the final
+  model; one line per person per detection crop, not matched to bodies): gender v5 0.32-0.76 (median 0.59, the
+  training median 0.588), final 0.05-0.99 (median 0.90); 21 of the final model's 127 lines are below 0.3 and 87
+  above 0.7, v5 has none below 0.3. Age v5 0.50-0.77 (median 0.61), final 0.42-0.65 (0.56). Other values moved too:
+  muscle median 0.28 -> 0.48, proportions 0.81 -> 0.57, weight 0.59 -> 0.48.
+- [Certain, log] The log does not confirm the direction the eye sees. Anny's male end is 0 (3.5); the man in
+  `office_phoneCall_00` gets 0.05-0.16 and the stage photo's women 0.96-0.99, as expected, but on the tennis photo,
+  where 3 of 4 men look male, 16 of the 21 lines are above 0.7. [Guessing] There the male look comes from the other
+  values (muscle, proportions), or the lines do not belong to the bodies one assumes. Do not quote a gender
+  number from the demo.
+- [Likely] Why gender moved: the shape mask was off (`MASK_3DPW_SHAPE=0`), so the corrected v23 gender labels
+  supervise the shape head on 30% of the images; v5 never saw 3DPW. Not tested.
+- [Certain] Children: nothing in exp7 adds a child signal; the boy agrees. The Relative Human result of v5 (above)
+  stands for children.
+- Pending: the Relative Human evaluation of the final model (command in 0a, step 6). It gives the gender accuracy
+  (prediction < 0.5 = male; v5 0.465, chance) and the children's age on labelled real photos. Until then say "by eye".
+  If its accuracy comes out far below 0.5, the model separates men and women but in the wrong direction: check
+  that before anything else.
 
 ### 3.5 3DPW -> Anny labels
 
@@ -1563,17 +1676,21 @@ jobs 3587852/3587853 crashed on an H200 (4f).
 **Done on 18 Oct:** the full re-fit (rerun job 3602813; 87 fits; the `--seq all` post-check PASS on 60 sequences also
 covers the test's post-check), the v23 labels (16,694 images) and their conversion check (job 3611284: WARN, the
 three defects fixed) (3.5); the Relative Human evaluation (jobs 3611285_0/_1; 3.4); the final model, exp7 (jobs
-3611333, 3611336, 3611339; section 5, item 7).
+3611333, 3611336, 3611339; section 5, item 7); the 3DPW-test re-evaluations of v5, v9 e62 and exp6 on v23 (jobs
+3612073, 3612074, 3612075; section 5, item 7); the demo of the final model (job 3612078; 3.4).
 
-**Still pending** (0a step 6). Items 1-4 are done (above) and kept for reference.
+**Still pending** (0a step 6). Items 1-6 are done (above) and kept for reference.
 1. Done 18 Oct. The post-check of the re-fit test, on the login node (4e, step 2).
 2. Done 18 Oct. The full re-fit, 87 tasks, through `PY_VENV` with `--time=02:00:00` (4e, step 3; 4f).
 3. Done 18 Oct. Labels and the conversion check on v23 (4e, steps 4-5).
 4. Done 18 Oct. The final model: a v9-style fine-tune of v5 with its bone fix, the depth fix and the v23 labels
    (section 5, item 7). Script: `slurm/experiments/exp7_final_model.sh`. 3611333 smoke test PASS; 3611336 fix arm and
    3611339 control finished (0a, step 6; result in section 5, item 7).
-5. New, submitted by the student on the evening of 18 Oct: the 3DPW-test re-evaluations of v5 00099, v9 e62 and exp6
-   on the v23 labels (0a, step 6, command and the 20-min limit there). Old GPUs (the script's partition list).
+5. Done 18 Oct. The 3DPW-test re-evaluations of v5 00099, v9 e62 and exp6 on the v23 labels: jobs 3612073, 3612074,
+   3612075, 13-14 min each, inside the 20-min limit (0a, step 6; section 5, item 7).
+6. Done 18 Oct. The demo of the final model next to v5: job 3612078 (0a, step 6; 3.4).
+7. Optional, not submitted yet: the Relative Human evaluation of the final model (0a, step 6, the command there).
+   Old GPUs (the script's partition list).
 
 Also open: the x20 depth run (4d; the command was given on 14 Oct, the submission was never confirmed).
 
@@ -2048,9 +2165,10 @@ Not on H100/H200 (sm_90), B200 or RTXB6000. So:
 
 Analyse any new log only after the student says "done". The pending chain (section 4, 0a steps 3-6): (1) the
 post-check of the re-fit test, (2) the full re-fit, (3) labels and check on v23 are done (18 Oct; 3.5, item 7); (4)
-the final model is done too (18 Oct; end of item 7, "Result (18 Oct)"). Next: the v23 re-evaluations of v5, v9 e62
-and exp6 (0a, step 6). Everything below that trains or runs the model (training, demo, trace, evaluation) needs the
-old GPUs; only the 3DPW converter can use the H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 18.
+the final model is done too (18 Oct; end of item 7, "Result (18 Oct)"), and so are the v23 re-evaluations of v5,
+v9 e62 and exp6 and the demo of the final model (18 Oct, midday; item 7, "3DPW test against every model"; 3.4).
+Next, optional: the Relative Human evaluation of the final model (0a, step 6; item 12). Everything below that trains or runs the model (training, demo, trace, evaluation) needs the
+old GPUs; only the 3DPW converter can use the H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19.
 The label rebuild (item 5) is done.
 
 1. **exp6 panels: done (early 16 Oct).** The 12 v5 compare panels show thin-stalk necks without the correction and
@@ -2072,6 +2190,9 @@ The label rebuild (item 5) is done.
      `demo_out_anny_s2_shape_v5_00099_<set>/` would overwrite v5's folders). Not run, not asked for yet.
    - Optional: `--relax_hands 0` for the hands (3.3).
    - The predicted gender on the holdout, for the new female-body observation (3.4), costs no job: ask for it.
+   - The final model's demo (18 Oct, job 3612078; 0a step 6; 3.4, "Final model, by eye"; deck slide 17): most men
+     get male bodies by eye; the boy, placement offsets, ghost bodies and hard poses unchanged. The student's by-eye
+     read covers body shape, placement and poses; the necks are not mentioned.
 3. **Longer fine-tune with the fix: answered by the final model (18 Oct).** exp7 ran 10 epochs with the fix (plus the
    depth fix and 30% 3DPW) against a matched control without both: neck02 4.8 deg, girth 1.00, global head 13.1 vs
    13.0 (item 7, "Result (18 Oct)") [Certain]. A 10-epoch run with the bone fix alone stays optional; it would
@@ -2092,12 +2213,12 @@ The label rebuild (item 5) is done.
      still missing. Do not train on it; the re-fit (item 7) is next.
    - The re-check of `labels_rebuilt` (4c) is optional and not run.
    - The label build after the re-fit (item 7) uses the same images, so they are ready for it.
-6. **Supervisor's decision (slide 18).** Since 18 Oct the student went ahead with labels first: the final model
+6. **Supervisor's decision (slide 19).** Since 18 Oct the student went ahead with labels first: the final model
    (item 7) is done. The text below stays for the case that the supervisor asks for the v9 fine-tune. Fine-tune v9 now
    with `--gt_center_joint person_center` and x5, or first fix
    the labels (item 7) and then fine-tune? The student proposes labels first, because 3DPW is 30% of each batch and the
    men would keep learning the wrong body. Expected from v5: size ~0.84, root ~0.5 m, cost ~2.6 mm PVE and ~1.6 recall
-   points (notes, slide 18, If asked: Option 1). **The v9 fine-tune script does not exist yet (NEEDS CODE).** Recipe:
+   points (notes, slide 19, If asked: Option 1). **The v9 fine-tune script does not exist yet (NEEDS CODE).** Recipe:
    - Copy the training call of `slurm/train/train_teacher_v9_mixed.sh` (it has the 3DPW mix flags), into a new
      script, e.g. `slurm/experiments/exp8_v9_depth.sh` (exp7 is the final model, item 7). Do **not** reuse
      `exp1_depth_anchor.sh`: it trains on AnnyOne only, so `CKPT=v9` would silently drop the 30% 3DPW. Do not run
@@ -2118,7 +2239,7 @@ The label rebuild (item 5) is done.
      Never `logs/anny_model/anny_teacher_v9_mixed`: `train.py` keeps only the `--nb_max_ckpt` highest epoch numbers of
      a folder (`train.py:400-410`), so a run written there deletes checkpoints (its own low epochs, or old v9 ones).
    - Control arm, same script and weight: `--gt_center_joint root` (still x5), output `.../exp8_v9_depth/v9e62_root_dist5`.
-   - Labels (`--mix_3dpw_labels`): slide-18 option 1 ("now") = `/netscratch/najib/multi-hmr/threedpw_anny_full/labels`
+   - Labels (`--mix_3dpw_labels`): slide-19 option 1 ("now") = `/netscratch/najib/multi-hmr/threedpw_anny_full/labels`
      (what v9 trained on; gender reversed, 31% of train missing). `labels_rebuilt` has that 31% back (job 3581320,
      item 5), but from the same old fits (gender reversed, second actor missing): do not train on it; the re-fit is
      next. Option 2 ("labels first") = `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels` after item 7.
@@ -2153,8 +2274,8 @@ The label rebuild (item 5) is done.
    `MODEL_ENTRY` / `EVAL_LABELS` change to `slurm/eval/run_eval_3dpw_test.sh` it needs (4e, "Using the v23 labels");
    ran 18 Oct. Read its header before the student submits it. Before submitting, check the four prerequisites in its
    header: its guards check the labels and the fits, but not the `--seq all` post-check (4e, step 3), which the
-   student runs by hand. This item follows the script's defaults (chosen on 17 Oct so that this file, note 18 and the
-   script say the same thing). If the review changes a default, change it here and in note 18 too.
+   student runs by hand. This item follows the script's defaults (chosen on 17 Oct so that this file, note 19 and the
+   script say the same thing). If the review changes a default, change it here and in note 19 too.
    - What it is: v9's 3DPW mixing (30% 3DPW-train in every batch, 3DPW-validation each epoch) on top of the exp6
      fine-tune recipe (v5, last 4 backbone blocks trained, lr 1e-5, batch 4). It is its own script: never edit or
      rerun `slurm/train/train_teacher_v9_mixed.sh` (it starts from v5, runs 150 epochs and writes to
@@ -2175,7 +2296,7 @@ The label rebuild (item 5) is done.
      The script stops before the trace and the
      test evaluation if `train.log` has no `[bone_fix] ON` line.
    - Depth fix: `--gt_center_joint person_center --alpha_dist 5 --alpha_transl 5` (x5, as long_pc_dist5, item 6 and
-     slide 18; x20 only if 4d clearly beats it). [Likely] both slide-18 options include the depth fix (the slide says
+     slide 19; x20 only if 4d clearly beats it). [Likely] both slide-19 options include the depth fix (the slide says
      so only for option 1). If the supervisor says otherwise, follow that.
    - Labels: `LABELS` defaults to `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels`. The script refuses labels
      under `threedpw_anny_full` and fits not made with `--gender_convention anny --frame_grid shared`. Plus
@@ -2184,9 +2305,9 @@ The label rebuild (item 5) is done.
      `MASK_3DPW_SHAPE`, default `0` = unmasked, as all earlier runs. `1` passes `--mask_3dpw_shape 1` to both arms
      (fix and control stay matched) and adds `_shpmask` to the run names, so a masked run never shares a folder with
      an unmasked one. On or off is a Monday decision (0a, step 8; 3.4); the run submitted on 18 Oct uses `0`. The
-     default keeps this item, note 18 and the script in step. If the supervisor picks `1`: pass `MASK_3DPW_SHAPE=1` to
+     default keeps this item, note 19 and the script in step. If the supervisor picks `1`: pass `MASK_3DPW_SHAPE=1` to
      both submit commands below, read the 3DPW-test PVE with the caveat in 3.4 (it can move for a reason unrelated to
-     the two fixes), and update this item and note 18.
+     the two fixes), and update this item and note 19.
    - Length: **10 epochs by default** (`EPOCHS=10`, 1,000 iterations each; `--time` 5 h by the script's formula).
      Longer only with `EPOCHS=` set from the deadline (section 10), e.g. `EPOCHS=30` (`--time` 11 h). v9 ran up to 150
      epochs, and the student was distilled from epoch 62. [Guessing] ~6-10 min per epoch with 3DPW batches (never
@@ -2207,9 +2328,9 @@ The label rebuild (item 5) is done.
      ```
      cd /netscratch/najib/multi-hmr && ARM=control bash slurm/experiments/exp7_final_model.sh
      ```
-   - The deck describes a different fine-tune for option 1. Slide 18 and its notes frame it as one of v9 epoch 62
+   - The deck describes a different fine-tune for option 1. Slide 19 and its notes frame it as one of v9 epoch 62
      ("the planned start", "about 1 to 2 hours of training", a bone fix "estimated on v9 first"; notes, If asked:
-     "Option 1", "Bone flips in v9 and v10"). Since 17 Oct note 18's "Option 2" line says the fine-tune after the
+     "Option 1", "Bone flips in v9 and v10"). Since 17 Oct note 19's "Option 2" line says the fine-tune after the
      re-fit starts from v5 with v5's bone fix and the depth fix, 10 epochs, next to a control without the two fixes.
      If the supervisor wants the deck's v9 version, item 6's recipe with the option-2 labels is it.
    - Read the result:
@@ -2266,14 +2387,37 @@ The label rebuild (item 5) is done.
 
    | 3DPW test (v23) | v5 00099 | v9 e62 | exp6 ft | exp7 control | final model |
    |---|---|---|---|---|---|
-   | PVE, mm | pending | pending | pending | 91.5 | 89.0 |
-   | PA-PVE, mm | pending | pending | pending | 59.7 | 57.6 |
-   | MPJPE, mm | pending | pending | pending | 90.9 | 88.3 |
-   | precision / recall, % | pending | pending | pending | 62.0 / 99.0 | 64.0 / 99.0 |
+   | PVE, mm | 121.8 | 95.5 | 120.2 | 91.5 | **89.0** |
+   | PA-PVE, mm | 72.0 | 62.9 | 68.7 | 59.7 | **57.6** |
+   | MPJPE, mm | 126.9 | 94.8 | 124.8 | 90.9 | **88.3** |
+   | precision / recall, % | 54.0 / 100.0 | 73.0 / 94.0 | 53.0 / 100.0 | 62.0 / 99.0 | 64.0 / 99.0 |
+   | AnnyOne test-100 PVE / PA-PVE / recall (V0) | 74.3 / 57.5 / 90 | 78.5 / 57.4 / 89 | 72.7 / 55.0 / 89 | 81.2 / 60.6 / 89 | 77.5 / 54.4 / 87 |
 
-   The old v9 102.5 / v5 119.1 are against the OLD labels: never put them in this table. The same script's AnnyOne
-   test-100 (V0, unmasked): final model PVE 77.5 / PA-PVE 54.4, control 81.2 / 60.6 (3611336:218-223,
-   3611339:209-214).
+   The old v9 102.5 / v5 119.1 are against the OLD labels: retired, never put them in this table. The AnnyOne row is
+   the same script's last-100 AnnyOne test (V0, unmasked), not the V1 holdout table above (3611336:218-223,
+   3611339:209-214, 3612073:25-32, 3612074:25-32, 3612075:26-33).
+
+   **3DPW test against every model (18 Oct, midday)** [Certain, `logs/eval-test3dpw-3612073_0.out` (v5 00099,
+   `logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt`), `logs/eval-test3dpw-3612074_0.out` (v9 e62,
+   `models/multiHMR/anny_teacher_v9_mixed_00062.pt`), `logs/eval-test3dpw-3612075_0.out` (exp6,
+   `models/multiHMR/exp6_v5_bonefix_00001.pt`, bone fix inherited from its args, :10)]. The same script as the exp7
+   arms (`slurm/eval/run_eval_3dpw_test.sh`, v23 labels, 8,190 images), run names
+   `evaltest_<tag>__threedpw_anny_v23` under `logs/anny_model/`; all three on serv-3335 from 09:20 on 18 Oct, 13-14
+   min each, inside the 20-min limit. Numbers at 3612073:117-124, 3612074:117-124, 3612075:118-125 (table above).
+   Reading:
+   - [Certain] The final model is the best model on our 3DPW-Anny test labels: PVE 89.0 vs 95.5 for v9 e62, the
+     previous best, and 121.8 for v5; PA-PVE 57.6 vs 62.9 and 72.0. v9 trained on the old reversed-gender labels and
+     is tested on the corrected ones, like every model here. The final model also finds more 3DPW people than v9
+     (recall 99 vs 94).
+   - [Certain] Most of the v5 -> final gain (32.8 mm PVE) comes from training on 3DPW at all: the control, without
+     the two fixes, gets 91.5. The fixes add 2.5 mm PVE and 2.1 PA-PVE on top, inside one run's noise for PVE
+     (3.6). [Likely] Their other gains, neck, fingers and depth, barely show in a pelvis-aligned PVE.
+   - [Certain] The 2-epoch neck pilot (exp6, AnnyOne only) is at v5's level on 3DPW (120.2 vs 121.8): the bone fix
+     alone does not move 3DPW PVE much.
+   - [Likely] Precision is low for every model (53-73%) partly because 3DPW labels only the one or two actors, not
+     the bystanders, so a detected bystander counts as a false positive; do not rank models by it.
+   - The old-label numbers (v9 102.5, v5 119.1) are retired; only v23 numbers are compared now. Say "best on our
+     3DPW-Anny labels", never "best model" in general.
 
    Reading:
    1. [Certain] All three fixes hold in one model after 10 epochs with real photos in the mix: neck 175.8 -> 4.8 deg
@@ -2284,7 +2428,8 @@ The label rebuild (item 5) is done.
       73.7 (-3.7 mm, inside noise). Recall 89.0 -> 87.0 (-2 points, at the noise limit); against v5 (90.2) it is
       -3.2: a real cost to state.
    3. [Certain] On 3DPW test with the corrected labels the fix arm beats its control: PVE 91.5 -> 89.0, PA-PVE 59.7
-      -> 57.6. Against v5 / v9 on the same labels: pending.
+      -> 57.6. Against v5 and v9 on the same labels (18 Oct, midday): 121.8 and 95.5, so the final model is the best
+      on our 3DPW-Anny labels; most of that gain is the 3DPW training (above, "3DPW test against every model").
    4. [Likely] The restart cost is visible: both arms sit above v5's 70.5 PVE on the holdout (control 77.4), as every
       fine-tune did; the fix arm recovers more of it than the control.
    5. [Certain] Depth slope 0.42 is the best of the 10-epoch runs (the 2-epoch x5 / x20 pilots had 0.44 / 0.43, 3.1)
@@ -2293,21 +2438,24 @@ The label rebuild (item 5) is done.
    6. [Certain] Head direction 13.1 deg (v5 12.0, exp6 14.4, control 13.0): within noise; the exp6 worry (14.4) did
       not repeat.
    7. [Certain] Both arms skipped a few NaN/Inf gradient steps (16 and 10 of 10,000); harmless at this rate, noted.
-   8. [Likely, not measured] Children and gender unchanged by design (shape mask off, no child signal); the Relative
-      Human result stands (3.4).
+   8. [Certain, by eye] Children unchanged (no child signal; the boy is still an adult body). Gender is not
+      unchanged: with the shape mask off the corrected 3DPW gender labels train the shape head, and in the demo most
+      men now look male [Likely, by eye; job 3612078; 3.4, "Final model, by eye"]. The Relative Human number for the
+      final model is not run yet (0a, step 6); the v5 result stands until then.
 
    Pilot noise (3.6; deck slide 14): two identical runs differed by 7.6 mm PVE and 1.9 deg head error, about 2
    recall points. One run per arm, no seed.
 
    What stays open: the slope (item 8); the recall cost (item 9: paired PVE and head-visible recall still NEED
-   CODE); 3DPW test against v5 / v9 / exp6 on v23 (pending, 0a step 6); children (item 12; unchanged by design); the
-   final model on real images (optional demo, 0a step 6).
+   CODE); children (item 12; unchanged); the gender number of the final model (Relative Human, 0a step 6). Done on
+   18 Oct, midday: the 3DPW test against v5 / v9 / exp6 on v23 (above) and the final model on real images (demo
+   job 3612078; 3.4).
 
    Checkpoint of the final model:
    `results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10/train/checkpoints/00009.pt`. The bone fix is in
    its saved args and applied on load (`[load_model] bone_fix: checkpoint args (bone_fix_spec)`, 3611336:169).
    Outputs in that folder: `train.log`, `settings.txt`, `holdout_ft/`, `compare.json`. Logs
-   `logs/exp7_final_model_3611336.out` and `logs/exp7_final_model_3611339.out`. Deck: slide 16 (section 9).
+   `logs/exp7_final_model_3611336.out` and `logs/exp7_final_model_3611339.out`. Deck: slides 16 and 17 (section 9).
 8. **Depth slope stuck at 0.3-0.44 (final model: 0.42, 3611336:195).** Measure the training-set depth distribution
    properly (so far only batch means of
    ~2.5-3.2 m) and the fix run's slope on training images. Both **NEED CODE**: extend
@@ -2333,7 +2481,8 @@ The label rebuild (item 5) is done.
        logs]. Real children are read as short adults: predicted age kids 0.61, babies 0.62 vs adults 0.63;
        child-vs-adult AUC 0.61 (127 vs 821); height 0.45 kid / 0.39 baby vs 0.51 adult; gender men 0.535, women
        0.551 (accuracy 0.465); recall 47% (1,003 / 2,130; babies 33%, kids 43%). exp6: the same within noise.
-       Matching at IoU >= 0.3 (the script default). Not run: the test split (`SPLIT=test`, 1,836 images).
+       Matching at IoU >= 0.3 (the script default). Not run: the test split (`SPLIT=test`, 1,836 images), and the
+       final model (exp7; its gender after the corrected 3DPW labels; command in 0a, step 6).
        - Data [Certain, RH repo]: 24,814 people: 1,534 babies, 2,720 kids, 1,067 teens, 19,493 adults. Labels per
          person: age group (0 adult, 1 teen, 2 kid, 3 baby, -1 unknown), gender (0 male, the same direction as Anny),
          depth layer, boxes, 2D pose. Download: the Google Drive link in the README of
