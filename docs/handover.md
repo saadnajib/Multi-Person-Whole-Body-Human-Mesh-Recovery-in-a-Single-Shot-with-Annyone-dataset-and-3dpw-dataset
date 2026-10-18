@@ -33,7 +33,8 @@ confirm the three. To check a copy of this file:
   children diagnosis corrected, the ranked plan, the 3DPW shape mask; 3.4, section 5 item 12). `0` means an older
   copy: it still counts the "five small people" as children predicted as adults, which is wrong.
 - `grep -c 'short adults' docs/handover.md` prints a number above `0` only in this version (18 Oct: the Relative
-  Human result, jobs 3611285_0/_1, 3.4; the v23 conversion check, job 3611284, 3.5; the deck updated, section 9).
+  Human result, jobs 3611285_0/_1, 3.4; the v23 conversion check, job 3611284, 3.5; exp7 submitted, jobs 3611333 /
+  3611336 / 3611339, 0a step 6; the deck updated, section 9).
   `0` means an older copy: it still rests the children claim on one boy in our own photos, calls the RH evaluation
   and the v23 check not run, and has the "0.60 / one real child" tile on slide 10.
 
@@ -86,6 +87,9 @@ file were merged into `main` (section 8).
 - Relative Human val, jobs 3611285_0 (v5 00099) and _1 (exp6 fine-tuned) [Certain, logs]: real children are read
   as short adults. Predicted age kids 0.61, babies 0.62 vs adults 0.63; child-vs-adult AUC 0.61; height 0.45 kid /
   0.39 baby vs 0.51 adult. Gender: men 0.535, women 0.551, no signal. Recall 47%. exp6: the same (3.4).
+- exp7 (the final model) passed its `CHECK_ONLY` guards and was submitted (the student wants it before Monday
+  16:00): 3611333 smoke test, 3611336 fix arm, 3611339 control arm, all queued on A100 / L40S / RTXA6000;
+  `MASK_3DPW_SHAPE=0` (0a, step 6).
 - Deck: slides 1, 6, 10, 14, 16, 17 and notes 1, 6, 8, 10, 14, 16, 17 updated with these results (section 9).
 
 **Meeting date: Monday 19 October 2026** (the student, 17 Oct), with the deck `docs/supervisor_update_2026-10-16.pptx`
@@ -160,10 +164,11 @@ Finished 15 Oct: exp6 on v5 and on v10, 3DPW label rebuild. 16 Oct: the exp6 nec
 the fix (job 3581312), the 3DPW image re-extraction and the second label rebuild (job 3581320) (results in handover
 section 3). 17 Oct: the 3DPW re-fit test on H100 (job 3589270). 18 Oct: the full re-fit (87 fits, post-check PASS),
 the v23 labels, their conversion check (job 3611284: WARN, the three defects fixed) and the Relative Human evaluation
-(job 3611285). Pending (handover 0a, 5): the final model: a v9-style fine-tune of v5 with its bone fix, the depth fix
-and the v23 labels (script drafted, not yet reviewed: slurm/experiments/exp7_final_model.sh); its label
-prerequisites are met. I submit it only after the supervisor answers the slide-17 question on Monday (and decides
-MASK_3DPW_SHAPE on or off).
+(job 3611285). Submitted 18 Oct, queued on the old GPUs (handover 0a step 6, 5): the final model (exp7): a v9-style
+fine-tune of v5 with its bone fix, the depth fix and the v23 labels, 10 epochs, next to a control without the two
+fixes (slurm/experiments/exp7_final_model.sh): smoke test 3611333, fix arm 3611336, control 3611339; no 3DPW shape
+mask (MASK_3DPW_SHAPE=0). I want it before Monday 16:00. If the supervisor picks "fine-tune v9 now" on Monday, I
+cancel the two arms.
 Never confirmed: the x20 depth run (14 Oct). Ask me to run the status block from handover section 4 (squeue alone
 misses finished jobs).
 
@@ -195,13 +200,14 @@ answer. It overrides the other docs in the repo.
 
 **State on Sunday 18 Oct (this version):** steps 3, 4 and 5 are done: the full re-fit (87 fits, post-check PASS),
 the v23 labels and their conversion check (job 3611284: WARN, the three 15-Oct defects fixed; 3.5). The Relative
-Human evaluation ran too (jobs 3611285_0/_1; 3.4). Left before Monday: step 6's guard check (`CHECK_ONLY=1`, seconds,
-login node) and step 7 (the deck). Step 6's submission waits for the meeting (steps 8-9).
+Human evaluation ran too (jobs 3611285_0/_1; 3.4). Step 6, the final model (exp7), passed its guard check and was
+submitted on 18 Oct: 3611333 (smoke test), 3611336 (fix arm), 3611339 (control), queued. Left before Monday: step 7
+(the deck) and reading the exp7 logs once the student says "done".
 
 Paste this section with section 0. Each step names the section with the details.
 
-1. Ask the student: the thesis submission date and the draft's chapters (section 10); and whether exp7's guard check
-   (step 6) has run since 18 Oct. Ask for that output before giving the next step.
+1. Ask the student: the thesis submission date and the draft's chapters (section 10); and the state of the exp7 jobs
+   3611333 / 3611336 / 3611339 (step 6; status block, step 2). Ask for that output before giving the next step.
 2. Status block (section 4, top), for the x20 depth run (4d, never confirmed) and for anything of steps 3-6 already
    submitted. **Never cancel or resubmit a queued job** (section 10); resubmit only if both `sacct` and the output
    folder show nothing. Analyse logs only after the student says "done".
@@ -253,12 +259,25 @@ Paste this section with section 0. Each step names the section with the details.
    ```
    Then the conversion check through the venv on H100 (4e, step 5; [Likely]: never run in the venv). The check
    script also asks for the old partitions by default; the 4e command passes `--partition` with the H100/H200.
-6. Pending (4): the final model (section 5, item 7): a fine-tune of v5 00099 with v5's bone fix, the depth fix and
-   the v23 labels, 10 epochs, plus its matched control (`ARM=control`). It trains, so it needs the normal env and
-   **only the old GPUs** (4f): expect days in the queue. **Since 18 Oct its prerequisites 1-3** (header of
-   `exp7_final_model.sh:22-33`: the re-fit check task, all 87 fits with the `--seq all` check, the v23 labels and
-   their conversion check) **are met** [Certain, logs]; prerequisite 4 (both files on `main`) since `b188b63`. What
-   is left is Monday: `MASK_3DPW_SHAPE` on or off, and whether to submit before the supervisor answers slide 17.
+6. **SUBMITTED 18 Oct, waiting for the queue** (pending item 4): the final model (section 5, item 7): a fine-tune of
+   v5 00099 with v5's bone fix, the depth fix and the v23 labels, 10 epochs, plus its matched control (`ARM=control`).
+   It trains, so it needs the normal env and **only the old GPUs** (4f): expect days in the queue. **Since 18 Oct its
+   prerequisites 1-3** (header of `exp7_final_model.sh:22-33`: the re-fit check task, all 87 fits with the `--seq all`
+   check, the v23 labels and their conversion check) **are met** [Certain, logs]; prerequisite 4 (both files on
+   `main`) since `b188b63`. **Submitted on 18 Oct** (the student wants the final model before Monday 16:00) [Certain,
+   the student's `CHECK_ONLY` and `sbatch` output]. `CHECK_ONLY=1` passed: label check `RESULT: PASS` (390 / 379 / 438
+   sampled people [Likely: per split, train / validation / test], 0 with the wrong gender, 0 without a fit); all 87
+   fits present. Three jobs, all queued on the A100 / L40S / RTXA6000 partitions (the 16-Oct start estimate for
+   these was 22-26 Oct, so "before Monday 16:00" is not assured [Likely]):
+   - 3611333: smoke test (`EPOCHS=1 N_ITERS=20 EVAL_TEST=0 VAL_3DPW_N=20 N_VIS=2`, RUN
+     `v5_pc_dist5_bonefix_v23_e1_it20`, 78-min limit);
+   - 3611336: fix arm (RUN `v5_pc_dist5_bonefix_v23_e10`, 5-h limit, `MASK_3DPW_SHAPE=0`, i.e. no shape mask);
+   - 3611339: control arm (RUN `v5_root_dist1_nofix_v23_e10`, 5-h limit).
+   Outputs `results/experiments/exp7_final_model/<RUN>/`, logs `logs/exp7_final_model_<jobid>.out`. The Monday mask
+   question is answered "off" for this first run. Never cancel or resubmit them to start sooner (section 10). Read the
+   smoke test first (it must reach its end without an error and print the `[bone_fix] ON` line), then the two arms as
+   in section 5, item 7, "Read the result". If the supervisor picks option 1 on Monday, cancelling the two arms is
+   allowed (a change of plan; bullet "If the student wants it queued ..." below).
    - Sunday: its script `slurm/experiments/exp7_final_model.sh` is on `main` (`b188b63`, never run). Check it against section 5, item 7 (start checkpoint, bone fix, epochs, control arm; item 7 now
      follows the script's defaults, so pick one start if the review changes it). The change to
      `slurm/eval/run_eval_3dpw_test.sh` is in the same commit: exp7's test evaluation calls that script with `MODEL_ENTRY` and
@@ -268,14 +287,14 @@ Paste this section with section 0. Each step names the section with the details.
      `main`. So commit the two files together, in one commit, push it to `main`, and `git pull` on the cluster.
      Check that both arrived: `ls slurm/experiments/exp7_final_model.sh` and
      `grep -c EVAL_LABELS slurm/eval/run_eval_3dpw_test.sh` (must print more than `0`).
-   - Once the v23 labels exist (step 5), run its guards alone on the login node (seconds; it submits nothing; the
-     label check needs the `multihmr` Python, otherwise it refuses with exit 1):
+   - Done 18 Oct (PASS, above). Once the v23 labels exist (step 5), run its guards alone on the login node (seconds;
+     it submits nothing; the label check needs the `multihmr` Python, otherwise it refuses with exit 1):
      ```
      cd /netscratch/najib/multi-hmr && git pull && conda activate multihmr && CHECK_ONLY=1 bash slurm/experiments/exp7_final_model.sh
      ```
-   - **Submit it after the meeting**, if the supervisor picks "labels first" (step 9) and step 5's check passed; then
-     once, and leave it queued (commands in section 5, item 7). Submitting it on Sunday would answer the slide-17
-     question for the supervisor.
+   - Overtaken on 18 Oct (submitted before the meeting, above). The plan was: **Submit it after the meeting**, if the
+     supervisor picks "labels first" (step 9) and step 5's check passed; then once, and leave it queued (commands in
+     section 5, item 7). Submitting it on Sunday would answer the slide-17 question for the supervisor.
    - If the student wants it queued before the meeting anyway (to gain queue time; [Guessing] about a day), say so
      plainly at the meeting. If the supervisor then picks option 1, cancelling it is allowed: it is a change of plan,
      not a cancel-and-resubmit to start sooner, so it duplicates nothing (section 10).
@@ -294,10 +313,11 @@ Paste this section with section 0. Each step names the section with the details.
    slurm/diagnostics/eval_relative_human.sh`, old GPUs only) is optional.
 8. In the meeting: the deck as it is. On 3DPW: the re-fit is done and the v23 labels passed their conversion check
    (WARN, old labels FAIL; slide 6, notes 6, 16, 17): the three defects are fixed and confirmed by the check. On
-   training: the labels are ready; it waits for the supervisor's answer and for the old GPUs (4f). Slide 17 describes
-   the fine-tune as one of v9 epoch 62; the final model of step 6 starts from v5 00099 with v5's bone fix, so the
-   student should say so if option 2 is chosen (note 17, "Option 2", now says it; section 5, item 7). Also say whether
-   the final model is queued (by default it is not: step 6). On children (slide 10 and its notes; 3.4), three points:
+   training: the final model is submitted (step 6) and waits for the old GPUs (4f). Slide 17 describes the fine-tune
+   as one of v9 epoch 62; the final model of step 6 starts from v5 00099 with v5's bone fix, so the student should say
+   so if option 2 is chosen (note 17, "Option 2", now says it; section 5, item 7). Also say that the final model is
+   already queued or running (submitted 18 Oct, shape mask off; step 6). On children (slide 10 and its notes; 3.4),
+   three points:
    - Children are now measured on real photos with labels: Relative Human val (jobs 3611285_0/_1; 3.4). Real
      children get adult age: kids 0.61, babies 0.62 vs adults 0.63; child-vs-adult AUC 0.61, near chance. The model
      reads them as short adults: height 0.45 kid / 0.39 baby vs 0.51 adult. Gender: men 0.535, women 0.551, no
@@ -309,11 +329,12 @@ Paste this section with section 0. Each step names the section with the details.
    - Decision: a limitation (Path A) or BEV-style weak labels from RH train (Path B, 1-2 weeks of code, after exp7).
      The 3DPW shape mask exists, default off; on or off in exp7 is a decision (with it on, exp7's 3DPW-test PVE can
      move for a reason unrelated to the depth and bone fixes).
-9. After the meeting: write the supervisor's answers into section 9: the slide-17 question, the children path (A or
-   B) and `MASK_3DPW_SHAPE` on or off (if on, update section 5, item 7 and note 17 too). "Labels first" (the
-   student's proposal): submit the final model (step 6; steps 3-5 are done). "Fine-tune v9 now": section 5, item 6
-   comes first and the final model is not submitted (or is cancelled, if it was queued early; step 6); item 6 trains
-   too, so it also waits for the old GPUs. Steps 3-5 are done either way (18 Oct).
+9. After the meeting: write the supervisor's answers into section 9: the slide-17 question, the children path (A or B)
+   and `MASK_3DPW_SHAPE` on or off (if on, update section 5, item 7 and note 17 too, and rerun exp7 with
+   `MASK_3DPW_SHAPE=1`: new run names with `_shpmask`). "Labels first" (the student's proposal): the final model is
+   already submitted (step 6); let it run. "Fine-tune v9 now": section 5, item 6 comes first and the final model is
+   not submitted (or is cancelled, if it was queued early; step 6); item 6 trains too, so it also waits for the old
+   GPUs. Steps 3-5 are done either way (18 Oct).
 
 Done on 16 Oct, nothing to ask for: the exp6 v5 compare panels (3.2, 4a); the real-image demo with the fix (job
 3581312; 3.2, 4b; figures `docs/figures/neck_before_after_3dpw_bar.jpg` and `..._bar_office.jpg`); the
@@ -1167,10 +1188,11 @@ Reading:
 - Default `0`. In exp7: env `MASK_3DPW_SHAPE` (default `0`; `1` adds `_shpmask` to the run names and requires the
   `[loss] mask_3dpw_shape:` line in `train.log`). Check that it arrived: `grep -c mask_3dpw_shape loss.py`.
 - [Certain] It adds no child signal. The v3d / v2d mesh terms still carry the neutral body.
-- On or off in exp7 is a **Monday decision** (0a, step 8). Caveat: with it on, exp7's 3DPW-test PVE can move for a
-  reason unrelated to the depth and bone fixes, and it compares worse against the neutral-body GT. If on: re-evaluate
-  the baselines with the 8 phenotypes neutralised at inference (`model.neutral_phenotype_names`, `model.py:470-477`)
-  or caveat the number; update section 5, item 7 and note 17.
+- On or off in exp7 is a **Monday decision** (0a, step 8); the first exp7 run, submitted 18 Oct, uses `0` (0a, step
+  6). Caveat: with it on, exp7's 3DPW-test PVE can move for a reason unrelated to the depth and bone fixes, and it
+  compares worse against the neutral-body GT. If on: re-evaluate the baselines with the 8 phenotypes neutralised at
+  inference (`model.neutral_phenotype_names`, `model.py:470-477`) or caveat the number; update section 5, item 7 and
+  note 17.
 
 **Next:** section 5, item 12. In one line: Relative Human is measured (above, 18 Oct); the supervisor picks a
 limitation (Path A) or BEV-style weak labels from RH train (Path B, 1-2 weeks of code, after exp7). The 3DPW shape
@@ -1411,7 +1433,8 @@ three defects fixed) (3.5); the Relative Human evaluation (jobs 3611285_0/_1; 3.
 3. Done 18 Oct. Labels and the conversion check on v23 (4e, steps 4-5).
 4. The final model: a v9-style fine-tune of v5 with its bone fix, the depth fix and the v23 labels (section 5,
    item 7). Script: `slurm/experiments/exp7_final_model.sh` (on `main` since `b188b63`; never run). It trains, so
-   old GPUs only (4f). Submit it after the meeting, if the supervisor picks labels first (0a, step 6).
+   old GPUs only (4f). **Submitted 18 Oct** (before the meeting): 3611333 smoke test, 3611336 fix arm, 3611339
+   control, queued (0a, step 6).
 
 Also open: the x20 depth run (4d; the command was given on 14 Oct, the submission was never confirmed).
 
@@ -2011,10 +2034,10 @@ done.
    - 3DPW shape mask (new on the evening of 17 Oct, another session; commit `a0926fd`, not on `main` yet):
      `MASK_3DPW_SHAPE`, default `0` = unmasked, as all earlier runs. `1` passes `--mask_3dpw_shape 1` to both arms
      (fix and control stay matched) and adds `_shpmask` to the run names, so a masked run never shares a folder with
-     an unmasked one. On or off is a Monday decision (0a, step 8; 3.4). The default keeps this item, note 17 and the
-     script in step. If the supervisor picks `1`: pass `MASK_3DPW_SHAPE=1` to both submit commands below, read the
-     3DPW-test PVE with the caveat in 3.4 (it can move for a reason unrelated to the two fixes), and update this item
-     and note 17.
+     an unmasked one. On or off is a Monday decision (0a, step 8; 3.4); the run submitted on 18 Oct uses `0`. The
+     default keeps this item, note 17 and the script in step. If the supervisor picks `1`: pass `MASK_3DPW_SHAPE=1` to
+     both submit commands below, read the 3DPW-test PVE with the caveat in 3.4 (it can move for a reason unrelated to
+     the two fixes), and update this item and note 17.
    - Length: **10 epochs by default** (`EPOCHS=10`, 1,000 iterations each; `--time` 5 h by the script's formula).
      Longer only with `EPOCHS=` set from the deadline (section 10), e.g. `EPOCHS=30` (`--time` 11 h). v9 ran up to 150
      epochs, and the student was distilled from epoch 62. [Guessing] ~6-10 min per epoch with 3DPW batches (never
@@ -2026,8 +2049,9 @@ done.
      partition list (draft read at ~04:05 UTC on 17 Oct) is A100, L40S and RTXA6000; V100 and RTX3090 only on request
      (its header says why); never H100/H200, B200 or RTXB6000, and it refuses a GPU of compute capability 9.0 or
      higher. Expect days in the queue (22-26 Oct estimated on 16 Oct for those partitions).
-   - When: guards first (`CHECK_ONLY=1`, 0a step 6), once the v23 labels exist. Submit after the meeting, if the
-     supervisor picks labels first, once each, and leave both queued:
+   - When: **submitted 18 Oct** after `CHECK_ONLY=1` passed (0a step 6: 3611333 smoke test, 3611336 fix arm, 3611339
+     control; `MASK_3DPW_SHAPE=0`). The plan was: guards first, once the v23 labels exist; submit after the meeting,
+     if the supervisor picks labels first, once each, and leave both queued:
      ```
      cd /netscratch/najib/multi-hmr && bash slurm/experiments/exp7_final_model.sh
      ```
@@ -2438,6 +2462,9 @@ give it to ChatGPT, download
 | 3611284 | check_3dpw_conversion | conversion check on the v23 labels (`LABELS=threedpw_anny_v23/labels`, `OUT=results/diagnostics/check_3dpw_conversion_v23`): OVERALL WARN (3575369: FAIL; :351); per split train FAIL (V4e 5.5%), validation FAIL (V4c forearm 0.877), test WARN (:352-354); body joints 14.1 / p95 21.1 mm (:337); surface 18.9 / 16.1 (:339); 2D +0.4 px (:340); gender m 0.000 / f 1.000, flip test worse, men 13.9 -> 20.0 mm (:322-325, :347); 0 of 1,080 two-person images miss an actor (:349); 87 fits, 22,912 frames, 16,694 label images (:350). 3.5 |
 | 3608336 | eval_rh | Relative Human smoke test (`N=20`, v5 00099, val): ran; its 20 cached predictions were reused by 3611285_0 (that log: "615 new images cached") |
 | 3611285 (task 1's own job id: 3611286 [Likely]) | eval_rh | Relative Human val, `--array=0-1`: _0 = v5 00099, _1 = the exp6 fine-tuned checkpoint (`[bone_fix] ON, 4 bone(s)`). 635 images, 2,130 labelled people, IoU >= 0.3. v5: mean predicted age adult 0.631 / kid 0.613 / baby 0.624, AUC 0.606 (127 vs 821), height 0.507 / 0.451 / 0.394, gender men 0.535 women 0.551 (accuracy 0.465), recall 0.471 (3611285_0:23-31). exp6: AUC 0.613, gender 0.533 / 0.562, recall 0.452 (3611285_1:25-33). Logs `logs/eval_rh_3611285_0.out`, `_1.out`; outputs `results/diagnostics/relative_human_val_anny_s2_shape_v5_00099/` and `..._exp6_v5_bonefix_00001/`. 3.4 |
+| 3611333 | exp7 (log `logs/exp7_final_model_3611333.out`) | exp7 smoke test, submitted 18 Oct, queued (A100 / L40S / RTXA6000): `EPOCHS=1 N_ITERS=20 EVAL_TEST=0 VAL_3DPW_N=20 N_VIS=2`, RUN `v5_pc_dist5_bonefix_v23_e1_it20`, 78-min limit. After `CHECK_ONLY=1` passed (label check PASS: 390 / 379 / 438 sampled people, 0 wrong gender, 0 without a fit; 87 fits). 0a step 6 |
+| 3611336 | exp7 (log `logs/exp7_final_model_3611336.out`) | exp7 fix arm, submitted 18 Oct, queued: v5 00099 + v5's bone fix + depth fix (person_center, x5) + v23 labels, 10 epochs, RUN `v5_pc_dist5_bonefix_v23_e10`, 5-h limit, `MASK_3DPW_SHAPE=0`. Output `results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10/` |
+| 3611339 | exp7 (log `logs/exp7_final_model_3611339.out`) | exp7 control arm, submitted 18 Oct, queued: same labels and schedule, old targets (root, x1), no bone fix, RUN `v5_root_dist1_nofix_v23_e10`, 5-h limit. Output `results/experiments/exp7_final_model/v5_root_dist1_nofix_v23_e10/` |
 
 **Experiments, one line each:** exp1 depth anchor (placement much better, slope not, likely cost; rule failed);
 exp2 children sampler (inconclusive at 2 epochs); exp3 global head loss (null); exp4 fingers crop + region-norm (both null); exp5
@@ -2672,13 +2699,15 @@ rebuild (or hand-edit the pptx as above).
 
 **The question on slide 17:** fine-tune v9 now (fixed targets, depth loss x5), or first fix the 3DPW labels, re-fit,
 then fine-tune? The student proposes the second. Since 18 Oct the re-fit and its check are done, so option 2 no
-longer waits for the labels (the question box says "(done 18 Oct)"). Record the supervisor's answer here after the
+longer waits for the labels (the question box says "(done 18 Oct)"). The student submitted option 2's final model
+(exp7) on 18 Oct, before the answer; if the supervisor picks option 1, cancelling its two arms is allowed (0a, step
+6). Record the supervisor's answer here after the
 meeting.
 
 **The children decisions (slide 10; 3.4; section 5, item 12):** (1) Path A (a limitation, with the Relative Human
 numbers of 18 Oct, 3.4) or Path B (A plus BEV-style weak labels from RH train, 1-2 weeks of code after exp7); the
-measurement the student proposed first is done. (2) `MASK_3DPW_SHAPE` on or off in exp7 (default off). Record both
-answers here after the meeting.
+measurement the student proposed first is done. (2) `MASK_3DPW_SHAPE` on or off in exp7 (default off; the run
+submitted on 18 Oct uses off). Record both answers here after the meeting.
 
 ---
 
