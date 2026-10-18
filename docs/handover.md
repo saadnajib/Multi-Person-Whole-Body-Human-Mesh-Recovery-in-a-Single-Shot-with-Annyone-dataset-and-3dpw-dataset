@@ -361,6 +361,29 @@ student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30, 20:00:00, check + teach
 (CHECK_ONLY PASS, 485 original-class keys), run 3 job 3614042; all PENDING (Priority) at submission. Logs:
 `logs/exp8_distill_vitb_3614191.out`, `logs/eval-test3dpw-3614192_0.out`, run 3 under
 `results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/`.
+**NAVER baseline DONE, 18 Oct evening [Certain, job 3614192]** (`logs/eval-test3dpw-3614192_0.out`, `.err` without
+errors): NAVER's own `models/multiHMR/multiHMR_672_L_anny.pt`, `--model_class multi_hmr_original`, 518/518 tensors
+loaded, our labels and settings (same `evaluate()`; Multi_HMR forces the helper bones to identity by design, so its
+numbers are helper-masked everywhere):
+  - AnnyOne test-100 (indices 579860-579959, helper bones masked = the same 100 images as our V1 holdout): PVE 60.3 mm,
+    PA-PVE 44.6, MPJPE 63.3, PA-MPJPE 45.0, precision 82.0%, recall 89.0%, F1 85.0. Ours (final, 3611336): 73.7 / 50.3 /
+    recall 87.0; v5 70.5 / 53.3 / 90.2; control 77.4 / 56.4 / 89.0.
+  - 3DPW test, v23 labels, all 8,190 images: PVE 126.9 mm, PA-PVE 68.8, MPJPE 129.4, PA-MPJPE 66.4, precision 75.0%,
+    recall 97.0%, F1 85.0. Ours (final): 89.0 / 57.6 / precision 64 / recall 99; v5 121.8; control 91.5.
+  - Caveats. [Likely] NAVER's model was trained on the whole AnnyOne release, so our 100 holdout images are probably in
+    ITS training set (in-sample for NAVER, held out for us): its 60.3 is not a fair test number for it. [Certain] On real
+    3DPW it is far worse than our final model (126.9 vs 89.0 mm PVE; 68.8 vs 57.6 PA-PVE), about v5's level (121.8).
+    [Certain] Its params / GFLOPs / ms are still NOT measured (pending). The login node cannot run model_cost.py
+    (model.py imports the renderer, which needs EGL: `ImportError: Unable to load EGL library`, seen 18 Oct), so it runs as
+    a GPU job: `cd /netscratch/najib/multi-hmr && git pull && bash slurm/diagnostics/model_cost.sh` (new script, 18 Oct
+    evening; defaults: NAVER's checkpoint + the final model, `--bench`, 30 min; log `logs/model_cost_<jobid>.out`, json
+    `results/diagnostics/model_cost_naver_vs_final.json`). Latency is measured for our class only; NAVER's ms cell stays
+    empty by design (model_cost.py bench()). When the log arrives: slide 24 NAVER row (params, GFLOPs), plan 3.2, this block.
+  - Consequence for the 95% bar (1b). Against NAVER on AnnyOne the bar would be 60.3 / 0.95 = 63.5 mm, which no student of
+    a 73.7 mm teacher can reach; against our ViT-L it is 77.6 mm. Against NAVER on 3DPW it is 126.9 / 0.95 = 133.6 mm,
+    trivially met (against ours 93.7). So slide 26's question 1 ("which baseline") now has numbers: the AnnyOne gap to
+    NAVER is 13.4 mm, likely in-sample for NAVER. And our final model already "beats the baseline" on 3DPW test but not
+    on AnnyOne, so the new-architecture route of 1b would hinge on AnnyOne. Deck: slides 20, 23, 24, 25, 26, 30 (section 9).
 **Deck rebuilt, 18 Oct (evening):** 30 slides in story order (overview, data, training, findings and fixes, final
 model, requirements and plan, appendix), replacing the 21-slide deck. Three files: `docs/supervisor_update_2026-10-19.pptx`,
 `docs/supervisor_talk_notes_2026-10-19.md` (speaker script, generated from `docs/deck_src/build.js`) and
@@ -631,6 +654,12 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   (v5 90.2); neck02 4.8 vs 175.8 deg, girth 0.996 vs 0.464, PVE_neck 11.0 vs 27.7 mm, head bone 8.9 vs 177.7 deg,
   global head 13.1 vs 13.0 (v5 12.0); fingers 8.3 vs 17.4 deg. One run per arm, no seed. Table and reading: section
   5, item 7.
+- NAVER's `multiHMR_672_L_anny` (the 1b baseline; job 3614192, 18 Oct evening, 0a) [Certain, log]: the same 100 holdout
+  images (helper bones masked) PVE 60.3, PA-PVE 44.6, MPJPE 63.3, PA-MPJPE 45.0, recall 89.0%, precision 82.0% (final
+  model 73.7 / 50.3 / recall 87.0); 3DPW test (v23, 8,190 images) PVE 126.9, PA-PVE 68.8, MPJPE 129.4, recall 97%,
+  precision 75% (final 89.0 / 57.6 / 99 / 64). [Likely] in-sample for NAVER on AnnyOne (trained on all of it). 95% bars
+  against NAVER: 63.5 mm AnnyOne (unreachable for a student of a 73.7 mm teacher), 133.6 mm 3DPW (already met); against
+  our ViT-L: 77.6 / 93.7. Params / GFLOPs / ms: pending (0a has the command).
 - Pilot noise: two identical configs differ by 7.6 mm PVE and 1.9 deg global head. One pilot resolves ~10 mm, ~3 deg,
   ~2 recall points.
 - Neck, v5 (all eight v5-line checkpoints alike): neck02 175.6 deg (half-turn), head 177.9 deg, global head only
@@ -748,9 +777,11 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   | exp6 neck pilot (3612075; bone fix from its args) | 120.2 | 68.7 | 124.8 | 53.0 | 100.0 | 72.7 / 55.0 / 89 |
   | exp7 control (3611339) | 91.5 | 59.7 | 90.9 | 62.0 | 99.0 | 81.2 / 60.6 / 89 |
   | final model (3611336) | **89.0** | **57.6** | **88.3** | 64.0 | 99.0 | 77.5 / 54.4 / 87 |
+  | NAVER `multiHMR_672_L_anny` (3614192; helper bones always masked) | 126.9 | 68.8 | 129.4 | 75.0 | 97.0 | 60.3 / 44.6 / 89 (masked = V1; likely in-sample) |
 
   Lines: 3612073:25-32 and :117-124; 3612074 the same; 3612075:26-33 and :118-125; 3611339:209-220; 3611336:218-229.
-  The AnnyOne column is the same script's last-100 AnnyOne test (V0, unmasked), not the V1 holdout above.
+  The AnnyOne column is the same script's last-100 AnnyOne test (V0, unmasked), not the V1 holdout above; NAVER's row
+  is the exception: Multi_HMR masks the helper bones by design, so its 60.3 compares with the V1 73.7, not with 77.5.
   [Certain] The final model is the best on these labels (6.5 mm better than v9) and finds more 3DPW people than v9
   (recall 99 vs 94). [Certain] Most of the v5 -> final gain is training on 3DPW at all (control 91.5); the fixes add
   2.5 mm PVE and 2.1 PA-PVE. [Likely] Precision is low for every model partly because 3DPW labels only the actors,
@@ -3163,7 +3194,7 @@ rebuild (or hand-edit the pptx as above).
 
 | result | slide text | speaker notes | what changes |
 |---|---|---|---|
-| NAVER baseline `multiHMR_672_L_anny`, job 3614192 (pending) | 23 (row 1b: "NAVER's Anny model: evaluation running (job 3614192)"), 24 (the NAVER row, all "pending"; the bars), 30 (row 3614192, "pending"); also named in 25 (week 1) | 23 (main: "reported against our ViT-L and against NAVER's ViT-L"; If asked: "It is being evaluated with our code on the same labels now (job 3614192)"), 24 ("which is being evaluated on the same labels now"), 25, 30 | the NAVER row (params, GFLOPs, ms; PVE / MPJPE on the AnnyOne holdout and the 3DPW test); which bar is the stricter one; the 1b evidence cell |
+| NAVER baseline `multiHMR_672_L_anny`, job 3614192: **DONE 18 Oct evening** (errors in the deck; params / GFLOPs / ms still pending) | now carried by 20 (3DPW line "NAVER 126.9"; source line), 23 (row 1b evidence), 24 (NAVER row "60.3 mm*" / "126.9 mm", footnote *, the bars 63.5 / 133.6 in the rule line), 26 (question 1), 30 (row 3614192); also 25 (week 1 "done 18 Oct") | 20, 23 (main + If asked), 24, 25, 26 (main + If asked), 30 | still pending: the NAVER row's parameters, GFLOPs and ms (`model_cost.py`, command in 0a); then replace the three "pending" cells on slide 24 |
 | exp8, the ViT-B student, job 3614191 (pending; smoke test 3613926 passed) | 24 (student row "pending (this week)"; the timeline bullet), 30 (row 3614191); also 1 ("ViT-B student running"), 2 (row 1b), 23 (row 1b, next), 25 (weeks 1 and 3) | 24, 23 (main), 25, 30 | the student's holdout and 3DPW-test PVE / MPJPE and its ratio against both ViT-Ls (bar <= 77.6 mm and <= 93.7 mm against ours); if it misses with a still-falling curve, week 3's longer run |
 | partial mask, age kept, job 3614042 (queued) | 19 ("Reading and next step": "job 3614042, queued; result after this meeting"), 30 (row 3614042, "queued"); also named in 23 (row 1a shape, next) and 25 (week 1) | 19 ("It is queued; the result comes after this meeting"), 25, 30 | Relative Human gender, AUC and babies' age, and the demo spread of muscle / weight with age supervised; whether it becomes the final ViT-L (decision on Sun 25 Oct, slide 25) |
 | the other four demo images of the 2-epoch model (runForBus, sitOnStairs, fencing frames, one photo; job 3581312) | none | 16 (If asked: "I have looked at 8 of these 12 images so far ..."), 27 (main: "the 8 real images I have seen so far"; If asked: "I have looked at 8 of these 12 images so far"), 26 (If asked: "in the 8 of its 12 images I have seen") | how many of the 12 show normal necks with the fix |
@@ -3174,13 +3205,15 @@ rebuild (or hand-edit the pptx as above).
 Done and in the deck, nothing pending: the 3DPW re-fit and the v23 check (slide 6), the Relative Human evaluations of
 v5, exp6 and the final model (slide 18), the final model (exp7; slides 8, 14, 15, 17 and 20), the v23 3DPW-test
 re-evaluations of v5, v9 e62 and exp6 (slide 20), the demo of the final model (slide 21), the masked arm (slides 18
-and 19) and the exp8 smoke test (slide 24).
+and 19), the exp8 smoke test (slide 24) and the NAVER baseline's errors (job 3614192; slides 20, 23, 24, 26, 30).
 
 **The question on slide 26:** last week's question was: fine-tune v9 now (fixed targets, depth loss x5), or first
 fix the 3DPW labels, re-fit, then fine-tune? The student chose the second and did it before the meeting: the re-fit
 and its check (18 Oct) and the final model (exp7, evening of 18 Oct; slide 20); note 26 says so. The box asks four
 questions (`docs/thesis_requirements_plan.md`, section 5): (1) for 1b, is the 95% bar against our ViT-L, NAVER-L or
-both (the student reports both), and does a smaller Multi-HMR-style student count as "not exactly Multi-HMR"? (2) Does
+both (the student reports both; NAVER: 60.3 mm AnnyOne, likely in-sample, and 126.9 mm 3DPW, vs ours 73.7 / 89.0, so
+NAVER's bars are 63.5 / 133.6 mm and ours 77.6 / 93.7), and does a smaller Multi-HMR-style student count as "not exactly
+Multi-HMR"? (2) Does
 a temporal refiner on frozen per-frame features count as "understands motion"? (3) Children: a limitation, or weak
 age labels from Relative Human (1-2 weeks)? (4) The submission date. If the supervisor still wants last week's option
 1, it is a new run (section 5, item 6). Record the supervisor's answers here after the meeting.
@@ -3282,11 +3315,13 @@ commands, the Monday bullets, the writing and clean-up list). Read it before pla
   called it pending and its numbers unverified; that is fixed there (its 3.1, item 7). [Likely] Part of the age
   shift is the 3DPW age label 0.55, so the `MASK_3DPW_SHAPE=1` arm (running) can go either way.
 - 1b route: a ViT-B student distilled from the final model (exp8; 101 M / 603 GFLOPs vs 318 M / 1927), ratios vs our
-  ViT-L and vs NAVER-L, bar x1.05; AnnyOne 95% about 50/50 [Guessing]. Get his yes first.
+  ViT-L and vs NAVER-L, bar x1.05; AnnyOne 95% about 50/50 [Guessing]. Get his yes first. NAVER-L measured 18 Oct
+  (job 3614192, 0a): 60.3 mm AnnyOne holdout [Likely in-sample for it] / 126.9 mm 3DPW, so its bars are 63.5 (out of
+  reach for a student of our 73.7 mm teacher) and 133.6 (met); ours 77.6 / 93.7. Its params / GFLOPs / ms: pending.
 - Fixed/committed on 18 Oct (`a9db35c`, on `main`): the NAVER adapter now exposes nearness / img_size / patch_size /
   person_center_idx; exp8, model_cost.py and the baseline script are committed, reviewed twice, never run on the cluster.
   Still to write: a masked-eval flag; `kd_shp` masking of the 8 constants.
-- Order: Mon evening adapter fix, commit, NAVER smoke test; the `MASK_3DPW_SHAPE=1` arm is already running (then its
+- Order: Mon evening adapter fix, commit, NAVER smoke test (all done: the NAVER evaluation ran as job 3614192, 0a); the `MASK_3DPW_SHAPE=1` arm is already running (then its
   own Relative Human run, with a `TAG`); the final model's Relative Human run is done (3612131); Tue 20 exp8 as one
   ~42-h job (never 5-h chunks). Student ~8 Nov, fallback 10 Nov, (1) closed 15 Nov, no buffer. Weeks 5-6 temporal
   refiner; weeks 7-8 writing, release, buffer. Write his answers to the four slide-26 questions into section 9.

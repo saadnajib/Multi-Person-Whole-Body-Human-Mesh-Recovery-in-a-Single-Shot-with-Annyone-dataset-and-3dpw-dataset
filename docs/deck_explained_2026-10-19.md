@@ -795,7 +795,7 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
   the slide says "size ratio" and "neck girth"), a box (fixes hold together; the cost: recall -2 points vs the
   control, -3 vs v5, PVE -3.7 mm inside the noise, depth slope still 0.42), the 3DPW line, the recipe line (10 epochs,
   40,000 images, 70% AnnyOne + 30% 3DPW-train, one run each, noise about 7.6 mm / 2 recall points) and the source
-  line (jobs 3611336, 3611339, 3612073-75).
+  line (jobs 3611336, 3611339, 3612073-75; NAVER 3614192). The 3DPW line now starts with "NAVER 126.9".
 - **What we did:** exp7: fix arm 3611336 and control 3611339 (Part 5).
 - **Numbers** [Certain, H 5 item 7; 3611336:191-229, 3611339:182-220; 3612073-3612075]:
 
@@ -814,7 +814,10 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
 
   3DPW test, all on the same labels and script: v5 121.8, v9 (old best) 95.5, 2-epoch neck pilot 120.2, control 91.5,
   final 89.0 mm PVE; PA-PVE 72.0 / 62.9 / 68.7 / 59.7 / 57.6; final recall 99% vs v9 94% [Certain, H 0b]. The slide
-  shows the PVE line and the recall; the PA-PVE values are in the notes.
+  shows the PVE line and the recall; the PA-PVE values are in the notes. NAVER's own Anny model
+  (`multiHMR_672_L_anny`, run with our code, labels and settings) on the same 8,190 images: PVE 126.9, PA-PVE 68.8,
+  MPJPE 129.4, PA-MPJPE 66.4, precision 75%, recall 97% [Certain, job 3614192, `logs/eval-test3dpw-3614192_0.out`; H 0a]: about v5's level and 37.9 mm behind the final
+  model. It never trained on 3DPW, so this is the fairer of its two numbers (slide 24).
 - **Result:** all fixes hold together; PA-PVE 50.3 is the best of every model with a V1 PA-PVE; the final model is the
   best on our 3DPW-Anny labels, mostly because of the 3DPW training (control 91.5); the fixes add 2.5 mm PVE
   [Certain, H 5 item 7].
@@ -868,21 +871,30 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
 
 - **On the slide:** a table requirement | status | evidence (18 Oct) | next (see Part 7 for the full text), in the
   order 1c, 2a, 1a pose, 1a shape, 1b, 2b, 3, and a "how to read" line. The evidence and next cells name the partial
-  mask (job 3614042), NAVER's model (job 3614192, running) and the ViT-B student (job 3614191, slide 24); the report
+  mask (job 3614042), NAVER's model (row 1b: "NAVER's model: 60.3 mm AnnyOne (likely in-sample) / 126.9 mm 3DPW vs
+  ours 73.7 / 89.0"; job 3614192) and the ViT-B student (job 3614191, slide 24); the report
   row says "draft exists (74 mm -> 70.5); 98 files hard-code /netscratch; no results or models committed"
   [D slide 23].
 - **Status words:** 1c met; 2a met; 1a pose partly; 1a shape partly, at risk; 1b not met; 2b not started; 3 partly
   [Certain, P 2; D slide 23].
-- **Not claimed:** that 1b is met by the current model. It is still Multi-HMR [Certain, P 3.1 item 1].
+- **NAVER baseline in row 1b** [Certain, job 3614192, `logs/eval-test3dpw-3614192_0.out`; H 0a]: NAVER's own Anny model gets 60.3 mm PVE on our AnnyOne holdout
+  and 126.9 on the 3DPW test, against our final model's 73.7 and 89.0. [Likely] it was trained on the whole AnnyOne
+  release, so the holdout images are probably in its training set (held out for us, not for it). [Certain] On real
+  3DPW it is far worse than ours.
+- **Not claimed:** that 1b is met by the current model. It is still Multi-HMR [Certain, P 3.1 item 1]. Nor that our
+  model beats NAVER's in general: it does on 3DPW, not on AnnyOne.
 
 ### Slide 24. Plan for 1b: a smaller model by distillation
 
 - **On the slide** [D slide 24]: one table with four rows: our ViT-L (final model, the teacher: 318.4 M params,
   1,927 GFLOPs, 110 ms on an A40, holdout PVE 73.7 mm, 3DPW test PVE 89.0 mm); the ViT-B student (101.4 M, 603,
-  51.4 ms, errors pending this week); NAVER's ViT-L Anny model (all pending, job 3614192); and "student vs teacher"
+  51.4 ms, errors pending this week); NAVER's ViT-L Anny model (params, GFLOPs and ms "pending"; AnnyOne holdout PVE "60.3 mm*", 3DPW test PVE
+  "126.9 mm"; job 3614192); and "student vs teacher"
   (3.14x fewer params, 3.19x fewer FLOPs, 2.14x faster; bars <= 77.6 mm and <= 93.7 mm). Under it: a "how to read"
-  line (cost measured in smoke test 3613926, 1 multiply-add = 2 FLOPs, 672 px, one person; the backbone alone is
-  304 M params and 1,917 GFLOPs), the 95% rule, and three bullets: recipe, timeline, risk with the question for the
+  line (our cost measured in smoke test 3613926, 1 multiply-add = 2 FLOPs, 672 px, one person; NAVER's errors from job
+  3614192; "*in-sample for NAVER, likely: trained on all of AnnyOne; our holdout is held out only for us"; "†same ViT-L
+  backbone: 304 M params, 1,917 GFLOPs alone"), the 95% rule with both pairs of bars (ours 77.6 / 93.7 mm, NAVER's
+  63.5 / 133.6 mm; "which counts: slide 26, Q1"), and three bullets: recipe, timeline, risk with the question for the
   supervisor. There is no teacher -> student drawing.
 - **What we did:** wrote exp8 (`slurm/experiments/exp8_distill_vitb.sh`). The student is a DINOv2 ViT-B initialised
   from NAVER's Multi-HMR ViT-B; a small projector (768 -> 1024) feeds heads copied from the teacher; it learns from the
@@ -891,8 +903,21 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
   [Certain, exp8 header; E exp8]. The slide's recipe bullet adds the distillation temperature, T 4.
 - **Status:** smoke test 3613926 passed end to end; full run job 3614191 launched 18 Oct (30 epochs, 20-hour limit);
   the slide says "result this week once the queue runs it"; if it misses the bar with a still-falling curve: train
-  longer and report the ratio as measured. NAVER's own Anny model on the same labels: job 3614192, pending (the first
+  longer and report the ratio as measured. NAVER's own Anny model on the same labels: done 18 Oct evening, job 3614192 (the first
   try, 3613928, crashed on a head-size mismatch, now fixed; that job id is not in the deck) [Certain, H 0a].
+- **NAVER baseline numbers** [Certain, job 3614192, `logs/eval-test3dpw-3614192_0.out`; H 0a] (518/518 tensors loaded, `--model_class multi_hmr_original`; Multi_HMR
+  masks the helper bones by design):
+
+  | | NAVER `multiHMR_672_L_anny` | our final model |
+  |---|---|---|
+  | AnnyOne holdout (same 100 images, helper bones masked): PVE / PA-PVE / MPJPE / PA-MPJPE, mm | 60.3 / 44.6 / 63.3 / 45.0 | 73.7 / 50.3 / - / - |
+  | AnnyOne: precision / recall / F1 | 82.0% / 89.0% / 85.0 | - / 87.0% / - |
+  | 3DPW test (v23, 8,190 images): PVE / PA-PVE / MPJPE / PA-MPJPE, mm | 126.9 / 68.8 / 129.4 / 66.4 | 89.0 / 57.6 / 88.3 / - |
+  | 3DPW: precision / recall / F1 | 75.0% / 97.0% / 85.0 | 64% / 99% / - |
+  | params / GFLOPs / ms | pending (`model_cost.py`, H 0a) | 318.4 M / 1,927 / 110 |
+
+  Caveats: [Likely] NAVER trained on the whole AnnyOne release, so our holdout is probably in-sample for it and its
+  60.3 is not a fair test number. [Certain] On 3DPW it is far worse than ours and about v5's level (121.8).
 - **Numbers** [Certain, exp8 smoke test 3613926, H 0a]:
 
   | | teacher ViT-L (final model) | student ViT-B | ratio |
@@ -907,7 +932,9 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
 - **The 95% rule:** for PVE and MPJPE on both the AnnyOne holdout and the 3DPW test, student error <= teacher error /
   0.95 (exp8's rule; targets about 77.6 mm and 93.7 mm), plus fewer params and FLOPs and faster [Certain, exp8 header
   "THE 95% RULE"]. The deck uses only this /0.95 form; the ratio is reported against both our ViT-L and NAVER's
-  [Certain, P 3.2].
+  [Certain, P 3.2]. Against NAVER the bars would be 60.3 / 0.95 = 63.5 mm on AnnyOne, which no student of a 73.7 mm
+  teacher can reach, and 126.9 / 0.95 = 133.6 mm on 3DPW, trivially met; against our ViT-L 77.6 / 93.7. The AnnyOne gap
+  to NAVER is 13.4 mm and likely in-sample for NAVER; that is why question 1 on slide 26 matters.
 - **Why ViT-B:** NAVER's own ViT-B equals its ViT-L on 3DPW (PVE 94.0 vs 94.1; the slide says "equal on 3DPW", the
   numbers are in the notes of slide 23) [Certain, fetched NAVER README, P 3.2]; our old ViT-S students had 1.17-1.54x
   their teacher's error (notes of slide 23) [Certain, P 2].
@@ -920,7 +947,7 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
 - **On the slide** [D slide 25]: a table week | dates | what happens | for, with six rows (weeks 1, 2, 3, 4, 5-6 and
   7-8), and a "how to read" line: part (1) of the list closes around 15 Nov; dropped: the ViT-S student, the children
   sampler runs and the depth-slope investigation (slope 0.42 becomes a stated limitation).
-- **Week 1 (19-25 Oct; 1a shape, 1b):** NAVER baseline result (job 3614192); the partial-mask run (job 3614042) and its
+- **Week 1 (19-25 Oct; 1a shape, 1b):** NAVER baseline: done 18 Oct (job 3614192, slide 24); the partial-mask run (job 3614042) and its
   Relative Human run; decide the final ViT-L on Sunday 25 Oct; the student's result (job 3614191) once the queue runs
   it: holdout, 3DPW test, the 95% table; code: a masked-evaluation flag and the student's shape-distillation mask;
   phenotype statistics on AnnyOne (r, slope, R^2) [D slide 25; P 4 week 1; H 0a].
@@ -935,8 +962,8 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
   [D slide 25; P 4 week 4].
 - **After:** weeks 5-6 (16-29 Nov) the temporal refiner (2b); weeks 7-8 (30 Nov-13 Dec) introduction, related work,
   conclusion, limitations, revision, code clean-up and the presentation, week 8 as buffer [D slide 25; P 4].
-- **Not on the slide:** Monday evening, write down the supervisor's answers and check jobs 3614042 (partial mask),
-  3614191 (student) and 3614192 (NAVER).
+- **Not on the slide:** Monday evening, write down the supervisor's answers and check jobs 3614042 (partial mask)
+  and 3614191 (student); NAVER's job 3614192 is done (its params / GFLOPs / ms still need `model_cost.py`, H 0a).
 - **Not claimed:** a buffer before 15 Nov. Tier (1) closes around 15 Nov with no slack [Likely, P 3.6]. Parts of the
   plan file still say the student launches Tue 20 Oct with 100 epochs; it was in fact launched on 18 Oct with
   30 epochs, as the deck says.
@@ -957,8 +984,10 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
   made most of the 3DPW gain (3DPW training did); a model that is not Multi-HMR (requirement 1b). Not in the deck's
   list but true: visibly varied body build on real photos is not claimed either (muscle, weight near 0.5; slide 19).
 - **Questions for the supervisor** (D slide 26, P 5):
-  1. (1b) Is the 95% bar against our ViT-L, NAVER's ViT-L, or both? Does a smaller Multi-HMR-style student count as
-     "not exactly Multi-HMR"?
+  1. (1b) Is the 95% bar against our ViT-L, NAVER's ViT-L, or both? (NAVER: 60.3 mm on AnnyOne, likely in-sample;
+     126.9 on 3DPW; ours 73.7 / 89.0) Does a smaller Multi-HMR-style student count as "not exactly Multi-HMR"?
+     Against NAVER the bar would be 63.5 mm on AnnyOne (out of reach for a student of a 73.7 mm teacher) and 133.6 mm
+     on 3DPW (already met); against our ViT-L 77.6 / 93.7 [Certain, job 3614192, `logs/eval-test3dpw-3614192_0.out`; H 0a].
   2. (2b) Does a temporal refiner on frozen per-frame features count as "understands motion"?
   3. Children: a stated limitation, or weak age labels from Relative Human (1-2 weeks of code)?
   4. When is the submission date?
@@ -989,7 +1018,8 @@ Background to these items, and what else is open:
 - **The x20 depth run for 10 epochs:** command given on 14 Oct, never confirmed [Certain, H 3.1, H 4d].
 - **3DPW precision 64% and ghost bodies** (not on this slide; slide 20 notes): about a third of the detections match
   no label; the split between bystanders and ghosts is unknown [Certain, P 3.1 item 4].
-- **NAVER baseline** (not on this slide; slides 23-25): pending (job 3614192) [Certain, H 0a].
+- **NAVER baseline** (not on this slide; slides 20, 23, 24, 26, 30): done, job 3614192: 60.3 mm AnnyOne holdout
+  (likely in-sample for NAVER), 126.9 mm 3DPW test; params / GFLOPs / ms pending [Certain, job 3614192, `logs/eval-test3dpw-3614192_0.out`; H 0a].
 
 ### Slide 28. Corrections to the draft and the repo
 
@@ -1036,7 +1066,7 @@ these lines come from H 1 "Headline", H 6 and H 7, and apart from the headline n
 **On the slide** (appendix) [D slide 30]: one table, job | what | path under `/netscratch/najib/multi-hmr`, with 13
 rows: v5 epoch 99; 3611336 final model (3DPW test in its log); 3611339 control; 3612325 masked-shape arm; 3614042
 partial mask (queued); 3614191 ViT-B student (smoke test 3613926; `logs/exp8_distill_vitb_3614191.out`); 3614192
-NAVER's Anny model on both test sets (pending; `logs/eval-test3dpw-3614192_0.out`,
+NAVER's Anny model on both test sets: 60.3 / 126.9 mm (`logs/eval-test3dpw-3614192_0.out`,
 `models/multiHMR/multiHMR_672_L_anny.pt`); 3611285 Relative Human v5 (_0) and neck pilot (_1); 3612131 / 3613616
 Relative Human final / masked; 3612078 / 3613617 demos; 3612073-75 3DPW test of v5, v9 e62 and the neck pilot;
 3611284 v23 label check; 3579014 exp6 bone fix. Checkpoints are not in git (release: week 4). The lists below are
@@ -1081,7 +1111,7 @@ job before 3611284 except 3579014 are not on it.
 | 3612325; 3613616; 3613617 | masked arm; its Relative Human run; its demo |
 | 3614042 | partial mask (7 constants, keep age), queued |
 | 3613926; 3614191 | exp8 student smoke test (passed); full student run (submitted 18 Oct) |
-| 3613928; 3614192 | NAVER baseline (crashed, fixed); resubmitted, pending |
+| 3613928; 3614192 | NAVER baseline (crashed, fixed); resubmitted, done 18 Oct evening: AnnyOne holdout PVE 60.3 (likely in-sample for NAVER), 3DPW test 126.9 |
 
 ---
 
@@ -1113,8 +1143,14 @@ Status words as on slide 23. Sources: P 2, P 3, H 0a, H 11.
   fix (P 2). The ViT-B student is training (job 3614191, submitted 18 Oct; smoke test 3613926 passed). Its cost is
   measured: 101.38 M params / 603.3 GFLOPs / 51.4 ms vs the teacher's 318.38 M / 1,927.4 GFLOPs / 110 ms (A40):
   3.14x fewer params, 3.19x fewer FLOPs, 2.14x faster (H 0a).
-- **Missing:** the student's accuracy (the 95% rule on both test sets); NAVER's own Anny model on the same labels
-  (job 3614192, pending); the supervisor's yes that a smaller student counts [P 3.2].
+- **Evidence, the baseline** [Certain, job 3614192, `logs/eval-test3dpw-3614192_0.out`; H 0a]: NAVER's own Anny model on our labels and settings: AnnyOne holdout PVE
+  60.3 / PA-PVE 44.6 / recall 89%; 3DPW test PVE 126.9 / PA-PVE 68.8 / recall 97%; ours 73.7 / 50.3 / 87% and 89.0 /
+  57.6 / 99%. [Likely] in-sample for NAVER on AnnyOne (trained on all of it). Consequences: against NAVER the 95% bar
+  would be 63.5 mm on AnnyOne (no student of a 73.7 mm teacher can reach it) and 133.6 mm on 3DPW (trivially met);
+  against our ViT-L 77.6 / 93.7. Our final model already beats NAVER on 3DPW but not on AnnyOne, so the
+  new-architecture route (1b-i) would hinge on AnnyOne.
+- **Missing:** the student's accuracy (the 95% rule on both test sets); NAVER's params / GFLOPs / ms (pending,
+  `model_cost.py`); the supervisor's yes that a smaller student counts, and which baseline sets the bar [P 3.2].
 - **Planned:** student result within days of the job starting (job 3614191, 20 h); fallback decision (train longer) right after; final table by 15 Nov [P 3.6, P 4].
   [Guessing] passing on 3DPW is likely; on AnnyOne about 50/50 (P 3.2).
 
@@ -1171,14 +1207,19 @@ had to learn real images [Certain for the restart cost, H 3.6; Likely for the re
 **Q2. Is it still Multi-HMR?**
 Yes. The architecture is the upstream Multi-HMR with its output resized for Anny and a bone correction that adds no
 parameters [Certain, P 2]. That is why requirement 1b is not met. Our route is a smaller ViT-B student (3.14x fewer
-params, 2.14x faster); whether that counts is your decision [Certain for the numbers, H 0a].
+params, 2.14x faster); whether that counts is your decision [Certain for the numbers, H 0a]. It is also not NAVER's
+checkpoint under another name: NAVER's own `multiHMR_672_L_anny`, run with our code on the same labels, gets 60.3 mm on
+the AnnyOne holdout (likely in-sample for it) and 126.9 on the 3DPW test, against our 73.7 and 89.0 [Certain, job 3614192, `logs/eval-test3dpw-3614192_0.out`; H 0a].
 
 **Q3. What does the 95% rule mean in practice?**
 For error measures, lower is better, so we read it as: the student's PVE and MPJPE must be at most the teacher's
 divided by 0.95, on both the AnnyOne holdout and the 3DPW test. With the final model's numbers that is about 77.6 mm
 holdout PVE and 93.7 mm 3DPW PVE; the deck uses this /0.95 form only. It must also have fewer
 params and FLOPs and be faster [Certain, exp8 header, P 3.2]. Open: is the larger model our ViT-L or NAVER's? We will
-report both.
+report both. **Which baseline, in numbers:** NAVER gets 60.3 mm on AnnyOne (likely in-sample: trained on all of AnnyOne)
+and 126.9 on 3DPW, so its bars would be 63.5 mm (out of reach for any student of our 73.7 mm teacher) and 133.6 mm
+(already met); against our ViT-L 77.6 / 93.7. The AnnyOne gap to NAVER is 13.4 mm [Certain, job 3614192, `logs/eval-test3dpw-3614192_0.out`; H 0a]. NAVER's params /
+GFLOPs / ms are pending.
 
 **Q4. Why do children fail?**
 On real photos, v5 gives children an adult age and puts their small size into the height value instead, so they look
@@ -1223,7 +1264,7 @@ the control it is -2.0 points (at the noise limit); against v5 -3.2: we state it
 **Q10. Are your 3DPW numbers comparable with published Multi-HMR numbers?**
 No. They are against our own Anny conversion, our MPJPE averages 163 Anny joints, and the labels have a conversion
 floor of about 14 mm [Certain, P 3.1 item 4]. We say "best on our 3DPW-Anny labels", never "best model". NAVER's own
-Anny checkpoint on the same labels is pending (job 3614192) [Certain, H 0a].
+Anny checkpoint on the same labels gets 126.9 mm PVE (ours 89.0) [Certain, job 3614192, `logs/eval-test3dpw-3614192_0.out`; H 0a].
 
 **Q11. Why is 3DPW precision only 64%?**
 3DPW labels only the one or two actors, not the bystanders, so a correctly detected bystander counts as a false
