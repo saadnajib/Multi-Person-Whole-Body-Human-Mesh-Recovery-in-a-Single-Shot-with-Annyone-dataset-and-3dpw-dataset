@@ -193,7 +193,11 @@ reported. The four pending items are steps 3-6, in this order.
    ```
    cd /netscratch/najib/multi-hmr && conda activate multihmr && python scripts/data/check_refit_task.py --seq courtyard_captureSelfies_00 --split train --new_root /netscratch/najib/multi-hmr/threedpw_anny_v23 --old_root /netscratch/najib/multi-hmr/threedpw_anny_full --seq_root /netscratch/najib/multi-hmr/data/3DPW/sequenceFiles --expect_gender_convention anny --expect_frame_grid shared
    ```
-4. Pending (2): the full re-fit. **First run 17 Oct, job 3590385** [Certain, the student's `sacct` and check loop]:
+4. **DONE 18 Oct.** The full re-fit is complete: rerun job 3602813 (36 tasks, no V100) ended with every task
+   COMPLETED on A100/H100/L40S/RTX3090/RTXA6000 nodes; the missing-task check prints nothing and counts 87 `.npz`;
+   the `--seq all` post-check on the login node ends `RESULT: PASS - 0 violation(s) in 60 sequence(s); expected
+   gender_convention 'anny', frame_grid 'shared'` (saved as `logs/check_refit_all_v23.log`). Next: step 5 (labels
+   on the login node, then the conversion check). History of this step: the full re-fit. **First run 17 Oct, job 3590385** [Certain, the student's `sacct` and check loop]:
    51 of 87 fits done (tasks 9 and 10 skipped as planned, 18 s each). The other 36 tasks all FAILED after 33-40 s,
    every one on the two V100-32GB nodes `gifu` (16) and `glendale` (20); all 51 that worked ran on other nodes
    (H200-AV serv-3312: 36, A100-PCI serv-3315: 7, RTX3090 serv-9216/9218: 4, RTXA6000-AV serv-9224: 3, H200
