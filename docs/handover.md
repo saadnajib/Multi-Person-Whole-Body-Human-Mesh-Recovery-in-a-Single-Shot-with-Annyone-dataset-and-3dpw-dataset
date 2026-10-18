@@ -70,8 +70,8 @@ file were merged into `main` (section 8).
   [Certain, log]. The shape head regresses to the training median, in the synthetic tails and on real photos.
 - A ranked plan: measure on Relative Human (real photos with age groups) first; then a limitation (Path A) or
   BEV-style weak labels (Path B, 1-2 weeks of code after exp7). Both are for the supervisor on Monday (0a, step 8).
-- Another session added `--mask_3dpw_shape` (default off; exp7 env `MASK_3DPW_SHAPE`, default 0; commit `a0926fd`,
-  not on `main` yet). On or off in exp7 is a Monday decision (3.4).
+- `--mask_3dpw_shape` added (default off; exp7 env `MASK_3DPW_SHAPE`, default 0; commit `a0926fd`, on `main`). The
+  first exp7 run (18 Oct) uses it off; a mask-on run is a possible follow-up (3.4).
 - Deck: slide 10 (children) corrected, slides 14 and 16 and notes 8, 10, 14, 16, 17 made consistent (section 9).
 
 **What happened on 18 Oct** (this version; details in 3.4, 3.5, 0a and section 8):
@@ -347,7 +347,7 @@ item 2).
 Done on 17 Oct: the re-fit test (job 3589270; 0b, 4e step 1) and the H100 route for the converter (4f). The full
 re-fit (job 3590385) made 51 of 87 fits; the 36 that ran on the V100 nodes gifu/glendale failed and are rerun (0a, 4).
 Evening: the children re-check, the ranked plan and the corrected slide 10 (3.4; section 5, item 12; section 9);
-the `--mask_3dpw_shape` flag by another session (commit `a0926fd`, not on `main` yet).
+the `--mask_3dpw_shape` flag (commit `a0926fd`, on `main`).
 
 Done on 18 Oct, nothing to ask for: the full re-fit (rerun job 3602813; 87 fits; `--seq all` post-check PASS on 60
 sequences, `logs/check_refit_all_v23.log`; men 19.0 -> 14.7 mm, women 15.0 -> 15.2, frames missing an actor 54% ->
@@ -655,7 +655,7 @@ followed by the path (e.g. `.../main/train.py`), if your tools can fetch URLs; o
 | `--alpha_global_rot`, `--global_rot_bones` | train.py | exp3 loss on global head/neck03/wrist orientation |
 | `--rotmat_region_norm 1` | train.py | exp4 rotation loss averaged per body region |
 | `--mask_3dpw_hands 1` | train.py | ignore 3DPW finger labels (they are rest pose). Use in any mixed fine-tune |
-| `--mask_3dpw_shape 1` | loss.py, train.py | new 17 Oct evening (another session; commit `a0926fd`, not on `main` yet): no shape L1 on the 8 converter constants (age, muscle, weight, cupsize, firmness, african, asian, caucasian) for 3DPW-Anny people; gender, height, proportions stay. Default 0. exp7: `MASK_3DPW_SHAPE` (3.4) |
+| `--mask_3dpw_shape 1` | loss.py, train.py | new 17 Oct evening (commit `a0926fd`, on `main`): no shape L1 on the 8 converter constants (age, muscle, weight, cupsize, firmness, african, asian, caucasian) for 3DPW-Anny people; gender, height, proportions stay. Default 0. exp7: `MASK_3DPW_SHAPE` (3.4) |
 | `--rotmat_loss geodesic` | train.py | exp5 geodesic rotation loss (default `l1`) |
 | `--bone_fix <json>` | train.py, trace, demo.py | exp6 constant correction `R <- R·C` for listed bones; saved into checkpoint args |
 | `--dump_bones 1`, `--dump_bone_names all` | trace | per-bone error table (verdicts FLIP_TWIST, FLIP_SWING, ...) |
@@ -1182,7 +1182,7 @@ Reading:
   (`train.py:~647-662`). [Guessing] Part of v9's 3DPW gain (102.5 vs 119.1) may come from that.
 - [Certain] Not the root cause: v5 never saw 3DPW and shows the same real-photo pull. 3DPW has no children.
 
-**`--mask_3dpw_shape` (new on the evening of 17 Oct; another session; commit `a0926fd`, not on `main` yet):**
+**`--mask_3dpw_shape` (new on the evening of 17 Oct; commit `a0926fd`, on `main`):**
 - What: with `1`, people tagged `has_hand_labels 0` (3DPW-Anny) get no shape L1 on the 8 constants. Gender, height
   and proportions stay supervised. AnnyOne people are unchanged. It reuses the `HandLabelFlag` tag.
 - Default `0`. In exp7: env `MASK_3DPW_SHAPE` (default `0`; `1` adds `_shpmask` to the run names and requires the
@@ -2031,7 +2031,7 @@ done.
    - Labels: `LABELS` defaults to `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels`. The script refuses labels
      under `threedpw_anny_full` and fits not made with `--gender_convention anny --frame_grid shared`. Plus
      `--mask_3dpw_hands 1` (3DPW fingers are rest pose).
-   - 3DPW shape mask (new on the evening of 17 Oct, another session; commit `a0926fd`, not on `main` yet):
+   - 3DPW shape mask (new on the evening of 17 Oct; commit `a0926fd`, on `main`):
      `MASK_3DPW_SHAPE`, default `0` = unmasked, as all earlier runs. `1` passes `--mask_3dpw_shape 1` to both arms
      (fix and control stay matched) and adds `_shpmask` to the run names, so a masked run never shares a folder with
      an unmasked one. On or off is a Monday decision (0a, step 8; 3.4); the run submitted on 18 Oct uses `0`. The
