@@ -1,0 +1,53 @@
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+Human Mesh Recovery (HMR) estimates the 3D surface of people from images by
+regressing the parameters of a parametric body model. Almost all existing
+systems target the SMPL family, whose restrictive license and scan-derived
+shape space limit both commercial use and demographic coverage. Anny is a
+recently released, fully open (Apache~2.0) body model whose shape is
+controlled by interpretable phenotype parameters such as age, gender, height
+and weight, spanning infants to elders within a single model.
+
+This thesis extends Multi-HMR, a single-shot multi-person HMR architecture, to
+predict Anny parameters instead of SMPL-X. The output head is redesigned to
+regress 163 bone rotations in a continuous 6D representation together with 11
+phenotype parameters, and the network is trained on the synthetic Anny-One
+dataset. Starting from a Multi-HMR ViT-L backbone, a staged
+transfer schedule (frozen, partially unfrozen, fully unfrozen) reduces the
+per-vertex error on a held-out Anny-One split from 145\,mm to 74.3\,mm.
+
+Two systematic defects were found and corrected through measurement rather than
+guesswork. First, the shape head was found to regress dataset-average phenotype
+values because the shape loss was weighted 100$\times$ below the geometric
+losses; re-weighting reduced the age error from $+0.199$ to $-0.002$ and the
+height error from $-0.154$ to $-0.026$ (in phenotype units). Second, a
+persistent neck elongation artifact was traced, by eliminating four candidate
+causes with targeted experiments, to linear-blend-skinning stretch across
+Anny's stacked neck bones, a property of the rig rather than of the network.
+
+To address model size, a knowledge distillation framework trains a ViT-S
+student from the ViT-L teacher. Distilling backbone features alone with a
+temperature-scaled KL divergence left the student at 193\,mm PVE; the
+shortfall was traced to the randomly initialised prediction heads. Transferring
+the teacher's heads failed at first because their width-dependent input
+projections could not be copied; feeding the heads teacher-width tokens
+through the learned distillation projector lets all head weights transfer and
+brings the student to 114.5\,mm PVE at 8.6$\times$ fewer parameters, with each
+intermediate step measured.
+
+Finally, an optimisation-based converter fits Anny parameters to the SMPL
+ground truth of the real-world 3DPW dataset. Its first version carried a
+34\,mm error floor that was identical for every frame and every person; the
+cause was a joint correspondence that was wrong by 25\,cm for one spine joint,
+invisible by name but obvious once the two rest skeletons were compared
+geometrically. With a geometry-verified correspondence and rest-pose
+``virtual joints'' that close the remaining definition gap between the rigs,
+the error falls to 13--20\,mm, and all 87 person--sequences of 3DPW are
+converted into Anny-space labels. Training with 30\,\% real images reduces the
+error on real photographs by 14\,\% for the teacher (119 to 103\,mm on
+3DPW-test) and 11\,\% for the student (140 to 124\,mm) at a cost of 4--6\,mm on
+synthetic data; a held-back test split shows that the 3DPW validation split,
+which shares actors with training, over-states this gain by a factor of two.
+All engineering fixes are exposed as command-line flags so that every
+experiment is reproducible under identical settings.

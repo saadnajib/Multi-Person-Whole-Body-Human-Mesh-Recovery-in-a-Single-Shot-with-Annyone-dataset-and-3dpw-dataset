@@ -1,0 +1,64 @@
+\appendix
+
+\chapter{Reproduction: scripts and flags}
+\label{app:scripts}
+
+Every experiment in this thesis is a Slurm job script in the project
+repository; the table lists the ones behind the reported numbers. All of them
+run \texttt{train.py}, \texttt{smpl\_to\_anny.py} or \texttt{demo.py} with
+command-line flags only, so any row of any table can be re-run without
+editing code.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{p{4.6cm}p{8.6cm}}
+\toprule
+Script & Produces \\
+\midrule
+\texttt{train\_step1\_pretrained\_bb.sh}, \texttt{train\_step2\_frozen\_bb.sh} & teacher stages 1--2 (Table~\ref{tab:main}) \\
+\texttt{train\_s2\_partialft.sh}, \texttt{train\_s2\_boosted\_v4.sh}, \texttt{train\_s2\_shape\_v5.sh} & teacher stages 3--5; \texttt{anny\_s2\_shape\_v5} is the teacher \\
+\texttt{run\_eval\_test.sh} & four-metric evaluation on the Anny-One holdout \\
+\texttt{train\_distill\_vits.sh} \ldots \texttt{\_v6.sh}, \texttt{\_v6b.sh}, \texttt{\_v6c.sh} & students v1--v6c (Tables~\ref{tab:student_runs}--\ref{tab:kd_eval}) \\
+\texttt{train\_distill\_vits\_v7\_mixed.sh} & mixed synthetic--real student (Section~\ref{sec:mixed}) \\
+\texttt{apply\_student\_fix.py}, \texttt{\_v2.py}, \texttt{\_v3.py} & patches adding head transfer, warm-up freeze and \texttt{--head\_dim} to \texttt{train.py}/\texttt{model.py} \\
+\texttt{apply\_speed\_fix.py} & TF32 and bf16 teacher backbone \\
+\texttt{apply\_mixed\_data\_fix.py}, \texttt{datasets/threedpw\_anny.py} & mixed sampler and 3DPW-Anny evaluation loader \\
+\texttt{run\_smpl\_to\_anny.sh}, \texttt{run\_smpl\_to\_anny\_scenes\_v21.sh} & single-scene and four-scene conversion (Tables~\ref{tab:fit_versions}, \ref{tab:fit_scenes}) \\
+\texttt{run\_3dpw\_list.sh}, \texttt{run\_smpl\_to\_anny\_task.sh}, \texttt{run\_build\_labels.sh} & whole-dataset conversion: task list, Slurm array, label files \\
+\texttt{render\_anny\_fit.py}, \texttt{check\_anny\_fit.py} & overlays with ground-truth vs.\ fitted joints; structural checks of a fit \\
+\texttt{check\_mask\_boost.py}, \texttt{compare\_gt\_pred\_shape.py}, \texttt{phenotype\_stats.py} & diagnostics of Chapter~\ref{ch:ablation} \\
+\bottomrule
+\end{tabular}
+\caption{Job scripts and patches behind the reported experiments.}
+\label{tab:scripts}
+\end{table}
+
+\chapter{SMPL--Anny joint correspondence}
+\label{app:mapping}
+
+The correspondence used by the final converter, with the rest-pose offset of
+each virtual joint (Section~\ref{sec:smpl2anny}). Offsets are measured on the
+two rest skeletons after aligning them at the hip midpoint and scaling SMPL to
+Anny's hip--neck length (factor 0.864); limb joints use the bone head.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llr}
+\toprule
+SMPL joint & Anny bone & virtual-joint offset (cm) \\
+\midrule
+pelvis & \texttt{root} & 11.6 \\
+left / right hip & \texttt{upperleg01.L/R} & 4.3 \\
+spine1 / spine2 / spine3 & \texttt{spine03} / \texttt{spine02} / \texttt{spine01} & 3--7 \\
+neck & \texttt{neck01} & 0 (reference) \\
+left / right collar & \texttt{clavicle.L/R} & 5 \\
+head & \texttt{head} & --- \\
+shoulder / elbow / wrist / hand & \texttt{upperarm01} / \texttt{lowerarm01} / \texttt{wrist} / \texttt{finger2-1} & --- \\
+knee / ankle / foot & \texttt{lowerleg01} / \texttt{foot} / \texttt{toe1-1} & --- \\
+\bottomrule
+\end{tabular}
+\caption{Final SMPL$\rightarrow$Anny correspondence. The first converter had
+\texttt{spine1}$\rightarrow$\texttt{spine01} (25\,cm too high) and the hips on
+\texttt{pelvis.L/R}.}
+\label{tab:mapping}
+\end{table}

@@ -1,0 +1,1379 @@
+% =============================================================================
+% main.tex  --  thesis body, \input from the scrbook template
+%
+% Every number in a table below was measured in this project. Experiments that
+% have not been run yet are marked \TODO{...} so nothing is fabricated. Search
+% for "TODO" before submission and fill each one from the corresponding log.
+% =============================================================================
+
+% --- \TODO, \mm and the packages used below are defined in thesis.tex ------
+
+% =============================================================================
+\chapter{Introduction}
+\label{ch:intro}
+% =============================================================================
+
+\section{Problem}
+
+Human Mesh Recovery (HMR) is the task of estimating the full 3D surface of the
+people visible in an image or video. Rather than regressing thousands of
+vertices directly, HMR methods predict the low-dimensional parameters of a
+\emph{parametric body model}: a differentiable function that maps a pose vector
+and a shape vector to a watertight mesh. The parametric model supplies a strong
+anatomical prior, makes the output animatable, and lets a network learn from a
+compact target.
+
+Almost every HMR system published in the last decade targets the SMPL family of
+body models~\cite{loper2015smpl,romero2017mano,pavlakos2019smplx}. Two
+properties of that family motivate this thesis. First, SMPL is released under a
+research-only license that forbids commercial use. Second, its shape space is
+learned by principal component analysis over 3D scans of adults, so it does not
+faithfully represent children, the elderly, or the extremes of body type, and
+its ten shape coefficients carry no semantic meaning.
+
+Anny~\cite{bregier2025anny} is a recently released body model that addresses
+both points. It is published under the Apache~2.0 license, and its shape is
+controlled by \emph{phenotype} parameters, e.g.\ \texttt{age}, \texttt{gender},
+\texttt{height}, \texttt{weight}, \texttt{proportions}, that are interpretable
+and calibrated against WHO population statistics. Anny is accompanied by
+Anny-One, a large synthetic dataset of photorealistic renderings with exact
+ground truth. No published multi-person HMR system predicts Anny parameters.
+
+The problem addressed here is therefore: \emph{adapt a strong multi-person HMR
+architecture so that it outputs Anny parameters, train it on Anny-One, and
+reduce its size substantially while retaining accuracy}. The research question
+posed by the supervising group is whether an accurate and efficient multi-person
+HMR system for Anny can be trained, with a model size significantly smaller than
+a strong baseline.
+
+\section{Motivation}
+
+Multi-HMR~\cite{baradel2024multihmr} is a single-shot, multi-person, whole-body
+HMR network: one forward pass of a Vision Transformer (ViT) detects every person
+in the image and regresses their SMPL-X parameters and 3D location. It is an
+attractive base because detection and mesh regression share one backbone, the
+architecture is body-model agnostic in principle (the body model appears only
+in the final layer and in the loss), and public checkpoints with several
+backbone sizes exist. Its best configuration, however, uses a ViT-L backbone
+of roughly 300\,M parameters, which is far from the efficiency target.
+
+Adapting it to Anny is not a one-line change. Anny has 163 bones where SMPL-X
+has 55, expresses pose as $4{\times}4$ transforms rather than axis-angle vectors,
+and has a shape space with no correspondence to SMPL-X's PCA coefficients.
+Meeting the size target additionally requires a compression strategy that does
+not simply discard the accuracy of the large model.
+
+\section{Contributions}
+
+\begin{enumerate}
+  \item A working Multi-HMR variant that predicts Anny parameters (163 bone
+        rotations in a 6D representation plus 11 phenotypes), trained on
+        Anny-One, reaching 74.3\,mm PVE on a held-out split from a 145\,mm
+        starting point via a staged backbone-transfer schedule
+        (Chapter~\ref{ch:experiments}).
+  \item A knowledge-distillation framework that compresses the ViT-L model
+        8.6$\times$ into a ViT-S student. Feature-level distillation alone
+        left the student at 193\,mm PVE; transferring the teacher's prediction
+        heads through a learned projector that feeds them teacher-width tokens
+        brings it to 127\,mm, with each intermediate step measured
+        (Section~\ref{sec:kd}, Section~\ref{sec:kd_results}).
+  \item Two measured defects and their fixes: a shape head that regressed
+        dataset averages because of loss-weight imbalance, and a neck
+        elongation artifact whose cause was isolated by eliminating four
+        alternative hypotheses (Chapter~\ref{ch:ablation}).
+  \item An optimisation-based converter from SMPL ground truth to Anny
+        parameters whose joint correspondence is verified by rest-pose
+        geometry rather than by name, and which closes the remaining
+        definition gap between the two rigs with \emph{virtual joints}. The
+        error floor fell from 34\,mm to 13--20\,mm, and the whole of 3DPW
+        (87 person--sequences) was converted into Anny-space labels for mixed
+        synthetic--real training (Section~\ref{sec:smpl2anny},
+        Section~\ref{sec:fit_results}).
+  \item A reproducible experimental setup in which every intervention is a
+        command-line flag, together with a documented set of pipeline bugs
+        (silent weight loading, unit mismatches, per-image intrinsics) whose
+        symptoms are easily mistaken for model failures
+        (Section~\ref{sec:pipeline}).
+\end{enumerate}
+
+\section{Outline}
+
+Chapter~\ref{ch:related} reviews parametric body models, HMR architectures and
+knowledge distillation, and states the research gap. Chapter~\ref{ch:method}
+gives the formal problem statement, the network, its inputs and outputs, and the
+loss functions. Chapter~\ref{ch:experiments} describes datasets, metrics,
+baselines and the main results. Chapter~\ref{ch:ablation} presents ablations
+and the two root-cause investigations. Chapter~\ref{ch:discussion} discusses
+what did and did not improve and why, and Chapter~\ref{ch:conclusion} concludes.
+
+% =============================================================================
+\chapter{Related Work}
+\label{ch:related}
+% =============================================================================
+
+\section{Parametric body models}
+
+A parametric body model is a differentiable function
+$M(\boldsymbol{\theta},\boldsymbol{\beta}) \rightarrow \mathbf{V}\in\mathbb{R}^{N\times 3}$
+that maps a pose vector $\boldsymbol{\theta}$ and a shape vector
+$\boldsymbol{\beta}$ to $N$ mesh vertices. Pose is applied by linear blend
+skinning (LBS): every vertex is a weighted combination of the transforms of a
+few nearby bones, so the mesh deforms smoothly as the skeleton moves.
+
+\paragraph{SMPL~\cite{loper2015smpl}.} The pioneering model of this family
+(2015) has 6,890 vertices, 24 joints, and a shape space of 10 PCA coefficients
+learned from thousands of registered scans. Its parameters are a global
+orientation (3), body pose (69 axis-angle values for 23 joints), translation
+(3), and betas (10). SMPL-H~\cite{romero2017mano} adds 15 articulated joints per
+hand, and SMPL-X~\cite{pavlakos2019smplx} adds an expressive face (jaw, eyes and
+10 expression coefficients), giving 55 joints in total. Multi-HMR predicts
+SMPL-X.
+
+\paragraph{Anny~\cite{bregier2025anny}.} Anny (2025) departs from the
+scan-based design. Its mesh (13,718 vertices, 13,710 quad faces) and rig of
+163 bones come from the open MakeHuman project, and its shape is a set of
+artist-authored blendshapes controlled by \emph{phenotypes}. The subset used
+in this work is \texttt{gender}, \texttt{age}, \texttt{muscle}, \texttt{weight},
+\texttt{height}, \texttt{proportions}, \texttt{cupsize}, \texttt{firmness} and
+three ethnicity blends (\texttt{african}, \texttt{asian}, \texttt{caucasian}),
+each in $[0,1]$. Pose is a $4{\times}4$ transform per bone. Because the model
+is built from open assets rather than scans it is free of biometric-data
+constraints and is released under Apache~2.0. The authors show that HMR
+models trained with Anny-One match those trained with scan-based models.
+
+Two properties of Anny's rig matter later in this thesis. Of the 163 bones,
+roughly 88 are \emph{helper} or \emph{deform} bones (breast, spine and neck
+subdivisions, face micro-bones) whose rotation cannot be inferred from an
+image; and the neck is modelled by three stacked bones
+(\texttt{neck01}, \texttt{neck02}, \texttt{neck03}) plus \texttt{head}.
+
+\section{Human mesh recovery}
+
+Early HMR methods regressed SMPL parameters for a single cropped person, most
+influentially HMR~\cite{kanazawa2018hmr} with an iterative regression head.
+HMR2.0~\cite{goel2023humans4d} replaced the convolutional backbone with a
+Vision Transformer and showed that a large ViT backbone trained on a broad
+mixture of data is a strong, simple recipe, and extended it to video by tracking
+people in 3D.
+
+Multi-person HMR adds detection. Two-stage methods run a person detector and
+then a single-person HMR on each crop, which is slow and loses inter-person
+context. Single-shot methods such as ROMP~\cite{sun2021romp} and
+BEV~\cite{sun2022bev} predict a person-centre heatmap and per-location
+parameters in one pass.
+
+\paragraph{Multi-HMR~\cite{baradel2024multihmr}.} This is the base of the
+present work. A ViT backbone (DINOv2~\cite{oquab2023dinov2} initialisation)
+produces one token per $14{\times}14$ image patch. A small MLP scores each
+patch as ``a person's primary keypoint is here'', and detected tokens become
+queries to the \emph{Human Perception Head} (HPH), a stack of cross-attention
+blocks in which every query attends to the full image and to the other queries.
+The HPH outputs SMPL-X parameters, a 2D offset, and a log-depth from which the
+3D translation is recovered through the camera intrinsics. Multi-HMR is trained
+on synthetic data (BEDLAM~\cite{black2023bedlam}, AGORA~\cite{patel2021agora}
+and the authors' close-up dataset CUFFS) and reports, with a ViT-B backbone and
+HPH head, 73.5\,mm MPJPE on 3DPW; a ViT-S backbone at $448{\times}448$ runs at
+roughly 30\,fps and a ViT-L at $896{\times}896$ at roughly 5\,fps on a V100.
+
+\section{Knowledge distillation}
+
+Knowledge distillation~\cite{hinton2015distilling} trains a small
+\emph{student} network to reproduce the behaviour of a large, already-trained
+\emph{teacher}. The original formulation matches the teacher's softened
+output probabilities with a Kullback--Leibler (KL) divergence at temperature
+$T$, scaling the gradient by $T^2$ so that its magnitude is independent of
+$T$. \emph{Feature} distillation~\cite{romero2015fitnets} instead matches
+intermediate representations, which is the form used here: the student
+backbone is asked to reproduce the teacher backbone's patch tokens, and a
+learned linear projector bridges the different channel widths. Distillation
+is the standard way to obtain a small model that retains most of a large
+model's accuracy, and it is directly applicable to Multi-HMR because the
+backbone is a separable module in front of the heads.
+
+\section{Research gap}
+
+Three gaps are addressed.
+\begin{enumerate}
+  \item \textbf{No HMR network predicts Anny.} All multi-person HMR systems
+        output SMPL-family parameters. Using Anny requires redesigning the
+        output layer for 163 rotations and semantic phenotypes, converting the
+        ground truth, and re-examining the loss, since Anny's helper bones and
+        phenotype space have no SMPL-X analogue.
+  \item \textbf{Model size.} The best Multi-HMR configuration uses a ViT-L
+        backbone of $\sim$300\,M parameters. The thesis target is a
+        25--50\,\% or larger reduction at similar accuracy, which the paper's
+        own ablations show a from-scratch ViT-S does not achieve (80.1 vs.\
+        73.5\,mm MPJPE on 3DPW for ViT-S vs.\ ViT-B). Distillation is the
+        natural tool and has not been applied to this architecture.
+  \item \textbf{Real-image evaluation in Anny space.} Anny-One is synthetic.
+        Real-world benchmarks such as 3DPW~\cite{vonmarcard2018_3dpw} carry
+        SMPL ground truth, so evaluating or training an Anny model on them
+        requires converting SMPL parameters into Anny's space, which no
+        existing tool does.
+\end{enumerate}
+
+% =============================================================================
+\chapter{Method}
+\label{ch:method}
+% =============================================================================
+
+\section{Problem statement}
+
+Given an RGB image $\mathbf{I}\in\mathbb{R}^{H\times W\times 3}$ with (optionally
+known) intrinsics $\mathbf{K}\in\mathbb{R}^{3\times3}$, containing an unknown
+number $n$ of people, predict for each person $i\in\{1,\dots,n\}$:
+\begin{align}
+  \mathbf{R}_i &\in SO(3)^{J},\quad J=163 \quad\text{(per-bone rotations)}\\
+  \boldsymbol{\phi}_i &\in [0,1]^{P},\quad P=11 \quad\text{(phenotypes)}\\
+  \mathbf{t}_i &\in \mathbb{R}^3 \quad\text{(3D translation in camera coordinates)}
+\end{align}
+such that the Anny mesh
+$\mathbf{V}_i = M_{\text{Anny}}(\mathbf{R}_i,\boldsymbol{\phi}_i) + \mathbf{t}_i$
+matches the person's true body surface. A secondary objective is to do this with
+a network whose parameter count is a small fraction of the ViT-L baseline.
+
+\section{Network architecture}
+\label{sec:arch}
+
+The architecture (Figure~\ref{fig:arch}) follows Multi-HMR; the modifications
+are confined to the parameter head and the body-model layer.
+
+\paragraph{Backbone.} A DINOv2 ViT with patch size 14 maps a
+$672{\times}672$ input to a $48{\times}48$ grid of $C$-dimensional tokens
+$\mathbf{z}\in\mathbb{R}^{2304\times C}$ ($C{=}1024$ for ViT-L, 768 for ViT-B,
+384 for ViT-S).
+
+\paragraph{Detection.} A two-layer MLP scores every token; after non-maximum
+suppression, tokens above a threshold are treated as detected people. A second
+MLP predicts a 2D sub-patch offset so the person's primary keypoint (the head)
+is localised more finely than the patch grid.
+
+\paragraph{Human Perception Head.} Detected tokens become queries to a
+cross-attention transformer (dimension 512, 2 blocks, 16 heads). Each query
+attends to all image tokens and, through self-attention, to the other people.
+The output token $\mathbf{y}_i$ feeds three MLPs.
+
+\paragraph{Anny parameter head.} This is the main architectural change.
+\begin{itemize}
+  \item \emph{Pose.} Rotations are regressed in the continuous 6D
+        representation of Zhou et al.~\cite{zhou2019continuity}: the MLP
+        outputs $\mathbf{r}_i\in\mathbb{R}^{163\times 6}$ as a residual on a
+        fixed mean-pose buffer, and each 6-vector is mapped to a rotation
+        matrix by Gram--Schmidt orthonormalisation. This replaces SMPL-X's
+        $55{\times}3$ axis-angle output, avoiding the discontinuities of
+        axis-angle regression.
+  \item \emph{Helper-bone masking.} A fixed binary mask
+        $\mathbf{m}\in\{0,1\}^{163}$ marks 75 bones as predictable and forces
+        the remaining 88 helper bones to identity,
+        $\mathbf{R}_{i,j}\leftarrow m_j\mathbf{R}_{i,j}+(1-m_j)\mathbf{I}$.
+        The same mask is applied to the ground truth so those bones contribute
+        zero loss.
+  \item \emph{Shape.} An MLP outputs $P{=}11$ logits passed through a sigmoid to
+        give phenotypes in $[0,1]$, replacing the SMPL-X beta/expression heads.
+  \item \emph{Depth.} As in Multi-HMR, a log-depth $d_i$ normalised by focal
+        length is predicted and unprojected with $\mathbf{K}$ to obtain
+        $\mathbf{t}_i$.
+\end{itemize}
+
+\paragraph{Body-model layer.} The Anny model is evaluated inside the network,
+in PyTorch, to produce vertices $\mathbf{V}_i$ and joint positions
+$\mathbf{J}_i$ from $(\mathbf{R}_i,\boldsymbol{\phi}_i)$, so that 3D and 2D
+geometric losses can be back-propagated through it.
+
+\begin{figure}[t]
+  \centering
+  \fbox{\parbox{0.9\linewidth}{\centering\vspace{2cm}
+  \TODO{insert architecture figure: image $\rightarrow$ ViT backbone
+  $\rightarrow$ detection MLP + HPH $\rightarrow$ Anny head (6D pose, phenotypes,
+  depth) $\rightarrow$ Anny body model $\rightarrow$ mesh; teacher backbone in
+  a dashed box feeding the KD loss (Section~\ref{sec:kd})}\vspace{2cm}}}
+  \caption{Overview of the Anny-adapted Multi-HMR architecture.}
+  \label{fig:arch}
+\end{figure}
+
+\section{Inputs and outputs}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lll}
+\toprule
+ & Tensor & Shape \\
+\midrule
+Input  & RGB image & $3{\times}672{\times}672$ \\
+       & intrinsics $\mathbf{K}$ (optional) & $3{\times}3$ \\
+\midrule
+Output & detection scores & $48{\times}48$ \\
+(per person) & 2D offset & $2$ \\
+       & bone rotations $\mathbf{R}$ & $163{\times}3{\times}3$ \\
+       & phenotypes $\boldsymbol{\phi}$ & $11$ \\
+       & log-depth $d$, translation $\mathbf{t}$ & $1$, $3$ \\
+       & mesh vertices $\mathbf{V}$ & $13718{\times}3$ \\
+       & joints $\mathbf{J}$ & $163{\times}3$ \\
+\bottomrule
+\end{tabular}
+\caption{Inputs and outputs of the network.}
+\end{table}
+
+\section{Loss functions}
+\label{sec:loss}
+
+Ground truth is prepared per person: Anny $4{\times}4$ transforms are converted
+to rotation matrices, and the Anny model is run on the ground-truth parameters
+to obtain target vertices and joints. The total loss is
+\begin{equation}
+\begin{split}
+\mathcal{L} = {}& \alpha_{\text{bce}}\mathcal{L}_{\text{det}}
+  + \alpha_{\text{off}}\mathcal{L}_{\text{off}}
+  + \alpha_{\text{rot}}\mathcal{L}_{\text{rot}}
+  + \alpha_{\text{shape}}\mathcal{L}_{\text{shape}}
+  + \alpha_{\text{dist}}\mathcal{L}_{\text{dist}}
+  + \alpha_{\text{t}}\mathcal{L}_{\text{t}} \\
+  &+ \alpha_{\text{j3d}}\mathcal{L}_{\text{j3d}}
+  + \alpha_{\text{v3d}}\mathcal{L}_{\text{v3d}}
+  + \mathbb{1}[e \ge e_{2\text{D}}]\left(\alpha_{\text{j2d}}\mathcal{L}_{\text{j2d}}
+  + \alpha_{\text{v2d}}\mathcal{L}_{\text{v2d}}\right)
+  + \lambda_{\text{kd}}\mathcal{L}_{\text{kd}}
+\end{split}
+\label{eq:loss}
+\end{equation}
+with
+\begin{align}
+\mathcal{L}_{\text{det}} &= \text{focal loss on the person-centre heatmap (CenterNet form)}\\
+\mathcal{L}_{\text{rot}} &= \sum_{j} w_j \left\| \mathbf{R}_j - \hat{\mathbf{R}}_j \right\|_1,
+  \qquad \textstyle\frac{1}{J}\sum_j w_j = 1\\
+\mathcal{L}_{\text{shape}} &= \left\| \boldsymbol{\phi} - \hat{\boldsymbol{\phi}} \right\|_1\\
+\mathcal{L}_{\text{j3d}} &= \frac{1}{J}\sum_j w_j\left\| (\mathbf{J}_j - \mathbf{J}_{\text{pelvis}}) - (\hat{\mathbf{J}}_j - \hat{\mathbf{J}}_{\text{pelvis}}) \right\|_1\\
+\mathcal{L}_{\text{v3d}} &= \frac{1}{N}\sum_v \left\| (\mathbf{V}_v - \mathbf{J}_{\text{pelvis}}) - (\hat{\mathbf{V}}_v - \hat{\mathbf{J}}_{\text{pelvis}}) \right\|_1
+\end{align}
+and $\mathcal{L}_{\text{j2d}},\mathcal{L}_{\text{v2d}}$ the $\ell_1$ reprojection
+errors of joints and vertices, enabled only after epoch $e_{2\text{D}}$ because
+early predictions are too poor for reprojection gradients to be informative.
+$\mathcal{L}_{\text{off}},\mathcal{L}_{\text{dist}},\mathcal{L}_{\text{t}}$ are
+$\ell_1$ losses on the offset, log-depth and translation. Hats denote ground
+truth. The per-joint weights $w_j$ are $1$ by default; Section~\ref{sec:neck}
+uses them to up-weight neck and hand bones.
+
+The Multi-HMR defaults are
+$\alpha_{\text{bce}}{=}10,\ \alpha_{\text{rot}}{=}0.1,\ \alpha_{\text{shape}}{=}1,\
+\alpha_{\text{j3d}}{=}\alpha_{\text{v3d}}{=}100$. The 100:1 ratio between the
+geometric terms and the shape term is the subject of
+Section~\ref{sec:shape_ablation}, where $\alpha_{\text{shape}}{=}20$ is shown to
+be necessary for Anny.
+
+\section{Knowledge distillation}
+\label{sec:kd}
+
+To meet the size target, a frozen ViT-L \emph{teacher} (the best trained model)
+supervises a ViT-S \emph{student} at the level of backbone patch tokens. The
+loss is inserted immediately after patch decoding and before any prediction
+head, so the student is asked to reproduce the teacher's \emph{representation}
+rather than only its outputs. With teacher tokens
+$\mathbf{z}^{t}\in\mathbb{R}^{N\times C_t}$ and student tokens
+$\mathbf{z}^{s}\in\mathbb{R}^{N\times C_s}$, a learned linear projector
+$\mathbf{P}\in\mathbb{R}^{C_s\times C_t}$ bridges the width mismatch
+($C_s{=}384$, $C_t{=}1024$), and
+\begin{equation}
+\mathcal{L}_{\text{kd}} = T^2\cdot \frac{1}{N}\sum_{n=1}^{N}
+  \mathrm{KL}\!\left(\ \sigma\!\left(\tfrac{\mathbf{z}^{t}_n}{T}\right)
+  \ \Big\|\ \sigma\!\left(\tfrac{\mathbf{z}^{s}_n\mathbf{P}}{T}\right)\right),
+\label{eq:kd}
+\end{equation}
+where $\sigma$ is the softmax over the channel dimension and $T$ the
+temperature~\cite{hinton2015distilling}. The $T^2$ factor keeps the gradient
+magnitude comparable across temperatures. The teacher receives no gradient; the
+projector is trained with the student and discarded at inference, so the
+deployed model is the student alone. $\mathcal{L}_{\text{kd}}$ is added to
+Equation~\ref{eq:loss} with weight $\lambda_{\text{kd}}$; the student is trained
+on the full task loss at the same time.
+
+\paragraph{Head transfer.} The first student (Section~\ref{sec:kd_results})
+showed that feature-level distillation alone leaves the prediction heads, which
+are trained from random initialisation, far behind the teacher's. Because
+teacher and student instantiate the same \texttt{Model} class, every head
+tensor has the same name in both; the student is therefore initialised by
+copying each non-backbone tensor whose name \emph{and shape} match the
+teacher's (\texttt{--init\_heads\_from\_teacher}). Of 67 non-backbone tensors,
+54 transfer. The remaining 13 are exactly those whose shape depends on the
+backbone width $C$ ($1024$ vs $384$): the HPH token embedding, the
+cross-attention key/value projections in both HPH blocks, and the detection
+and offset MLPs. These \emph{entry points} of the head remain randomly
+initialised.
+
+\paragraph{Output-level distillation.} In addition to matching backbone
+tokens, the student's predictions are pulled toward the teacher's on the same
+image. Both models are run on the ground-truth query locations during
+training, so person $i$ of the student corresponds to person $i$ of the
+teacher without any matching step:
+\begin{equation}
+\mathcal{L}_{\text{kd-out}} = \alpha_{\text{rot}}\left\|\mathbf{R}^{s}-\mathbf{R}^{t}\right\|_1
+ + \alpha_{\text{shape}}\left\|\boldsymbol{\phi}^{s}-\boldsymbol{\phi}^{t}\right\|_1
+ + \alpha_{\text{dist}}\left|d^{s}-d^{t}\right| ,
+\label{eq:kdout}
+\end{equation}
+weighted like the task terms and added with $\lambda_{\text{kd-out}}$
+(\texttt{--lambda\_kd\_out}). Teacher outputs are detached.
+
+\paragraph{Warm-up freeze.} With trained head blocks reading through random
+entry projections, the head produces confident but wrong outputs from step
+one, and the resulting gradients degrade the transferred weights before the
+projections have adapted. The transferred tensors are therefore frozen for the
+first $E_w$ epochs (\texttt{--freeze\_heads\_epochs}), during which only the 13
+random projections, the backbone and the KD projector train, with
+Equation~\ref{eq:kdout} supplying a direct target; all parameters are then
+released. The 2D reprojection losses are enabled at the same epoch.
+
+
+\paragraph{Projector-fed heads.} The warm-up freeze protects the transferred
+weights but cannot help the 13 random entry projections, which must learn, from
+384-dimensional student tokens, to reproduce what the teacher's own projections
+produced from 1024-dimensional tokens. Meanwhile the KD projector $\mathbf{P}$
+of Equation~\ref{eq:kd} learns exactly this mapping, yet lives inside the loss
+and is discarded. The final design therefore moves the projector \emph{in front
+of the heads}: the student's tokens are mapped to the teacher width once,
+$\mathbf{z}^{s}\mathbf{P}$, every head is built at that width
+(\texttt{--head\_dim 1024}), and the feature loss of Equation~\ref{eq:kd}
+compares the projected tokens with the teacher's directly, without a
+loss-side projector. All 67 head tensors then transfer, the only new parameters
+are the $384{\times}1024$ projector ($0.4$\,M), and the heads receive inputs of
+the kind they were trained on from the first step, while the feature loss
+trains the projector toward precisely that input distribution. The deployed
+student is backbone, projector and heads: 37\,M parameters, 8.6$\times$ smaller
+than the teacher.
+
+\paragraph{Throughput.} The frozen teacher dominates each distillation
+iteration: a ViT-L at $672^2$ processes 2304 tokens through 24 blocks,
+$\approx$1.9\,TFLOP per image, and with mixed precision disabled (it produced
+NaNs with the Anny layer) these matmuls ran in plain fp32. Two changes that
+leave the student's own arithmetic untouched cut the iteration time from
+1.24\,s to 0.47\,s on an A100: enabling TensorFloat-32 matmuls (fp32 range,
+10-bit mantissa inputs, fp32 accumulation), and running the teacher's backbone
+under bfloat16 autocast inside \texttt{no\_grad}, casting its tokens back to
+fp32 before its heads and the loss. The first evaluation after the change
+reproduced the previous one to the decimal (155.0/107.3\,mm), confirming that
+only speed changed.
+
+\section{SMPL-to-Anny conversion for real data}
+\label{sec:smpl2anny}
+
+Real-world datasets such as 3DPW carry SMPL ground truth. To train and
+evaluate in Anny space, every annotated person is converted by optimisation,
+following the autograd strategy of NVlabs' \texttt{smpl2soma} and the
+joint-fitting objective of \texttt{joints2smpl}: Anny's 163 6D rotations
+$\mathbf{r}$, phenotype logits $\boldsymbol{\ell}$ and a translation
+$\mathbf{t}$ are found so that Anny's joints land on the 24 SMPL joints
+$\hat{\mathbf{J}}^{S}$ of the frame,
+\begin{equation}
+\min_{\mathbf{r},\boldsymbol{\ell},\mathbf{t}}
+\ \frac{1}{24}\sum_{k=1}^{24}
+\left\| \mathbf{p}_{\pi(k)}\!\left(\mathbf{r},\sigma(\boldsymbol{\ell})\right)
+ + \mathbf{t} - \hat{\mathbf{J}}^{S}_{k}\right\|_2^2
+ + \lambda_{r}\sum_{b\neq\text{root}}\left\|\mathbf{R}_b-\mathbf{I}\right\|_F^2
+ + \lambda_{\phi}\sum_{j\in\text{free}}\left(\sigma(\ell_j)-\tfrac12\right)^2 ,
+\label{eq:fit}
+\end{equation}
+where $\pi$ is the bone correspondence and $\mathbf{p}_{b}$ the position of the
+point attached to bone $b$ (defined below). Optimisation is staged (root
+orientation and translation, then all bone rotations, then phenotypes), with
+Adam on the 6D representation. The two regularisers are weak
+($\lambda_r{=}10^{-4}$, $\lambda_\phi{=}10^{-3}$): the first settles the null
+space of the problem (twist about a bone's own axis moves no joint but
+corkscrews the mesh), the second stops a single residual joint gap from
+dragging a phenotype to an extreme. Only the root and the bones that carry a
+mapped joint may rotate; the other $\sim$130 bones (twist helpers, fingers,
+toes, face) have no target and would otherwise drift.
+
+\paragraph{Targets.} 3DPW's own per-frame \texttt{jointPositions} are used
+as $\hat{\mathbf{J}}^{S}$ rather than a neutral-model SMPL forward pass:
+3DPW's shape coefficients belong to the gendered SMPL models, and evaluating
+them in the neutral model moved the joints by 37\,mm on average (93\,mm at the
+feet) on the first frame checked.
+
+\paragraph{Correspondence verified by geometry.} The first version of the
+converter chose Anny bones by name. Two of those choices were wrong in a way
+that no name reveals: Anny's MakeHuman rig numbers the spine \emph{top-down}
+(\texttt{spine01} sits just below the neck, \texttt{spine05} on the pelvis)
+while SMPL numbers it bottom-up, so SMPL's lumbar \texttt{spine1} had been
+mapped to a bone 25\,cm above it; and SMPL's hip joints had been mapped to
+\texttt{pelvis.L/R}, short bones whose heads lie 4\,cm from the hip joint,
+instead of to \texttt{upperleg01.L/R}. The converter now evaluates both
+models in their rest poses, prints the two skeletons side by side, and
+chooses the spine and hip bones by their height along the hip-midpoint--neck
+axis and their distance from the pelvis.
+
+\paragraph{Virtual joints.} Even with the right bones, the two rigs define
+their torso joints at different anatomical points: in the rest pose SMPL's
+pelvis joint sits 9\,cm above its hip joints whereas Anny's root sits at hip
+height and 7\,cm in front of them, SMPL's \texttt{spine3} lies between two Anny
+bones 6.5\,cm from either, and its collar joints are 6\,cm further lateral.
+Forcing bone \emph{heads} onto such targets makes the optimiser compromise
+with the pelvis and the shape. Instead, for each torso joint the rest-pose
+offset from its Anny bone head to the SMPL joint is measured once (both
+skeletons aligned at the hip midpoint, with the spine as the vertical axis
+and scaled to equal hip--neck length) and expressed in the bone's local frame
+$\boldsymbol{\delta}_b$; the fit then moves the point
+$\mathbf{p}_b = \mathbf{h}_b + \mathbf{R}_b\boldsymbol{\delta}_b$ onto the SMPL
+joint, where $\mathbf{h}_b$ and $\mathbf{R}_b$ are the posed bone head and
+frame. The offsets are 11.6\,cm for the pelvis, 4.3\,cm for the hips, 3--7\,cm
+along the spine and 5\,cm for the collars; limb joints use the bone head.
+
+\paragraph{Shape.} Phenotypes are not \emph{mapped} from SMPL's PCA
+coefficients, which have no semantic counterpart. Nor can joint positions
+determine most of them: weight, muscle, cup size, firmness and ethnicity move
+no joint, and adult age barely does. Left free, the optimiser used them as
+slack and produced the same body for every actor (all four test-scene
+subjects came out female, 0.34 in height, and all adults at exactly 0.67 in
+age). The final converter therefore fixes gender from 3DPW's annotation, fixes
+age at 0.55 (the Anny-One adult mean; the 3DPW actors are young adults),
+fits only height and proportions, and estimates one body per person and
+sequence as the per-phenotype median over all frames before refitting every
+frame with that body fixed and pose free.
+
+\paragraph{Whole-dataset pipeline.} 3DPW is video, so each frame is
+warm-started from the previous one, which cuts the per-frame cost to
+$\sim$8\,s (every third frame is converted, 10\,fps). The 87
+person--sequences of the train, validation and test splits are converted as
+one Slurm array job; for each frame the posed mesh is projected with 3DPW's
+camera to obtain a bounding box and the fraction of the body inside the
+image. A final pass merges the people of each frame into one label file per
+image in the Anny-One format (camera intrinsics, and per person the
+$163{\times}4{\times}4$ pose with the root carried into the camera frame as
+$\mathbf{R}_{\text{cam}}\mathbf{Q}_{\text{root}}$ and
+$\mathbf{R}_{\text{cam}}(\mathbf{t}+\mathbf{t}_{\text{3DPW}})+\mathbf{t}_{\text{cam}}$,
+the 11 phenotypes and the box), dropping people whose fit error exceeds
+80\,mm or who are mostly outside the frame. The camera convention is the one
+Multi-HMR's own 3DPW loader uses and was checked independently by projecting
+the converted joints onto 3DPW's 2D detections (8.9\,px mean). A dataset class
+returns these labels in the exact sample format of Anny-One, so the training
+code, collate function and evaluation run on them unchanged.
+
+\paragraph{Mixed synthetic--real training.} With the labels in place, the
+student is trained on the union of Anny-One and the converted 3DPW-train
+split, drawn by a weighted sampler so that on average a fraction $\rho$ of
+every batch is real (\texttt{--mix\_3dpw\_ratio}, $\rho{=}0.3$), and evaluated
+every few epochs on both the Anny-One holdout and the converted
+3DPW-validation split. The 3DPW test split is never used for training.
+
+\section{Training and transfer schedule}
+\label{sec:schedule}
+
+Training of the teacher begins from the public Multi-HMR ViT-L checkpoint
+\texttt{multiHMR\_672\_L\_anny}; the student backbone is analogously initialised
+from the authors' \texttt{multiHMR\_672\_S}, a ViT-S already trained for mesh
+recovery, rather than from ImageNet-only DINOv2. Because the Anny
+head has a different architecture from the SMPL-X head, only the backbone is
+transferred (a key-name remapping is required between the original and the
+training model class). A staged schedule is used:
+\begin{enumerate}
+  \item \emph{Frozen backbone:} only the heads train (learning rate $3{\cdot}10^{-5}$).
+  \item \emph{Partial fine-tuning:} the last 4 of 24 ViT blocks are unfrozen
+        ($10^{-5}$), with helper-bone masking enabled.
+  \item \emph{Loss re-weighting:} $\alpha_{\text{shape}}$ raised to 20.
+\end{enumerate}
+Every continuation uses a learning rate one order of magnitude below the
+cold-start value, with step decay (halving every 30--60 epochs); a constant
+cold-start rate on a partially trained model produced hundreds of NaN gradient
+events per epoch. All of these choices are command-line flags
+(\texttt{--freeze\_backbone}, \texttt{--unfreeze\_last\_n\_blocks},
+\texttt{--mask\_helper\_joints\_train}, \texttt{--alpha\_shape},
+\texttt{--boost\_neck\_weight}, \texttt{--distill\_teacher\_ckpt},
+\texttt{--lambda\_kd}, \texttt{--kd\_temperature}) so that any configuration can
+be reproduced without editing code.
+
+% =============================================================================
+\chapter{Experiments}
+\label{ch:experiments}
+% =============================================================================
+
+\section{Datasets}
+
+\paragraph{Anny-One~\cite{bregier2025anny} (training and in-domain test).}
+579,960 photorealistic $672{\times}672$ renderings of Anny bodies in indoor and
+outdoor scenes, each with intrinsics $\mathbf{K}$ and, for every visible person,
+the exact Anny pose ($163{\times}4{\times}4$) and phenotypes. The last 100
+samples are held out and never trained on; they serve as the in-domain test set
+(\texttt{--test\_anny\_n 100}). Per-image field of view varies widely
+(51$^\circ$--110$^\circ$ across a sample of five images), so the true
+$\mathbf{K}$ must be used at evaluation.
+
+\paragraph{3DPW~\cite{vonmarcard2018_3dpw} (real-world training and evaluation).}
+60 outdoor and indoor video sequences ($1080{\times}1920$, 30\,fps) with SMPL
+ground truth from IMUs and a hand-held camera, in the licensed standard
+release: 24 training, 12 validation and 24 test sequences, 87 annotated
+person--sequences in total. All of them are converted to Anny space with the
+method of Section~\ref{sec:smpl2anny} at every third frame. The train split is
+used for mixed training, the validation split for model selection and the
+test split is reserved for reporting. Two evaluation protocols exist and are
+reported separately: (a) the Multi-HMR protocol against the original SMPL
+meshes, comparable to published numbers; (b) Anny-space metrics against the
+converted ground truth, on which the conversion residual (13--20\,mm,
+Section~\ref{sec:fit_results}) is a floor.
+
+\section{Evaluation metrics}
+\label{sec:metrics}
+
+For a person with predicted joints $\mathbf{J}\in\mathbb{R}^{J\times3}$ and
+vertices $\mathbf{V}\in\mathbb{R}^{N\times3}$, and ground truth
+$\hat{\mathbf{J}},\hat{\mathbf{V}}$, both pelvis-centred:
+\begin{align}
+\text{MPJPE} &= \frac{1}{J}\sum_{j=1}^{J}\left\|\mathbf{J}_j-\hat{\mathbf{J}}_j\right\|_2\\
+\text{PVE}   &= \frac{1}{N}\sum_{v=1}^{N}\left\|\mathbf{V}_v-\hat{\mathbf{V}}_v\right\|_2\\
+\text{PA-MPJPE} &= \frac{1}{J}\sum_{j=1}^{J}\left\|s\mathbf{R}\mathbf{J}_j+\mathbf{t}-\hat{\mathbf{J}}_j\right\|_2,
+\quad (s,\mathbf{R},\mathbf{t}) = \arg\min \sum_j \left\|s\mathbf{R}\mathbf{J}_j+\mathbf{t}-\hat{\mathbf{J}}_j\right\|_2^2
+\end{align}
+and PA-PVE analogously on vertices. The Procrustes-aligned (PA) variants remove
+global rotation, scale and translation and therefore measure the quality of the
+body reconstruction alone; the unaligned variants additionally penalise
+orientation error. All are reported in millimetres. Because these metrics are
+computed only over predictions matched to a ground-truth person, detection
+precision, recall and F1 are reported alongside them: a model that detects few
+people can post a good PVE while missing most of them.
+
+\section{Baselines}
+
+Baseline numbers are taken from the Multi-HMR paper~\cite{baradel2024multihmr}
+(Table~\ref{tab:baselines}). They are SMPL-X predictions on 3DPW and are not
+directly comparable to Anny-space numbers, but they establish the accuracy
+gap between backbone sizes that distillation must close.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llrr}
+\toprule
+Backbone & Head & Params (backbone) & 3DPW MPJPE $\downarrow$ \\
+\midrule
+ViT-S & HPH & 21\,M  & 80.1 \\
+ViT-B & HPH & 86\,M  & 73.5 \\
+ViT-L & HPH & 304\,M & \TODO{from paper Fig.~4 / suppl.} \\
+\bottomrule
+\end{tabular}
+\caption{Multi-HMR baselines (SMPL-X, trained on AGORA+BEDLAM) reproduced from
+\cite{baradel2024multihmr}.}
+\label{tab:baselines}
+\end{table}
+
+\section{Implementation details}
+
+Input $672{\times}672$, AdamW, 1000 iterations per epoch, evaluation every 5
+epochs on the holdout, mixed precision disabled for trainable models (it
+produced NaNs with the Anny layer). Teacher runs use batch size 4; student runs
+batch 8 (the frozen teacher needs no activation memory), with TF32 matmuls and
+a bfloat16 teacher backbone (Section~\ref{sec:kd}), at 0.47\,s per iteration
+on one NVIDIA A100 of the DFKI Pegasus cluster. Model sizes: ViT-L 318.4\,M
+parameters; ViT-S student with 384-wide heads 32.8\,M, with projector-fed
+1024-wide heads 37\,M (8.6$\times$ smaller).
+
+\section{Main results: Anny-One}
+\label{sec:main_results}
+
+Table~\ref{tab:main} traces the held-out PVE across the transfer schedule.
+The frozen-backbone stage reaches 145\,mm; unfreezing the last four blocks and
+masking helper bones halves this to 73.6\,mm, after which further loss
+re-weighting changes PVE only marginally but substantially improves shape
+estimation (Section~\ref{sec:shape_ablation}).
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llrrrrr}
+\toprule
+Run & Change vs.\ previous & PVE & PA-PVE & MPJPE & PA-MPJPE & Recall \\
+\midrule
+v2 frozen   & heads only                          & 145 & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+v3 partial  & +unfreeze last 4 blocks, +helper mask & 73.6 & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+v4 boosted  & +neck/hand loss $\times4$            & 73.6 & 56.5 & 73.2 & \TODO{} & \TODO{} \\
+v5 shape    & +$\alpha_{\text{shape}}{=}20$ (teacher) & \textbf{74.3} & \textbf{57.5} & \textbf{74.4} & \textbf{54.1} & 90 \\
+\bottomrule
+\end{tabular}
+\caption{Held-out Anny-One results (mm) across the transfer schedule. The v5
+row is the standalone test-set evaluation (\texttt{run\_eval\_test.sh},
+\texttt{--test\_anny\_n 100}, batch size 1; precision 81\,\%, F1 85\,\%); the
+training-time evaluation of the same checkpoint reported 73.6 / 56.5 / 73.2,
+the 0.7\,mm difference coming from the evaluation batch size. Earlier rows
+are training-time values. \TODO{re-evaluate the v2--v4 checkpoints with the
+same script for the open cells.}}
+\label{tab:main}
+\end{table}
+
+\section{Knowledge distillation results}
+\label{sec:kd_results}
+
+All students use a ViT-S backbone, $672{\times}672$ input,
+$\lambda_{\text{kd}}{=}1$, $T{=}4$, channel-wise softmax, and the same
+\texttt{anny\_s2\_shape\_v5} teacher. Table~\ref{tab:student_runs} lists the
+configurations; each adds one change to the previous one so that effects are
+attributable.
+
+\paragraph{Feature-only distillation (v1/v2).} The first student had randomly
+initialised heads and an ImageNet-only DINOv2-S backbone. Run v1 (300 epochs,
+LR $10^{-4}$ halved every 30 epochs) reduced $\mathcal{L}_{\text{kd}}$ from 2679
+to $\sim$46 but stopped improving after epoch $\sim$60: the schedule had
+decayed the LR to $3.9{\cdot}10^{-7}$ by epoch 240. Run v2 resumed for 200
+epochs at $2{\cdot}10^{-5}$ halved every 60 and the KD loss kept falling
+(463$\rightarrow$38), but the student converged to \textbf{193.4\,mm PVE}
+against the teacher's 74.3\,mm --- 2.6$\times$ worse. The Multi-HMR authors'
+own ViT-S trails their ViT-L by only 9\,\% at the same resolution, so this gap
+is a defect of the distillation setup, not of model capacity: the KL term
+supervises only the backbone, and the heads, which turn features into a body,
+received nothing from the teacher.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llll}
+\toprule
+Run & Student backbone init & Heads & Added \\
+\midrule
+v1/v2 & ImageNet DINOv2-S & random & feature KD \\
+v3 & ImageNet DINOv2-S & 54/67 from teacher & output KD \\
+v4 & \texttt{multiHMR\_672\_S} & 54/67 from teacher & colour jitter, batch 8 \\
+v5 & \texttt{multiHMR\_672\_S} & 54/67, frozen 5 epochs & 2D losses from epoch 5 \\
+v6 & \texttt{multiHMR\_672\_S} & 67/67 via projector & \texttt{--head\_dim 1024} \\
+v6b & continues v6 & & 150 more epochs, LR $2{\cdot}10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\caption{Student configurations. Each row adds to the previous one.}
+\label{tab:student_runs}
+\end{table}
+
+\paragraph{Head transfer (v3--v6).} Table~\ref{tab:kd_epochs} gives the
+held-out PVE and PA-PVE of the four head-transfer runs at equal epochs. Two
+things are visible. First, every head-transfer run starts \emph{worse} than
+the random-head baseline (377, 298 and 378\,mm against 228\,mm at epoch 0):
+trained head blocks reading through random entry projections produce
+confident wrong poses. Second, the ordering reverses after roughly 20 epochs
+and is then monotone at every evaluation: ImageNet backbone $<$ HMR-trained
+backbone $<$ head freeze $<$ projector-fed heads. The HMR-trained student
+backbone (v4) is the single largest gain, 36--79\,mm over v3 at equal epochs;
+the freeze (v5) helps PA-PVE by 4--9\,mm; and feeding the heads teacher-width
+tokens (v6) improves both metrics further and crosses the random-head
+baseline's \emph{final} PVE by epoch 60. The pre-registered success test for
+v5 (``below 228\,mm by epoch 5--10'') was not met by any run; it was the wrong
+test, because the projections need about 20 epochs to adapt.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrrrrr}
+\toprule
+Epoch & v3 & v4 & v5 & v6 & v2 (random heads, final) \\
+\midrule
+0   & 377 / 190 & 298 / 199 & 378 / 192 & 327 / 172 & \\
+30  & 305 / 160 & 239 / 163 & 240 / 155 & \textbf{221 / 143} & \\
+60  & 228 / 147 & 197 / 138 & 205 / 136 & \textbf{186 / 127} & 193 / 128 \\
+100 & 213 / 136 & 179 / 128 & 175 / 119 & \textbf{175 / 116} & \\
+130 & 199 / 134 & 163 / 122 & 159 / 113 & \textbf{155 / 106} & \\
+best & 191 / 133 & 156 / 117 & 159 / 113 & \textbf{152 / 105} & \\
+\bottomrule
+\end{tabular}
+\caption{Held-out PVE / PA-PVE (mm) of the head-transfer students at equal
+epochs. Teacher: 74.3 / 57.5.}
+\label{tab:kd_epochs}
+\end{table}
+
+\paragraph{Continuation (v6b).} v6 reached its 48-hour limit at epoch 138
+with the loss still falling; 138 epochs of 8000 images are under two passes
+over Anny-One. Continued for 150 epochs at $2{\cdot}10^{-5}$ (with the
+throughput changes of Section~\ref{sec:kd}, 20 hours instead of 48), the
+student reached its best value at epoch 130, \textbf{126.9\,mm PVE / 92.1\,mm
+PA-PVE} (MPJPE 132.0), after which the curve flattened within $\pm4$\,mm at an
+LR of $5{\cdot}10^{-6}$ (Table~\ref{tab:kd_eval}). Detection precision rose
+from 71 to 78\,\% over the same run (teacher: 81\,\%); recall stayed at
+87--89\,\% (teacher: 90\,\%).
+
+\paragraph{Batch size (v6c).} The same continuation at batch 16 on an 80\,GB
+GPU, i.e.\ twice the images per epoch, reached \textbf{114.5\,mm / 84.6\,mm}
+after 150 epochs and was still improving at the end ($-7$\,mm over its last
+five epochs), 12\,mm better than v6b. The student was never
+capacity-limited; it was limited by the number of images it had seen. The
+cost is a higher NaN-gradient skip rate (0.7\,\% of steps against 0.4\,\%).
+The best synthetic-only student therefore stands at 1.5$\times$ the
+teacher's error, down from 2.6$\times$ for feature-only distillation.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llrrrrrr}
+\toprule
+Model & Backbone & Params & PVE & PA-PVE & MPJPE & Prec. & Recall \\
+\midrule
+Teacher (\texttt{anny\_s2\_shape\_v5}) & ViT-L & 318.4\,M & 74.3 & 57.5 & 74.4 & 81 & 90 \\
+Student v2 (feature KD only) & ViT-S & 32.8\,M & 193.4 & 128.2 & 210.7 & & 86 \\
+Teacher v9 (v5 + 30\,\% real 3DPW, ep.\ 62) & ViT-L & 318.4\,M & 78.5 & 57.4 & 78.6 & 83 & 89 \\
+Fresh model v10 (new heads, 30\,\% real from start, ep.\ 299) & ViT-L & 318.4\,M & 87.4 & 71.1 & 99.2 & 81 & 89 \\
+Student v6b (projector-fed heads, ep.\ 130) & ViT-S & 37\,M & 126.9 & 92.1 & 132.0 & 77 & 88 \\
+Student v6c (v6b recipe, batch 16, ep.\ 149) & ViT-S & 37\,M & \textbf{114.5} & \textbf{84.6} & \textbf{118.4} & 81 & 89 \\
+Student v7 (v6b + 30\,\% real 3DPW, ep.\ 130) & ViT-S & 37\,M & 120.6 & 88.2 & 125.2 & 78 & 87 \\
+Student v8 (v6c + 30\,\% real, teacher v9, ep.\ 52) & ViT-S & 37\,M & 120.6 & 86.9 & 125.0 & 76 & 87 \\
+\bottomrule
+\end{tabular}
+\caption{Student vs.\ teacher on the 100-image Anny-One holdout (mm), all
+rows from the standalone evaluation script except v6b (training-time). The
+teacher's precision (81--83\,\%) exceeds every student's (76--81\,\%) at
+similar recall. A ViT-B student was not trained.}
+\label{tab:kd_eval}
+\end{table}
+
+\section{SMPL-to-Anny conversion results}
+\label{sec:fit_results}
+
+\paragraph{The 34\,mm floor and its cause.} The first converter was validated
+on four frames of \texttt{downtown\_bar\_00} (mean 34.5\,mm; stage-wise errors
+in Table~\ref{tab:fit}) and then run on four diverse test scenes with 40
+frames each. Two facts in that run's log identified a defect before any
+render was examined: the error was 30--37\,mm on \emph{every} frame of every
+scene, walking or fencing, and all four actors came out with the same body
+(female, age 0.67, height 0.33, Asian 0.73). A residual that does not depend
+on the pose and a shape that does not depend on the person mean the shape
+was absorbing a fixed skeleton-definition mismatch. The rest-pose comparison
+of Section~\ref{sec:smpl2anny} then showed the mismatch: \texttt{spine1} mapped
+25\,cm too high and the hips 4\,cm off. (The accompanying renders had looked
+wrong for an unrelated reason: the renderer had used 3DPW's
+\texttt{img\_frame\_ids}, the index map into the 60\,Hz pose arrays, as image
+numbers, drawing pose frame $t$ on image $2t$.)
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrrrr}
+\toprule
+Frame & root only & +pose & +shape & final (mm) \\
+\midrule
+0   & 137.9 & 40.4 & 36.2 & 36.2 \\
+50  & 131.2 & 43.1 & 35.1 & 35.1 \\
+100 & 169.5 & 39.4 & 34.1 & 34.1 \\
+199 & 135.0 & 39.0 & 32.6 & 32.6 \\
+\midrule
+mean & & & & 34.5 \\
+\bottomrule
+\end{tabular}
+\caption{First converter (name-based correspondence): mean joint error after
+each optimisation stage on \texttt{downtown\_bar\_00}.}
+\label{tab:fit}
+\end{table}
+
+\paragraph{Effect of each correction.} Table~\ref{tab:fit_versions} isolates
+the two corrections on the hardest test scene, \texttt{outdoors\_fencing\_01}
+(38 frames at stride 25, including full lunges). Correcting the
+correspondence and the targets (v2) removed the common floor: limbs and head
+dropped to 1--10\,mm, but the torso joints stayed at 43--73\,mm because of the
+definition gap, and the optimiser compromised by displacing the pelvis 5\,cm
+and driving \texttt{proportions} to 0.06. The virtual joints (v2.1) brought
+the torso to 13--22\,mm, the pelvis to 19\,mm and \texttt{proportions} to 0.27,
+leaving the arm chain (shoulders 23--36\,mm, wrists 25--27\,mm) as the largest
+remaining term. The per-joint table is flat, which is the signature of a
+correct correspondence.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{p{5.6cm}rrp{4.6cm}}
+\toprule
+Converter & mean (mm) & max & worst joints (mm) \\
+\midrule
+v1: name-based mapping, neutral SMPL targets & 34.3 & 37 & all joints, common floor \\
+v2: geometry-checked mapping, 3DPW joints, fixed gender & 24.6 & 30 & spine1 73, collars 55--59, spine3 58, pelvis 53 \\
+v2.1: + virtual torso joints, bone mask, warm start & \textbf{15.8} & 18.8 & shoulder 36, wrists 25--27 \\
+\bottomrule
+\end{tabular}
+\caption{Mean joint error over all 24 joints on \texttt{outdoors\_fencing\_01}
+(38 frames) for the three converter versions.}
+\label{tab:fit_versions}
+\end{table}
+
+\paragraph{Diverse scenes.} With v2.1, the four test scenes chosen for
+variety convert to 15.8--20.1\,mm (Table~\ref{tab:fit_scenes}), with no frame
+near the 80\,mm rejection threshold except one occluded office frame
+(43.5\,mm), and the fitted bodies now differ between actors. One number did
+not: \texttt{age} came out at exactly 0.67 for all four, as it had in every
+earlier version. Joint positions cannot distinguish a 25-year-old from a
+45-year-old; the optimiser was using the age morph to absorb a residual
+torso-length gap. Age is therefore fixed at 0.55 in the final converter, as
+described in Section~\ref{sec:smpl2anny}.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Scene & frames & mean (mm) & max & height & proportions & age \\
+\midrule
+\texttt{downtown\_walking\_00} & 40 & 17.5 & 19.0 & 0.52 & 0.34 & 0.67 \\
+\texttt{outdoors\_fencing\_01} & 38 & 15.8 & 18.8 & 0.51 & 0.27 & 0.67 \\
+\texttt{office\_phoneCall\_00} & 32 & 20.1 & 43.5 & 0.49 & 0.42 & 0.67 \\
+\texttt{flat\_guitar\_01} & 30 & 16.2 & 18.0 & 0.52 & 0.23 & 0.67 \\
+\bottomrule
+\end{tabular}
+\caption{Converter v2.1 on four diverse 3DPW test scenes (stride 25, shared
+body per scene, all 24 joints). Age was still a free phenotype in this run.}
+\label{tab:fit_scenes}
+\end{table}
+
+\paragraph{Whole dataset.} The final converter (v2.2: age fixed, mesh
+bounding boxes) was run on all 87 person--sequences at every third frame.
+On the training-split sequences inspected so far the mean error is
+12.5--22.9\,mm per sequence (e.g.\ \texttt{courtyard\_arguing\_00}: 255 frames,
+12.8\,mm mean, 15.3\,mm max), the hardest single frames are acrobatic
+(capoeira, 70.8\,mm) and remain below the rejection threshold, and no fit
+failed. The two recurring courtyard actors receive identical bodies across
+their sequences (male: height 0.60, proportions 0.41; female: 0.34, 0.70),
+whereas the distinct test-split actors receive distinct ones, which is the
+behaviour one would want from a shape estimate. The merged training labels
+comprise 4\,451 images of the train split. Table~\ref{tab:labels} gives the
+full count: 16\,631 labelled images with 20\,028 people across the three
+splits, every one of them under the 80\,mm rejection threshold; the only
+drops are 162 validation-split people who are mostly outside the frame.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrrrl}
+\toprule
+Split & sequences & images & people & dropped \\
+\midrule
+train & 24 & 4\,451 & 5\,183 & 0 \\
+validation & 12 & 2\,458 & 2\,995 & 162 (visible $<$ 0.3) \\
+test & 24 & 9\,722 & 11\,850 & 0 \\
+\midrule
+total & 60 & 16\,631 & 20\,028 & 162 \\
+\bottomrule
+\end{tabular}
+\caption{Converted 3DPW labels (every third frame, converter v2.2). No frame
+exceeded the 80\,mm fit-error threshold.}
+\label{tab:labels}
+\end{table}
+
+Because the ground truth itself carries this residual, any Anny-space
+accuracy measured on 3DPW is bounded below by roughly 13--20\,mm; this is
+stated wherever such numbers are reported.
+
+\section{Qualitative results}
+
+\TODO{Figure: in-domain Anny-One holdout images with predicted meshes
+(current best checkpoint). Figure: real photographs (tennis, stage, party
+images used throughout development). Figure: 3DPW frames. Note visibly the
+neck elongation on all, and correct body pose after the weight-loading fix.}
+
+\TODO{Figure: converted 3DPW ground truth rendered over the original frames
+(\texttt{threedpw\_anny\_v21/renders/}): the Anny mesh with SMPL joints (red)
+and fitted virtual joints (green), e.g.\ the fencing lunge and the seated
+guitar frame, which are the supervisor's qualitative acceptance check.}
+
+% =============================================================================
+\chapter{Ablation Studies and Root-Cause Investigations}
+\label{ch:ablation}
+% =============================================================================
+
+The supervisor's guideline for this chapter is to justify each design choice by
+removing it under otherwise identical settings and reporting the change. Two of
+the investigations below go further: they isolate the cause of an observed
+defect by testing and eliminating alternative hypotheses.
+
+\section{Shape loss weight}
+\label{sec:shape_ablation}
+
+\paragraph{Observation.} The trained model predicted nearly the same phenotypes
+for every person. Comparing predictions against Anny-One ground truth on the
+same held-out samples (Table~\ref{tab:shape}) showed three phenotypes offset by
+4--6 standard deviations of the data: the shape head was regressing dataset
+averages, not per-person values.
+
+\paragraph{Hypothesis.} With $\alpha_{\text{shape}}{=}1$ against
+$\alpha_{\text{j3d}}{=}\alpha_{\text{v3d}}{=}100$, the network gains far more by
+adjusting geometry than by getting shape right, so the shape head is
+under-trained.
+
+\paragraph{Test.} Raise $\alpha_{\text{shape}}$ to 20 and continue training
+(run v5), all else identical.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrrrrr}
+\toprule
+Phenotype & GT mean & GT std & v4 error ($\alpha{=}1$) & v5 error ($\alpha{=}20$) & \\
+\midrule
+age          & 0.553 & 0.036 & $+0.199$ & $\mathbf{-0.002}$ & fixed \\
+height       & 0.579 & 0.026 & $-0.154$ & $\mathbf{-0.026}$ & fixed \\
+proportions  & 0.763 & 0.070 & $-0.017$ & $\mathbf{-0.001}$ & fixed \\
+firmness     & 0.757 & 0.039 & $-0.167$ & $-0.190$ & unchanged \\
+gender       & 0.694 & --    & $-0.042$ & $-0.063$ & $\approx$ \\
+weight       & 0.382 & --    & $+0.056$ & $+0.064$ & $\approx$ \\
+\bottomrule
+\end{tabular}
+\caption{Predicted-minus-ground-truth phenotype error on the same Anny-One
+holdout samples, before and after raising the shape loss weight from 1 to 20.
+Errors are in phenotype units ($[0,1]$).}
+\label{tab:shape}
+\end{table}
+
+\paragraph{Result.} Age error fell by 99\,\% and height error by 83\,\%;
+\texttt{proportions} became essentially exact. \texttt{firmness} did not
+respond, and is discussed in Chapter~\ref{ch:discussion}. A sweep of
+$\alpha_{\text{shape}}\in\{1,5,10,20,50\}$ under identical settings would
+locate the optimum; \TODO{run and tabulate PVE and shape error per value.}
+
+\section{Neck elongation: root-cause isolation}
+\label{sec:neck}
+
+Every rendered mesh showed a visibly elongated, thin neck. Four candidate
+causes were tested (Table~\ref{tab:neck}); each test was designed so that its
+outcome would unambiguously confirm or eliminate the hypothesis.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{p{3.2cm}p{5.2cm}p{4.6cm}}
+\toprule
+Hypothesis & Test & Result \\
+\midrule
+The Anny body model itself has a long neck &
+Render every person in rest pose (all rotations identity, predicted shape kept) &
+Neck normal $\rightarrow$ eliminated \\
+Helper-bone mask removes neck bones from the loss, so the $\times4$ boost multiplied zero &
+Script listing masked/active status of every neck bone &
+\texttt{neck01/02/03}, \texttt{head} all active $\rightarrow$ eliminated \\
+Domain gap (synthetic $\rightarrow$ real photos) &
+Run on Anny-One's own held-out images &
+Elongation present in-domain $\rightarrow$ eliminated \\
+Shape head over-predicts \texttt{proportions} &
+GT vs.\ predicted phenotypes on the same samples &
+\texttt{proportions} accurate to 0.018 (v4) / 0.001 (v5) $\rightarrow$ eliminated \\
+\bottomrule
+\end{tabular}
+\caption{Elimination of candidate causes for the neck artifact.}
+\label{tab:neck}
+\end{table}
+
+The surviving explanation is linear blend skinning across Anny's three stacked
+neck bones plus head: when the network predicts slightly different rotations
+for each, the skin between them stretches. This is consistent with every
+observation: rest pose is normal (no rotation differential), the $\times4$ neck
+loss boost did not change it (rotations are already near the target), it appears
+in-domain, and shape is accurate. It is a property of the rig, not a training
+failure. A side finding is that an inference-time ``fix'' forcing
+\texttt{proportions} to 0.5 was in fact pushing it 0.26 away from the true
+dataset mean of 0.763 and was removed.
+
+\section{Per-joint loss boosting}
+
+Up-weighting neck and hand bones by $\times4$ in
+$\mathcal{L}_{\text{rot}}$ and $\mathcal{L}_{\text{j3d}}$ (run v4, from the v3
+checkpoint, identical settings otherwise) left holdout PVE unchanged at
+73.6\,mm (best 72.0 at epoch 125) and did not alter the neck. The mask check
+above confirms the boost did reach the intended bones; it simply had nothing to
+correct. The boost is therefore disabled in the final configuration.
+
+\section{Learning-rate schedule for distillation}
+
+Two otherwise identical distillation runs differ only in schedule. With a halving
+every 30 epochs over 300 epochs the learning rate reaches $3.9{\cdot}10^{-7}$ by
+epoch 240 and all losses plateau from epoch $\sim$60; with a halving every 60
+epochs over 200 epochs the KD loss falls monotonically to the end
+(Table~\ref{tab:kd_epochs}). The schedule must be sized to the epoch budget.
+
+\section{Backbone transfer and fine-tuning depth}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrr}
+\toprule
+Configuration & Trainable params & Holdout PVE \\
+\midrule
+Frozen backbone, heads only & $\sim$14\,M & 145 \\
+Last 4 of 24 blocks unfrozen (+helper mask) & $\sim$64\,M & 73.6 \\
+Fully unfrozen (from scratch, all fixes) & 318\,M & \TODO{run v7} \\
+\bottomrule
+\end{tabular}
+\caption{Effect of how much of the backbone is trained. The v2$\rightarrow$v3
+step also introduced helper-bone masking; a clean separation requires re-running
+v3 without the mask. \TODO{}}
+\label{tab:ft}
+\end{table}
+
+\section{Distilling the heads, not only the backbone}
+\label{sec:head_ablation}
+
+\paragraph{Observation.} With feature-level distillation only, the student's
+backbone tokens converge toward the teacher's ($\mathcal{L}_{\text{kd}}$
+2679$\rightarrow$38) yet PVE plateaus at 193\,mm. The backbone learned the
+teacher's representation; the randomly initialised heads did not learn to use
+it as well as the teacher's heads do.
+
+\paragraph{Intervention and its side effect.} Copying the 54 shape-compatible
+head tensors from the teacher (v3) \emph{raised} first-eval PVE from 228 to
+377\,mm. The 13 non-transferable tensors are the head's input paths, so this
+is the expected behaviour of a trained function applied to random inputs:
+confident, wrong outputs, whose gradients then erode the transferred weights.
+
+\paragraph{Three hypotheses, three runs.} Each was tested by one change
+(Table~\ref{tab:kd_epochs}). (i) \emph{The gradients damage the heads}: the
+five-epoch freeze (v5) kept the rotation loss at 90 where v4's sat at 300, so
+the damage is real, yet PA-PVE at the unfreeze evaluation did not move
+(192$\rightarrow$193); protecting the heads is necessary but not the main
+effect. (ii) \emph{The backbone, not the heads, is the problem}: initialising
+the student backbone from the authors' HMR-trained ViT-S instead of ImageNet
+(v4) gave the largest single improvement at every epoch. (iii) \emph{The heads
+are fed the wrong input}: moving the KD projector in front of the heads so
+that all 67 tensors transfer (v6) gave the best run at every epoch from 10
+onward and the best final student. The sequence shows the right diagnosis
+sitting one step behind each intervention: v3 fixed the head initialisation
+and exposed the entry projections; v5 fixed the damage and exposed that the
+projections themselves were the bottleneck; v6 removed them.
+
+\paragraph{What remains.} At 114.5\,mm the best synthetic-only student is
+1.5$\times$ the teacher, against a 9\,\% gap between the authors' own ViT-S
+and ViT-L. The batch-16 continuation (v6c) took 12\,mm off v6b and was still
+falling when its budget ended, so under-training rather than capacity is the
+better-supported explanation for most of the remaining gap on synthetic data.
+On real photographs the picture is different: there the student plateaus at
+the same value whichever teacher distils it and whichever checkpoint it starts
+from (Section~\ref{sec:mixed}), i.e.\ the ViT-S itself is the limit.
+
+\section{Student backbone size and KD hyper-parameters}
+
+A ViT-B student and sweeps of $\lambda_{\text{kd}}$ and $T$ were planned but
+not run within the time available; all students use $\lambda_{\text{kd}}{=}1$,
+$T{=}4$. Given that the ViT-S student is limited by training length on
+synthetic data and by its own capacity on real data, a ViT-B student is the
+natural next experiment and the recipe transfers unchanged
+(\texttt{--backbone dinov2\_vitb14}, \texttt{--head\_dim 1024}).
+
+\section{Synthetic-only vs.\ mixed synthetic--real training}
+\label{sec:mixed}
+
+This is the result that addresses the domain-shift concern raised by the
+supervisor: a student can match the teacher on synthetic renders while both
+rely on render-specific cues absent from photographs. Four models were trained
+with 30\,\% of every batch drawn from the 4\,451 converted 3DPW-train images:
+the teacher continued from v5 (\textbf{v9}: last four ViT blocks unfrozen, LR
+$10^{-5}$), the student continued from v6b with teacher v5 (\textbf{v7}), the
+student continued from v6c with teacher v9 (\textbf{v8}, the final student),
+and a fresh model with heads trained from scratch on the Naver backbone with
+real data present from the start (\textbf{v10}, 300 epochs). All were
+evaluated every five epochs on the Anny-One holdout and on 300 converted
+3DPW-validation images; model selection used the validation split only.
+
+\paragraph{Validation trajectories.} The real data acts within the first
+five epochs. The teacher's 3DPW-validation PVE fell from 127.1 to 78.0\,mm at
+epoch 5 and never improved afterwards (80--83\,mm by epoch 150, a sign of
+over-fitting 4\,451 images); the student's fell from 149.0 to 116.8 at epoch 5
+and settled at 106--108 from epoch 20 onward. On the synthetic holdout the
+teacher paid 3--9\,mm, whereas the student first lost 8\,mm and then recovered
+to below its starting value (128.5 $\rightarrow$ 120.1), so at $\rho{=}0.3$ the
+real data was close to free for the student. v8 reproduced v7 almost exactly
+on real photographs (105.7 vs 106.0 at best) despite starting from a 12\,mm
+better checkpoint and distilling from a teacher that is 49\,mm better on real
+data: the student's real-photo error does not depend on the teacher's domain
+gap, which locates the limit in the ViT-S itself. v10 plateaued from epoch
+$\sim$100 at 87\,mm synthetic / 90\,mm real on validation, short of the
+continued teacher on both (discussed with the test results below).
+
+\paragraph{Test split.} Table~\ref{tab:test3dpw} gives the one-time
+evaluation on all 9\,722 converted 3DPW-test images. Every model that saw
+real data improved on real photographs: the teacher by 14\,\% (119.1
+$\rightarrow$ 102.5\,mm, PA-PVE 68.8 $\rightarrow$ 62.7) and the student by
+11\,\% (139.5 $\rightarrow$ 123.6, PA-PVE 88.0 $\rightarrow$ 81.2), for a cost
+of 4 and 6\,mm on the synthetic holdout. The gains are, however, about half of
+what the validation split had shown (38\,\% and 29\,\%), and the mixed
+student no longer beats the synthetic-only teacher on real photographs (123.6
+vs 119.1\,mm) as it did on validation (106 vs 127). The reason is in the data:
+3DPW's train and validation splits were filmed with the same actors at the
+same courtyard locations, whereas the test split contains different people in
+different (downtown) scenes. The validation numbers therefore partly measured
+how well the models learned those actors; the test numbers measure
+generalisation, and are the ones to report. Holding the test split back from
+every decision is what made this visible.
+
+\paragraph{Real data from the start (v10).} The fresh model trained with real
+data from its first epoch reaches 111.5\,mm on 3DPW-test, 8\,mm better than
+the synthetic-only teacher but 9\,mm worse than the teacher that received the
+same real data at the end of its staged training (v9), and 87.4\,mm on the
+synthetic holdout, 13\,mm worse than either. Its real-photo PA-PVE (76.2) is
+also worse than the synthetic-only teacher's (68.8): what the real data gave
+it is better global placement and scale, not better body pose and shape. Its
+recall on 3DPW (85\,\% against 95--100\,\%) and the unusually large gap
+between its joint and vertex errors (MPJPE 99.2 vs PVE 87.4 on synthetic data,
+where the other models are within 1--5\,mm) both point the same way: a single
+300-epoch run does not replace the staged teacher training, and real data is
+best added as a final fine-tuning step.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llrrrrr}
+\toprule
+Model & Backbone & real data & PVE & PA-PVE & MPJPE & PA-MPJPE \\
+\midrule
+Teacher v5 & ViT-L & -- & 119.1 & 68.8 & 124.1 & 63.1 \\
+Teacher v9 (ep.\ 62) & ViT-L & 30\,\% & \textbf{102.5} & \textbf{62.7} & \textbf{102.1} & \textbf{56.1} \\
+Fresh model v10 & ViT-L & 30\,\% from start & 111.5 & 76.2 & 121.8 & 84.8 \\
+Student v6c & ViT-S & -- & 139.5 & 88.0 & 144.1 & 83.1 \\
+Student v7 & ViT-S & 30\,\% & 124.5 & 81.7 & 126.2 & 76.8 \\
+Student v8 (final) & ViT-S & 30\,\% & \textbf{123.6} & \textbf{81.2} & 125.6 & \textbf{76.3} \\
+\bottomrule
+\end{tabular}
+\caption{3DPW-test (9\,722 converted images, Anny-space metrics in mm). The
+13--20\,mm conversion residual is a floor on every row. Recall is 95--100\,\%
+for all models except v10 (85\,\%); precision (37--59\,\%) is not meaningful here because 3DPW
+annotates only one or two actors per frame and the downtown scenes contain
+unannotated bystanders, so each correctly detected passer-by counts as a false
+positive.}
+\label{tab:test3dpw}
+\end{table}
+
+\paragraph{Reading the final model.} The final student (v8: 37\,M
+parameters, 8.6$\times$ smaller than the teacher) scores 123.6\,mm on real
+photographs against 102.5 for the mixed teacher and 119.1 for the
+synthetic-only teacher, and 120.6\,mm on synthetic data against 74.3 / 78.5.
+Against the Multi-HMR authors' own 9\,\% ViT-S/ViT-L gap on SMPL-X, the
+remaining gap here (21\,mm on real, 42\,mm on synthetic) says that the
+distillation recipe is not yet at parity; the ablations above locate the
+synthetic-side gap in training length and the real-side gap in the student's
+capacity.
+
+\section{Joint correspondence and virtual joints in the converter}
+\label{sec:fit_ablation}
+
+Table~\ref{tab:fit_versions} is itself an ablation: the correspondence fix
+accounts for 10\,mm of the improvement and the virtual joints for a further
+9\,mm, and the two act on different joints (the first on limbs and head, the
+second on the torso). Two further observations qualify as negative results.
+Down-weighting the torso joints and reporting only a ``reliable'' subset,
+tried in an intermediate version, hid the symptom without touching the cause
+and should not be used. And the \texttt{age} phenotype, free in every version
+up to v2.1, converged to 0.67 for every actor in every scene; it is not
+identifiable from joints and is now fixed. Each converter flag
+(\texttt{--offset\_joints}, \texttt{--free\_bones}, \texttt{--shape\_reg},
+\texttt{--warm\_start}) can be switched off individually to reproduce the
+intermediate rows.
+
+% =============================================================================
+\chapter{Discussion}
+\label{ch:discussion}
+% =============================================================================
+
+\paragraph{What improved.} The staged transfer schedule halved the held-out
+PVE (145$\rightarrow$74.3\,mm) and the shape re-weighting corrected the
+systematic phenotype bias almost entirely for age, height and proportions. The
+distillation framework works end-to-end: an 8.6$\times$ smaller student
+reaches 127\,mm PVE, down from 193\,mm with feature-only distillation, once
+the teacher's heads are transferred through a projector that feeds them
+teacher-width tokens. The SMPL-to-Anny converter went from a 34\,mm floor that
+was the same for every frame and every person to 13--20\,mm with bodies that
+differ between actors, and the whole of 3DPW is now available as Anny-space
+labels.
+
+\paragraph{What did not improve, and best guesses why.}
+\begin{itemize}
+  \item \emph{Neck elongation.} Unchanged by masking, loss boosting, shape
+        correction or in-domain evaluation. The best explanation is LBS stretch
+        across the stacked neck bones. Because it is a rig property, the
+        remedies lie outside training: fewer neck bones, adjusted skinning
+        weights, or a smoothness constraint across the neck chain in the loss.
+  \item \emph{\texttt{firmness}.} Did not respond to a 20$\times$ increase in
+        shape supervision and does not move under joint-based fitting either.
+        Best guess: it is a soft-tissue property with almost no visual
+        signature at $672$ pixels on clothed people, and none in joint
+        positions, i.e.\ it is unobservable from the available signal rather
+        than under-trained.
+  \item \emph{PVE plateau at $\sim$73\,mm.} Every continuation converges to the
+        same value. Best guess: the frozen early backbone blocks limit
+        adaptation; the fully-unfrozen v7 run (\TODO{}) tests this.
+  \item \emph{The remaining student--teacher gap (127 vs 74.3\,mm).}
+        Matching backbone features was necessary but not sufficient; the
+        heads had to be transferred, and transferring them across a width
+        mismatch introduced its own failure (random entry projections feeding
+        trained blocks) that a warm-up alone did not cure and the
+        projector-fed design did. Each step was correct about the defect it
+        fixed and wrong about the next one it exposed
+        (Tables~\ref{tab:student_runs} and \ref{tab:kd_epochs}). The batch-16
+        continuation showed that the synthetic-side gap is mostly training
+        length; the mixed runs showed that the real-side gap is not (two
+        different teachers and starting points gave the same real-photo
+        error), so it belongs to the student's capacity.
+\end{itemize}
+
+\paragraph{Pipeline bugs whose symptoms mimic model failures.}
+\label{sec:pipeline}
+Several weeks were spent on artifacts that turned out to be engineering
+defects. They are documented because their symptoms are easily misread as
+learning failures:
+\begin{itemize}
+  \item The demo selected the model class by checkpoint \emph{filename};
+        Anny checkpoints were routed to a class with different module names,
+        and \texttt{strict=False} loading silently loaded zero weights, so every
+        person rendered in the same mean pose. Fix: route by checkpoint
+        contents and assert $\geq$80\,\% of tensors loaded.
+  \item Two code paths produced translations in centimetres and metres
+        respectively; an unconditional $/100$ discarded every in-domain
+        detection in one place and placed people 2.8\,cm from the camera in
+        another. Fix: unit auto-detection.
+  \item A single global field of view was applied to Anny-One images whose
+        true FOV spans 51--110$^\circ$, mis-scaling meshes in depth. Fix:
+        per-image intrinsics.
+  \item Reusing a run name let checkpoint cleanup, which keeps the ten
+        highest-numbered files, delete a new run's checkpoints.
+  \item A degenerate 6D rotation initialisation (indices 0 and 4 instead of 0
+        and 3) produced NaN for every bone before optimisation began in the
+        SMPL-to-Anny fit. Two earlier hypotheses (invalid 3DPW frames, the
+        SMPL forward pass) were each ruled out by the log before the real
+        cause was found.
+  \item The converter's overlay renderer used 3DPW's \texttt{img\_frame\_ids}
+        as image numbers. That array is the index map into the 60\,Hz pose
+        arrays, roughly $2t$, so every mesh was drawn on the frame where the
+        person had already walked elsewhere, and the fits looked far worse
+        than they were. The tell-tale was in the log (a request for image
+        1401 of a 1387-frame sequence), not in the picture.
+  \item A joint correspondence chosen by name was wrong by 25\,cm for one
+        spine joint because the two rigs number the spine in opposite
+        directions. It produced a plausible-looking 34\,mm fit and a
+        ``reliable-joint'' metric that quietly excluded the affected joints;
+        only comparing the two rest skeletons geometrically exposed it.
+  \item A learning-rate schedule copied from short fine-tuning runs (halving
+        every 30 epochs) silently froze a 300-epoch distillation run from
+        epoch $\sim$60 onward; the loss curves looked converged when the
+        optimiser had simply run out of step size.
+  \item The 3DPW archive lives on a host path (\texttt{/ds-av}) that was not
+        in the job container's mount list; the failure surfaced as an
+        unrelated ``file not found'' inside the container.
+\end{itemize}
+The common lesson is that silent failure is the dominant failure mode in this
+class of pipeline; loud, verified failure (load percentages, unit checks, NaN
+guards) would have saved most of the time lost.
+
+\paragraph{Limitations.} The in-domain test set is only 100 samples; a
+larger holdout requires retraining with a larger \texttt{--val\_anny\_n}. 3DPW
+results in Anny space depend on the conversion residual (13--20\,mm), which
+bounds the achievable measured accuracy on real data; the arm chain
+(shoulders, wrists) is the largest remaining term. The converted labels fix
+age and gender from annotations and cannot recover soft-tissue phenotypes,
+so the real data supervises shape only through height and proportions. The
+3DPW validation split shares actors and locations with the training split,
+so it over-states the benefit of real data by about a factor of two relative
+to the test split; only the test numbers should be quoted. A ViT-B student
+was not trained. The neck artifact is unresolved at the rig level.
+
+% =============================================================================
+\chapter{Conclusion}
+\label{ch:conclusion}
+% =============================================================================
+
+This thesis adapted Multi-HMR to the open Anny body model and trained it on
+Anny-One, reaching 74.3\,mm PVE on held-out synthetic data. It identified and
+corrected a loss-imbalance defect in shape estimation with quantified
+before/after evidence, isolated the cause of a persistent rendering artifact by
+eliminating four alternatives, built a knowledge-distillation framework that
+compresses the model 8.6$\times$ and, through a projector that lets the
+teacher's heads transfer intact, brings the student from 193 to 114.5\,mm PVE
+on synthetic data, and produced an SMPL-to-Anny converter whose
+correspondence is verified by rest-pose geometry and whose virtual joints
+reduce the conversion floor from 34 to 13--20\,mm. With it the whole of 3DPW
+was converted into Anny-space labels, and training with 30\,\% real images
+reduced the real-photograph error of the teacher by 14\,\% (119 $\rightarrow$
+103\,mm on 3DPW-test) and of the student by 11\,\% (140 $\rightarrow$ 124\,mm)
+at a cost of 4--6\,mm on synthetic data. Every intervention is exposed as a
+flag so the experiments can be re-run under identical settings.
+
+\paragraph{Future work.} Train a ViT-B student with the same recipe, since
+the ViT-S is capacity-limited on real photographs; evaluate the final models
+under the Multi-HMR SMPL protocol on 3DPW-test for comparison with published
+numbers; use the teacher's predictions on unlabelled
+real photographs as pseudo-labels (the output-distillation term already
+provides the mechanism); extend the virtual-joint treatment to the arm chain;
+address the neck at the rig level; and, per the original topic description,
+extend the system from images to video with temporal consistency, for which
+HMR2.0's tracking formulation is the natural starting point.
+
+% =============================================================================
+% Appendix material lives in appendix.tex (hyper-parameter tables per run,
+% additional qualitative figures, diagnostic scripts).
+% =============================================================================
