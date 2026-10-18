@@ -581,8 +581,11 @@ the **head** joint (`--person_center head`). 88 helper bones (toes, breasts, fac
 | v9 = `anny_teacher_v9_mixed` epochs 62, 149 | v5 + 30% 3DPW-train. Teacher of the final student | 75.0 / 77.0 (3571963:40, 3571964:40) | 102.5 / 62.7 |
 | v10 = `anny_v10_scratch_mixed` epoch 290 | ViT-L. Despite "scratch": DINOv2 backbone from NAVER's `multiHMR_672_L_anny` + fresh heads (`train_v10_scratch_mixed.sh:3-8`), last 4 blocks trainable, 30% 3DPW from the start | 74.1 (3571794:40) | 111.5 / 76.2 |
 | students v6c, v8 final | ViT-S distilled | not traced | 139.5 / 88.0, 123.6 / 81.2 |
+| final model = exp7 fix arm `v5_pc_dist5_bonefix_v23_e10` epoch 9 (18 Oct) | v5 00099 + bone fix + depth fix, 10 epochs, 30% 3DPW-train on v23; control `v5_root_dist1_nofix_v23_e10` | 73.7, control 77.4 (3611336:191, 3611339:182) | not in this column: measured on the v23 labels (section 5, item 7) |
 
-\* Quoted in the header of `slurm/demo/run_demo_compare.sh:5-9`, which names neither the method nor the epochs.
+\* The four numbers in this column are against the OLD labels (before the 18-Oct re-fit); never put them next to the
+final model's v23 numbers (0b above; section 5, item 7). v5, v9 e62 and exp6 on v23: pending (0a, step 6).
+Quoted in the header of `slurm/demo/run_demo_compare.sh:5-9`, which names neither the method nor the epochs.
 [Likely] they come from `slurm/eval/run_eval_3dpw_test.sh`: `train.py --eval_only 1` (`evaluate()`, V0, unmasked) on
 "all 9,722 converted images, every third frame of the 24 test sequences" (`:11-12`); its model list has v9 00062 and
 v10 00299 (`:36`, `:40`), as does `run_demo_compare.sh:93-98`. No log of that run is in the chat. The scores are
@@ -2783,10 +2786,11 @@ item 6 are full; do not add text there).
 **Evening of 18 Oct, the final model (exp7)** (section 5, item 7): rebuilt again from `build.js`, now 19 slides.
 Against the 18-Oct pptx (old slide N = new slide N up to 15; old 16-18 = new 17-19) only these parts differ [Certain,
 part-by-part diff]: slides 1, 7, 9, 13, 14 and old 16-18 (the appendix only by its image's part name); notes 1, 7, 9,
-10, 12, 13, 14 and old 16-18; the new `slide16.xml` and `notesSlide16.xml`; `slideLayout4.xml` (the footer); and
-`presentation.xml`, `[Content_Types].xml`, the presentation rels, `docProps/app.xml` and `core.xml` (the new slide,
-timestamps, section IDs). The notes `.md` is the build's output: 19 slide headings, title "supervisor update, 19
-October 2026". In short:
+10, 12, 13, 14 and old 16-18; the new `slide16.xml` and `notesSlide16.xml` (and, by the shift, `slide19.xml`,
+`notesSlide19.xml` and the appendix image as `image-19-1.jpg`); the rels of slides 17 and 18 (the appendix image
+moved to slide 19); `slideLayout4.xml` (the footer); and `presentation.xml`, `[Content_Types].xml`, the presentation
+rels, `docProps/app.xml` and `core.xml` (the new slide, timestamps, section IDs). The notes `.md` is the build's
+output: 19 slide headings, title "supervisor update, 19 October 2026". In short:
 - new slide 16, "Final model: all fixes together, with a control": a table v5 | control | final model: PVE 70.5 /
   77.4 / 73.7, PA-PVE 53.3 / 56.4 / 50.3, recall 90.2 / 89.0 / 87.0% (the 87.0 in orange), root error 1208 / 1402 /
   728 mm, size ratio 0.63 / 0.59 / 0.78, neck02 175.6 / 175.8 / 4.8° (the flips in red), neck girth 0.46 / 0.46 /
