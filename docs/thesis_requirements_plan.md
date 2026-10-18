@@ -4,6 +4,14 @@ Written on Sunday 18 Oct 2026, the evening before the meeting of Monday 19 Oct, 
 question: what of the supervisor's list is done, and what to do next for a good grade. `docs/handover.md`, section 11,
 points here; where the two disagree on the plan, this file is newer.
 
+**Update, 18 Oct afternoon.** The Relative Human evaluation of the final model has run: job 3612131
+(`logs/eval_rh_3612131_0.out`, node serv-9225, 09:40; `models/multiHMR/exp7_v5_final_00009.pt`, its bone fix from the
+checkpoint args; val split, 635 images, 2,130 labelled people, IoU 0.3, child threshold 0.45) [Certain, log]. Gender
+accuracy 0.642 (v5 0.465), children AUC 0.719 (v5 0.606), recall 0.647 (v5 0.471); table and reading in 3.1, item 7.
+Every "pending" for it in the first version of this file (the skeptic's review included) is replaced below. The
+`MASK_3DPW_SHAPE=1` arm is running [Likely, the student's message of 18 Oct; no job id or log here yet]. The deck has
+a requirements slide since this update (slide 20; handover section 9).
+
 **Sources.** The supervisor's e-mail (pasted by the student on 18 Oct); `docs/handover.md` (0b, 3.4, 3.5, 3.6, 4f,
 section 5 item 7); four read-only investigator reports (architecture and baseline, distillation, phenotypes,
 temporal and report) and a skeptic's review of the first plan, all of 18 Oct. The skeptic's corrections are applied
@@ -74,8 +82,8 @@ met. [1a-pose] is close on 3DPW. Not met: [1b] (the model is Multi-HMR with an A
 | Req. | Status | Evidence (one number or fact) | Missing |
 |---|---|---|---|
 | 1a-pose, 3DPW test | partly | 3DPW test, v23 labels, 8,190 images: PVE 89.0 / PA-PVE 57.6 / MPJPE 88.3, recall 99, **precision 64** (3611336:224-229; handover 0b) [Certain]. By eye: 8 3DPW-test frames, necks normal (demo 3612078) | a body-joint MPJPE; a 3DPW-test overlay panel with predicted hands; a seed or a CI; depth slope 0.42 (1 = right) |
-| 1a-pose, in the wild | partly, by eye only | 4 photos (3612078): necks normal; the boy is an adult body; placement offsets and ghost bodies unchanged [Certain, by eye]. **Every real-photo demo so far forces the fingers to rest pose** (`--relax_hands 1`, `slurm/demo/run_demo_compare.sh:171`) [Certain] | a demo with predicted fingers; a number on a labelled real set (Relative Human recall: v5 47%; final model pending); offsets and ghosts as stated limitations |
-| 1a-shape, visible change | partly / at risk | Men look male now, by eye [Likely]. Medians moved onto the 3DPW converter constants: muscle 0.28 -> 0.48, weight 0.59 -> 0.48, age 0.61 -> 0.56 (demo `[shape]` lines, not matched to people; handover 3.4) [Certain, log]; spreads of muscle, weight, cup size, firmness, age <= 0.05 [Unverified]. Children read as short adults (v5 Relative Human AUC 0.61; final pending). No correlation, slope or R² exists for any phenotype [Certain] | the `MASK_3DPW_SHAPE=1` arm; per-phenotype r / slope / R² on AnnyOne; a rest-pose lineup; Relative Human of the final model |
+| 1a-pose, in the wild | partly, by eye only | 4 photos (3612078): necks normal; the boy is an adult body; placement offsets and ghost bodies unchanged [Certain, by eye]. **Every real-photo demo so far forces the fingers to rest pose** (`--relax_hands 1`, `slurm/demo/run_demo_compare.sh:171`) [Certain] | a demo with predicted fingers; a number on a labelled real set beyond Relative Human (recall v5 47%, final model 65%, job 3612131); offsets and ghosts as stated limitations |
+| 1a-shape, visible change | partly / at risk | Men look male now, by eye [Likely]. Medians moved onto the 3DPW converter constants: muscle 0.28 -> 0.48, weight 0.59 -> 0.48, age 0.61 -> 0.56 (demo `[shape]` lines, not matched to people; handover 3.4) [Certain, log]; spreads of muscle, weight, cup size, firmness, age <= 0.05 [Unverified]. Relative Human, final model (3612131:26-32) [Certain, log]: gender accuracy 0.642 (v5 0.465; mean women 0.861, men 0.551 = still mid-range); children AUC 0.719 (v5 0.606), babies 0.438 vs adults 0.536. No correlation, slope or R² exists for any phenotype [Certain] | the `MASK_3DPW_SHAPE=1` arm (running); per-phenotype r / slope / R² on AnnyOne; a rest-pose lineup |
 | 1a-shape, trained on AnnyOne labels | met | `--use_anny_shape 1 --alpha_shape 20`, L1 on all 11 values (`loss.py:319-326`; `exp7_final_model.sh:751-752`) [Certain] | nothing |
 | 1b, not exactly Multi-HMR | **not met** | `model.py` is the upstream paper model with the output resized to 163x6 rotations and 11 phenotypes, plus a 0-parameter bone fix [Certain] | a route (3.2) and the supervisor's yes |
 | 1b-i, new architecture | not started | no candidate. NAVER's `multiHMR_672_L_anny.pt` never evaluated here; the adapter is written (uncommitted) and crashes at `train.py:242` [Certain] | the adapter fix; the baseline row |
@@ -116,9 +124,31 @@ met. [1a-pose] is close on 3DPW. Not met: [1b] (the model is Multi-HMR with an A
 5. **Every headline number is one run, no seed** [Certain]. Two identical configs differed by 7.6 mm PVE (handover
    3.6). The AnnyOne test is 100 images (the last 100 indices, `--val_anny_n 100`). A 3.7 mm margin there is noise.
 6. **Root error**: say "1402 -> 728 mm against the matched control (v5 1208)", not "1208 -> 728" (handover 0b).
-7. **Relative Human of the final model: pending** (handover 3.4). No final-model gender, children or recall number
-   exists. Earlier figures in circulation (recall 65%, gender accuracy 0.64, AUC 0.72) are [Unverified]: never say
-   them.
+7. **Relative Human of the final model: done, job 3612131** (18 Oct, 09:40; `logs/eval_rh_3612131_0.out`; handover 3.4)
+   [Certain, log]. The first version of this file (and its skeptic's review) called it pending and the figures
+   "unverified": that is overtaken; they are measured now.
+
+   | group | labelled | matched | recall | age mean | age median | age < 0.45 | height | proportions | gender acc. | n_g |
+   |---|---|---|---|---|---|---|---|---|---|---|
+   | adult | 1,680 | 1,113 | 0.662 | 0.536 | 0.530 | 0.012 | 0.500 | 0.671 | 0.663 | 1,079 |
+   | teen | 101 | 72 | 0.713 | 0.524 | 0.518 | 0.014 | 0.492 | 0.674 | 0.571 | 70 |
+   | kid | 209 | 119 | 0.569 | 0.500 | 0.505 | 0.168 | 0.466 | 0.670 | 0.528 | 108 |
+   | baby | 117 | 73 | 0.624 | 0.438 | 0.456 | 0.493 | 0.464 | 0.686 | 0.560 | 50 |
+
+   Child-vs-adult AUC 0.719 (n_pos 192, n_neg 1,113); gender accuracy 0.642 (n = 1,308), mean predicted gender men
+   0.551, women 0.861; overall recall 0.647 (1,379 / 2,130) (3612131:25-33). v5 (3611285_0): recall 0.471, gender
+   0.465 (men 0.535, women 0.551), age adult 0.631 / kid 0.613 / baby 0.624, AUC 0.606. Reading:
+   - [Certain] Better than v5 on every line: recall 47 -> 65% (babies 33 -> 62%); gender 46 -> 64% (women recognised,
+     men still mid-range); children separate from adults (AUC 0.61 -> 0.72; babies 0.44 vs adults 0.54; 49% of babies
+     below the child threshold, v5 3%).
+   - [Likely] Part of the age shift is the 3DPW age label 0.55: every real person moved down (adults 0.63 -> 0.54),
+     babies further (0.44). The AUC ranks people, so a common shift alone cannot raise it. So the
+     `MASK_3DPW_SHAPE=1` arm is an experiment with two possible outcomes (3.3), not a sure improvement.
+   - Caveats [Certain]: more people matched (1,305 children and adults vs 948), so the two AUCs cover different
+     detected sets. On the 12 demo images muscle, weight, cup size and firmness sit at ~0.5, the converter constants
+     (demo 3612078 `[shape]` lines), so "shape visibly changes per person" holds for gender and partly for age and
+     height only.
+   - Say it as "measured improvement, not solved" (deck slides 10, 19 and 20).
 
 ### 3.2 The route for [1b]
 
@@ -155,7 +185,10 @@ than its L on synthetic BEDLAM-val (67.2 vs 58.6), and AnnyOne is synthetic.
 
 ### 3.3 [1a-shape]
 
-- The `MASK_3DPW_SHAPE=1` arm (one exp7 run, ~2 h) will [Likely] bring back the spread of the collapsed phenotypes.
+- The `MASK_3DPW_SHAPE=1` arm (one exp7 run, ~2 h; running since 18 Oct [Likely, the student's message]) will [Likely]
+  bring back the spread of the collapsed phenotypes. It can also cost something: the final model's children gain on
+  Relative Human (AUC 0.61 -> 0.72, 3.1 item 7) came with the 0.55 age anchor on, so it may shrink or stay with the
+  mask. Two outcomes; read both the spreads and the Relative Human run of the mask arm (section 4, week 1, item 6).
 - Predictions, written before the run: muscle, weight, cup size, firmness and age widen back to std >= 0.06 on the
   demo and on Relative Human; their medians leave 0.5 / 0.55; adult age moves toward ~0.6. Gender, height and
   proportions: no change beyond noise. AnnyOne holdout PVE within 7.6 mm. 3DPW-test PVE equal or a few mm worse,
@@ -242,7 +275,9 @@ exist yet.
    Read with the `grep` in the script's header. The line `[model_class] multi_hmr_original: ... loaded N/N tensors
    (100.0%)` must be there. Until 3.4 item 2 exists, label the row: NAVER masked by design, ours unmasked (V0).
    Not known: whether NAVER trained on our last-100 AnnyOne images. If it did, its AnnyOne number is optimistic.
-4. **`MASK_3DPW_SHAPE=1` arm** (the fix arm only; `bash`, not `sbatch`: the script runs its guards and sets `--time`):
+4. **`MASK_3DPW_SHAPE=1` arm** (the fix arm only; `bash`, not `sbatch`: the script runs its guards and sets `--time`).
+   **Running since 18 Oct** [Likely, the student's message; no job id here yet]: check `squeue` and its log first and do
+   not submit it a second time (handover 10). The commands, for the record:
    ```
    cd /netscratch/najib/multi-hmr && conda activate multihmr && MASK_3DPW_SHAPE=1 CHECK_ONLY=1 bash slurm/experiments/exp7_final_model.sh
    ```
@@ -253,7 +288,7 @@ exist yet.
    the table looks for a `_shpmask` control (`:225`), which will not exist, and prints "-". ~2 h + trace + 3DPW-test
    evaluation, 5-h limit. The job stops if `train.log` lacks `[loss] mask_3dpw_shape:`. Compare it with the unmasked
    fix arm `v5_pc_dist5_bonefix_v23_e10` (both `holdout_ft/summary.json` and `eval_3dpw_test.log`).
-5. **Relative Human of the final model** (pending since 18 Oct; handover 0a, step 6):
+5. **Relative Human of the final model: DONE 18 Oct**, job 3612131 (3.1, item 7). The command, for the record:
    ```
    cd /netscratch/najib/multi-hmr && MODEL=/netscratch/najib/multi-hmr/models/multiHMR/exp7_v5_final_00009.pt sbatch --array=0 slurm/diagnostics/eval_relative_human.sh
    ```
@@ -411,7 +446,7 @@ the presentation and **pure buffer**. (3) is where the grade is decided; do not 
 | Item | GPU-h | Code-days |
 |---|---|---|
 | NAVER adapter fix, masked-eval flag, NAVER + 2 masked evaluations | ~1.5 | 0.5 |
-| `MASK_3DPW_SHAPE=1` arm + Relative Human x2 + its 3DPW test | 5-6 | 0 |
+| `MASK_3DPW_SHAPE=1` arm + its Relative Human (the final model's: done, 3612131) + its 3DPW test | 5-6 | 0 |
 | Phenotype stats, RH CPU stats, demo overrides, lineup, finger demo | 0.3 | 2 |
 | ViT-B student, one job, 100 epochs, with its post-steps | 25-45 | 0.5 (`kd_shp` mask) |
 | Old students on v23, body-joint MPJPE, final table, figures | 1 | 2 |
@@ -436,8 +471,11 @@ the presentation and **pure buffer**. (3) is where the grade is decided; do not 
    there an official split? Could NAVER's Anny checkpoint have trained on those images?
 3. **Honest gaps.** (a) Architecturally this is Multi-HMR with an Anny head, so (1b) is open. (b) On real photos
    muscle, weight, cup size, firmness and age sit on the 3DPW converter constants, because they were trained at full
-   weight; a masked run goes in this week. (c) Children are read as short adults on v5 (AUC 0.61); the final model's
-   Relative Human run is pending. (d) About a third of 3DPW-test detections are unmatched (unlabelled bystanders plus
+   weight; a masked run goes in this week. (c) Children and gender on Relative Human: v5 reads children as short
+   adults (AUC 0.61, gender 46.5%); the final model is better on every line (AUC 0.72, babies 0.44 vs adults 0.54,
+   gender 64%, recall 65%; job 3612131) but not solved: men are still mid-range, and part of the age shift is likely
+   the 3DPW age anchor 0.55. **Ask:** children as a stated limitation, or weak age labels from Relative Human (1-2
+   weeks)? (d) About a third of 3DPW-test detections are unmatched (unlabelled bystanders plus
    ghosts). (e) NAVER's Anny checkpoint has not been evaluated here yet; the adapter exists and runs this week, under
    the same protocol (helper bones masked for every row).
 4. **Proposed route for (1b): a ViT-B student** (101 M params, 603 GFLOPs at 2 x MAC; 3.1x / 3.2x below our 318 M /
@@ -454,7 +492,7 @@ the presentation and **pure buffer**. (3) is where the grade is decided; do not 
    motion"? Is a shape-consistency window alone acceptable if time runs out? **And the submission date.**
 
 After the meeting: write his answers into handover section 9. Then, before anything else that evening: fix the
-adapter (3.4, item 1), commit the pending files, submit the baseline smoke test and the `MASK_3DPW_SHAPE=1` arm
+adapter (3.4, item 1), commit the pending files, submit the baseline smoke test (the `MASK_3DPW_SHAPE=1` arm is already running)
 (section 4, "Monday 19 Oct, evening").
 
 ---
@@ -509,7 +547,7 @@ adapter (3.4, item 1), commit the pending files, submit the baseline smoke test 
    `demo.py:640`); the final recipe in `configs/final_model.args`, read by `train.py` and the job script; a real name
    for the final model.
 9. **Commit the evidence**: `results/final/` with `summary.json` and the key logs (3611336 / 3611339, 3612073-5,
-   3611285, 3611284, and the new ones), plus the provenance table (number -> file:line).
+   3611285, 3612131, 3611284, and the new ones), plus the provenance table (number -> file:line).
 10. **Tests and a smoke script**: pytest for the 3DPW K formula, the bone-fix round trip, label loading and a
     one-image forward; `scripts/smoke_test.sh` under 5 min. Deliver as a tagged release on `main`; the current branch
     has "WIP, not for main" commits.

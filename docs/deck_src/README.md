@@ -1,15 +1,20 @@
 # Deck source: supervisor update, 19 October 2026
 
-`build.js` builds the 20-slide deck `docs/supervisor_update_2026-10-16.pptx` and its speaker notes
+`build.js` builds the 21-slide deck `docs/supervisor_update_2026-10-16.pptx` and its speaker notes
 `docs/supervisor_talk_notes_2026-10-16.md` for the supervisor meeting on 19 October 2026 (the file names keep the
 first meeting date, 16 Oct). It is the script that made the published files (first on 15 Oct 2026, then every update;
-the 20-slide version on 18 Oct), with two lines changed so that it runs outside the machine it was first built on
+the 21-slide version on the afternoon of 18 Oct), with two lines changed so that it runs outside the machine it was first built on
 (line 2 loads `./apply_theme.js`; line 70 finds the figures through `__dirname`).
 
-Slides added last (18 Oct): slide 16, "Final model: all fixes together, with a control" (exp7 against its control,
-with the 3DPW test on the corrected labels for v5, v9, the neck pilot, the control and the final model), and slide 17,
+Slide added last (18 Oct, afternoon): slide 20, "Thesis requirements: where we stand, and the plan" (the
+supervisor's requirements of 18 Oct as a status table, from `docs/thesis_requirements_plan.md`, and the route for
+requirement 1b). The appendix moved from slide 20 to slide 21. In the same rebuild slides 10, 17, 18 and 19 got the
+final model's Relative Human result (job 3612131), and slide 19's question box the four questions for the meeting.
+Before that (18 Oct): slide 16, "Final model: all fixes together, with a control" (exp7 against its control, with
+the 3DPW test on the corrected labels for v5, v9, the neck pilot, the control and the final model), and slide 17,
 "Final model on real photos: v5 vs final (by eye)" (figure `docs/figures/final_model_real_photos.jpg`, demo job
-3612078). The old slides 16-18 are now 18-20. `docs/handover.md` section 9 lists every slide and what it says.
+3612078). The slides 16-18 of before 18 Oct are now 18, 19 and 21. `docs/handover.md` section 9 lists every slide
+and what it says.
 
 Files here:
 - `build.js`: the whole deck (layouts, slides, speaker notes) written with pptxgenjs, plus two post-processing steps.
@@ -33,12 +38,14 @@ Run `node build.js` from this folder: it writes its outputs into the current fol
 Checked on 15 Oct 2026 (node 22, `npm ci`, a fresh copy of this folder next to `docs/figures/`): `node build.js` gives
 the same slides, theme, media and layouts as `docs/supervisor_update_2026-10-16.pptx` (only the timestamps in
 `docProps/core.xml` and the random section IDs in `ppt/presentation.xml` differ), and a speaker-notes `.md`
-byte-identical to `docs/supervisor_talk_notes_2026-10-16.md`.
+byte-identical to `docs/supervisor_talk_notes_2026-10-16.md`. Checked again on the afternoon of 18 Oct for the
+21-slide version (this folder's `build.js` and `apply_theme.js` copied next to `docs/figures/`, pptxgenjs 4.0.1 from
+an existing `node_modules` instead of a fresh `npm ci`): the same result.
 
 ## What `build.js` does when it runs
 
 1. Writes `supervisor_update.pptx` into the current folder.
-2. Calls `applyTheme("supervisor_update.pptx", THEME)` (`build.js:617`, from `apply_theme.js`): writes the deck's 12
+2. Calls `applyTheme("supervisor_update.pptx", THEME)` (`build.js:670`, from `apply_theme.js`): writes the deck's 12
    theme colours (theme "MeshDiag": dark `1B2233`, accent `0E7C86`, orange `E8792B`, green `3BA55D`, red `C0392B`,
    grey `7B8794`, yellow `F4C95D`; fonts Calibri; the object is `THEME` at `build.js:4-5`) into
    `ppt/theme/theme1.xml`, replacing the Office palette that pptxgenjs always writes there. Many shapes use scheme
@@ -55,8 +62,8 @@ soffice --headless --convert-to pdf supervisor_update.pptx
 pdftoppm -jpeg -r 80 supervisor_update.pdf slide
 ```
 
-LibreOffice wraps text slightly differently from PowerPoint. Slides 5, 6, 15, 16 and 19 (the claims slide) are the
-tightest; check them in PowerPoint (`docs/handover.md` section 9 lists every slide to check).
+LibreOffice wraps text slightly differently from PowerPoint. Slides 5, 6, 10, 15, 16, 19 (the claims slide) and 20
+(the requirements table) are the tightest; check them in PowerPoint (`docs/handover.md` section 9 lists every slide to check).
 
 ## Publish
 
