@@ -259,7 +259,16 @@ Paste this section with section 0. Each step names the section with the details.
    ```
    Then the conversion check through the venv on H100 (4e, step 5; [Likely]: never run in the venv). The check
    script also asks for the old partitions by default; the 4e command passes `--partition` with the H100/H200.
-6. **SUBMITTED 18 Oct, waiting for the queue** (pending item 4): the final model (section 5, item 7): a fine-tune of
+6. **RUNNING 18 Oct** (pending item 4). Fix arm 3611336 started ~05:28 on serv-3315 (A100-PCI); control 3611339
+   still queued. **Smoke test 3611333 PASSED** [Certain, logs/exp7_final_model_3611333.out]: label check PASS inside the
+   job; `[bone_fix] ON` (4 bones), `[loss] mask_3dpw_hands` (38 bones), `[mixed] 579860 AnnyOne + 5882 3DPW-train`, 30%;
+   anchor check: GT offsets all within [-0.5, 0.5] (targets consistent; predictions not yet, after 0 steps); 0 NaN
+   steps; trace and table written. Its numbers after 20 steps (80 images) say nothing about quality except that the
+   bone fix is active from step 0: neck02 4.7 deg, girth 0.992, PVE_neck 12.5 mm, fingers 8.3 deg (= exp6). Watch in the
+   full run: PVE 83.5 after 20 steps (v5 70.5; restart cost with fresh Adam and the new depth targets; must come back to
+   ~75 or below), head direction 21.3 deg (exp6 14.4), root error 888 mm (needs epochs; long_pc_dist5 reached 544).
+   Throughput 4.78 images/s on A100-PCI (AnnyOne alone 11.8-12.2: the 1920x1080 3DPW JPEGs) [Likely: ~14 min per
+   epoch, ~3-3.5 h with evaluations and the 3DPW test, inside the 5-h limit]. History: SUBMITTED 18 Oct: the final model (section 5, item 7): a fine-tune of
    v5 00099 with v5's bone fix, the depth fix and the v23 labels, 10 epochs, plus its matched control (`ARM=control`).
    It trains, so it needs the normal env and **only the old GPUs** (4f): expect days in the queue. **Since 18 Oct its
    prerequisites 1-3** (header of `exp7_final_model.sh:22-33`: the re-fit check task, all 87 fits with the `--seq all`
