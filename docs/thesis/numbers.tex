@@ -1,0 +1,31 @@
+% =============================================================================
+% numbers.tex  --  every headline number of the thesis, as a macro
+%
+% Convention (REWRITE_PLAN.md section 5, "Traceability without job ids"):
+%   * one macro per headline number, e.g.
+%       \newcommand{\FinalPVE}{73.7} % 3611336:191, V1 holdout
+%   * the source goes in a comment on the same line: job:line of the Slurm log,
+%     a handover section (H 0b, H 3.1, ...) or file:line of the repository;
+%   * job ids never appear in the running text or in captions; Appendix A (T13)
+%     maps run names to job ids, logs and checkpoints;
+%   * macro names are letters only (LaTeX forbids digits): \FinalThreeDPW, not
+%     \Final3DPW; numbers are plain (1927.4, not 1,927.4) so \num{} can format
+%     them;
+%   * a macro is defined once, in the file of the chapter that owns it; check
+%     the other numbers_*.tex files before adding one (a second \newcommand of
+%     the same name is a build error).
+%
+% Files (owner):
+%   numbers_data.tex         Data writer        (chapter 3)
+%   numbers_method.tex       Method writer      (chapter 4)
+%   numbers_diagnostics.tex  Diagnostics writer (chapter 5)
+%   numbers_results.tex      Results writer     (chapter 6; merges additions)
+%   numbers_background.tex   Background writer  (chapter 2)
+% Each is input only if it exists, so the skeleton compiles without them.
+% =============================================================================
+
+\IfFileExists{numbers_data.tex}{\input{numbers_data}}{}
+\IfFileExists{numbers_method.tex}{\input{numbers_method}}{}
+\IfFileExists{numbers_diagnostics.tex}{\input{numbers_diagnostics}}{}
+\IfFileExists{numbers_results.tex}{\input{numbers_results}}{}
+\IfFileExists{numbers_background.tex}{\input{numbers_background}}{}

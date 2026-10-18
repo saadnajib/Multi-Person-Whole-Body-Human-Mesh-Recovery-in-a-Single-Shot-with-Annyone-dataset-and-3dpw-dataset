@@ -1,0 +1,22 @@
+% F19 The Student's holdout and 3DPW-validation PVE per evaluated epoch next to the teacher's values
+% (Results 6.10). PLACEHOLDER: data pending (job 3614191).
+% Waits for (REWRITE_PLAN.md section 7 Q2):
+%   grep -E "epoch|pve|PVE" results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/train.log
+%   -> data/F19_student.csv (columns: epoch,holdout_pve,val3dpw_pve)
+\begin{figure}[tbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.8\linewidth, height=5.5cm,
+  xlabel={Epoch}, ylabel={PVE (mm)}, xmin=0, xmax=30, ymin=60, ymax=140,
+  grid=major, grid style={gray!25},
+  tick label style={font=\footnotesize}, label style={font=\small},
+]
+\draw[densely dotted, blue!70!black] (axis cs:0,\FinalPVE) -- (axis cs:30,\FinalPVE) node[pos=0.99, anchor=south east, font=\scriptsize] {teacher, holdout V1 (\FinalPVE)};
+\draw[densely dotted, black!60] (axis cs:0,\BarPVE) -- (axis cs:30,\BarPVE) node[pos=0.99, anchor=south east, font=\scriptsize] {95\,\% bar (\BarPVE)};
+\node[font=\small\bfseries, red!70!black, align=center] at (axis cs:15,120) {data pending\\[-1pt]\footnotesize Student train.log};
+\end{axis}
+\end{tikzpicture}
+\caption{The Student's error per evaluated epoch against the teacher's. \TODO{plot pending: Student training log}}
+\label{fig:student-curves}
+\end{figure}

@@ -1,0 +1,22 @@
+% Copied verbatim from draft_2026-10_original/main.tex:718-734 (draft label tab:student_runs).
+% Plan verdict (REWRITE_PLAN.md): keep (history): Method 4.7.1 ViT-S students. Colour jitter claim unconfirmed (plan 1.1 #13, Q8): remove "colour jitter" unless confirmed.
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llll}
+\toprule
+Run & Student backbone init & Heads & Added \\
+\midrule
+v1/v2 & ImageNet DINOv2-S & random & feature KD \\
+v3 & ImageNet DINOv2-S & 54/67 from teacher & output KD \\
+v4 & \texttt{multiHMR\_672\_S} & 54/67 from teacher & colour jitter, batch 8 \\
+v5 & \texttt{multiHMR\_672\_S} & 54/67, frozen 5 epochs & 2D losses from epoch 5 \\
+v6 & \texttt{multiHMR\_672\_S} & 67/67 via projector & \texttt{--head\_dim 1024} \\
+v6b & continues v6 & & 150 more epochs, LR $2{\cdot}10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\caption{Student configurations. Each row adds to the previous one.}
+\label{tab:student_runs}
+\end{table}

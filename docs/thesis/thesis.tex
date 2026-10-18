@@ -1,0 +1,270 @@
+% =============================================================================
+% thesis.tex  --  main file of the rewritten thesis (REWRITE_PLAN.md section 6)
+% Build:  cd docs/thesis && latexmk -pdf -interaction=nonstopmode thesis.tex
+% Preamble copied from draft_2026-10_original/thesis.tex; added: pgfplots,
+% subcaption, siunitx, multirow, \graphicspath, \input{numbers}, chapters
+% under chapters/. Writer-owned chapters are wrapped in \InputIfExists.
+% =============================================================================
+\documentclass[
+    bibliography=totoc, % Add the bibliography to the TOC
+    listof=totoc,      % Add the "List of *" to the TOC
+    %final              % Set document status as FINAL
+    %draft              % Set document status as DRAFT: Faster, skips some stuff (e.g. referencing)
+]{scrbook}              % scrbook defaults: a4paper, twoside, openright, 11pt
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Input encoding: UTF8
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Requirements
+
+% TIKZ
+\usepackage{tikz}
+    % \usetikzlibrary{external} % Externalisation needs -shell-escape; off so plain latexmk -pdf works.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Page Geometry Layout
+
+\usepackage[
+        a4paper,
+        top=35mm,
+        bottom=40mm,
+        inner=35mm,
+        outer=40mm,
+        bindingoffset=5mm,
+        marginparsep=5mm,
+        marginparwidth=40mm,
+        %showframe  % Can be enabled to debug the page geometry
+    ]{geometry}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Header & Footer
+
+\usepackage[
+        headsepline,
+        footsepline,
+        draft=false     % Draft mode adds "ruler" instead of header/footer, we never want that!
+    ]{scrlayer-scrpage}
+
+% Style
+\renewcommand*{\chaptermarkformat}{\chapapp~\thechapter:\enskip}% Put "chapter" oder "appendix" in front of the chapter number in running head
+\clearpairofpagestyles
+\ohead{\headmark}
+\automark[chapter]{chapter}
+\automark*[section]{}
+\ofoot*{\pagemark}
+\pagestyle{scrheadings}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Captions for Figures
+
+\usepackage[
+        font={normal,small,sl,color=black!80},
+        labelfont={normal,bf}
+    ]{caption}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% PDF Links 
+
+\usepackage[
+        bookmarksdepth=3,   % bookmark levels in the PDF.
+        bookmarksnumbered   % Show section numbering in bookmark
+    ]{hyperref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Bibliography / Citing
+
+\usepackage[
+        backend=biber,
+        style=alphabetic,
+        minnames=4,
+        maxnames=10
+    ]{biblatex}
+
+% Cititation References
+\addbibresource{references.bib}
+
+% Citation style
+%\DeclareFieldFormat{labelalpha}{\thefield{entrykey}}
+%\DeclareFieldFormat{extraalpha}{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Content Stuff
+
+\usepackage[ngerman,english]{babel}
+\usepackage{csquotes}
+
+% Packages and macros used by main.tex / appendix.tex
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+    \graphicspath{{figures/img/}{figures/}}
+\usepackage{listings}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{subcaption}
+\usepackage{siunitx}
+    \sisetup{group-separator={,}, group-minimum-digits=4}
+\usepackage{pgfplots}
+    \pgfplotsset{compat=1.18}
+    \usepgfplotslibrary{statistics,groupplots} % boxplots (F16), side-by-side panels (F18)
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,calc}
+\newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\mm}{\,\mathrm{mm}}
+
+% \InputIfExists{file}{chapter title}: \input a writer-owned chapter, or, while the
+% file does not exist yet, print a placeholder chapter with that title, so the
+% skeleton always compiles and the chapter numbers stay right.
+\newcommand{\InputIfExists}[2]{\IfFileExists{#1.tex}{\input{#1}}{\chapter{#2}\TODO{chapter pending (#1.tex)}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Headline numbers: one macro per number, source in a comment (see numbers.tex)
+
+\input{numbers}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------------------- %
+% --------------------------------------------------------------------------- %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Variables, Commands, Macros
+
+%\input{variables.tex} % Commented out as variables are defined directly below
+
+\title{Multi-Person Human Mesh Recovery with the Anny Body Model}
+\author{Muhammad Saad Najib}
+\date{\today}
+\newcommand{\thesisType}{Master}
+\newcommand{\supervisor}{Muhammad Saif Ullah Khan}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Set PDF attributes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\makeatletter
+\hypersetup{
+    pdftitle = {\@title},
+    pdfauthor= {\@author}
+}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------------------- %
+% -MAIN DOCUMENT------------------------------------------------------------- %
+% --------------------------------------------------------------------------- %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\frontmatter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Titlepage %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newgeometry{margin=1in}
+\begin{titlepage}
+    \makeatletter
+        \centering
+        \includegraphics[width=7cm]{RPTU-Logo-RGB} \par \vspace*{\fill}
+        {\scshape\LARGE \@title \par} \vspace*{\fill}
+        {\bfseries \thesisType's Thesis \par} \vspace{1cm}
+        {by \par} \vspace{1cm}
+        {\Large\itshape \@author \par} \vspace{1cm}
+        {\@date \par} \vspace*{\fill}
+        {RPTU University Kaiserslautern-Landau\\
+        Department of Computer Science\\
+        67663 Kaiserslautern\\
+        Germany \par} \vspace*{\fill}
+        {
+        \begin{tabular}{rl}
+        Examiner: & Prof. Dr. Didier Stricker \\
+                  & \supervisor \\
+        \end{tabular}
+        }
+    \makeatother
+\end{titlepage}
+\restoregeometry
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Authorship statement
+
+\selectlanguage{ngerman}
+
+\clearpage
+\pdfbookmark{Eigenständigkeitserklärung}{Eigenständigkeitserklärung}
+\section*{Eigenständigkeitserklärung}
+
+Hiermit versichere ich, dass ich die von mir vorgelegte Arbeit mit dem Thema \glqq \makeatletter\@title\makeatother \grqq{} selbstständig verfasst habe, dass ich die verwendeten Quellen und Hilfsmittel vollständig angegeben habe und dass ich die Stellen der Arbeit --- einschließlich Tabellen und Abbildungen ---, die anderen Werken oder dem Internet im Wortlaut oder dem Sinn nach entnommen sind unter Angabe der Quelle als Entlehnung kenntlich gemacht habe.
+
+\vspace{0.5cm}
+
+Kaiserslautern, den \the\day.\the\month.\the\year
+
+\vspace{2cm}
+
+\begin{tabular}{@{}l@{}}\hline
+\makeatletter\@author\makeatother
+\end{tabular}
+
+% TODO: add the AI-use statement if RPTU requires one (REWRITE_PLAN.md 1.2; P 6.1 "AI disclosure").
+
+\selectlanguage{english}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Abstract
+
+\input{chapters/00_abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Table of Contents %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\cleardoublepage                    % Open right (req. for bookmark)
+\pdfbookmark[0]{\contentsname}{toc} % Add TOC to PDF bookmarks
+\tableofcontents                    % Print TOC
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Content %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\mainmatter
+\input{chapters/01_introduction}
+\InputIfExists{chapters/02_background}{Background and Related Work}
+\InputIfExists{chapters/03_data}{Data}
+\InputIfExists{chapters/04_method}{Method}
+\InputIfExists{chapters/05_diagnostics}{Diagnostics: How Each Failure Was Isolated}
+\input{chapters/06_results}
+\input{chapters/07_discussion}
+\input{chapters/08_conclusion}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% List of Algorithms / Figures / ... %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\listoffigures
+\listoftables
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Appendix %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendix
+\input{chapters/appendix_a_reproduction}
+\input{chapters/appendix_b_joints}
+\input{chapters/appendix_c_flags}
+\input{chapters/appendix_d_figures}
+\input{chapters/appendix_e_pilots}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Biliography %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\nocite{*} % SKELETON ONLY: lists every entry so the bibliography can be checked; remove before submission.
+\printbibliography
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
+
+```

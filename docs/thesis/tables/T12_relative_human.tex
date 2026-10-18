@@ -1,0 +1,40 @@
+% T12 Relative Human (Results 6.7 / 6.8). Owner: Results writer.
+% Source: REWRITE_PLAN.md section 4 (T12); H 0a "DECIDED"; H 0b; H 3.4.
+% Base = 3611285_0 (:23-31), Final = 3612131 (:25-33), Final-masked = 3613616 (logs/eval_rh_3613616_0.out).
+% Demo spread: jobs 3612078 (Final) vs 3613617 (Final-masked), 12 images, [shape] lines (H 0a).
+% "--" = not reported in the sources.
+\begin{table}[tbp]
+\centering\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+ & Base & Final & Final-masked \\
+\midrule
+Recall (\%) & \RHRecallBase & \RHRecallFinal & \RHRecallMasked \\
+Gender accuracy (\%) & \RHGenderBase & \RHGenderFinal & \RHGenderMasked \\
+\quad mean predicted gender, men (0 = male) & 0.535 & 0.551 & 0.717 \\
+\quad mean predicted gender, women (1 = female) & 0.551 & 0.861 & 0.860 \\
+Child-vs-adult AUC & \RHAUCBase & \RHAUCFinal & \RHAUCMasked \\
+\addlinespace
+Mean predicted age, adult & 0.631 & 0.536 & 0.638 \\
+\quad teen & 0.597 & 0.524 & -- \\
+\quad kid & 0.613 & 0.500 & 0.611 \\
+\quad baby & 0.624 & 0.438 & 0.524 \\
+Babies below the child threshold 0.45 (\%) & 2.6 & 49.3 & 16.9 \\
+Mean predicted height, adult / kid / baby & 0.507 / 0.451 / 0.394 & 0.500 / 0.466 / 0.464 & -- \\
+Matched children + adults & 948 & 1,305 & -- \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Spread on the 12 demo images (standard deviation of the predicted value)}} \\
+Muscle & -- & 0.04 & 0.06 \\
+Weight & -- & 0.04 & 0.11 \\
+Cup size & -- & 0.05 & 0.11 \\
+Firmness & -- & 0.04 & 0.11 \\
+Age & -- & 0.03 & 0.08 \\
+\bottomrule
+\end{tabular}
+\caption{Body shape on real photos. Upper part: Relative Human validation split (635 images, 2,130 labelled people),
+detected people only, matched to the labelled boxes at IoU $\geq$ 0.3; ``child'' means a predicted age below 0.45;
+the matched sets differ between models because recall differs. Lower part: spread of the predicted phenotypes over all
+detected people of the 12 demo images (4 photos and 8 3DPW test frames), not matched to people. The neck pilot
+(bone correction and a 2-epoch fine-tune) is the same as Base within run-to-run variation (AUC 0.613).}
+\label{tab:relhuman}
+\end{table}

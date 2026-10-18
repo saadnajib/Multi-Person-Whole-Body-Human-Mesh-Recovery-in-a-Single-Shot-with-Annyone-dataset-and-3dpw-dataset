@@ -1,0 +1,21 @@
+% Copied verbatim from draft_2026-10_original/main.tex:1066-1081 (draft label tab:ft).
+% Plan verdict (REWRITE_PLAN.md): keep only if plan 7 Q7 answers; otherwise drop the TODO row.
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrr}
+\toprule
+Configuration & Trainable params & Holdout PVE \\
+\midrule
+Frozen backbone, heads only & $\sim$14\,M & 145 \\
+Last 4 of 24 blocks unfrozen (+helper mask) & $\sim$64\,M & 73.6 \\
+Fully unfrozen (from scratch, all fixes) & 318\,M & \TODO{run v7} \\
+\bottomrule
+\end{tabular}
+\caption{Effect of how much of the backbone is trained. The v2$\rightarrow$v3
+step also introduced helper-bone masking; a clean separation requires re-running
+v3 without the mask. \TODO{}}
+\label{tab:ft}
+\end{table}

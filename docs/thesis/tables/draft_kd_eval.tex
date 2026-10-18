@@ -1,0 +1,27 @@
+% Copied verbatim from draft_2026-10_original/main.tex:789-810 (draft label tab:kd_eval).
+% Plan verdict (REWRITE_PLAN.md): keep (history): Results 6.11; V0, mark it; delete "A ViT-B student was not trained" (plan 1.6 4.6).
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llrrrrrr}
+\toprule
+Model & Backbone & Params & PVE & PA-PVE & MPJPE & Prec. & Recall \\
+\midrule
+Teacher (\texttt{anny\_s2\_shape\_v5}) & ViT-L & 318.4\,M & 74.3 & 57.5 & 74.4 & 81 & 90 \\
+Student v2 (feature KD only) & ViT-S & 32.8\,M & 193.4 & 128.2 & 210.7 & & 86 \\
+Teacher v9 (v5 + 30\,\% real 3DPW, ep.\ 62) & ViT-L & 318.4\,M & 78.5 & 57.4 & 78.6 & 83 & 89 \\
+Fresh model v10 (new heads, 30\,\% real from start, ep.\ 299) & ViT-L & 318.4\,M & 87.4 & 71.1 & 99.2 & 81 & 89 \\
+Student v6b (projector-fed heads, ep.\ 130) & ViT-S & 37\,M & 126.9 & 92.1 & 132.0 & 77 & 88 \\
+Student v6c (v6b recipe, batch 16, ep.\ 149) & ViT-S & 37\,M & \textbf{114.5} & \textbf{84.6} & \textbf{118.4} & 81 & 89 \\
+Student v7 (v6b + 30\,\% real 3DPW, ep.\ 130) & ViT-S & 37\,M & 120.6 & 88.2 & 125.2 & 78 & 87 \\
+Student v8 (v6c + 30\,\% real, teacher v9, ep.\ 52) & ViT-S & 37\,M & 120.6 & 86.9 & 125.0 & 76 & 87 \\
+\bottomrule
+\end{tabular}
+\caption{Student vs.\ teacher on the 100-image Anny-One holdout (mm), all
+rows from the standalone evaluation script except v6b (training-time). The
+teacher's precision (81--83\,\%) exceeds every student's (76--81\,\%) at
+similar recall. A ViT-B student was not trained.}
+\label{tab:kd_eval}
+\end{table}

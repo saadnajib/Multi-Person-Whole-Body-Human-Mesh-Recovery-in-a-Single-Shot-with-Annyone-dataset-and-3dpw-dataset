@@ -1,0 +1,43 @@
+% F18 Parameters and GFLOPs against 3DPW-test PVE (Results 6.9). Owner: Results writer.
+% Numbers from tables/T16 via numbers_results.tex: NAVER 380.94 M / >= 1917.2 GFLOPs (backbone only,
+% head FLOPs not countable for its class; job 3614947) / 126.9 mm; Final 318.38 M / 1927.4 / 89.0 mm;
+% Student 101.38 M / 603.3 GFLOPs, PVE pending (job 3614191): drawn as a dashed vertical line until known.
+% When the Student's 3DPW PVE exists: replace the \draw lines by a third \addplot coordinate.
+\begin{figure}[tbp]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 1, horizontal sep=1.6cm, y descriptions at=edge left},
+  width=0.52\linewidth, height=5.2cm,
+  ylabel={3DPW test PVE (mm)}, ymin=70, ymax=140,
+  grid=major, grid style={gray!25},
+  tick label style={font=\footnotesize}, label style={font=\small},
+  every node near coord/.append style={font=\scriptsize, anchor=south west},
+]
+\nextgroupplot[xlabel={Parameters (M)}, xmin=50, xmax=420]
+  \addplot[only marks, mark=square*, color=gray!70!black, nodes near coords, point meta=explicit symbolic]
+    coordinates {(\NAVERParams,\NAVERThreeDPW) [NAVER]};
+  \addplot[only marks, mark=*, color=blue!70!black, nodes near coords, point meta=explicit symbolic]
+    coordinates {(\FinalParams,\FinalThreeDPW) [Final]};
+  \draw[dashed, red!70!black] (axis cs:\StudentParams,70) -- (axis cs:\StudentParams,140);
+  \node[font=\scriptsize, red!70!black, rotate=90, anchor=south] at (axis cs:\StudentParams,105) {Student: PVE pending};
+  \draw[densely dotted, black!60] (axis cs:50,\BarThreeDPW) -- (axis cs:420,\BarThreeDPW)
+    node[pos=0.98, anchor=south east, font=\scriptsize] {95\,\% bar};
+\nextgroupplot[xlabel={GFLOPs}, xmin=400, xmax=2200]
+  \addplot[only marks, mark=square*, color=gray!70!black, nodes near coords, point meta=explicit symbolic,
+    every node near coord/.append style={anchor=north east}]
+    coordinates {(\NAVERBackboneGFLOPs,\NAVERThreeDPW) [NAVER (backbone only)]};
+  \draw[->, gray!70!black] (axis cs:\NAVERBackboneGFLOPs,\NAVERThreeDPW) -- ++(axis direction cs:150,0);
+  \addplot[only marks, mark=*, color=blue!70!black, nodes near coords, point meta=explicit symbolic,
+    every node near coord/.append style={anchor=north east}]
+    coordinates {(\FinalGFLOPs,\FinalThreeDPW) [Final]};
+  \draw[dashed, red!70!black] (axis cs:\StudentGFLOPs,70) -- (axis cs:\StudentGFLOPs,140);
+  \node[font=\scriptsize, red!70!black, rotate=90, anchor=south] at (axis cs:\StudentGFLOPs,105) {Student: PVE pending};
+  \draw[densely dotted, black!60] (axis cs:400,\BarThreeDPW) -- (axis cs:2200,\BarThreeDPW);
+\end{groupplot}
+\end{tikzpicture}
+\caption{Model size and compute against 3DPW-test PVE (corrected labels, all 8,190 images). NAVER's GFLOPs count its
+backbone only (arrow: the true value is higher); the Student's error is pending, so only its cost is drawn. Dotted
+line: the 95\,\% bar against Final (\BarThreeDPW\,mm).}
+\label{fig:cost-pve}
+\end{figure}

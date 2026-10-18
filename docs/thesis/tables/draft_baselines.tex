@@ -1,0 +1,20 @@
+% Copied verbatim from draft_2026-10_original/main.tex:638-652 (draft label tab:baselines).
+% Plan verdict (REWRITE_PLAN.md): DELETE in the new thesis: replaced by the measured NAVER row in T16 (plan 1.1 #16, 1.6 4.3). Paper numbers only as context, re-checked against the paper.
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llrr}
+\toprule
+Backbone & Head & Params (backbone) & 3DPW MPJPE $\downarrow$ \\
+\midrule
+ViT-S & HPH & 21\,M  & 80.1 \\
+ViT-B & HPH & 86\,M  & 73.5 \\
+ViT-L & HPH & 304\,M & \TODO{from paper Fig.~4 / suppl.} \\
+\bottomrule
+\end{tabular}
+\caption{Multi-HMR baselines (SMPL-X, trained on AGORA+BEDLAM) reproduced from
+\cite{baradel2024multihmr}.}
+\label{tab:baselines}
+\end{table}

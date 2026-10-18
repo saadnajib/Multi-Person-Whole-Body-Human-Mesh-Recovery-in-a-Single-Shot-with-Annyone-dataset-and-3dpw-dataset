@@ -1,0 +1,25 @@
+% Copied verbatim from draft_2026-10_original/main.tex:296-315 (draft label tab:io).
+% Plan verdict (REWRITE_PLAN.md): keep: Method 4.1 inputs/outputs; add a row "anchor joint: head (2D cell + offset + depth)" and the 1280 -> 672 resize note (plan 1.5, 3.3).
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lll}
+\toprule
+ & Tensor & Shape \\
+\midrule
+Input  & RGB image & $3{\times}672{\times}672$ \\
+       & intrinsics $\mathbf{K}$ (optional) & $3{\times}3$ \\
+\midrule
+Output & detection scores & $48{\times}48$ \\
+(per person) & 2D offset & $2$ \\
+       & bone rotations $\mathbf{R}$ & $163{\times}3{\times}3$ \\
+       & phenotypes $\boldsymbol{\phi}$ & $11$ \\
+       & log-depth $d$, translation $\mathbf{t}$ & $1$, $3$ \\
+       & mesh vertices $\mathbf{V}$ & $13718{\times}3$ \\
+       & joints $\mathbf{J}$ & $163{\times}3$ \\
+\bottomrule
+\end{tabular}
+\caption{Inputs and outputs of the network.}
+\end{table}

@@ -1,0 +1,31 @@
+% T4 3DPW-Anny label sets (Data 3.5/3.6). Plan REWRITE_PLAN.md section 4, T4.
+% Sources: old labels 3575369:31, 3579266:25/:39/:65/:67 (H 3.5); rebuilt v2.2 labels 3581320:25/:39/:65/:67 (H 3.5);
+% v23 labels H 0b, H 3.5 "v23 labels built" (builder output, fits of jobs 3590385 + 3602813).
+% Layout transposed against the plan (label sets as columns) so that it fits the text width.
+\begin{table}[tbp]
+\centering\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+ & old labels & rebuilt & v23 labels \\
+\midrule
+converter fits & v2.2 & v2.2 & v2.3 \\
+image files of 8 sequences & missing & re-extracted & re-extracted \\
+\addlinespace
+train, images / people & \DataOldTrainImages{} / \DataOldTrainPeople & \DataRebuiltTrainImages{} / \DataRebuiltTrainPeople & \DataThreeDPWTrainImages{} / \DataThreeDPWTrainPeople \\
+validation & \DataOldValImages{} / \DataOldValPeople & \DataRebuiltValImages{} / \DataRebuiltValPeople & \DataThreeDPWValImages{} / \DataThreeDPWValPeople \\
+test & \DataOldTestImages{} / \DataOldTestPeople & \DataRebuiltTestImages{} / \DataRebuiltTestPeople & \DataThreeDPWTestImages{} / \DataThreeDPWTestPeople \\
+total & \DataOldTotalImages{} / \DataOldTotalPeople & \DataRebuiltTotalImages{} / \DataRebuiltTotalPeople & \DataThreeDPWTotalImages{} / \DataThreeDPWTotalPeople \\
+\addlinespace
+gender reversed & yes & yes & no \\
+actor missing in two-person frames & yes & yes & no \\
+labels missing (no image file) & yes & no & no \\
+used for training & Student-S, Base+3DPW (history) & never & Final, Control, Student \\
+\bottomrule
+\end{tabular}
+\caption{The three 3DPW-Anny label sets. All are built at every third frame with the same drop rules. The v23
+labels have fewer images than the rebuilt set but the same people, because both actors of a two-person
+sequence now share each frame. \texttt{outdoors\_crosscountry\_00} yields no labels in any set
+(Section~\ref{sec:data-defects}). Numbers measured on the old labels are retired and never appear next to
+numbers on the v23 labels.}
+\label{tab:label-sets}
+\end{table}

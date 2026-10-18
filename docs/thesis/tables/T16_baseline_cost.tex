@@ -1,0 +1,39 @@
+% T16 Baseline comparison including cost (Results 6.9). Owner: Results writer.
+% Source: REWRITE_PLAN.md section 4 (T16), updated with the MEASURED NAVER cost (H 0a, job 3614947):
+%   NAVER 380.94 M params (backbone 304.37 + head 76.57), backbone 1917.2 GFLOPs, head FLOPs and ms not
+%   measured for its class (model_cost.py supports model.py's Model only).
+%   Final 318.38 M (head 14.01), 1927.4 GFLOPs, 77.9 ms median on an A100-PCIe-40GB (3614947);
+%   110 ms on an A40 (3613926, exp8 smoke test), Student 101.38 M / 603.3 GFLOPs / 51.4 ms on the same A40.
+% Accuracy: 3614192 (NAVER), 3611336 (Final), 3611339 (Control), 3570222 + 3612073 (Base).
+% Backbone-only analytic rows: model_cost.py --no-build --all (H 0a).
+\begin{table}[tbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{@{}lrrrrrrrrrrc@{}}
+\toprule
+ & \multicolumn{4}{c}{Cost} & \multicolumn{3}{c}{AnnyOne holdout (V1)} & \multicolumn{3}{c}{3DPW test (v23)} & \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}
+Model & \shortstack[r]{Params\\(M)} & GFLOPs & \shortstack[r]{ms\\A100} & \shortstack[r]{ms\\A40} & PVE & PA-PVE & Recall & PVE & PA-PVE & Recall & \shortstack{Trained\\on 3DPW} \\
+\midrule
+Multi-HMR-Anny (NAVER) & \NAVERParams & $\geq$\,\NAVERBackboneGFLOPs$^{b}$ & n/m & n/m & \NAVERAnnyOne$^{a}$ & \NAVERPAAnnyOne$^{a}$ & 89.0$^{a}$ & \NAVERThreeDPW & \NAVERPAThreeDPW & 97 & no \\
+Final & \FinalParams & \FinalGFLOPs & \TeacherMsAHundred & \TeacherMsAForty & \FinalPVE & \FinalPAPVE & \FinalRecall & \textbf{\FinalThreeDPW} & \textbf{\FinalPAThreeDPW} & \FinalRecallThreeDPW & yes \\
+Control & \multicolumn{4}{c}{same network as Final$^{c}$} & \ControlPVE & \ControlPAPVE & \ControlRecall & \ControlThreeDPW & \ControlPAThreeDPW & 99 & yes \\
+Base & \multicolumn{4}{c}{same network as Final$^{c}$} & \BasePVE & \BasePAPVE & \BaseRecall & \BaseThreeDPW & \BasePAThreeDPW & 100 & no \\
+Student (ViT-B) & \StudentParams & \StudentGFLOPs & n/m & \StudentMsAForty & \multicolumn{3}{c}{pending} & \multicolumn{3}{c}{pending} & yes \\
+\midrule
+\multicolumn{12}{@{}l}{\emph{Backbone only, analytic count}} \\
+DINOv2 ViT-S/14 & 22.06 & 196.9 & & & & & & & & & \\
+DINOv2 ViT-B/14 & 86.58 & 589.5 & & & & & & & & & \\
+DINOv2 ViT-L/14 & \BackboneLParams & 1917.2 & & & & & & & & & \\
+\bottomrule
+\end{tabular}}
+\caption{Accuracy and cost. GFLOPs count one multiply-add as two FLOPs, at 672\,px input with one person; latency is
+the median forward pass at batch 1 (fp32 with TF32). The two GPUs differ, so only times in the same column compare:
+the Student is \SpeedRatioStudent$\times$ faster than Final on the A40 and has \ParamRatioStudent$\times$ fewer
+parameters and \FlopRatioStudent$\times$ fewer FLOPs. n/m: not measured. $^{a}$Most likely in-sample for
+Multi-HMR-Anny, which was trained on the AnnyOne release; ours are held out. $^{b}$Backbone only: the head's FLOPs and
+the latency cannot be counted for NAVER's model class; its head has \NAVERHeadParams\,M parameters against
+\FinalHeadParams\,M in ours. $^{c}$Base, Control and Final share the architecture; the bone correction adds no
+parameters.}
+\label{tab:baseline}
+\end{table}

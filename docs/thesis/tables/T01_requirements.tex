@@ -1,0 +1,63 @@
+% T1 Requirements map (Discussion 7.1, full form; short form in Introduction 1.3).
+% Owner: skeleton / Discussion writer. Source: REWRITE_PLAN.md section 4 (T1);
+% docs/thesis_requirements_plan.md sections 1-2 (P 1, P 2); deck slide 23 (D slide 23).
+% Status words only: met / met with caveats / partly / not met / not started (plan section 5).
+% Job ids for the evidence: 3611336:224-229 (3DPW test), 3612131 (RH final), 3612078 (demo),
+% 3613616 (RH masked), 3614191 (student, pending), 3614192 (NAVER), 3611284 (label check v23).
+% Section numbers in the evidence column are of the NEW thesis; replace by \ref once the
+% writers' labels exist.
+\begin{table}[tbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}>{\raggedright}p{1.3cm}>{\raggedright}p{3.0cm}>{\raggedright}p{1.5cm}>{\raggedright}p{3.6cm}>{\raggedright\arraybackslash}p{3.3cm}@{}}
+\toprule
+Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
+\midrule
+1a-pose & ``Pose of all body parts must look correct'' on the 3DPW test set and on any in-the-wild image &
+  partly &
+  3DPW test (v23 labels): PVE \FinalThreeDPW\,mm, recall \FinalRecallThreeDPW\,\%, precision \FinalPrecThreeDPW\,\%
+  (Table~\ref{tab:final}); necks and fingers corrected on the holdout (Sec.~\ref{sec:res-bone}, \ref{sec:res-fingers});
+  real photos judged by eye only &
+  predicted fingers on a real photo; depth slope 0.42; one run, no seed \\
+\addlinespace
+1a-shape & ``Mesh size, proportions, age, muscles \ldots{} must visibly change according to the person'' &
+  partly, at risk &
+  Relative Human: gender \RHGenderFinal\,\% (Base \RHGenderBase), child AUC \RHAUCFinal{} (Base \RHAUCBase)
+  (Table~\ref{tab:relhuman}); muscle, weight, cup size, firmness near 0.5 on photos; masked arm trades
+  variety for gender (Sec.~\ref{sec:res-mask}) &
+  per-phenotype correlation on AnnyOne; rest-pose line-up (F17); the partial mask \\
+\addlinespace
+1b & ``Must not be exactly the same as the Multi-HMR model'': new and better, or significantly smaller and
+  $\geq$\,95\,\% as good &
+  not met &
+  the architecture is Multi-HMR's with an Anny head; Student \StudentParams\,M vs \FinalParams\,M params
+  (Table~\ref{tab:baseline}); accuracy pending (Table~\ref{tab:student}); Multi-HMR-Anny (NAVER)
+  \NAVERAnnyOne{} / \NAVERThreeDPW\,mm &
+  the Student's accuracy; the supervisor's choice of baseline for the bar \\
+\addlinespace
+1c & Evaluation on the real-world set with Anny parameters, not only SMPL-X &
+  met with caveats &
+  3DPW test in Anny space, 8,190 images / 11,854 people; label check WARN, body joints 14.1\,mm (Ch.~3) &
+  state the label caveats: 8 constant phenotypes, hands and head at rest, $\sim$14\,mm floor \\
+\addlinespace
+2a & Convert 3DPW train and test to Anny and include the train set in training &
+  met &
+  train 5,882 images / 7,584 people; 30\,\% of each batch; Control \ControlThreeDPW{} vs Base
+  \BaseThreeDPW\,mm on 3DPW test (Table~\ref{tab:final}) &
+  nothing (a 50\,\% mix is optional) \\
+\addlinespace
+2b & The model understands motion in video instead of predicting every frame on its own &
+  not started &
+  no temporal code &
+  design and evaluation (Ch.~\ref{ch:conclusion}) \\
+\addlinespace
+3 & A well-written report; a clean codebase and models he can verify &
+  partly &
+  this thesis; Appendix~\ref{app:reproduction} maps every number to its run &
+  code release and licences (Ch.~\ref{ch:conclusion}) \\
+\bottomrule
+\end{tabular}
+\caption{The supervisor's requirements and their status. Numbers: AnnyOne holdout in setting V1, 3DPW test on the
+corrected (v23) labels, Relative Human validation split; run names as defined in Chapter~4.}
+\label{tab:requirements}
+\end{table}

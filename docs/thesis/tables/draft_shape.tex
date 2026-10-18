@@ -1,0 +1,24 @@
+% Copied verbatim from draft_2026-10_original/main.tex:980-998 (draft label tab:shape).
+% Plan verdict (REWRITE_PLAN.md): keep: becomes T18 (Diagnostics 5.6); say n = 10; soften "fixed" to "near the mode".
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrrrrr}
+\toprule
+Phenotype & GT mean & GT std & v4 error ($\alpha{=}1$) & v5 error ($\alpha{=}20$) & \\
+\midrule
+age          & 0.553 & 0.036 & $+0.199$ & $\mathbf{-0.002}$ & fixed \\
+height       & 0.579 & 0.026 & $-0.154$ & $\mathbf{-0.026}$ & fixed \\
+proportions  & 0.763 & 0.070 & $-0.017$ & $\mathbf{-0.001}$ & fixed \\
+firmness     & 0.757 & 0.039 & $-0.167$ & $-0.190$ & unchanged \\
+gender       & 0.694 & --    & $-0.042$ & $-0.063$ & $\approx$ \\
+weight       & 0.382 & --    & $+0.056$ & $+0.064$ & $\approx$ \\
+\bottomrule
+\end{tabular}
+\caption{Predicted-minus-ground-truth phenotype error on the same Anny-One
+holdout samples, before and after raising the shape loss weight from 1 to 20.
+Errors are in phenotype units ($[0,1]$).}
+\label{tab:shape}
+\end{table}

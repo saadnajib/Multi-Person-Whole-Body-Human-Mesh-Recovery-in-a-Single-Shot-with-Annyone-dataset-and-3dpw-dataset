@@ -1,0 +1,20 @@
+% Copied verbatim from draft_2026-10_original/main.tex:861-875 (draft label tab:fit_versions).
+% Plan verdict (REWRITE_PLAN.md): keep: Data 3.4 converter history.
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{p{5.6cm}rrp{4.6cm}}
+\toprule
+Converter & mean (mm) & max & worst joints (mm) \\
+\midrule
+v1: name-based mapping, neutral SMPL targets & 34.3 & 37 & all joints, common floor \\
+v2: geometry-checked mapping, 3DPW joints, fixed gender & 24.6 & 30 & spine1 73, collars 55--59, spine3 58, pelvis 53 \\
+v2.1: + virtual torso joints, bone mask, warm start & \textbf{15.8} & 18.8 & shoulder 36, wrists 25--27 \\
+\bottomrule
+\end{tabular}
+\caption{Mean joint error over all 24 joints on \texttt{outdoors\_fencing\_01}
+(38 frames) for the three converter versions.}
+\label{tab:fit_versions}
+\end{table}

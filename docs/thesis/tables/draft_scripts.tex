@@ -1,0 +1,26 @@
+% Copied verbatim from draft_2026-10_original/appendix.tex:12-34 (draft label tab:scripts).
+% Plan verdict: extend into T13 / Appendix A (plan 1.8): add exp1-exp8, diagnostics, eval scripts, job ids.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{p{4.6cm}p{8.6cm}}
+\toprule
+Script & Produces \\
+\midrule
+\texttt{train\_step1\_pretrained\_bb.sh}, \texttt{train\_step2\_frozen\_bb.sh} & teacher stages 1--2 (Table~\ref{tab:main}) \\
+\texttt{train\_s2\_partialft.sh}, \texttt{train\_s2\_boosted\_v4.sh}, \texttt{train\_s2\_shape\_v5.sh} & teacher stages 3--5; \texttt{anny\_s2\_shape\_v5} is the teacher \\
+\texttt{run\_eval\_test.sh} & four-metric evaluation on the Anny-One holdout \\
+\texttt{train\_distill\_vits.sh} \ldots \texttt{\_v6.sh}, \texttt{\_v6b.sh}, \texttt{\_v6c.sh} & students v1--v6c (Tables~\ref{tab:student_runs}--\ref{tab:kd_eval}) \\
+\texttt{train\_distill\_vits\_v7\_mixed.sh} & mixed synthetic--real student (Section~\ref{sec:mixed}) \\
+\texttt{apply\_student\_fix.py}, \texttt{\_v2.py}, \texttt{\_v3.py} & patches adding head transfer, warm-up freeze and \texttt{--head\_dim} to \texttt{train.py}/\texttt{model.py} \\
+\texttt{apply\_speed\_fix.py} & TF32 and bf16 teacher backbone \\
+\texttt{apply\_mixed\_data\_fix.py}, \texttt{datasets/threedpw\_anny.py} & mixed sampler and 3DPW-Anny evaluation loader \\
+\texttt{run\_smpl\_to\_anny.sh}, \texttt{run\_smpl\_to\_anny\_scenes\_v21.sh} & single-scene and four-scene conversion (Tables~\ref{tab:fit_versions}, \ref{tab:fit_scenes}) \\
+\texttt{run\_3dpw\_list.sh}, \texttt{run\_smpl\_to\_anny\_task.sh}, \texttt{run\_build\_labels.sh} & whole-dataset conversion: task list, Slurm array, label files \\
+\texttt{render\_anny\_fit.py}, \texttt{check\_anny\_fit.py} & overlays with ground-truth vs.\ fitted joints; structural checks of a fit \\
+\texttt{check\_mask\_boost.py}, \texttt{compare\_gt\_pred\_shape.py}, \texttt{phenotype\_stats.py} & diagnostics of Chapter~\ref{ch:ablation} \\
+\bottomrule
+\end{tabular}
+\caption{Job scripts and patches behind the reported experiments.}
+\label{tab:scripts}
+\end{table}

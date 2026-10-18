@@ -1,0 +1,27 @@
+% Copied verbatim from draft_2026-10_original/main.tex:1190-1211 (draft label tab:test3dpw).
+% Plan verdict (REWRITE_PLAN.md): DELETE: old 3DPW labels, retired (plan 1.1 #5, 1.7 5.8). Never put these numbers next to v23 numbers.
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llrrrrr}
+\toprule
+Model & Backbone & real data & PVE & PA-PVE & MPJPE & PA-MPJPE \\
+\midrule
+Teacher v5 & ViT-L & -- & 119.1 & 68.8 & 124.1 & 63.1 \\
+Teacher v9 (ep.\ 62) & ViT-L & 30\,\% & \textbf{102.5} & \textbf{62.7} & \textbf{102.1} & \textbf{56.1} \\
+Fresh model v10 & ViT-L & 30\,\% from start & 111.5 & 76.2 & 121.8 & 84.8 \\
+Student v6c & ViT-S & -- & 139.5 & 88.0 & 144.1 & 83.1 \\
+Student v7 & ViT-S & 30\,\% & 124.5 & 81.7 & 126.2 & 76.8 \\
+Student v8 (final) & ViT-S & 30\,\% & \textbf{123.6} & \textbf{81.2} & 125.6 & \textbf{76.3} \\
+\bottomrule
+\end{tabular}
+\caption{3DPW-test (9\,722 converted images, Anny-space metrics in mm). The
+13--20\,mm conversion residual is a floor on every row. Recall is 95--100\,\%
+for all models except v10 (85\,\%); precision (37--59\,\%) is not meaningful here because 3DPW
+annotates only one or two actors per frame and the downtown scenes contain
+unannotated bystanders, so each correctly detected passer-by counts as a false
+positive.}
+\label{tab:test3dpw}
+\end{table}

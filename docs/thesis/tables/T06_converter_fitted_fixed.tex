@@ -1,0 +1,27 @@
+% T6 What the converter fits, reads and fixes (Data 3.3). Plan REWRITE_PLAN.md section 4, T6.
+% Sources: H 3.5 "How they are made"; H 3.4 "3DPW labels and body shape"; D part 3; smpl_to_anny.py docstring
+% (v2.2 item 1, v2.3 item 1); run_smpl_to_anny_task.sh:94-95; build_threedpw_anny_labels.py:62-64; 3611284:348.
+\begin{table}[tbp]
+\centering\small
+\begin{tabular}{@{}p{3.9cm}p{3.6cm}p{4.3cm}@{}}
+\toprule
+fitted to the 3DPW joints & read from 3DPW metadata & fixed \\
+\midrule
+root position and rotation, per frame
+  & gender: men \DataGenderMale, women \DataGenderFemale{} (Anny's convention, since v2.3)
+  & age \DataFixedAge \\
+\DataFittedBones{} of the \DataMappedBones{} mapped bones, per frame
+  &
+  & muscle, weight, cup size, firmness, african, asian, caucasian: \DataFixedNeutral{} \\
+height and proportions, one value per person
+  &
+  & \DataRestBones{} of \DataBones{} bones at rest, among them neck02, neck03, head, jaw and all finger bones \\
+\midrule
+\multicolumn{3}{@{}p{12.2cm}@{}}{dropped by the label builder: fit error above \DataDropErr\,mm; less than
+\DataDropVisPct\% of the mesh inside the image; box narrower or shorter than \DataDropBox\,px} \\
+\bottomrule
+\end{tabular}
+\caption{What the SMPL-to-Anny converter fits, what it reads from 3DPW and what it fixes. Everything in the
+right column is the same for every 3DPW person, so the labels carry no information about it.}
+\label{tab:converter-fixed}
+\end{table}

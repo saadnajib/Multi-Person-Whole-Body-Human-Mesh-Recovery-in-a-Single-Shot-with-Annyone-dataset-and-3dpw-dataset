@@ -1,0 +1,24 @@
+% Copied verbatim from draft_2026-10_original/appendix.tex:44-64 (draft label tab:mapping).
+% Plan verdict: keep: Appendix B (corrected copy in chapters/appendix_b_joints.tex).
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llr}
+\toprule
+SMPL joint & Anny bone & virtual-joint offset (cm) \\
+\midrule
+pelvis & \texttt{root} & 11.6 \\
+left / right hip & \texttt{upperleg01.L/R} & 4.3 \\
+spine1 / spine2 / spine3 & \texttt{spine03} / \texttt{spine02} / \texttt{spine01} & 3--7 \\
+neck & \texttt{neck01} & 0 (reference) \\
+left / right collar & \texttt{clavicle.L/R} & 5 \\
+head & \texttt{head} & --- \\
+shoulder / elbow / wrist / hand & \texttt{upperarm01} / \texttt{lowerarm01} / \texttt{wrist} / \texttt{finger2-1} & --- \\
+knee / ankle / foot & \texttt{lowerleg01} / \texttt{foot} / \texttt{toe1-1} & --- \\
+\bottomrule
+\end{tabular}
+\caption{Final SMPL$\rightarrow$Anny correspondence. The first converter had
+\texttt{spine1}$\rightarrow$\texttt{spine01} (25\,cm too high) and the hips on
+\texttt{pelvis.L/R}.}
+\label{tab:mapping}
+\end{table}

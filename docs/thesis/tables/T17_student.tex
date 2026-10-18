@@ -1,0 +1,40 @@
+% T17 Student result (Results 6.10). Owner: Results writer. PENDING job 3614191.
+% Fill from <RUN>/final_table.json (RUN = student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30); the job
+% re-measures the teacher, so replace the teacher column by the job's values.
+% Teacher values now: V1 3611336:191-193; test-100 V0 and 3DPW 3611336:218-229; cost 3613926 (A40).
+% Bars: error metrics teacher / 0.95 (plan T11; 77.6 and 93.7 from H 0a; 52.9, 92.9, 60.6, 81.6, 57.3 computed
+% here from the teacher values); recall teacher x 0.95 (computed here); cost: student must be lower.
+% V1 MPJPE of the teacher is not in the handover: TODO fill from 3611336 log.
+\begin{table}[tbp]
+\centering\small
+\begin{tabular}{@{}llrrrrc@{}}
+\toprule
+Set & Metric & Teacher (Final) & Student & Ratio & Bar & Met? \\
+\midrule
+AnnyOne holdout, V1 & PVE (mm) & \FinalPVE & pending & & $\leq$ \BarPVE & \\
+ & PA-PVE (mm) & \FinalPAPVE & pending & & $\leq$ 52.9 & \\
+ & MPJPE (mm) & \TODO{} & pending & & & \\
+ & Recall (\%) & \FinalRecall & pending & & $\geq$ 82.7 & \\
+\addlinespace
+AnnyOne test-100, V0 & PVE (mm) & 77.5 & pending & & $\leq$ 81.6 & \\
+ & PA-PVE (mm) & 54.4 & pending & & $\leq$ 57.3 & \\
+ & Recall (\%) & 87 & pending & & $\geq$ 82.7 & \\
+\addlinespace
+3DPW test (v23), V0 & PVE (mm) & \FinalThreeDPW & pending & & $\leq$ \BarThreeDPW & \\
+ & PA-PVE (mm) & \FinalPAThreeDPW & pending & & $\leq$ 60.6 & \\
+ & MPJPE (mm) & \FinalMPJPEThreeDPW & pending & & $\leq$ 92.9 & \\
+ & Recall (\%) & \FinalRecallThreeDPW & pending & & $\geq$ 94.1 & \\
+\addlinespace
+Cost & Params (M) & \FinalParams & \StudentParams & \ParamRatioStudent$\times$ & fewer & yes \\
+ & GFLOPs & \FinalGFLOPs & \StudentGFLOPs & \FlopRatioStudent$\times$ & fewer & yes \\
+ & ms per image (A40) & \TeacherMsAForty & \StudentMsAForty & \SpeedRatioStudent$\times$ & faster & yes \\
+ & Training images/s & 10.9$^{a}$ & pending & & & \\
+\bottomrule
+\end{tabular}
+\caption{The Student against its teacher and the 95\,\% rule: every error of the Student at most the teacher's
+divided by 0.95, every recall at least 0.95 of the teacher's, and fewer parameters, fewer FLOPs and a faster forward
+pass. Against Multi-HMR-Anny the bars would be \BarNAVERAnnyOne\,mm on AnnyOne (most likely in-sample for it) and
+\BarNAVERThreeDPW\,mm on 3DPW. Cost from the end-to-end test of the distillation script on an A40. $^{a}$Final
+model's training throughput on an A100; the Student's is measured on its own GPU.}
+\label{tab:student}
+\end{table}

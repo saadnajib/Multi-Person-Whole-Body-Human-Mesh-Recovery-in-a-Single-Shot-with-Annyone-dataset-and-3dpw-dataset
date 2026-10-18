@@ -1,0 +1,37 @@
+% T18 Shape head: shape weight 1 vs 20, plus the regression to the median in the tails
+% (REWRITE_PLAN.md section 4, T18). Owner: Diagnostics writer (5.6).
+% Part (a): the draft's tab:shape as is (main.tex:980-998), n = 10 holdout images (plan 1.7); "fixed" softened to
+%   "near the mode"; v4 = the stage before Base (alpha_shape 1, boosted_v4 00299), v5 = Base (alpha_shape 20).
+% Part (b): holdout GT age 0.6-0.8 (n = 53, mean 0.67) predicted 0.57 (3570222:89); full holdout near the mode
+%   age bias -0.015 / abs 0.037, gender -0.008 / 0.068 (3570222:75); in-sample babies (youngest 50, GT age 0.015)
+%   predicted 0.10 (3569950:61; 3571955:174-175), height -0.25 traded (3569950:61,76); training medians gender 0.588,
+%   age 0.601, height 0.500 (3569948:8-18); holdout youngest person 0.513 (3569948:33).
+\begin{table}[tbp]
+\centering\footnotesize
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+\multicolumn{6}{@{}l}{\emph{(a) predicted minus true phenotype, 10 holdout images (draft measurement)}} \\
+phenotype & true mean & true std & shape weight 1 & shape weight 20 (Base) & reading \\
+\midrule
+age         & 0.553 & 0.036 & $+0.199$ & $-0.002$ & near the mode \\
+height      & 0.579 & 0.026 & $-0.154$ & $-0.026$ & near the mode \\
+proportions & 0.763 & 0.070 & $-0.017$ & $-0.001$ & near the mode \\
+firmness    & 0.757 & 0.039 & $-0.167$ & $-0.190$ & unchanged \\
+gender      & 0.694 & --    & $-0.042$ & $-0.063$ & $\approx$ \\
+weight      & 0.382 & --    & $+0.056$ & $+0.064$ & $\approx$ \\
+\midrule
+\multicolumn{6}{@{}l}{\emph{(b) Base on the full holdout and in the young tail}} \\
+\multicolumn{4}{@{}l}{set} & \multicolumn{2}{l}{result} \\
+\midrule
+\multicolumn{4}{@{}l}{holdout, all 222 people (nobody younger than 0.513)} & \multicolumn{2}{l}{age bias $-0.015$ (abs.\ 0.037); gender $-0.008$ (0.068)} \\
+\multicolumn{4}{@{}l}{holdout, true age 0.6--0.8 ($n = 53$, mean 0.67)}   & \multicolumn{2}{l}{predicted age 0.57} \\
+\multicolumn{4}{@{}l}{50 youngest training people (in-sample, true age 0.015)} & \multicolumn{2}{l}{predicted age 0.10; height $-0.25$} \\
+\multicolumn{4}{@{}l}{training medians (AnnyOne)}                          & \multicolumn{2}{l}{gender 0.588, age 0.601, height 0.500} \\
+\bottomrule
+\end{tabular}
+\caption[Shape head: shape weight and the pull to the median]{Shape head. (a) The draft's comparison of the stage
+before Base (shape loss weight 1) with Base (weight 20) on the same 10 AnnyOne holdout images, in phenotype units
+$[0,1]$; it holds near the mode of the data only. (b) Base, V1, on the full 100-image holdout and on the 50 youngest
+training people (in-sample: the holdout has no children). Predictions in both tails move toward the training median.}
+\label{tab:shape-head}
+\end{table}

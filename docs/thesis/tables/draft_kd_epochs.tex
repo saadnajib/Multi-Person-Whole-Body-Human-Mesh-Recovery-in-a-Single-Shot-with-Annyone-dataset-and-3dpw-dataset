@@ -1,0 +1,23 @@
+% Copied verbatim from draft_2026-10_original/main.tex:751-768 (draft label tab:kd_epochs).
+% Plan verdict (REWRITE_PLAN.md): keep (history): Method 4.7.1 / Results 6.11; V0 numbers, say so. Also source for F22.
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrrrrr}
+\toprule
+Epoch & v3 & v4 & v5 & v6 & v2 (random heads, final) \\
+\midrule
+0   & 377 / 190 & 298 / 199 & 378 / 192 & 327 / 172 & \\
+30  & 305 / 160 & 239 / 163 & 240 / 155 & \textbf{221 / 143} & \\
+60  & 228 / 147 & 197 / 138 & 205 / 136 & \textbf{186 / 127} & 193 / 128 \\
+100 & 213 / 136 & 179 / 128 & 175 / 119 & \textbf{175 / 116} & \\
+130 & 199 / 134 & 163 / 122 & 159 / 113 & \textbf{155 / 106} & \\
+best & 191 / 133 & 156 / 117 & 159 / 113 & \textbf{152 / 105} & \\
+\bottomrule
+\end{tabular}
+\caption{Held-out PVE / PA-PVE (mm) of the head-transfer students at equal
+epochs. Teacher: 74.3 / 57.5.}
+\label{tab:kd_epochs}
+\end{table}

@@ -1,0 +1,24 @@
+% F15 Predicted root depth against true depth for the 222 holdout people, Base (slope 0.33) and Final (0.42),
+% with the identity line (Diagnostics 5.3 / Results 6.2). PLACEHOLDER: data pending.
+% Waits for (REWRITE_PLAN.md section 3 "F15 and F16, CSVs"; section 7 Q11; confirm column names with head -1):
+%   data/F15_base_per_person.csv     <- v5 trace (job 3570222) per_person.csv
+%   data/F15_final_per_person.csv    <- results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10/holdout_ft/per_person.csv
+%   data/F15_control_per_person.csv  <- results/experiments/exp7_final_model/v5_root_dist1_nofix_v23_e10/holdout_ft/per_person.csv
+% Then: \addplot[only marks] table[x=<true depth col>, y=<pred depth col>, col sep=comma] {data/F15_final_per_person.csv};
+\begin{figure}[tbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.62\linewidth, height=0.62\linewidth,
+  xlabel={True root depth (m)}, ylabel={Predicted root depth (m)},
+  xmin=0, xmax=8, ymin=0, ymax=8, grid=major, grid style={gray!25},
+  tick label style={font=\footnotesize}, label style={font=\small},
+]
+\addplot[domain=0:8, densely dotted, black!60] {x};
+\node[font=\small\bfseries, red!70!black, align=center] at (axis cs:4,6.2) {data pending\\[-1pt]\footnotesize per\_person.csv of Base and Final};
+\end{axis}
+\end{tikzpicture}
+\caption{Predicted against true root depth for the 222 people of the 100 holdout images, Base and Final, each at its
+own predicted depth; dotted: identity. \TODO{plot pending: per-person CSVs}}
+\label{fig:depth-scatter}
+\end{figure}

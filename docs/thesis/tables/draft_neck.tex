@@ -1,0 +1,28 @@
+% Copied verbatim from draft_2026-10_original/main.tex:1013-1035 (draft label tab:neck).
+% Plan verdict (REWRITE_PLAN.md): keep the four eliminations as "what is not the cause" (Diagnostics 5.2/5.4); DELETE the LBS / rig-property conclusion (plan 1.1 #1).
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{p{3.2cm}p{5.2cm}p{4.6cm}}
+\toprule
+Hypothesis & Test & Result \\
+\midrule
+The Anny body model itself has a long neck &
+Render every person in rest pose (all rotations identity, predicted shape kept) &
+Neck normal $\rightarrow$ eliminated \\
+Helper-bone mask removes neck bones from the loss, so the $\times4$ boost multiplied zero &
+Script listing masked/active status of every neck bone &
+\texttt{neck01/02/03}, \texttt{head} all active $\rightarrow$ eliminated \\
+Domain gap (synthetic $\rightarrow$ real photos) &
+Run on Anny-One's own held-out images &
+Elongation present in-domain $\rightarrow$ eliminated \\
+Shape head over-predicts \texttt{proportions} &
+GT vs.\ predicted phenotypes on the same samples &
+\texttt{proportions} accurate to 0.018 (v4) / 0.001 (v5) $\rightarrow$ eliminated \\
+\bottomrule
+\end{tabular}
+\caption{Elimination of candidate causes for the neck artifact.}
+\label{tab:neck}
+\end{table}

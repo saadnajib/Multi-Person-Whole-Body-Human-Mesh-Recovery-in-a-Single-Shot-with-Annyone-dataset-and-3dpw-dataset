@@ -1,0 +1,55 @@
+% T08 Depth fix: the depth-anchor pilots, the final model and its control (REWRITE_PLAN.md section 4, T8).
+% Owner: Diagnostics writer (chapter 5, section "The hidden depth bug"); also referenced from Results 6.2.
+% Setting: V1, 100-image AnnyOne holdout (579,860-579,959), matched people; root error = PLACEMENT table `root mm`
+% (absolute 3D pelvis distance), never the signed `root dz`.
+% Sources (handover.md 3.1 tables, checked against the logs there; head px from the deck build
+% docs/deck_src/build.js:439, slide 14, and handover 3.1 for the final model and control):
+%   Base (v5 00099)           3571596:55,64; 3570222:40
+%   2-ep control              3571599:49,58,67-68   (pilot_root_dist1_transl1_...)
+%   2-ep fix x1               3571598:66,75,84-85   (pilot_person_center_dist1_transl1_...)
+%   2-ep fix x5               3572418:52,61,70-71
+%   2-ep fix x20              3572483:57,66,75-76
+%   10-ep control             3571934:134,143,152-153 (long_root)
+%   10-ep fix x1              3571933:125,134,143-144 (long_person_center)
+%   10-ep fix x5              3572482:126,135,144-145 (long_pc_dist5)
+%   Control (exp7)            3611339:166,175,182-184; head px 67.1 (3611339:166)
+%   Final (exp7 fix arm)      3611336:175,184,191-193; head px 7.6 (3611336:175)
+%   Base+3DPW(old labels) e62 3571963:40,55,64; fresh-head run (v10 e290) 3571794:40,55,64 (no head px quoted)
+% PVE / recall rounded to one decimal from the handover's two-decimal values (72.19 -> 72.2, 77.25 -> 77.3 as on the deck).
+\begin{table}[tbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{3.6pt}
+\begin{tabular}{@{}llrrrrrrrr@{}}
+\toprule
+run & depth loss & root err.\ (m) & size & slope & icpt.\ (m) & head px & pelvis px & PVE & recall (\%) \\
+\midrule
+Base                     & $\times$1  & 1.21 & 0.63 & 0.33 & 2.36 & 64.5 & 23.4 & 70.5 & 90.2 \\
+\addlinespace
+\multicolumn{10}{@{}l}{\emph{2-epoch fine-tunes of Base, AnnyOne only}} \\
+control (pelvis targets) & $\times$1  & 1.11 & 0.66 & 0.33 & 2.28 & 58.1 & 23.3 & 72.3 & 89.8 \\
+fix (head targets)       & $\times$1  & 0.69 & 0.78 & 0.30 & 1.93 &  9.6 & 37.3 & 77.3 & 87.8 \\
+fix                      & $\times$5  & 0.66 & 0.80 & 0.44 & 1.62 &  8.5 & 38.1 & 76.8 & 87.8 \\
+fix                      & $\times$20 & 0.53 & 0.87 & 0.43 & 1.44 &  8.8 & 31.4 & 75.7 & 87.4 \\
+\addlinespace
+\multicolumn{10}{@{}l}{\emph{10-epoch fine-tunes of Base, AnnyOne only}} \\
+control (pelvis targets) & $\times$1  & 1.44 & 0.59 & 0.34 & 2.59 & 64.0 & 24.3 & 72.2 & 89.4 \\
+fix (head targets)       & $\times$1  & 0.73 & 0.78 & 0.30 & 1.98 &  7.6 & 38.5 & 75.5 & 87.0 \\
+fix                      & $\times$5  & 0.54 & 0.84 & 0.38 & 1.59 &  7.2 & 33.1 & 74.8 & 87.8 \\
+\addlinespace
+\multicolumn{10}{@{}l}{\emph{10-epoch fine-tunes of Base with 30\% 3DPW (v23 labels)}} \\
+Control (no fix)         & $\times$1  & 1.40 & 0.59 & 0.28 & 2.66 & 67.1 & 26.7 & 77.4 & 89.0 \\
+Final (fix + bone corr.) & $\times$5  & 0.73 & 0.78 & 0.42 & 1.75 &  7.6 & 41.1 & 73.7 & 87.0 \\
+\addlinespace
+\multicolumn{10}{@{}l}{\emph{other checkpoints trained with pelvis targets}} \\
+Base+3DPW (old labels)   & $\times$1  & 1.39 & 0.59 & 0.31 & 2.60 &  --  & 25.1 & 75.0 & 88.6 \\
+fresh-head run           & $\times$1  & 1.49 & 0.57 & 0.28 & 2.71 &  --  & 24.0 & 74.1 & 89.0 \\
+\bottomrule
+\end{tabular}
+\caption[Depth fix: pilots, final model and control]{Placement before and after building the training targets at
+the head joint. V1, 100-image AnnyOne holdout, matched people. Root error: absolute 3D distance of the pelvis; size:
+predicted over true head-to-pelvis distance in pixels (1 is right); slope and intercept: linear fit of predicted
+against true pelvis depth (1 and 0\,m are right); head and pelvis px: 2D error of those joints; PVE in mm. ``Depth
+loss'' is the weight of the distance and translation terms. One run per row, no seed. No control was run at
+$\times$5 or $\times$20; each fix row is read against the control of the same length.}
+\label{tab:depth-runs}
+\end{table}

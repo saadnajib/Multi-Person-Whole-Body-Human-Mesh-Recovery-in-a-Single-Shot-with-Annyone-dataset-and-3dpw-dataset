@@ -1,0 +1,88 @@
+% =============================================================================
+% numbers_results.tex  --  headline numbers of chapter 6 (Results), T12, T15-T17
+% Convention: see numbers.tex. Source on every line. Settings:
+%   V1  = 100-image AnnyOne holdout (579,860-579,959), helper bones masked,
+%         matched people, trace script;
+%   V0  = same images, helper bones unmasked, train.py evaluate();
+%   3DPW test = all 8,190 images of the v23 labels, run_eval_3dpw_test.sh, V0.
+% Run names: Base = v5 epoch 99; Control = exp7 control; Final = exp7 fix arm;
+% Final-masked = exp7 with --mask_3dpw_shape 1; Student = exp8 ViT-B;
+% Multi-HMR-Anny (NAVER) = multiHMR_672_L_anny.pt.
+% =============================================================================
+
+% --- AnnyOne holdout, V1 (T15 part A) -----------------------------------------
+\newcommand{\FinalPVE}{73.7}          % 3611336:191 (V1); H 0b
+\newcommand{\ControlPVE}{77.4}        % 3611339:182 (V1); H 0b
+\newcommand{\BasePVE}{70.5}           % 3570222:40 (V1); H 0b
+\newcommand{\FinalPAPVE}{50.3}        % 3611336:191-193 (V1); H 0b
+\newcommand{\ControlPAPVE}{56.4}      % 3611339:182-184 (V1); H 0b
+\newcommand{\BasePAPVE}{53.3}         % 3570222:40 (V1); H 0b
+\newcommand{\FinalRecall}{87.0}       % 3611336:191-193 (V1), percent; H 0b
+\newcommand{\ControlRecall}{89.0}     % 3611339:182-184 (V1), percent; H 0b
+\newcommand{\BaseRecall}{90.2}        % 3570222:40 (V1), percent; H 0b
+\newcommand{\FinalMaskedPVE}{71.7}    % 3612325 log (V1); H 0a "MASK_3DPW_SHAPE=1 arm DONE"
+
+% --- 3DPW test, v23 labels, 8,190 images, V0 (T15 part B) ---------------------
+\newcommand{\FinalThreeDPW}{89.0}       % 3611336:224-229; H 0b 3DPW table
+\newcommand{\ControlThreeDPW}{91.5}     % 3611339:215-220; H 0b
+\newcommand{\BaseThreeDPW}{121.8}       % 3612073:117-124; H 0b
+\newcommand{\BaseOldThreeDPW}{95.5}     % 3612074:117-124 (Base+3DPW(old labels), v9 e62); H 0b
+\newcommand{\NAVERThreeDPW}{126.9}      % 3614192 log; H 0a "NAVER baseline DONE"; H 0b
+\newcommand{\FinalPAThreeDPW}{57.6}     % 3611336:224-229 (PA-PVE); H 0b
+\newcommand{\ControlPAThreeDPW}{59.7}   % 3611339:215-220 (PA-PVE); H 0b
+\newcommand{\BasePAThreeDPW}{72.0}      % 3612073:117-124 (PA-PVE); H 0b
+\newcommand{\NAVERPAThreeDPW}{68.8}     % 3614192 log (PA-PVE); H 0a
+\newcommand{\FinalMPJPEThreeDPW}{88.3}  % 3611336:224-229 (MPJPE, 163 Anny joints); H 0b
+\newcommand{\FinalPrecThreeDPW}{64}     % 3611336:224-229 (precision, percent); H 0b
+\newcommand{\FinalRecallThreeDPW}{99}   % 3611336:224-229 (recall, percent); H 0b
+
+% --- Multi-HMR-Anny (NAVER) on AnnyOne, helper bones masked by design (= V1) --
+\newcommand{\NAVERAnnyOne}{60.3}      % 3614192 log, PVE, likely in-sample for NAVER; H 0a, H 0b
+\newcommand{\NAVERPAAnnyOne}{44.6}    % 3614192 log, PA-PVE; H 0a
+\newcommand{\NAVERRecallAnnyOne}{89.0}% 3614192 log, recall percent; H 0a
+\newcommand{\FinalGainOverNAVERThreeDPW}{37.9} % 126.9 - 89.0; REWRITE_PLAN.md section 5 fixed wording
+
+% --- Model cost (T16, F18) ----------------------------------------------------
+% Final model and NAVER on an NVIDIA A100-PCIe-40GB (job 3614947, fp32+TF32, batch 1,
+% 20 warm-up + 50 timed, one person); teacher/student ms pair on an A40 (job 3613926).
+% 1 MAC = 2 FLOPs, 672 px input.
+\newcommand{\FinalParams}{318.38}       % M params; 3614947 (model_cost_naver_vs_final.json); H 0a
+\newcommand{\FinalHeadParams}{14.01}    % M params, heads only; 3614947; H 0a
+\newcommand{\NAVERParams}{380.94}       % M params; 3614947; H 0a (MEASURED, replaces the ~414 M estimate)
+\newcommand{\NAVERHeadParams}{76.57}    % M params, 8-layer cross-attention decoder; 3614947; H 0a
+\newcommand{\BackboneLParams}{304.37}   % M params, ViT-L/14 backbone (both models); 3614947; H 0a
+\newcommand{\StudentParams}{101.38}     % M params, ViT-B student; 3613926 (exp8 smoke); H 0a
+\newcommand{\FinalGFLOPs}{1927.4}       % 1917.2 backbone + 10.16 head; 3614947; H 0a
+\newcommand{\NAVERBackboneGFLOPs}{1917.2}% backbone only; NAVER head FLOPs not countable for its class; 3614947
+\newcommand{\StudentGFLOPs}{603.3}      % 3613926; H 0a
+\newcommand{\TeacherMsAForty}{110}      % ms, final model, A40, batch 1; 3613926; H 0a
+\newcommand{\StudentMsAForty}{51.4}     % ms, student, A40, batch 1; 3613926; H 0a
+\newcommand{\TeacherMsAHundred}{77.9}   % ms median one-person forward, A100-PCIe-40GB (backbone 60.8 ms); 3614947; H 0a
+% NAVER ms: not measured (model_cost.py --bench supports model.py's Model class only); 3614947; H 0a
+\newcommand{\ParamRatioStudent}{3.14}   % 318.38 / 101.38; 3613926; H 0a
+\newcommand{\FlopRatioStudent}{3.19}    % 1927.4 / 603.3; 3613926; H 0a
+\newcommand{\SpeedRatioStudent}{2.14}   % 110 / 51.4 (A40); 3613926; H 0a
+\newcommand{\ParamRatioStudentNAVER}{3.76} % 380.94 / 101.38; H 0a
+
+% --- Relative Human val (T12): 635 images, 2,130 people, IoU 0.3, child threshold 0.45
+% Base = 3611285_0, Final = 3612131, Final-masked = 3613616
+\newcommand{\RHGenderBase}{46.5}      % percent; 3611285_0:30; H 0b
+\newcommand{\RHGenderFinal}{64.2}     % percent; 3612131:32; H 0b
+\newcommand{\RHGenderMasked}{49.3}    % percent; logs/eval_rh_3613616_0.out; H 0a "DECIDED"
+\newcommand{\RHAUCBase}{0.606}        % child-vs-adult AUC; 3611285_0:23-31; H 3.4; plan T12
+\newcommand{\RHAUCFinal}{0.719}       % 3612131:25-33; H 0b
+\newcommand{\RHAUCMasked}{0.708}      % logs/eval_rh_3613616_0.out; H 0a
+\newcommand{\RHRecallBase}{47.1}      % percent; 3611285_0; plan T12
+\newcommand{\RHRecallFinal}{64.7}     % percent; 3612131; H 0a
+\newcommand{\RHRecallMasked}{57.2}    % percent; logs/eval_rh_3613616_0.out; H 0a
+
+% --- The 95% bars for the student (T11 part B, T17) ---------------------------
+\newcommand{\BarPVE}{77.6}            % 73.7 / 0.95, AnnyOne V1, against our ViT-L; H 0a; P 3.2
+\newcommand{\BarThreeDPW}{93.7}       % 89.0 / 0.95, 3DPW test, against our ViT-L; H 0a
+\newcommand{\BarNAVERAnnyOne}{63.5}   % 60.3 / 0.95, against NAVER (in-sample caveat); H 0a
+\newcommand{\BarNAVERThreeDPW}{133.6} % 126.9 / 0.95, against NAVER; H 0a
+
+% --- Run-to-run noise (two identical 2-epoch controls, 3571958 vs 3571960) ----
+\newcommand{\NoisePVE}{7.6}           % mm PVE, 76.3 vs 68.7; H 3.6; D slide 22
+\newcommand{\NoiseHeadDeg}{1.9}       % deg global head, 13.6 vs 11.7; H 3.6
+\newcommand{\NoiseRecall}{2}          % recall points one run resolves (measured gap 0.8); H 3.6, H 0b

@@ -1,0 +1,22 @@
+% Copied verbatim from draft_2026-10_original/main.tex:919-935 (draft label tab:labels).
+% Plan verdict (REWRITE_PLAN.md): DELETE: old label counts (v2.2, 31% missing, gender reversed); replaced by T4 and T5 (plan 1.6 4.7). Copied for reference only.
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrrrl}
+\toprule
+Split & sequences & images & people & dropped \\
+\midrule
+train & 24 & 4\,451 & 5\,183 & 0 \\
+validation & 12 & 2\,458 & 2\,995 & 162 (visible $<$ 0.3) \\
+test & 24 & 9\,722 & 11\,850 & 0 \\
+\midrule
+total & 60 & 16\,631 & 20\,028 & 162 \\
+\bottomrule
+\end{tabular}
+\caption{Converted 3DPW labels (every third frame, converter v2.2). No frame
+exceeded the 80\,mm fit-error threshold.}
+\label{tab:labels}
+\end{table}

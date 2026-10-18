@@ -1,0 +1,23 @@
+% Copied verbatim from draft_2026-10_original/main.tex:830-847 (draft label tab:fit).
+% Plan verdict (REWRITE_PLAN.md): keep: Data 3.4 converter history.
+% Numbers here are the DRAFT's; check each against REWRITE_PLAN.md section 1.1 before reuse.
+% Rename the \label if you include this next to a new table with the same label.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrrrr}
+\toprule
+Frame & root only & +pose & +shape & final (mm) \\
+\midrule
+0   & 137.9 & 40.4 & 36.2 & 36.2 \\
+50  & 131.2 & 43.1 & 35.1 & 35.1 \\
+100 & 169.5 & 39.4 & 34.1 & 34.1 \\
+199 & 135.0 & 39.0 & 32.6 & 32.6 \\
+\midrule
+mean & & & & 34.5 \\
+\bottomrule
+\end{tabular}
+\caption{First converter (name-based correspondence): mean joint error after
+each optimisation stage on \texttt{downtown\_bar\_00}.}
+\label{tab:fit}
+\end{table}

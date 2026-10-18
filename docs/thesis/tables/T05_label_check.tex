@@ -1,0 +1,34 @@
+% T5 Label quality before and after the re-fit (Data 3.5). Plan REWRITE_PLAN.md section 4, T5; H 0b table; H 3.5.
+% Columns: old labels = check job 3575369 (15 Oct, v2.2 fits); v23 labels = check job 3611284 (18 Oct, v2.3 fits).
+% Re-fit post-check rows: logs/check_refit_all_v23.log (H 3.5 "Re-fit v2.3 result").
+\begin{table}[tbp]
+\centering\small
+\begin{tabular}{@{}p{6.4cm}rr@{}}
+\toprule
+check & old labels & v23 labels \\
+\midrule
+overall grade of the check & FAIL & WARN \\
+body joints vs 3DPW, median / p95 (mm) & \DataCheckJointsOld{} / \DataCheckJointsOldPn & \DataCheckJointsNew{} / \DataCheckJointsNewPn \\
+surface, Anny$\to$SMPL / SMPL$\to$Anny (mm) & \DataCheckSurfAOld{} / \DataCheckSurfBOld & \DataCheckSurfANew{} / \DataCheckSurfBNew \\
+2D error over raw 3DPW (px) & $\DataCheckTwoDOld$ & $\DataCheckTwoDNew$ \\
+gender labels & reversed & men 0, women 1 \\
+\quad refit with flipped gender & better, \DataGenderFlipMen{} of \DataGenderFlipMenOf{} men & worse, men \DataCheckFlipMenLabel{} $\to$ \DataCheckFlipMenFlipped\,mm \\
+two-person images with an unlabelled actor & \DataMissingActor{} of \DataTwoPersonChecked & 0 of \DataCheckGapNewOf \\
+fitted frames; per-frame error, median (mm) & \DataOldFrames; \DataOldFitMedian & \DataCheckFramesNew; \DataCheckFitMedianNew \\
+head turn vs chest, labels / SMPL, median (deg) & \DataCheckHeadLabelOld{} / \DataCheckHeadSmplOld & \DataCheckHeadLabelNew{} / \DataCheckHeadSmplNew \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{post-check of the re-fit, all fitted frames, \DataThreeDPWPersonSeq{} people}} \\
+mean joint error, men (\DataThreeDPWMen) / women (\DataThreeDPWWomen) (mm) & \DataRefitMenBefore{} / \DataRefitWomenBefore & \DataRefitMenAfter{} / \DataRefitWomenAfter \\
+two-person frames with one valid actor unfitted & \DataRefitGapBefore{} of \DataRefitGapBeforeOf & 0 of \DataRefitGapAfterOf \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{still WARN on the v23 labels}} \\
+limb-length ratio Anny / SMPL, forearm / thigh & & \DataCheckForearm{} / \DataCheckThigh \\
+people with a joint more than \DataCheckFarMm\,mm off & & \DataCheckFarPct\% \\
+\bottomrule
+\end{tabular}
+\caption{Independent conversion check of the 3DPW-Anny labels before (old labels, v2.2 fits) and after the
+re-fit (v23 labels, v2.3 fits). The check samples images from every sequence and compares the labels with
+3DPW's own joints, surface and 2D keypoints. The middle block is the re-fit's own post-check over all fitted
+frames; old and new fits fitted different frames, so it is not a paired comparison.}
+\label{tab:label-check}
+\end{table}

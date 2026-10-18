@@ -1,0 +1,30 @@
+% T14 Pilot noise and restart cost (REWRITE_PLAN.md section 4, T14). Owner: Diagnostics writer (5.7).
+% Setting: V1, 100-image AnnyOne holdout, matched people; 2-epoch fine-tunes of v5 00099 (Base), lr 1e-5.
+% Sources: handover 3.6; deck slide 22. Two identical configs: exp3 control 3571958:104 (PVE 76.3, head 13.6, :99) and
+%   exp4 control 3571960:320 (PVE 68.7, head 11.7, :318); recall 0.8 points apart. Six 2-epoch v5-recipe arms:
+%   docs/experiments_plan.md:413-419. Restart cost ~2.4 mm (controls mean 72.9 vs v5 70.5; deck notes slide 22).
+%   Root error: every fix run 0.53-0.73 m, every control 1.11-1.44 m (handover 3.1). exp5 L1 control 76.9 (3573521:98).
+%   train.py sets no random seed.
+\begin{table}[tbp]
+\centering\footnotesize
+\begin{tabular}{@{}lll@{}}
+\toprule
+quantity & measured & what one run can resolve \\
+\midrule
+two identical 2-epoch controls: PVE        & 76.3 vs 68.7\,mm (7.6\,mm)   & about 10\,mm \\
+\phantom{two identical 2-epoch controls: }global head direction & 13.6 vs 11.7\,deg (1.9\,deg) & about 3\,deg \\
+\phantom{two identical 2-epoch controls: }recall & 0.8 points apart           & about 2 points \\
+six 2-epoch arms of the Base recipe: PVE   & 68.7--76.3\,mm               & \\
+\phantom{six 2-epoch arms of the Base recipe: }recall & 88.6--90.2\%        & \\
+\phantom{six 2-epoch arms of the Base recipe: }global head & 11.3--13.7\,deg & \\
+restart cost (mean of controls vs Base)    & 72.9 vs 70.5\,mm (about 2.4\,mm) & read pilots against their own control \\
+root error                                 & no measured floor            & every fix run (0.53--0.73\,m) is below \\
+                                           &                              & every control (1.11--1.44\,m) \\
+\bottomrule
+\end{tabular}
+\caption[Pilot noise and restart cost]{Run-to-run variation of the 2-epoch pilots. V1, 100-image AnnyOne holdout,
+matched people. All arms fine-tune Base for 2 epochs at learning rate $10^{-5}$; the training code sets no random seed,
+so two runs of the same configuration differ. The restart cost is what two more epochs of fine-tuning Base cost with
+nothing changed.}
+\label{tab:pilot-noise}
+\end{table}

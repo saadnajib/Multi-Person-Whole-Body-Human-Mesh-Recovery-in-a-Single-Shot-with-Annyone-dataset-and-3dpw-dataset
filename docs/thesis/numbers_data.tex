@@ -1,0 +1,266 @@
+% numbers_data.tex -- every number of Chapter 3 (Data) and tables T3-T6, one macro each.
+% Source key as in docs/thesis/REWRITE_PLAN.md: H x.y = docs/handover.md section x.y; D = docs/deck_explained_2026-10-19.md;
+% F = docs/diagnostics_findings.md; NNNNNNN:LL = line LL of that Slurm job's log (quoted via the handover);
+% main.tex:LL = docs/thesis/draft_2026-10_original/main.tex; file:LL = that file in the repo at commit 56091f3.
+% Thousands are written with a comma; use \Data...{} before a following word.
+
+% ---------------------------------------------------------------- Anny body model
+\newcommand{\DataBones}{163}                 % H 1 "Model"
+\newcommand{\DataHelperBones}{88}            % H 1 "Model"; F "Checks 2+3"
+\newcommand{\DataActiveBones}{75}            % H 1 "Model"
+\newcommand{\DataPhenotypes}{11}             % H 1 "Model"
+\newcommand{\DataAnnyStatureMale}{1.753}     % m, rest stature at gender 0; 3575369:24, :313 (H 3.5 defect 1)
+\newcommand{\DataAnnyStatureFemale}{1.632}   % m, rest stature at gender 1; 3575369:24, :313 (H 3.5 defect 1)
+\newcommand{\DataAgeAnchorChild}{0.333}      % anny 0.6.1 linspace(-1/3,1,5) (H 3.4 "How Anny makes a child")
+\newcommand{\DataAgeAnchorYoung}{0.667}      % same
+\newcommand{\DataChildAgeLow}{0.4}           % child shape change below about 0.4-0.5 (H 3.4 "How Anny makes a child")
+\newcommand{\DataChildAgeHigh}{0.5}          % same
+\newcommand{\DataSweepHeightAgeZero}{0.53}   % m, skeletal height at age 0 (0.528); F "Checks 2+3"
+\newcommand{\DataSweepHeightAgeHalf}{1.37}   % m, at age 0.5 (1.374); F "Checks 2+3"
+\newcommand{\DataSweepHeightAgeHigh}{1.55}   % m, at age 0.8 (1.553); F "Checks 2+3"
+\newcommand{\DataShoulderHeadChild}{2.24}    % shoulder/head width at age 0.1 (H 3.4 "How Anny makes a child")
+\newcommand{\DataShoulderHeadAdult}{3.00}    % at age 0.6 (same)
+
+% ---------------------------------------------------------------- AnnyOne
+\newcommand{\DataAnnyOneImages}{579,960}     % H 1 "Data"; D part 3
+\newcommand{\DataAnnyOneTrainImages}{579,860}% indices 0-579,859; H 1 "Data"
+\newcommand{\DataAnnyOneLastTrainIndex}{579,859} % H 1 "Data"
+\newcommand{\DataHoldoutImages}{100}         % --val_anny_n 100; H 1 "Data"
+\newcommand{\DataHoldoutFirstIndex}{579,860} % H 1 "Data"; plan "Evaluation settings"
+\newcommand{\DataHoldoutLastIndex}{579,959}  % same
+\newcommand{\DataAnnyOneRenderPx}{1280}      % render side, px; H 1 "Data"; D part 3; plan 1.1 row 7
+\newcommand{\DataInputPx}{672}               % network input side, px; H 1 "Model"
+\newcommand{\DataTokenGrid}{48}              % 48 x 48 tokens; H 1 "Terms"
+\newcommand{\DataPatchPx}{14}                % px per token; H 1 "Terms"
+\newcommand{\DataAnnyOnePeoplePerImage}{2.73}% 3571601:21 (H 3.4 "3DPW labels and body shape")
+\newcommand{\DataAnnyOneAgeBelowTwo}{1.06}   % % of people with age < 0.2; 3569948:9-35 (H 3.4 "Age scales")
+\newcommand{\DataAnnyOneAgeBelowThree}{2.53} % % with age < 0.3; same
+\newcommand{\DataAnnyOneAgeBelowFour}{4.45}  % % with age < 0.4; same
+\newcommand{\DataAnnyOneAgeMedian}{0.601}    % same
+\newcommand{\DataAnnyOneAgeModeShare}{41}    % % of people with age in 0.5-0.6; same
+\newcommand{\DataHoldoutMinAge}{0.513}       % youngest holdout person; 3569948:33 (H 3.4)
+\newcommand{\DataBatchChildLow}{2.1}         % % of supervised people with age < 0.3 per natural batch; 3571955:154, 3571956:149, 3571601:35 (H 3.4 "The sampler")
+\newcommand{\DataBatchChildHigh}{2.3}        % same
+\newcommand{\DataTrainMedianGender}{0.588}   % AnnyOne training median; 3569948:8-18 (H 0b)
+\newcommand{\DataTrainMedianHeight}{0.500}   % same
+\newcommand{\DataAnnyOneFovMin}{51}          % deg, sample of five images; main.tex:594-595 (draft, kept)
+\newcommand{\DataAnnyOneFovMax}{110}         % deg; same
+\newcommand{\DataAnnyOneFovSample}{five}     % images in that sample; same
+\newcommand{\DataMixAnnyOne}{70}             % % of each batch from AnnyOne; exp7_final_model.sh:225 (MIX_RATIO 0.3); D part 3
+\newcommand{\DataMixThreeDPW}{30}            % % of each batch from 3DPW-train; same
+
+% ---------------------------------------------------------------- 3DPW
+\newcommand{\DataThreeDPWSequences}{60}      % main.tex:599-602 (draft, kept); D slide 4
+\newcommand{\DataThreeDPWTrainSeq}{24}       % main.tex:601-602 (draft, kept)
+\newcommand{\DataThreeDPWValSeq}{12}         % same
+\newcommand{\DataThreeDPWTestSeq}{24}        % same
+\newcommand{\DataThreeDPWValUsableSeq}{11}   % crosscountry_00 yields no labels; H 3.5 "v23 labels built"
+\newcommand{\DataThreeDPWPersonSeq}{87}      % person-sequences = converter fits; H 3.5; main.tex:533
+\newcommand{\DataThreeDPWWidth}{1080}        % px; H 3.5; datasets/threedpw_anny.py:19-20
+\newcommand{\DataThreeDPWHeight}{1920}       % px; same
+\newcommand{\DataThreeDPWFps}{30}            % main.tex:599 (draft, kept)
+\newcommand{\DataFrameStride}{3}             % slurm/data/run_smpl_to_anny_task.sh:90
+\newcommand{\DataLabelFps}{10}               % same line ("10 fps")
+\newcommand{\DataThreeDPWMen}{62}            % fitted men; logs/check_refit_all_v23.log (H 3.5 "Re-fit v2.3 result")
+\newcommand{\DataThreeDPWWomen}{25}          % fitted women; same
+\newcommand{\DataValImagesPerEpoch}{300}     % 3DPW-val images evaluated each epoch; exp7_final_model.sh:226; D part 3
+\newcommand{\DataSupervisedShareThreeDPW}{16}% % of supervised people from 3DPW in a 70/30 batch, estimate; H 3.4 "3DPW labels and body shape"
+\newcommand{\DataCrossCountryDepth}{-0.3}    % m, GT joint depth with 3DPW's own camera; H 3.5 "v23 labels built"
+\newcommand{\DataCrossCountryFramesOld}{162} % frames dropped in the old sets; H 3.5; 3575369:96
+\newcommand{\DataCrossCountryFramesNew}{163} % frames dropped in v23; H 3.5 "v23 labels built"
+
+% ---------------------------------------------------------------- Converter
+\newcommand{\DataSmplJoints}{24}             % smpl_to_anny.py docstring
+\newcommand{\DataMappedBones}{23}            % D part 3 "What is fitted"; H 3.5
+\newcommand{\DataFittedBones}{18}            % same
+\newcommand{\DataRestBones}{144}             % 3611284:348 (H 3.5); D part 3
+\newcommand{\DataVirtualJoints}{nine}        % smpl_to_anny.py:957-958 (--offset_joints default list)
+\newcommand{\DataUntargetedBones}{130}       % "~130" bones without target; smpl_to_anny.py docstring v2.1 item 3; main.tex:481
+\newcommand{\DataPoseReg}{10^{-4}}           % smpl_to_anny.py:581, :921
+\newcommand{\DataShapeReg}{10^{-3}}          % smpl_to_anny.py:581, :953
+\newcommand{\DataFitLr}{0.05}                % smpl_to_anny.py:920
+\newcommand{\DataColdIters}{150 / 400 / 250} % iterations per stage, first frame; run_smpl_to_anny_task.sh:91
+\newcommand{\DataWarmIters}{20 / 80 / 60}    % following frames; run_smpl_to_anny_task.sh:92
+\newcommand{\DataRefineIters}{100}           % pose refit with the shared body; run_smpl_to_anny_task.sh:93
+\newcommand{\DataNeutralShift}{37}           % mm, neutral-model joints vs 3DPW joints, first frame; main.tex:487-489
+\newcommand{\DataNeutralShiftFeet}{93}       % mm, at the feet; main.tex:488-489
+\newcommand{\DataSpineMapError}{25}          % cm, spine1 mapped too high in v1; main.tex:494-496
+\newcommand{\DataHipMapError}{4}             % cm, pelvis.L/R heads from the hip joint; main.tex:497-498
+\newcommand{\DataSmplPelvisAboveHips}{9}     % cm; main.tex:505-506
+\newcommand{\DataAnnyRootFront}{7}           % cm; main.tex:506-507
+\newcommand{\DataSpineThreeGap}{6.5}         % cm; main.tex:507-508; smpl_to_anny.py docstring v2.1
+\newcommand{\DataCollarGap}{6}               % cm; same
+\newcommand{\DataOffsetPelvis}{11.6}         % cm; main.tex:516-517; draft appendix tab:mapping
+\newcommand{\DataOffsetHip}{4.3}             % cm; same
+\newcommand{\DataOffsetSpineMin}{3}          % cm; same
+\newcommand{\DataOffsetSpineMax}{7}          % cm; same
+\newcommand{\DataOffsetCollar}{5}            % cm; same
+\newcommand{\DataFixedAge}{0.55}             % run_smpl_to_anny_task.sh:95; smpl_to_anny.py:269
+\newcommand{\DataFixedNeutral}{0.5}          % the seven other constants; smpl_to_anny.py docstring v2 item 3; H 3.4
+\newcommand{\DataConstantCount}{8}           % age + seven at 0.5; H 3.4 "--mask_3dpw_shape"
+\newcommand{\DataNeutralCount}{seven}        % same
+\newcommand{\DataGenderMale}{0}              % Anny convention, --gender_convention anny; smpl_to_anny.py docstring v2.3
+\newcommand{\DataGenderFemale}{1}            % same
+\newcommand{\DataDropErr}{80}                % mm; build_threedpw_anny_labels.py:62
+\newcommand{\DataDropVisPct}{30}             % % of mesh vertices in the image; build_threedpw_anny_labels.py:63
+\newcommand{\DataDropBox}{40}                % px; build_threedpw_anny_labels.py:64
+\newcommand{\DataLabelMedianHeight}{0.47}    % median label height phenotype, v23; 3611284 (H 3.5 "v23 conversion check")
+\newcommand{\DataLabelMedianProportions}{0.51} % same
+\newcommand{\DataHandMaskBones}{38}          % hand bones masked for 3DPW people; loss.py:231-253 (plan T2)
+
+% ---------------------------------------------------------------- Converter development (draft :812-939, jobs named in smpl_to_anny.py docstring)
+\newcommand{\DataVOneBarFrames}{four}        % main.tex:815-816
+\newcommand{\DataVOneBarMean}{34.5}          % mm; main.tex:816; draft tab:fit
+\newcommand{\DataVOneFloorMin}{30}           % mm, every frame of every scene; main.tex:819-820
+\newcommand{\DataVOneFloorMax}{37}           % same
+\newcommand{\DataVOneGender}{0.02}           % same body for all four actors; smpl_to_anny.py docstring "WHAT CHANGED IN v2" (gender~0.02)
+\newcommand{\DataVOneAge}{0.67}              % same; main.tex:821-822
+\newcommand{\DataVOneHeight}{0.33}           % same
+\newcommand{\DataVOneAsian}{0.73}            % same
+\newcommand{\DataFencingFrames}{38}          % outdoors_fencing_01; main.tex:851-852
+\newcommand{\DataVOneFencing}{34.3}          % mm; main.tex:867; smpl_to_anny.py docstring v2.1
+\newcommand{\DataVTwoFencing}{24.6}          % mm; main.tex:868
+\newcommand{\DataVTwoOneFencing}{15.8}       % mm; main.tex:869
+\newcommand{\DataVTwoTorsoMin}{43}           % mm; smpl_to_anny.py docstring v2.1
+\newcommand{\DataVTwoTorsoMax}{73}           % mm; same
+\newcommand{\DataVTwoPelvisShift}{5}         % cm; main.tex:855-856
+\newcommand{\DataVTwoProportions}{0.06}      % main.tex:856
+\newcommand{\DataVTwoOneTorsoMin}{13}        % mm; main.tex:857
+\newcommand{\DataVTwoOneTorsoMax}{22}        % mm; same
+\newcommand{\DataVTwoOnePelvis}{19}          % mm; main.tex:857-858
+\newcommand{\DataVTwoOneProportions}{0.27}   % main.tex:858
+\newcommand{\DataVTwoOneShoulderMin}{23}     % mm; main.tex:859
+\newcommand{\DataVTwoOneShoulderMax}{36}     % mm; same
+\newcommand{\DataGainCorrespondence}{10}     % mm, v1 -> v2 on fencing; main.tex:1226-1227 (34.3 - 24.6)
+\newcommand{\DataGainVirtual}{9}             % mm, v2 -> v2.1; main.tex:1227-1228 (24.6 - 15.8)
+\newcommand{\DataScenesMin}{15.8}            % mm, v2.1 on four scenes; main.tex:878-879; draft tab:fit_scenes
+\newcommand{\DataScenesMax}{20.1}            % mm; same
+\newcommand{\DataScenesWorstFrame}{43.5}     % mm, one occluded office frame; main.tex:880
+\newcommand{\DataFreeAge}{0.67}              % age when free, every actor, every version up to v2.1; main.tex:881-882
+
+% ---------------------------------------------------------------- Old labels and the label check of 15 Oct (v2.2 fits)
+\newcommand{\DataOldFrames}{22,915}          % fitted frames; 3575369:342 (H 3.5 "Measured")
+\newcommand{\DataOldFitMedian}{18.2}         % mm; same
+\newcommand{\DataOldFitMax}{70.9}            % mm; same
+\newcommand{\DataOldCheckImages}{2,000}      % "~2,000 sampled images"; H 3.5 "Measured"
+\newcommand{\DataGenderFlipMen}{72}          % men better with the flipped gender; 3575369:316 (H 3.5 defect 1)
+\newcommand{\DataGenderFlipMenOf}{73}        % same
+\newcommand{\DataGenderFlipMenBefore}{19.2}  % mm, men's joint error with the label gender; same
+\newcommand{\DataGenderFlipMenAfter}{15.3}   % mm, flipped; same
+\newcommand{\DataGenderFlipWomenBefore}{13.7}% mm; 3575369:316-317
+\newcommand{\DataGenderFlipWomenAfter}{16.3} % mm; same
+\newcommand{\DataGenderFlipWomenSurface}{27} % women with a closer surface when flipped; same
+\newcommand{\DataGenderFlipWomenOf}{31}      % same
+\newcommand{\DataMissingActor}{407}          % two-person images with an unlabelled valid actor; 3575369:228-229
+\newcommand{\DataTwoPersonChecked}{960}      % same
+\newcommand{\DataOldTrainImages}{4,451}      % 3575369:31; 3579266:25 (H 3.5)
+\newcommand{\DataOldTrainPeople}{5,183}      % 3579266:25
+\newcommand{\DataOldValImages}{2,458}        % 3579266:39
+\newcommand{\DataOldValPeople}{2,995}        % H 3.5 rebuild table
+\newcommand{\DataOldTestImages}{9,722}       % 3579266:65
+\newcommand{\DataOldTestPeople}{11,850}      % H 3.5 rebuild table
+\newcommand{\DataOldTotalImages}{16,631}     % 3579266:67
+\newcommand{\DataOldTotalPeople}{20,028}     % same
+\newcommand{\DataOldTrainMissingPct}{31}     % (6,437 - 4,451) / 6,437 = 30.9%; plan 1.1 row 9
+\newcommand{\DataMissingImageSeq}{8}         % sequences with missing image files; H 3.5 defect 3
+\newcommand{\DataSelfiesFilesBefore}{480}    % courtyard_captureSelfies_00 files before re-extraction; H 3.5
+\newcommand{\DataSelfiesFilesAfter}{750}     % after; same
+\newcommand{\DataRebuiltTrainImages}{6,437}  % 3581320:25 (H 3.5)
+\newcommand{\DataRebuiltTrainPeople}{7,589}  % same
+\newcommand{\DataRebuiltValImages}{2,777}    % 3581320:39
+\newcommand{\DataRebuiltValPeople}{3,314}    % same
+\newcommand{\DataRebuiltTestImages}{9,722}   % 3581320:65
+\newcommand{\DataRebuiltTestPeople}{11,850}  % same
+\newcommand{\DataRebuiltTotalImages}{18,936} % 3581320:67
+\newcommand{\DataRebuiltTotalPeople}{22,753} % same
+
+% ---------------------------------------------------------------- Re-fit v2.3 (logs/check_refit_all_v23.log, H 3.5 "Re-fit v2.3 result")
+\newcommand{\DataRefitSeq}{60}               % sequences, RESULT: PASS
+\newcommand{\DataRefitMenBefore}{19.0}       % mm, mean joint error over people, men
+\newcommand{\DataRefitMenAfter}{14.7}        % mm
+\newcommand{\DataRefitWomenBefore}{15.0}     % mm
+\newcommand{\DataRefitWomenAfter}{15.2}      % mm
+\newcommand{\DataRefitWorseSeq}{9}           % single-person outdoor sequences 1-3 mm worse
+\newcommand{\DataRefitWorseMin}{1}           % mm
+\newcommand{\DataRefitWorseMax}{3}           % mm
+\newcommand{\DataRefitGapBefore}{4,457}      % two-person frames with one valid actor unfitted, old
+\newcommand{\DataRefitGapBeforeOf}{8,274}    % same
+\newcommand{\DataRefitGapBeforePct}{54}      % %
+\newcommand{\DataRefitGapAfterOf}{6,055}     % new: 0 of 6,055
+
+% ---------------------------------------------------------------- v23 labels (H 0b; H 3.5 "v23 labels built")
+\newcommand{\DataThreeDPWTrainImages}{5,882}
+\newcommand{\DataThreeDPWTrainPeople}{7,584}
+\newcommand{\DataThreeDPWValImages}{2,622}
+\newcommand{\DataThreeDPWValPeople}{3,311}
+\newcommand{\DataThreeDPWTestImages}{8,190}
+\newcommand{\DataThreeDPWTestPeople}{11,854}
+\newcommand{\DataThreeDPWTotalImages}{16,694}
+\newcommand{\DataThreeDPWTotalPeople}{22,749}
+\newcommand{\DataThreeDPWTrainPPI}{1.29}     % people per image, train: 7,584 / 5,882 (arithmetic)
+\newcommand{\DataThreeDPWTestPPI}{1.45}      % test: 11,854 / 8,190 (arithmetic)
+\newcommand{\DataThreeDPWTotalPPI}{1.36}     % all: 22,749 / 16,694 (arithmetic)
+
+% ---------------------------------------------------------------- Conversion check on v23 (3611284) next to the old labels (3575369); H 0b table, H 3.5
+\newcommand{\DataCheckPeople}{3,314}         % people checked, v23; H 3.5 "v23 conversion check"
+\newcommand{\DataCheckImages}{2,360}         % images; same
+\newcommand{\DataCheckPerSeq}{40}            % images per sequence; same
+\newcommand{\DataCheckSeq}{59}               % sequences; same
+\newcommand{\DataCheckJointsOld}{18.7}       % mm median, body joints; 3575369:329
+\newcommand{\DataCheckJointsOldPn}{24.5}     % mm p95; same
+\newcommand{\DataCheckJointsNew}{14.1}       % mm median; 3611284:337
+\newcommand{\DataCheckJointsNewPn}{21.1}     % mm p95; same
+\newcommand{\DataCheckBareOld}{32.5}         % mm, bare bone heads; 3575369:329
+\newcommand{\DataCheckBareNew}{30.0}         % mm; 3611284 (H 3.5)
+\newcommand{\DataCheckSurfAOld}{18.9}        % mm, Anny->SMPL; 3575369:331
+\newcommand{\DataCheckSurfBOld}{18.3}        % mm, SMPL->Anny; same
+\newcommand{\DataCheckSurfANew}{18.9}        % mm; 3611284:339
+\newcommand{\DataCheckSurfBNew}{16.1}        % mm; same
+\newcommand{\DataCheckTwoDOld}{+1.1}         % px over raw 3DPW; 3575369:332
+\newcommand{\DataCheckTwoDNew}{+0.4}         % px; 3611284:340
+\newcommand{\DataCheckMenLabelled}{2,386}    % people with 3DPW 'm', all labelled 0.000; 3611284:347
+\newcommand{\DataCheckWomenLabelled}{928}    % 'f', all 1.000; same
+\newcommand{\DataCheckFlipMenLabel}{13.9}    % mm, men, label gender; 3611284:322-325
+\newcommand{\DataCheckFlipMenFlipped}{20.0}  % mm, men, flipped; same
+\newcommand{\DataCheckGapNewOf}{1,080}       % two-person images checked, v23 (0 missing); 3611284:349
+\newcommand{\DataCheckFramesNew}{22,912}     % fitted frames; 3611284:350
+\newcommand{\DataCheckFitMedianNew}{14.0}    % mm; same
+\newcommand{\DataCheckFitMeanNew}{14.7}      % mm; same
+\newcommand{\DataCheckFitPnNew}{19.9}        % mm p95; same
+\newcommand{\DataCheckFitOverThirty}{0.7}    % % of frames > 30 mm; same
+\newcommand{\DataCheckHeadLabelOld}{9.5}     % deg, head turn vs chest, labels; 3575369:223-224
+\newcommand{\DataCheckHeadSmplOld}{20.2}     % deg, SMPL; same
+\newcommand{\DataCheckHeadTestLabelOld}{6.3} % deg, test split, labels; H 3.5 "By design"
+\newcommand{\DataCheckHeadTestSmplOld}{20.0} % deg, test split, SMPL; same
+\newcommand{\DataCheckHeadLabelNew}{19.6}    % deg; 3611284:348
+\newcommand{\DataCheckHeadSmplNew}{19.3}     % deg; same
+\newcommand{\DataCheckForearm}{0.948}        % limb ratio median; 3611284:343
+\newcommand{\DataCheckThigh}{1.064}          % same
+\newcommand{\DataCheckFarPct}{3.2}           % % of people with a joint > 100 mm; 3611284:345
+\newcommand{\DataCheckFarTrainPct}{5.5}      % % in train (worst: outdoors_climbing_02 left hip); 3611284:292-302
+\newcommand{\DataCheckFarMm}{100}            % mm threshold of that row
+\newcommand{\DataFloor}{14}                  % mm, "~14 mm floor" = median body-joint residual 14.1; plan 7.3; H 3.5
+
+% ---------------------------------------------------------------- Relative Human (H 3.4; H 0a step 7; eval_relative_human.py)
+\newcommand{\DataRHImages}{8,741}            % whole set; H 0a step 7
+\newcommand{\DataRHTrainImages}{5,218}       % same
+\newcommand{\DataRHValImages}{635}           % same; H 3.4
+\newcommand{\DataRHTestImages}{1,836}        % same
+\newcommand{\DataRHValPeople}{2,130}         % labelled people, val; H 3.4
+\newcommand{\DataRHValAdults}{1,680}         % 3611285_0:23-31 (H 3.4 table)
+\newcommand{\DataRHValTeens}{101}            % same
+\newcommand{\DataRHValKids}{209}             % same
+\newcommand{\DataRHValBabies}{117}           % same
+\newcommand{\DataRHValUnknownAge}{23}        % H 3.4 "Relative Human result"
+\newcommand{\DataRHIoU}{0.3}                 % eval_relative_human.py:317
+\newcommand{\DataRHChildThr}{0.45}           % eval_relative_human.py:318
+\newcommand{\DataRHGenderThr}{0.5}           % eval_relative_human.py docstring
+\newcommand{\DataRHFov}{55}                  % deg; eval_relative_human.py:320
+
+% ---------------------------------------------------------------- Diagnostic manifest and demo images (H 1 "Data"; D part 3)
+\newcommand{\DataManifestTrain}{40}
+\newcommand{\DataManifestHoldout}{15}
+\newcommand{\DataManifestTotal}{55}
+\newcommand{\DataDemoPhotos}{4}              % example_data photos; H 3.2 "Real images"; D part 3
+\newcommand{\DataDemoFrames}{8}              % 3DPW test frames, one middle frame of 8 test sequences; same
+\newcommand{\DataDemoTotal}{12}              % same

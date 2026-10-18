@@ -1,0 +1,37 @@
+% T3 Datasets (Data 3.1). Plan REWRITE_PLAN.md section 4, T3; D part 3.
+% Sources: AnnyOne H 1 "Data", 2.73 people/image 3571601:21 (H 3.4); 3DPW-Anny v23 H 0b, H 3.5;
+% Relative Human H 3.4, H 0a step 7; manifest H 1, exp7_final_model.sh:13, :741-749; demo H 3.2, D part 3.
+% Numbers come from numbers_data.tex.
+\begin{table}[tbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{2.1cm}p{1.3cm}p{3.1cm}p{2.9cm}p{2.3cm}@{}}
+\toprule
+dataset & type & labels & used for & size \\
+\midrule
+AnnyOne & synthetic & full Anny labels: \DataBones{} bone rotations, \DataPhenotypes{} phenotypes, camera; \DataAnnyOneRenderPx{}\,px renders, \DataAnnyOnePeoplePerImage{} people per image
+  & training (\DataMixAnnyOne\% of each mixed batch); last \DataHoldoutImages{} images = holdout
+  & \DataAnnyOneImages{} images = \DataAnnyOneTrainImages{} + \DataHoldoutImages{} \\
+\addlinespace
+3DPW-Anny, v23 labels & real video & 3DPW's SMPL ground truth converted to Anny by my fit; every third frame; \DataThreeDPWTotalPPI{} people per image
+  & training (\DataMixThreeDPW\%, train split); validation (\DataValImagesPerEpoch{} images per epoch); test
+  & train \DataThreeDPWTrainImages{} / \DataThreeDPWTrainPeople; val \DataThreeDPWValImages{} / \DataThreeDPWValPeople; test \DataThreeDPWTestImages{} / \DataThreeDPWTestPeople \\
+\addlinespace
+Relative Human, validation split & real photos & per person: box, age group (adult, teen, kid, baby), gender; no 3D
+  & evaluation only (children, gender)
+  & \DataRHValImages{} / \DataRHValPeople{} (whole set \DataRHImages{} images) \\
+\addlinespace
+diagnostic manifest & synthetic & AnnyOne labels of fixed (image, person) entries
+  & the checks of Chapter~\ref{ch:diagnostics}; excluded from fine-tune sampling
+  & \DataManifestTrain{} training + \DataManifestHoldout{} holdout = \DataManifestTotal{} \\
+\addlinespace
+demo images & real & none used
+  & by-eye comparison of models
+  & \DataDemoPhotos{} photos + \DataDemoFrames{} 3DPW test frames \\
+\bottomrule
+\end{tabular}
+\caption{The datasets of this thesis. Sizes are images / labelled people where both are given. The 3DPW-Anny
+counts are those of the v23 labels (Section~\ref{sec:data-defects}); numbers on 3DPW are always against these
+converted labels, never against the original SMPL meshes.}
+\label{tab:datasets}
+\end{table}

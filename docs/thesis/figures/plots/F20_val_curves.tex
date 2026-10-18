@@ -1,0 +1,28 @@
+% F20 In-training 3DPW-validation PVE per epoch, Final and Control (Results 6.5).
+% Final: 3611336:55-164 (REWRITE_PLAN.md section 3, F20): 79.9 75.7 77.8 74.4 75.5 75.0 73.4 75.4 75.3 74.5.
+% Control: PENDING, needs lines 48-157 of logs/exp7_final_model_3611339.out (plan section 7, Q10):
+%   sed -n 48,157p logs/exp7_final_model_3611339.out
+% When it arrives, put both series in data/F20_val_curves.csv (columns: epoch,final,control) and switch to
+%   \addplot table[x=epoch, y=control, col sep=comma] {data/F20_val_curves.csv};
+\begin{figure}[tbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.8\linewidth, height=5.5cm,
+  xlabel={Epoch (1{,}000 steps of batch 4 each)}, ylabel={3DPW validation PVE (mm)},
+  xmin=-0.5, xmax=9.5, ymin=70, ymax=82, xtick={0,...,9},
+  grid=major, grid style={gray!25},
+  tick label style={font=\footnotesize}, label style={font=\small},
+  legend style={font=\footnotesize, at={(0.98,0.97)}, anchor=north east},
+]
+\addplot[color=blue!70!black, mark=*, thick] coordinates {
+  (0,79.9) (1,75.7) (2,77.8) (3,74.4) (4,75.5) (5,75.0) (6,73.4) (7,75.4) (8,75.3) (9,74.5)
+};
+\addlegendentry{Final}
+\node[font=\footnotesize, red!70!black, align=center] at (axis cs:4.5,80.8) {Control: data pending (log lines 48--157)};
+\end{axis}
+\end{tikzpicture}
+\caption{3DPW validation PVE measured during training after each epoch (300 validation images per epoch), Final
+model. The Control's curve is pending.}
+\label{fig:val-curves}
+\end{figure}
