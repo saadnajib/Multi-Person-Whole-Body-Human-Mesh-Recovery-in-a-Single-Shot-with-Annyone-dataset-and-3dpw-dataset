@@ -77,11 +77,15 @@
 % absorbs draft main.tex lines 1131-1221 (old-label numbers retired; validation-trajectory text moves to history)
 % needs: T15 part B, F10 (pending); 121.8 / 95.5 / 120.2 / 91.5 / 89.0 (3612073-5; 3611339; 3611336); most of the gain is training on 3DPW (Control 91.5); the fixes add 2.5 mm; precision 64% explained (bystanders not labelled). Wording: "lowest error on our 3DPW-Anny labels", "not comparable with published 3DPW numbers"
 \TODO{Every model on the v23 test labels with the same script.}
-% F10: montages of demo job 3612078 (student sends the 12 files)
+% F10 (plan section 3): demo job 3612078 montages, each photo | Base | photo | Final, labels baked in
+% (data/CLUSTER_ANSWERS.md). 3 of the 8 3DPW frames received; missing: downtown_bar, downtown_walking,
+% downtown_sitOnStairs, downtown_walkBridge, weekly market.
 \begin{figure}[tbp]
 \centering
-\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F10 pending: montages of demo job 3612078 (student sends the 12 files)}}}
-\caption{Eight 3DPW test frames, Base next to Final, bodies placed from the detector box.}
+\includegraphics[width=\linewidth]{F10_3dpw_guitar_v5_vs_final}\\[2pt]
+\includegraphics[width=\linewidth]{F10_3dpw_office_v5_vs_final}\\[2pt]
+\includegraphics[width=\linewidth]{F10_3dpw_fencing_v5_vs_final}
+\caption[3DPW test frames, Base vs Final]{3DPW test frames, each shown as photo and Base, then photo and Final; bodies placed from the detector box; judged by eye, no metric. \TODO{five more frames pending}}
 \label{fig:3dpw-overlays}
 \end{figure}
 

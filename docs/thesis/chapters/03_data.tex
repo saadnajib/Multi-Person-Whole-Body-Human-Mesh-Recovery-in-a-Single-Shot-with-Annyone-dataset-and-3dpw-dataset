@@ -163,7 +163,7 @@ training and evaluation code run on them unchanged.
 
 Each step of the converter's development answered a measured symptom.
 
-\paragraph{The 34\,mm floor.} The first converter (v1) gave \DataVOneBarMean\,mm on \DataVOneBarFrames{} frames of
+\paragraph{A common floor.} The first converter (v1) gave \DataVOneBarMean\,mm on \DataVOneBarFrames{} frames of
 \texttt{downtown\_bar\_00} (Table~\ref{tab:fit-stages}). On four test scenes, two facts in the log showed a defect
 before I looked at any render. The error was \DataVOneFloorMin{} to \DataVOneFloorMax\,mm on every frame of every
 scene, and all four actors came out with the same body (gender \DataVOneGender, age \DataVOneAge, height
@@ -293,7 +293,7 @@ from \DataRefitGapBefore{} of \DataRefitGapBeforeOf{} (\DataRefitGapBeforePct\%)
 images and \DataThreeDPWTotalPeople{} people (Table~\ref{tab:label-sets}). They have fewer images than the rebuilt set
 but the same people, because both actors now share each frame. No person was dropped for fit error or box size.
 \DataCrossCountryFramesNew{} frames were dropped for visibility, all from \texttt{outdoors\_crosscountry\_00}. With
-3DPW's own camera, the ground-truth joints of that sequence sit at a depth of \DataCrossCountryDepth\,m, behind the
+3DPW's own camera, the ground-truth joints of that sequence sit at a depth of $\DataCrossCountryDepth$\,m, behind the
 camera, and project far outside the image. The old fits show the same (\DataCrossCountryFramesOld{} frames), and no
 label set ever contained this sequence. The 3D fit is fine; image labels for it cannot exist with this camera.
 
@@ -402,7 +402,7 @@ group, the child-vs-adult AUC of the predicted age (kids and babies against adul
 number covers detected people only, so recall always stands next to it.
 
 % -----------------------------------------------------------------------------
-\section{The diagnostic manifest and the demo images}
+\section{The diagnostic manifest, the holdout and the demo images}
 \label{sec:data-manifest}
 
 \paragraph{Diagnostic manifest.} The checks of Chapter~\ref{ch:diagnostics} need the same people every time. A seeded
@@ -412,6 +412,10 @@ head turns), \DataManifestHoldout{} from the holdout, which has no children. Bas
 later fine-tune (Final, Control, Student) gives their images a sampling weight of zero, so they remain the same
 in-sample reference for all models. The manifest children are therefore in-sample: they show whether a model can fit
 a child it has seen, not whether it generalises.
+
+\paragraph{Holdout.} The \DataHoldoutImages{} holdout images (Section~\ref{sec:data-annyone}) are the headline
+synthetic test set: small, adult-only and synthetic. Every holdout comparison in Chapter~\ref{ch:results} is read
+against the run-to-run variation measured in Chapter~\ref{ch:diagnostics}.
 
 \paragraph{Demo images.} For by-eye comparisons I use \DataDemoTotal{} real images: \DataDemoPhotos{} photos and
 \DataDemoFrames{} 3DPW test frames, one middle frame from each of \DataDemoFrames{} test sequences. No model trained on

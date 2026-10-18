@@ -23,5 +23,15 @@
 \caption[Two 3DPW test frames: Base vs bone correction with a 2-epoch fine-tune]{Real 3DPW test frames \texttt{downtown\_bar\_00} 701 and \texttt{office\_phoneCall\_00} 440: Base next to the model fine-tuned for 2 epochs with the bone correction; bodies placed from the detector box; judged by eye.}
 \label{fig:neck-3dpw-office}
 \end{figure}
+% F10 photo montages (demo job 3612078; photo | Base | photo | Final, labels baked in).
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{F10_photo_garden_v5_vs_final}\\[2pt]
+\includegraphics[width=\linewidth]{F10_photo_tennis_v5_vs_final}\\[2pt]
+\includegraphics[width=\linewidth]{F10_photo_stage_v5_vs_final}\\[2pt]
+\includegraphics[width=\linewidth]{F10_photo_party_v5_vs_final}
+\caption[Four real photos, Base vs Final]{Four real photos never used in training, each shown as photo and Base, then photo and Final; bodies placed from the detector box, fingers forced to rest pose; judged by eye, no metric.}
+\label{fig:photo-montages}
+\end{figure}
 % F14 and F21 are placed in Chapter 3 (fig:label-check, fig:data-age-sweep); F23 and F24 in Chapter 5
 % (fig:exp6-compare, fig:gt-decode). Move them here only if their chapter drops them.
