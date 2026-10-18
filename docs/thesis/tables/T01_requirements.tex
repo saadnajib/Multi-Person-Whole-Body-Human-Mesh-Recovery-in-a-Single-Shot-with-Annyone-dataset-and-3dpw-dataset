@@ -10,7 +10,7 @@
 \centering\footnotesize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.1}
-\begin{tabular}{@{}>{\raggedright}p{1.15cm}>{\raggedright}p{2.75cm}>{\raggedright}p{1.25cm}>{\raggedright}p{4.1cm}>{\raggedright\arraybackslash}p{2.95cm}@{}}
+\begin{tabular}{@{}>{\raggedright}p{1.15cm}>{\raggedright}p{2.75cm}>{\raggedright}p{1.25cm}>{\raggedright}p{4.0cm}>{\raggedright\arraybackslash}p{2.95cm}@{}}
 \toprule
 Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
 \midrule
@@ -29,8 +29,8 @@ Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
   \SpreadMuscleFinal--\SpreadCupFinal); the shape mask trades this for gender (Section~\ref{sec:res-mask}) &
   per-phenotype agreement on AnnyOne; rest-pose line-up (Figure~\ref{fig:rest-lineup}); the partial mask \\
 \addlinespace
-1b & ``Must not be exactly the same as the Multi-HMR model'': new and better on both test sets, or significantly
-  smaller and $\geq$\,95\,\% as good &
+1b & ``Must not be exactly the same as the Multi-HMR model'': new and better on both test sets, or ``significantly
+  smaller'' and $\geq$\,95\,\% as good &
   \textbf{not met} &
   Final is Multi-HMR with an Anny head; \FinalParams\,M against \NAVERParams\,M parameters
   ($-$\DiscFinalSmallerPct\,\%); Multi-HMR-Anny \NAVERAnnyOne{} (likely in-sample) / \NAVERThreeDPW\,mm against
