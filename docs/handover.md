@@ -348,6 +348,11 @@ checkpoint'): all three now read `decoder.transformer.layers.0.2.fn.net.0.weight
 (3) Run 3 (partial mask, keep age) is queued as job 3614042 (RUN v5_pc_dist5_bonefix_v23_e10_shpmask_noage); the exp7 script's
 duplicate guard REFUSES a second submission while it is pending, which is correct, not an error. The student, the baseline and
 run 3 are independent jobs: submit all at once, no waiting.
+**Submitted 18 Oct ~17:15** [Certain, the student's terminal]: full student job 3614191 (RUN
+student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30, 20:00:00, check + teacher PASS), NAVER baseline job 3614192
+(CHECK_ONLY PASS, 485 original-class keys), run 3 job 3614042; all PENDING (Priority) at submission. Logs:
+`logs/exp8_distill_vitb_3614191.out`, `logs/eval-test3dpw-3614192_0.out`, run 3 under
+`results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/`.
 **DECIDED 18 Oct, 15:30: the UNMASKED model (3611336) stays the final model and the student's teacher.** Relative Human
 of the masked arm [Certain, `logs/eval_rh_3613616_0.out`, job 3613616]: recall 57.2% (unmasked 64.7%), gender accuracy
 49.3% (64.2%; men 0.717, women 0.860), children AUC 0.708 (0.719), ages adult 0.638 / kid 0.611 / baby 0.524 (unmasked
