@@ -561,6 +561,8 @@ RULE = 0.95
 
 
 def trace(d):
+    if not d:          # no trace planned (e.g. STUDENT_TRAIN_FIX=none): never read a summary.json from the CWD
+        return {}
     try:
         s = json.load(open(os.path.join(d, 'summary.json')))
         v = s['variants'][V]

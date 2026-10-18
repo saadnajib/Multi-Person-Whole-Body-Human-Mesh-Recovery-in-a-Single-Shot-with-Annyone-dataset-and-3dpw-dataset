@@ -850,7 +850,7 @@ adds no child signal (3DPW has no children); the v3d/v2d mesh terms still carry 
 mesh is built from the constants; and the 3DPW-test PVE is computed against the same neutral-body GT meshes, so a
 masked model can score worse there.
 
-### exp8: ViT-B student distilled from the final model (requirement 1b) (uncommitted, never run)
+### exp8: ViT-B student distilled from the final model (requirement 1b) (WIP commits aca1896 + 3fe870d, not on main, never run)
 
 **Purpose.** Supervisor requirement 1b, smaller-model route: a model that is not exactly Multi-HMR because it is much
 smaller (fewer parameters AND FLOPs, faster inference) while its PVE and MPJPE stay within 95% of the large model on
@@ -859,7 +859,9 @@ modes). Cost table: `scripts/analysis/model_cost.py`. Baseline: `slurm/eval/run_
 
 **Recipe.** Teacher = the final model (exp7 fix arm, `v5_pc_dist5_bonefix_v23_e10/train/checkpoints/00009.pt`),
 frozen, its ViT-L in bf16. Student = DINOv2 ViT-B/14 with NAVER's HMR-trained ViT-B weights
-(`models/multiHMR/multiHMR_672_B.pt`, backbone only), fully trained. `--head_dim 1024` puts a 768 -> 1024 projector
+(`models/multiHMR/multiHMR_672_B.pt`, backbone only; [Guessing] that NAVER serves that file and that its ViT loads at
+>= 90% as the ViT-S one did - the job's guard refuses without the file, train.py refuses below `--min_backbone_match`),
+fully trained. `--head_dim 1024` puts a 768 -> 1024 projector
 (`feat_proj`) in front of heads built at the teacher width, so `--init_heads_from_teacher` copies every head tensor (at
 head_dim 0 the head's input layers cannot transfer: the v3-v5 failure). The copied heads stay frozen for 5 epochs.
 The student trains with the teacher's own bone fix, because its heads start as the teacher's (train.py warns
@@ -898,14 +900,15 @@ lines it printed), copy its log to `<RUN>/eval_3dpw_test_{student,teacher}.log`,
 
 **What PASS means.** The student meets 1b's smaller-model clause on our two test sets: within 95% of the final model on
 PVE and MPJPE on the AnnyOne holdout and on 3DPW test (v23 labels), with about 3.1x fewer parameters and 3.2x fewer
-FLOPs (analytic: ViT-B student 101.4 M / 603 GFLOPs vs teacher 318.4 M / 1927 GFLOPs at 672 px, one person). It
+FLOPs (analytic backbone + hooked head linears, counted locally on a stand-in backbone [Likely]: ViT-B student 101.4 M /
+603 GFLOPs vs teacher 318.4 M / 1927 GFLOPs at 672 px, one person; the job re-counts both from the real checkpoints). It
 says nothing about other datasets, and the 3DPW numbers hold only against our converted labels.
 
 **Risks.**
 - Student bone fix: the fix is a fresh estimate on 200 training images. A compensated chain (neck02 -> head) or a bone
   that flips only in the student can still cost PVE. Compare `holdout_student/` with `holdout_student_trainfix/`.
-- ViT-B may miss 95% on 3DPW even if AnnyOne passes. The ViT-S students stayed far from their teachers (v8 3DPW-val
-  123.6 vs ~95-103), and 30 epochs is 10% of v8's images. A FAIL there calls for a longer run (`EPOCHS=60`) before any
+- ViT-B may miss 95% on 3DPW even if AnnyOne passes. The ViT-S students stayed far from their teachers (v8 final 123.6
+  vs its teacher v9 102.5 PVE on 3DPW test, old labels; handover model table), and 30 epochs is 10% of v8's images. A FAIL there calls for a longer run (`EPOCHS=60`) before any
   claim.
 - FLOPs are analytic for the backbone (+ hooked linear layers for the heads). The Anny mesh is not counted. Latency is
   batch 1 on whatever GPU the job got (teacher and student on the same one).
