@@ -14,18 +14,14 @@
 \multicolumn{3}{@{}l}{\emph{A. Recipe}} \\
  & Final (the teacher) & Student \\
 \midrule
-Backbone & DINOv2 ViT-L/14, width \MethodWidthL & DINOv2 ViT-B/14, width \MethodWidthB \\
-Backbone initialisation & Base (from NAVER's Anny checkpoint) & NAVER's Multi-HMR ViT-B, trained for mesh recovery \\
-Trainable during training & last \MethodUnfrozenBlocks{} of \MethodBlocksL{} blocks and the heads; frozen when teaching (bf16) & whole backbone, projector; heads after epoch \MethodStudentFreeze \\
-Heads & HPH at width \MethodHPHDim, \MethodParamsHeadsL\,M & copied from the teacher, fed by a projector \MethodWidthB{}$\to$\MethodWidthL{} (\MethodStudentProjParams\,M) \\
-Parameters & \MethodParamsTotalL\,M & \MethodStudentParams\,M (\MethodRatioParams$\times$ fewer) \\
-GFLOPs (672\,px, one person) & \num{\MethodGflopsL} & \MethodStudentGflops{} (\MethodRatioGflops$\times$ fewer) \\
-ms per image (A40, batch 1) & \MethodMsL & \MethodStudentMs{} (\MethodRatioMs$\times$ faster) \\
+Backbone & ViT-L/14 (width \MethodWidthL) from Base; last \MethodUnfrozenBlocks{} of \MethodBlocksL{} blocks trained; frozen in bf16 when teaching & ViT-B/14 (width \MethodWidthB) from NAVER's HMR-trained Multi-HMR ViT-B; fully trained \\
+Heads & HPH at width \MethodHPHDim{} (\MethodParamsHeadsL\,M) & copied from the teacher, frozen \MethodStudentFreeze{} epochs, fed by a projector \MethodWidthB{}$\to$\MethodWidthL{} (\MethodStudentProjParams\,M) \\
+Params / GFLOPs / ms & \MethodParamsTotalL\,M / \num{\MethodGflopsL} / \MethodMsL & \MethodStudentParams\,M / \MethodStudentGflops{} / \MethodStudentMs{} (\MethodRatioParams$\times$ / \MethodRatioGflops$\times$ / \MethodRatioMs$\times$ less) \\
 Schedule & \MethodFinalEpochs{} epochs $\times$ \num{\MethodFinalIters} iterations $\times$ batch \MethodFinalBatch{} $=$ \num{\MethodFinalImages} images & \MethodStudentEpochs{} epochs $\times$ \num{\MethodStudentIters} iterations $\times$ batch \MethodStudentBatch{} $=$ \num{\MethodStudentImages} images \\
 Learning rate & \MethodFinalLR, constant & \MethodStudentLR, halved every \MethodStudentLRDecay{} epochs \\
-Task targets & head anchor, distance and translation $\times$\MethodWDist, \MethodMixRatio\% 3DPW-train (v23), hand mask, manifest excluded & identical to the teacher \\
+Targets & head anchor, depth weight \MethodWDist, \MethodMixRatio\% 3DPW (v23), hand mask & identical \\
 Distillation & -- & feature KL $\lambda=\MethodKDLambda$, $T=\MethodKDTemp$; output L1 $\lambda=\MethodKDOutLambda$ \\
-Bone correction & four bones, estimated on Base & teacher's during training; own one re-estimated on \MethodBoneFixImages{} training images afterwards \\
+Bone correction & four bones, estimated on Base & teacher's in training; own one afterwards \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{B. The 95\% bars: student error $\le$ reference error / \MethodRuleFactor}} \\
  & against Final & against Multi-HMR-Anny \\
@@ -38,7 +34,7 @@ AnnyOne holdout MPJPE (V1) & \TODO{Final V1 MPJPE, re-measured in the student jo
 \end{tabular}
 \caption{The Student (ViT-B) next to its teacher Final. Part A: recipe and measured cost. Part B: the error bars of
 the 95\% rule in mm; the job computes the bars from the teacher re-measured in the same job, so these values are for
-orientation. The rule also asks for fewer parameters, fewer FLOPs and a faster forward pass. Read as ``error at most
+orientation. Cost at \MethodImgSize\,px, one person; ms on an A40, batch 1. The rule also asks for fewer parameters, fewer FLOPs and a faster forward pass. Read as ``error at most
 1.05 times the teacher's'', the bars against Final would be \MethodBarHoldoutAlt{} and \MethodBarThreeDPWAlt\,mm. The
 Student's own errors are in Chapter~\ref{ch:results}.}
 \label{tab:student-recipe}
