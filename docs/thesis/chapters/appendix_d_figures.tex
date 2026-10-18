@@ -6,48 +6,22 @@
 \label{app:figures}
 
 % absorbs - (new)
-% needs: F8, F9 office pair, F14, F20 (if moved here), F21, F23, F24, extra holdout panels (plan section 3)
+% needs: F8, F9 office pair, F20 (if moved here), extra holdout panels (plan section 3)
 \TODO{Extra figures, each with images, models, setting and caveat in the caption.}
 
 % F8 (plan section 3). Source docs/figures/depth_before_after_579860.jpg.
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.9\linewidth]{depth_before_after_579860}
-\caption{Holdout image 579860 at each model's own predicted depth: ground truth, Base, and the depth-fix pilot. Before the fix the ground-truth head shows above a shrunken body placed too far away. Synthetic image.}
+\caption[Holdout image 579860 at the predicted depth: ground truth, Base, depth-fix pilot]{Holdout image 579860 at each model's own predicted depth: ground truth, Base, and the depth-fix pilot. Before the fix the ground-truth head shows above a shrunken body placed too far away. Synthetic image.}
 \label{fig:depth-579860}
 \end{figure}
 % F9 office pair (plan section 3). Source docs/figures/neck_before_after_3dpw_bar_office.jpg.
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=0.9\linewidth]{neck_before_after_3dpw_bar_office}
-\caption{Real 3DPW test frames \texttt{downtown\_bar\_00} 701 and \texttt{office\_phoneCall\_00} 440: Base next to the model fine-tuned for 2 epochs with the bone correction; bodies placed from the detector box; judged by eye.}
+\caption[Two 3DPW test frames: Base vs bone correction with a 2-epoch fine-tune]{Real 3DPW test frames \texttt{downtown\_bar\_00} 701 and \texttt{office\_phoneCall\_00} 440: Base next to the model fine-tuned for 2 epochs with the bone correction; bodies placed from the detector box; judged by eye.}
 \label{fig:neck-3dpw-office}
 \end{figure}
-% F14: results/diagnostics/check_3dpw_conversion_v23/vis/*.jpg (send 3)
-\begin{figure}[tbp]
-\centering
-\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F14 pending: \texttt{\detokenize{results/diagnostics/check_3dpw_conversion_v23/vis/*.jpg (send 3)}}}}}
-\caption{A 3DPW label-check panel: photo, 3DPW SMPL ground truth with 2D keypoints, our Anny label.}
-\label{fig:label-check}
-\end{figure}
-% F21: results/diagnostics/bodymodel*/vis/age_sweep.jpg
-\begin{figure}[tbp]
-\centering
-\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F21 pending: \texttt{\detokenize{results/diagnostics/bodymodel*/vis/age_sweep.jpg}}}}}
-\caption{Anny at the dataset-mean shape with age swept from 0 to 1: skeletal height 0.53 to 1.54\,m.}
-\label{fig:age-sweep}
-\end{figure}
-% F23: exp6 compare panels 579864.jpg and 579866.jpg
-\begin{figure}[tbp]
-\centering
-\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F23 pending: \texttt{\detokenize{exp6 compare panels 579864.jpg and 579866.jpg}}}}}
-\caption{Two more holdout images, without (top) and with (bottom) the bone correction, no training.}
-\label{fig:exp6-compare}
-\end{figure}
-% F24: results/diagnostics/gt_decode/vis/ (send 2)
-\begin{figure}[tbp]
-\centering
-\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F24 pending: \texttt{\detokenize{results/diagnostics/gt_decode/vis/ (send 2)}}}}}
-\caption{Ground-truth decode overlay: AnnyOne labels rendered onto the people with the dataset camera.}
-\label{fig:gt-decode}
-\end{figure}
+% F14 and F21 are placed in Chapter 3 (fig:label-check, fig:data-age-sweep); F23 and F24 in Chapter 5
+% (fig:exp6-compare, fig:gt-decode). Move them here only if their chapter drops them.

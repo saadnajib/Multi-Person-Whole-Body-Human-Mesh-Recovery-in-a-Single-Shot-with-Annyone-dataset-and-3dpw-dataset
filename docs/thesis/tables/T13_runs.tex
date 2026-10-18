@@ -5,7 +5,7 @@
 % Uses longtable (one table may break across pages); \path breaks long paths at slashes.
 \begin{small}
 \setlength{\tabcolsep}{3pt}
-\begin{longtable}{@{}>{\raggedright}p{2.2cm}>{\raggedright}p{2.0cm}>{\raggedright}p{3.6cm}>{\raggedright\arraybackslash}p{5.2cm}@{}}
+\begin{longtable}{@{}>{\raggedright}p{2.0cm}>{\raggedright}p{2.0cm}>{\raggedright}p{3.2cm}>{\raggedright\arraybackslash}p{4.8cm}@{}}
 \caption{Run names, Slurm jobs, what each produced, and where the log and the checkpoint or output lie.}
 \label{tab:runs}\\
 \toprule
@@ -39,12 +39,12 @@ Re-fit (v2.3) & 3589270 (test), 3590385 + 3602813 & converter v2.3 on all 87 per
 Label rebuilds & 3579266, 3581320 & rebuilds from the old fits & \path{threedpw_anny_full/labels_rebuilt/} \\
 \addlinespace
 \multicolumn{4}{@{}l}{\emph{Pilots and diagnostics}} \\
-exp1 depth fix & 3571598/3571599, 3572418, 3572483, 3571933/3571934, 3572482 & 2- and 10-epoch arms and controls & \path{results/experiments/exp1_*} \\
-exp2 children sampler & 3571955/3571956 (measurement 3571601) & sampler pilot and control & \\
+exp1 depth fix & 3571598, 3571599, 3572418, 3572483, 3571933, 3571934, 3572482 & 2- and 10-epoch arms and controls & \path{results/experiments/exp1_*} \\
+exp2 children sampler & 3571955, 3571956 (measurement 3571601) & sampler pilot and control & \\
 exp3 global head loss & 3571957; controls 3571958, 3571960 & loss pilot and two identical controls (noise) & \\
 exp4 fingers & 3571959 & region-normalised loss & \\
-exp5 geodesic loss & 3573520/3573521 & geodesic rotation loss vs L1 & \\
-Per-bone dumps & 3573518/3573519 & per-bone angle dump & \\
+exp5 geodesic loss & 3573520, 3573521 & geodesic rotation loss vs L1 & \\
+Per-bone dumps & 3573518, 3573519 & per-bone angle dump & \\
 exp6 bone correction & 3579014 (Base), 3579015 (v10) & correction without training and with a 2-epoch fine-tune & \path{results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/bone_fix.json} \\
 \end{longtable}
 \end{small}

@@ -28,18 +28,25 @@ hip--neck length (factor 0.864); limb joints use the bone head.
 
 \begin{table}[htbp]
 \centering\small
-\begin{tabular}{llr}
+\begin{tabular}{@{}llr@{}}
 \toprule
 SMPL joint & Anny bone & virtual-joint offset (cm) \\
 \midrule
 pelvis & \texttt{root} & 11.6 \\
 left / right hip & \texttt{upperleg01.L/R} & 4.3 \\
-spine1 / spine2 / spine3 & \texttt{spine03} / \texttt{spine02} / \texttt{spine01} & 3--7 \\
+spine1 & \texttt{spine03} & 3--7 \\
+spine2 & \texttt{spine02} & 3--7 \\
+spine3 & \texttt{spine01} & 3--7 \\
 neck & \texttt{neck01} & 0 (reference) \\
 left / right collar & \texttt{clavicle.L/R} & 5 \\
 head & \texttt{head} & --- \\
-shoulder / elbow / wrist / hand & \texttt{upperarm01} / \texttt{lowerarm01} / \texttt{wrist} / \texttt{finger2-1} & --- \\
-knee / ankle / foot & \texttt{lowerleg01} / \texttt{foot} / \texttt{toe1-1} & --- \\
+shoulder & \texttt{upperarm01.L/R} & --- \\
+elbow & \texttt{lowerarm01.L/R} & --- \\
+wrist & \texttt{wrist.L/R} & --- \\
+hand & \texttt{finger2-1.L/R} & --- \\
+knee & \texttt{lowerleg01.L/R} & --- \\
+ankle & \texttt{foot.L/R} & --- \\
+foot & \texttt{toe1-1.L/R} & --- \\
 \bottomrule
 \end{tabular}
 \caption{SMPL$\rightarrow$Anny correspondence of the final converter. The fit rotates only the root and 18 bones;

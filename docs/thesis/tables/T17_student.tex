@@ -7,28 +7,32 @@
 % V1 MPJPE of the teacher is not in the handover: TODO fill from 3611336 log.
 \begin{table}[tbp]
 \centering\small
-\begin{tabular}{@{}llrrrrc@{}}
+\begin{tabular}{@{}lrrrrc@{}}
 \toprule
-Set & Metric & Teacher (Final) & Student & Ratio & Bar & Met? \\
+Metric & Teacher & Student & Ratio & Bar & Met? \\
 \midrule
-AnnyOne holdout, V1 & PVE (mm) & \FinalPVE & pending & & $\leq$ \BarPVE & \\
- & PA-PVE (mm) & \FinalPAPVE & pending & & $\leq$ 52.9 & \\
- & MPJPE (mm) & \TODO{} & pending & & & \\
- & Recall (\%) & \FinalRecall & pending & & $\geq$ 82.7 & \\
+\multicolumn{6}{@{}l}{\emph{AnnyOne holdout, V1}} \\
+PVE (mm) & \FinalPVE & pending & & $\leq$ \BarPVE & \\
+PA-PVE (mm) & \FinalPAPVE & pending & & $\leq$ 52.9 & \\
+MPJPE (mm) & \TODO{} & pending & & & \\
+Recall (\%) & \FinalRecall & pending & & $\geq$ 82.7 & \\
 \addlinespace
-AnnyOne test-100, V0 & PVE (mm) & 77.5 & pending & & $\leq$ 81.6 & \\
- & PA-PVE (mm) & 54.4 & pending & & $\leq$ 57.3 & \\
- & Recall (\%) & 87 & pending & & $\geq$ 82.7 & \\
+\multicolumn{6}{@{}l}{\emph{AnnyOne test-100, V0}} \\
+PVE (mm) & 77.5 & pending & & $\leq$ 81.6 & \\
+PA-PVE (mm) & 54.4 & pending & & $\leq$ 57.3 & \\
+Recall (\%) & 87 & pending & & $\geq$ 82.7 & \\
 \addlinespace
-3DPW test (v23), V0 & PVE (mm) & \FinalThreeDPW & pending & & $\leq$ \BarThreeDPW & \\
- & PA-PVE (mm) & \FinalPAThreeDPW & pending & & $\leq$ 60.6 & \\
- & MPJPE (mm) & \FinalMPJPEThreeDPW & pending & & $\leq$ 92.9 & \\
- & Recall (\%) & \FinalRecallThreeDPW & pending & & $\geq$ 94.1 & \\
+\multicolumn{6}{@{}l}{\emph{3DPW test (v23 labels), V0}} \\
+PVE (mm) & \FinalThreeDPW & pending & & $\leq$ \BarThreeDPW & \\
+PA-PVE (mm) & \FinalPAThreeDPW & pending & & $\leq$ 60.6 & \\
+MPJPE (mm) & \FinalMPJPEThreeDPW & pending & & $\leq$ 92.9 & \\
+Recall (\%) & \FinalRecallThreeDPW & pending & & $\geq$ 94.1 & \\
 \addlinespace
-Cost & Params (M) & \FinalParams & \StudentParams & \ParamRatioStudent$\times$ & fewer & yes \\
- & GFLOPs & \FinalGFLOPs & \StudentGFLOPs & \FlopRatioStudent$\times$ & fewer & yes \\
- & ms per image (A40) & \TeacherMsAForty & \StudentMsAForty & \SpeedRatioStudent$\times$ & faster & yes \\
- & Training images/s & 10.9$^{a}$ & pending & & & \\
+\multicolumn{6}{@{}l}{\emph{Cost}} \\
+Params (M) & \FinalParams & \StudentParams & \ParamRatioStudent$\times$ & fewer & yes \\
+GFLOPs & \FinalGFLOPs & \StudentGFLOPs & \FlopRatioStudent$\times$ & fewer & yes \\
+ms per image (A40) & \TeacherMsAForty & \StudentMsAForty & \SpeedRatioStudent$\times$ & faster & yes \\
+Training images/s & 10.9$^{a}$ & pending & & & \\
 \bottomrule
 \end{tabular}
 \caption{The Student against its teacher and the 95\,\% rule: every error of the Student at most the teacher's

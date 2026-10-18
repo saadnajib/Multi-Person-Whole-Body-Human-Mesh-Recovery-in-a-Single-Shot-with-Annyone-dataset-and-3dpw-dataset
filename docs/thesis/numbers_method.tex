@@ -221,3 +221,16 @@
 \newcommand{\MethodNoiseRecallPair}{0.8}  % recall points between the identical pair; H 3.6
 \newcommand{\MethodRestartCost}{2.4}      % mm PVE for restarting a fine-tune of Base unchanged; H 3.6; D slide 22
 \newcommand{\MethodLabelFloor}{14}        % mm, about the converter's own joint error on 3DPW (v23); H 0b; T5
+
+% --- Student-S table (tab:students-s): best holdout PVE / PA-PVE, V0; draft tab:kd_epochs ("best" row) and tab:kd_eval
+\newcommand{\MethodStudentSOnePA}{128.2}  % mm, S1/S2 PA-PVE; draft tab:kd_eval
+\newcommand{\MethodStudentSThreePVE}{191} % mm, S3 best; draft tab:kd_epochs
+\newcommand{\MethodStudentSThreePA}{133}  % mm; draft tab:kd_epochs
+\newcommand{\MethodStudentSFourPA}{117}   % mm, S4 best PA-PVE (PVE = \MethodStudentSInitAfter); draft tab:kd_epochs
+\newcommand{\MethodStudentSSixbPA}{92.1}  % mm; draft main.tex:776
+\newcommand{\MethodStudentSSevenPA}{88.2} % mm; draft tab:kd_eval
+\newcommand{\MethodStudentSEightPA}{86.9} % mm; draft tab:kd_eval
+\newcommand{\MethodStudentSContLR}{\ensuremath{2\times10^{-5}}} % S6b / S6c continuation LR; draft main.tex:773
+\newcommand{\MethodStudentSContEpochs}{150} % epochs of the S6b / S6c continuation; draft main.tex:772-783
+\newcommand{\MethodStudentSBatchBig}{16}  % S6c batch; draft main.tex:782
+\newcommand{\MethodBackboneSParams}{22.06}% M, ViT-S backbone, analytic; model_cost.py table (REWRITE_PLAN.md T16)
