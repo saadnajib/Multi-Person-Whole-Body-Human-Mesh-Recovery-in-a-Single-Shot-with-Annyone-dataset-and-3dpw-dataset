@@ -125,6 +125,8 @@
 #   "[loss] mask_3dpw_shape:"): 3DPW people lose the shape L1 on the 8 converter constants (age 0.55, muscle ...
 #   caucasian 0.5). It adds no child signal, the v3d/v2d mesh terms still carry the neutral body, and the 3DPW-test
 #   PVE is computed against neutral-body GT meshes, so a masked model can score worse there.
+#   MASK_3DPW_SHAPE_NAMES ('' = the 8; with MASK_3DPW_SHAPE=1, comma list -> --mask_3dpw_shape_names): RUN gets
+#   _shpmask_noage for the 7 non-age constants, else _shpmask_<3-letter prefixes joined by ->, e.g. _shpmask_mus-wei.
 #
 # RUNTIME (realistic, from the logs):
 #   [Certain] this recipe on AnnyOne alone: 328-339 s per 1,000-iteration epoch, 11.8-12.2 images/s (long_pc_dist5,
@@ -194,6 +196,14 @@ ITER_TAG=""; [ "${N_ITERS}" = 1000 ] || ITER_TAG="_it${N_ITERS}"   # in the defa
 MASK_3DPW_SHAPE="${MASK_3DPW_SHAPE:-0}"
 case "${MASK_3DPW_SHAPE}" in 0|1) ;; *) echo "ERROR: MASK_3DPW_SHAPE=${MASK_3DPW_SHAPE} (0|1)"; exit 1 ;; esac
 SHAPE_TAG=""; [ "${MASK_3DPW_SHAPE}" = 1 ] && SHAPE_TAG="_shpmask"   # masked runs never share an unmasked run's folder
+MASK_3DPW_SHAPE_NAMES="${MASK_3DPW_SHAPE_NAMES:-}"; SHAPE_NAMES=""   # SHAPE_NAMES: sorted, unique, comma-joined
+if [ "${MASK_3DPW_SHAPE}" = 1 ] && [ -n "${MASK_3DPW_SHAPE_NAMES}" ]; then
+  case "${MASK_3DPW_SHAPE_NAMES}" in *[!A-Za-z0-9_,]*) echo "ERROR: MASK_3DPW_SHAPE_NAMES=${MASK_3DPW_SHAPE_NAMES} (comma-separated phenotype names, no spaces)"; exit 1 ;; esac
+  SHAPE_NAMES="$(printf '%s\n' "${MASK_3DPW_SHAPE_NAMES}" | tr ',' '\n' | sed '/^$/d' | LC_ALL=C sort -u | paste -sd, -)"
+  [ -n "${SHAPE_NAMES}" ] || { echo "ERROR: MASK_3DPW_SHAPE_NAMES=${MASK_3DPW_SHAPE_NAMES} holds no name"; exit 1; }
+  if [ "${SHAPE_NAMES}" = "african,asian,caucasian,cupsize,firmness,muscle,weight" ]; then SHAPE_TAG="_shpmask_noage"
+  else SHAPE_TAG="_shpmask_$(printf '%s\n' "${SHAPE_NAMES}" | tr ',' '\n' | cut -c1-3 | paste -sd- -)"; fi   # 3-letter prefixes are unique
+fi
 LABELS="${LABELS:-${REPO}/threedpw_anny_v23/labels}"
 LABELS="$(abs "${LABELS%/}")"
 FITS="$(abs "${FITS:-$(dirname "${LABELS}")}")"
@@ -244,6 +254,7 @@ BF_ABS="${BONE_FIX}"; case "${BF_ABS}" in none|inherit) ;; *) BF_ABS="$(abs "${B
 HANDS_ARG=""; [ "${MASK_3DPW_HANDS}" = 1 ] && HANDS_ARG="--mask_3dpw_hands 1"
 SHAPE_ARG=""; SHAPE_GREP=""
 [ "${MASK_3DPW_SHAPE}" = 1 ] && { SHAPE_ARG="--mask_3dpw_shape 1"; SHAPE_GREP='|^\[loss\] mask_3dpw_shape:'; }
+[ -n "${SHAPE_NAMES}" ] && SHAPE_ARG="${SHAPE_ARG} --mask_3dpw_shape_names ${SHAPE_NAMES}"
 
 # ---------------------------------------------------------------- python checks (shared by both modes)
 # Label + bone-fix check. Standard library + NumPy; run on the login node (submit mode) and inside the job.

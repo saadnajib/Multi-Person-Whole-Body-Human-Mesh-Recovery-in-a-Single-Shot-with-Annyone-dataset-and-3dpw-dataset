@@ -849,6 +849,9 @@ on those 8 phenotypes, found by name; gender, height, proportions and every Anny
 adds no child signal (3DPW has no children); the v3d/v2d mesh terms still carry the neutral body, because the 3DPW GT
 mesh is built from the constants; and the 3DPW-test PVE is computed against the same neutral-body GT meshes, so a
 masked model can score worse there.
+`--mask_3dpw_shape_names` (exp7/exp8 `MASK_3DPW_SHAPE_NAMES`, default '' = the 8) masks a comma-separated subset
+instead, checked against `phenotype_labels`; next run `muscle,weight,cupsize,firmness,african,asian,caucasian` (RUN
+`..._shpmask_noage`) keeps age 0.55 supervised, the label that seemed to carry the gender/children gains of the 8-mask.
 
 ### exp8: ViT-B student distilled from the final model (requirement 1b) (WIP commits aca1896 + 3fe870d, not on main, never run)
 

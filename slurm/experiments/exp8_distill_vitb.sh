@@ -142,6 +142,8 @@
 #   TIME (from EPOCHS, see above), SMOKE (0; 1 = EPOCHS 1, N_ITERS 20, VAL_3DPW_N 20, N_VIS 2, N_EST 20, EVAL_3DPW_N 50,
 #   EVAL_FREQ 1 unless set), PARTITIONS, TORCH_CACHE (/netscratch/najib/torch_cache), MANIFEST, TASKS, N_LABEL_CHECK (300),
 #   ALLOW_RECIPE_MISMATCH (0), CHECK_ONLY, DRY_RUN, OVERWRITE, TABLE_ONLY, LOCAL_CHECK, IGNORE_PLAIN_SBATCH.
+#   MASK_3DPW_SHAPE_NAMES ('' = the 8; with MASK_3DPW_SHAPE=1 as in exp7: --mask_3dpw_shape_names for the student, RUN
+#   _shpmask_noage for the 7 non-age constants, else _shpmask_<3-letter prefixes joined by ->).
 #
 # OUTPUTS (results/experiments/exp8_distill_vitb/<RUN>/): settings.txt, teacher_check.json, teacher_bone_fix.json,
 #   exclude_manifest_indices.txt, train.log / train_lines.log, train/checkpoints, est_trace/ + bone_fix.json (+
@@ -233,6 +235,14 @@ LABELS="$(abs "${LABELS%/}")"
 FITS="$(abs "${FITS:-$(dirname "${LABELS}")}")"
 MASK_3DPW_HANDS="${MASK_3DPW_HANDS:-1}"; onezero MASK_3DPW_HANDS "${MASK_3DPW_HANDS}"
 MASK_3DPW_SHAPE="${MASK_3DPW_SHAPE:-0}"; onezero MASK_3DPW_SHAPE "${MASK_3DPW_SHAPE}"
+MASK_3DPW_SHAPE_NAMES="${MASK_3DPW_SHAPE_NAMES:-}"; SHAPE_NAMES=""; SHAPE_TAG="_shpmask"   # as exp7_final_model.sh
+if [ "${MASK_3DPW_SHAPE}" = 1 ] && [ -n "${MASK_3DPW_SHAPE_NAMES}" ]; then
+  case "${MASK_3DPW_SHAPE_NAMES}" in *[!A-Za-z0-9_,]*) echo "ERROR: MASK_3DPW_SHAPE_NAMES=${MASK_3DPW_SHAPE_NAMES} (comma-separated phenotype names, no spaces)"; exit 1 ;; esac
+  SHAPE_NAMES="$(printf '%s\n' "${MASK_3DPW_SHAPE_NAMES}" | tr ',' '\n' | sed '/^$/d' | LC_ALL=C sort -u | paste -sd, -)"
+  [ -n "${SHAPE_NAMES}" ] || { echo "ERROR: MASK_3DPW_SHAPE_NAMES=${MASK_3DPW_SHAPE_NAMES} holds no name"; exit 1; }
+  if [ "${SHAPE_NAMES}" = "african,asian,caucasian,cupsize,firmness,muscle,weight" ]; then SHAPE_TAG="_shpmask_noage"
+  else SHAPE_TAG="_shpmask_$(printf '%s\n' "${SHAPE_NAMES}" | tr ',' '\n' | cut -c1-3 | paste -sd- -)"; fi
+fi
 VAL_3DPW_N="${VAL_3DPW_N:-300}"; nonneg VAL_3DPW_N "${VAL_3DPW_N}"
 EVAL_FREQ="${EVAL_FREQ:-5}"; posint EVAL_FREQ "${EVAL_FREQ}"
 NB_MAX_CKPT="${NB_MAX_CKPT:-3}"; posint NB_MAX_CKPT "${NB_MAX_CKPT}"
@@ -268,7 +278,7 @@ TEACHER_EVAL_LOG="${TEACHER_EVAL_LOG:-${TEACHER_RUN_DIR:+${TEACHER_RUN_DIR}/eval
 SUFFIX=""
 [ "${N_ITERS}" = 1000 ] || SUFFIX="${SUFFIX}_it${N_ITERS}"
 [ "${BATCH}" = 8 ] || SUFFIX="${SUFFIX}_b${BATCH}"
-[ "${MASK_3DPW_SHAPE}" = 1 ] && SUFFIX="${SUFFIX}_shpmask"
+[ "${MASK_3DPW_SHAPE}" = 1 ] && SUFFIX="${SUFFIX}${SHAPE_TAG}"
 [ "${STUDENT_TRAIN_FIX}" = none ] && SUFFIX="${SUFFIX}_nofix"
 [ "${STUDENT_INIT}" = dinov2 ] && SUFFIX="${SUFFIX}_dinov2"
 [ "${SMOKE}" = 1 ] && SUFFIX="${SUFFIX}_smoke"
@@ -304,6 +314,7 @@ if [ "${STUDENT_TRAIN_FIX}" = teacher ]; then TRAIN_FIX_ARG="--bone_fix ${OUT_AB
 else TRAIN_FIX_ARG="--bone_fix none"; fi
 HANDS_ARG=""; [ "${MASK_3DPW_HANDS}" = 1 ] && HANDS_ARG="--mask_3dpw_hands 1"
 SHAPE_ARG=""; [ "${MASK_3DPW_SHAPE}" = 1 ] && SHAPE_ARG="--mask_3dpw_shape 1"
+[ -n "${SHAPE_NAMES}" ] && SHAPE_ARG="${SHAPE_ARG} --mask_3dpw_shape_names ${SHAPE_NAMES}"
 TRAIN_CMD="python train.py --train_data AnnyOne --train_n 0 --val_anny_n 100 --person_center head \
 --backbone ${STUDENT_BACKBONE} --img_size 672 --head_dim ${HEAD_DIM} ${INIT_ARGS} --freeze_backbone 0 \
 --distill_teacher_ckpt ${TEACHER} ${HEADS_ARGS} --teacher_bf16 1 \

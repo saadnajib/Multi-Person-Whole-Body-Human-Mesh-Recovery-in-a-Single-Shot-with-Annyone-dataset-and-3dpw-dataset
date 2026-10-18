@@ -266,17 +266,34 @@ class Loss(torch.nn.Module):
             raise ValueError("--mask_3dpw_shape 1 needs --mix_3dpw_labels: without 3DPW-Anny people nothing is masked, "
                              "and only mixed runs tag every human with has_hand_labels")
         labels = list(pheno_labels)
-        missing = [n for n in THREEDPW_CONSTANT_PHENOTYPES if n not in labels]
+        # --mask_3dpw_shape_names: '' = THREEDPW_CONSTANT_PHENOTYPES (the original path, unchanged); otherwise the
+        # comma-separated subset given, checked against phenotype_labels, duplicates dropped.
+        names_arg = str(getattr(self.parser_args, 'mask_3dpw_shape_names', '') or '').strip()
+        if names_arg:
+            names = list(dict.fromkeys(n.strip() for n in names_arg.split(',') if n.strip()))
+            if not names:
+                raise ValueError(f"--mask_3dpw_shape_names '{names_arg}' holds no phenotype name; valid names: "
+                                 f"{', '.join(labels)}")
+            bad = [n for n in names if n not in labels]
+            if bad:
+                raise ValueError(f"--mask_3dpw_shape_names: {bad} not in the body model's phenotype_labels; valid "
+                                 f"names: {', '.join(labels)}")
+            names = tuple(names)
+        else:
+            names = THREEDPW_CONSTANT_PHENOTYPES
+        missing = [n for n in names if n not in labels]
         if missing:
             raise ValueError(f"--mask_3dpw_shape: phenotype(s) {missing} not found in the body model's "
                              f"phenotype_labels {labels}")
-        m = torch.tensor([1.0 if n in THREEDPW_CONSTANT_PHENOTYPES else 0.0 for n in labels], dtype=torch.float32)
+        m = torch.tensor([1.0 if n in names else 0.0 for n in labels], dtype=torch.float32)
         self.shape_label_mask = m.reshape(1, -1)
-        masked = [n for n in labels if n in THREEDPW_CONSTANT_PHENOTYPES]
-        kept = [n for n in labels if n not in THREEDPW_CONSTANT_PHENOTYPES]
+        masked = [n for n in labels if n in names]
+        kept = [n for n in labels if n not in names]
+        why = ("3DPW-Anny converter constants: age 0.55, the rest 0.5" if not names_arg else
+               "--mask_3dpw_shape_names subset; 3DPW-Anny converter constants are age 0.55, the rest 0.5")
         print(f"[loss] mask_3dpw_shape: {len(masked)} of {len(labels)} phenotypes ({', '.join(masked)}) are not "
-              f"supervised (shape L1) for people with has_hand_labels 0 (3DPW-Anny converter constants: age 0.55, "
-              f"the rest 0.5); {', '.join(kept)} stay supervised; people tagged 1 (AnnyOne) unchanged; the masked "
+              f"supervised (shape L1) for people with has_hand_labels 0 ({why}); {', '.join(kept)} stay supervised; "
+              f"people tagged 1 (AnnyOne) unchanged; the masked "
               f"entries are zeroed, the sum over phenotypes and mean over people stay (no reweighting)", flush=True)
 
     def _shape_label_keep(self, y, like):
@@ -474,6 +491,11 @@ class Loss(torch.nn.Module):
                                  'never fits: age 0.55, the rest 0.5); gender, height and proportions stay supervised. '
                                  'The v3d/v2d mesh terms still carry the neutral 3DPW body. 0 = unchanged: 3DPW people '
                                  'are pulled toward the constants in mixed runs.')
+        parser.add_argument('--mask_3dpw_shape_names', type=str, default='',
+                            help="only with --mask_3dpw_shape 1: comma-separated phenotype names to mask instead of "
+                                 "the default 8 (e.g. 'muscle,weight,cupsize,firmness,african,asian,caucasian' keeps "
+                                 "age=0.55 supervised). Each must be in the body model's phenotype_labels; duplicates "
+                                 "are dropped. '' (default) = the 8 constants, unchanged. Ignored when the flag is 0.")
         # Per-bone rotation distance of the rotmat / global_rot terms (see geodesic_rad).
         parser.add_argument('--rotmat_loss', type=str, default='l1', choices=['l1', 'geodesic'],
                             help="per-bone distance in the rotmat term (and the global_rot term): 'l1' = sum of the "
