@@ -234,3 +234,17 @@
 \newcommand{\MethodStudentSContEpochs}{150} % epochs of the S6b / S6c continuation; draft main.tex:772-783
 \newcommand{\MethodStudentSBatchBig}{16}  % S6c batch; draft main.tex:782
 \newcommand{\MethodBackboneSParams}{22.06}% M, ViT-S backbone, analytic; model_cost.py table (REWRITE_PLAN.md T16)
+
+% --- Remaining literals of the chapter text -------------------------------------
+\newcommand{\MethodLOneHalfTurn}{4.83}    % L1 over the 9 matrix entries at 135 deg; loss.py:55, :505
+\newcommand{\MethodLOneFullTurn}{4.00}    % L1 at 180 deg; loss.py:55, :505
+\newcommand{\MethodShortSteps}{2000}      % steps of a 2-epoch fine-tune (2 x 1000); H 1 (NaN rate "per 2,000")
+\newcommand{\MethodShortEpochs}{2}        % epochs of the short pilots; H 3.1
+\newcommand{\MethodWDistPilotMax}{20}     % largest depth weight tried (2 epochs only); H 3.1
+\newcommand{\MethodBaseOldEpoch}{62}      % epoch of Base+3DPW (old labels); H 1 models table
+\newcommand{\MethodStudentSTwoDEpoch}{5}  % S5: 2D terms from epoch 5; draft tab:student_runs
+\newcommand{\MethodStudentSLimit}{48}     % hours, job limit S6 hit at epoch 138; draft main.tex:770
+\newcommand{\MethodStudentSSixbEpoch}{130}% epoch of the S6b value; draft main.tex:776
+\newcommand{\MethodStudentImageRatio}{6}  % 240,000 / 40,000 images; exp8 header ("6x the teacher's own fine-tune")
+\newcommand{\MethodResolvePVE}{10}        % mm PVE one run can resolve; H 3.6; D slide 9
+\newcommand{\MethodResolveHead}{3}        % deg one run can resolve; H 3.6; D slide 9

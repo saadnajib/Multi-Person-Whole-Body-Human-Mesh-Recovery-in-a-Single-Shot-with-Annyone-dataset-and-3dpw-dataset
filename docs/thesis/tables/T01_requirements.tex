@@ -19,14 +19,14 @@ Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
   (Table~\ref{tab:final}); necks and fingers corrected on the holdout (Sec.~\ref{sec:res-bone}, \ref{sec:res-fingers});
   real photos judged by eye only &
   predicted fingers on a real photo; depth slope 0.42; one run, no seed \\
-\addlinespace
+\addlinespace[1pt]
 1a-shape & ``Mesh size, proportions, age, muscles \ldots{} must visibly change according to the person'' &
   partly, at risk &
   Relative Human: gender \RHGenderFinal\,\% (Base \RHGenderBase), child AUC \RHAUCFinal{} (Base \RHAUCBase)
   (Table~\ref{tab:relhuman}); muscle, weight, cup size, firmness near 0.5 on photos; masked arm trades
   variety for gender (Sec.~\ref{sec:res-mask}) &
   per-phenotype correlation on AnnyOne; rest-pose line-up (F17); the partial mask \\
-\addlinespace
+\addlinespace[1pt]
 1b & ``Must not be exactly the same as the Multi-HMR model'': new and better, or significantly smaller and
   $\geq$\,95\,\% as good &
   not met &
@@ -34,23 +34,23 @@ Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
   (Table~\ref{tab:baseline}); accuracy pending (Table~\ref{tab:student}); Multi-HMR-Anny (NAVER)
   \NAVERAnnyOne{} / \NAVERThreeDPW\,mm &
   the Student's accuracy; the supervisor's choice of baseline for the bar \\
-\addlinespace
+\addlinespace[1pt]
 1c & Evaluation on the real-world set with Anny parameters, not only SMPL-X &
   met with caveats &
   3DPW test in Anny space, 8,190 images / 11,854 people; label check WARN, body joints 14.1\,mm (Ch.~3) &
   state the label caveats: 8 constant phenotypes, hands and head at rest, $\sim$14\,mm floor \\
-\addlinespace
+\addlinespace[1pt]
 2a & Convert 3DPW train and test to Anny and include the train set in training &
   met &
   train 5,882 images / 7,584 people; 30\,\% of each batch; Control \ControlThreeDPW{} vs Base
   \BaseThreeDPW\,mm on 3DPW test (Table~\ref{tab:final}) &
   nothing (a 50\,\% mix is optional) \\
-\addlinespace
+\addlinespace[1pt]
 2b & The model understands motion in video instead of predicting every frame on its own &
   not started &
   no temporal code &
   design and evaluation (Ch.~\ref{ch:conclusion}) \\
-\addlinespace
+\addlinespace[1pt]
 3 & A well-written report; a clean codebase and models he can verify &
   partly &
   this thesis; Appendix~\ref{app:reproduction} maps every number to its run &

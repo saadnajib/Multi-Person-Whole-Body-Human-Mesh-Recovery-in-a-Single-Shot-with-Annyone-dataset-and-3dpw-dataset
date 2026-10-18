@@ -8,36 +8,35 @@
 %   PA-PVE :110; recall :112; global head :113 / :191 / :200; fingers :114 / :192 / :201.
 % "not dumped" = the holdout dump 3573518 did not cover finger bones; finger4-1.R was found on the training images.
 % Correction constants 178.8 / 179.2 / 179.8 / 179.7 deg (3579014:12, :37), from 200 training images.
-\begin{table}[tbp]
+\begin{table}[htbp]
 \centering\footnotesize
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{3pt}
 \newcommand{\hd}[1]{\begin{tabular}[b]{@{}c@{}}#1\end{tabular}}
 \begin{tabular}{@{}lrrrrrr@{}}
 \toprule
- & \hd{Base} & \hd{correction,\\no training} & \hd{correction +\\2-ep.\ fine-tune} & \hd{2-ep.\ control,\\no correction}
- & \hd{Control\\(10 ep.)} & \hd{Final\\(10 ep.)} \\
+ & \hd{Base} & \hd{corr.,\\no train.} & \hd{corr.\ +\\2-ep.\ FT} & \hd{2-ep.\\control}
+ & \hd{Control\\10 ep.} & \hd{Final\\10 ep.} \\
 \midrule
-neck02, median error (deg)          & 175.6 &   4.5 &   4.7 & 175.7 & 175.8 &   4.8 \\
-head bone, median error (deg)       & 177.9 &  12.4 &  11.2 & 177.9 & 177.7 &   8.9 \\
+neck02 (deg)         & 175.6 &   4.5 &   4.7 & 175.7 & 175.8 &   4.8 \\
+head bone (deg)      & 177.9 &  12.4 &  11.2 & 177.9 & 177.7 &   8.9 \\
 metacarpal1.L (deg)                 & 180.0 &   0.0 &   0.0 &  --   & 180.0 &   0.0 \\
 finger4-1.R (deg)                   & n.d.  &  10.2 &  10.3 &  --   & 180.0 &   9.6 \\
-neck girth, pred / true             & 0.461 & 1.004 & 0.997 & 0.461 & 0.464 & 0.996 \\
-neck-skin error PVE$_\text{neck}$ (mm) & 27.3 & 10.8 & 10.7 & 27.9 & 27.7 & 11.0 \\
+neck girth, pred./true& 0.461 & 1.004 & 0.997 & 0.461 & 0.464 & 0.996 \\
+PVE$_\text{neck}$ (mm) & 27.3 & 10.8 & 10.7 & 27.9 & 27.7 & 11.0 \\
 \addlinespace
 body PVE (mm)                       &  70.5 &  71.3 &  68.8 &  76.9 &  77.4 &  73.7 \\
 PA-PVE (mm)                         &  53.3 &  52.2 &  50.9 &  55.2 &  56.4 &  50.3 \\
 recall (\%)                         &  90.2 &  90.2 &  89.4 &  91.1 &  89.0 &  87.0 \\
-global head direction (deg)         &  12.0 &  19.1 &  14.4 &  13.8 &  13.0 &  13.1 \\
+head direction (deg)         &  12.0 &  19.1 &  14.4 &  13.8 &  13.0 &  13.1 \\
 fingers (deg)                       &  17.3 &   8.2 &   8.3 &  17.4 &  17.4 &   8.3 \\
 \bottomrule
 \end{tabular}
 \caption[Neck: the half-turned bones and their correction]{The two half-turned neck bones and their correction. V1,
 100-image AnnyOne holdout, matched people. Bone errors are local (relative to the parent bone) medians; about 180\,deg
 means the bone is turned half a turn. Girth: radius of the neck skin, predicted over true. PVE$_\text{neck}$: vertex
-error over the 171 neck-skin vertices, centred at neck01. ``Correction'': one constant rotation per flipped bone
-(neck02, head, metacarpal1.L, finger4-1.R), estimated on 200 training images. The 2-epoch columns are AnnyOne-only
-fine-tunes of Base; Control and Final are the 10-epoch runs with 30\% 3DPW, Final also with the depth fix. n.d.: not
+error over the 171 neck-skin vertices, centred at neck01. Corr.: one constant rotation per flipped bone
+(neck02, head, metacarpal1.L, finger4-1.R), estimated on 200 training images. FT: fine-tune. The 2-epoch columns are AnnyOne-only fine-tunes of Base; Control and Final are the 10-epoch runs with 30\% 3DPW, Final also with the depth fix. n.d.: not
 dumped on the holdout. One run per column, no seed; PVE gaps below about 10\,mm are within run-to-run variation
 (Table~\ref{tab:pilot-noise}).}
-\label{tab:neck}
+\label{tab:neck-bones}
 \end{table}

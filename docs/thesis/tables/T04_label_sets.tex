@@ -2,14 +2,15 @@
 % Sources: old labels 3575369:31, 3579266:25/:39/:65/:67 (H 3.5); rebuilt v2.2 labels 3581320:25/:39/:65/:67 (H 3.5);
 % v23 labels H 0b, H 3.5 "v23 labels built" (builder output, fits of jobs 3590385 + 3602813).
 % Layout transposed against the plan (label sets as columns) so that it fits the text width.
-\begin{table}[tbp]
-\centering\small
-\begin{tabular}{@{}lrrr@{}}
+\begin{table}[htbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{2.5cm}@{}}
 \toprule
  & old labels & rebuilt & v23 labels \\
 \midrule
 converter fits & v2.2 & v2.2 & v2.3 \\
-image files of 8 sequences & missing & re-extracted & re-extracted \\
+image files of \DataMissingImageSeq{} sequences & missing & re-extracted & re-extracted \\
 \addlinespace
 train, images / people & \DataOldTrainImages{} / \DataOldTrainPeople & \DataRebuiltTrainImages{} / \DataRebuiltTrainPeople & \DataThreeDPWTrainImages{} / \DataThreeDPWTrainPeople \\
 validation & \DataOldValImages{} / \DataOldValPeople & \DataRebuiltValImages{} / \DataRebuiltValPeople & \DataThreeDPWValImages{} / \DataThreeDPWValPeople \\
@@ -19,7 +20,7 @@ total & \DataOldTotalImages{} / \DataOldTotalPeople & \DataRebuiltTotalImages{} 
 gender reversed & yes & yes & no \\
 actor missing in two-person frames & yes & yes & no \\
 labels missing (no image file) & yes & no & no \\
-used for training & Student-S, Base+3DPW (history) & never & Final, Control, Student \\
+used for training & history models only & never & Final, Control, Student \\
 \bottomrule
 \end{tabular}
 \caption{The three 3DPW-Anny label sets. All are built at every third frame with the same drop rules. The v23

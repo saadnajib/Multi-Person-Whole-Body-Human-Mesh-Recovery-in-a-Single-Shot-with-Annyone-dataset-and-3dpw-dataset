@@ -7,33 +7,30 @@
 \centering
 \begin{tikzpicture}
 \begin{groupplot}[
-  group style={group size=2 by 1, horizontal sep=1.6cm, y descriptions at=edge left},
-  width=0.47\linewidth, height=5.2cm,
+  group style={group size=2 by 1, horizontal sep=0.6cm, y descriptions at=edge left},
+  width=0.5\linewidth, height=5.6cm,
   ylabel={3DPW test PVE (mm)}, ymin=70, ymax=140,
   grid=major, grid style={gray!25},
   tick label style={font=\footnotesize}, label style={font=\small},
-  every node near coord/.append style={font=\scriptsize, anchor=south west},
 ]
-\nextgroupplot[xlabel={Parameters (M)}, xmin=50, xmax=420]
-  \addplot[only marks, mark=square*, color=gray!70!black, nodes near coords, point meta=explicit symbolic]
-    coordinates {(\NAVERParams,\NAVERThreeDPW) [NAVER]};
-  \addplot[only marks, mark=*, color=blue!70!black, nodes near coords, point meta=explicit symbolic]
-    coordinates {(\FinalParams,\FinalThreeDPW) [Final]};
+\nextgroupplot[xlabel={Parameters (M)}, xmin=0, xmax=450]
+  \draw[densely dotted, black!60] (axis cs:0,\BarThreeDPW) -- (axis cs:450,\BarThreeDPW);
+  \node[font=\scriptsize, anchor=south east, black!70] at (axis cs:445,\BarThreeDPW) {95\,\% bar};
+  \addplot[only marks, mark=square*, color=gray!70!black] coordinates {(\NAVERParams,\NAVERThreeDPW)};
+  \node[font=\scriptsize, anchor=north] at (axis cs:\NAVERParams,\NAVERThreeDPW-2) {NAVER};
+  \addplot[only marks, mark=*, color=blue!70!black] coordinates {(\FinalParams,\FinalThreeDPW)};
+  \node[font=\scriptsize, anchor=north, blue!70!black] at (axis cs:\FinalParams,\FinalThreeDPW-2) {Final};
   \draw[dashed, red!70!black] (axis cs:\StudentParams,70) -- (axis cs:\StudentParams,140);
-  \node[font=\scriptsize, red!70!black, rotate=90, anchor=south] at (axis cs:\StudentParams,105) {Student: PVE pending};
-  \draw[densely dotted, black!60] (axis cs:50,\BarThreeDPW) -- (axis cs:420,\BarThreeDPW)
-    node[pos=0.98, anchor=south east, font=\scriptsize] {95\,\% bar};
-\nextgroupplot[xlabel={GFLOPs}, xmin=400, xmax=2200]
-  \addplot[only marks, mark=square*, color=gray!70!black, nodes near coords, point meta=explicit symbolic,
-    every node near coord/.append style={anchor=north east}]
-    coordinates {(\NAVERBackboneGFLOPs,\NAVERThreeDPW) [NAVER (backbone only)]};
-  \draw[->, gray!70!black] (axis cs:\NAVERBackboneGFLOPs,\NAVERThreeDPW) -- ++(axis direction cs:150,0);
-  \addplot[only marks, mark=*, color=blue!70!black, nodes near coords, point meta=explicit symbolic,
-    every node near coord/.append style={anchor=north east}]
-    coordinates {(\FinalGFLOPs,\FinalThreeDPW) [Final]};
+  \node[font=\scriptsize, red!70!black, anchor=north west, align=left] at (axis cs:\StudentParams,138) {Student:\\PVE pending};
+\nextgroupplot[xlabel={GFLOPs}, xmin=0, xmax=2400]
+  \draw[densely dotted, black!60] (axis cs:0,\BarThreeDPW) -- (axis cs:2400,\BarThreeDPW);
+  \addplot[only marks, mark=square*, color=gray!70!black] coordinates {(\NAVERBackboneGFLOPs,\NAVERThreeDPW)};
+  \draw[->, gray!70!black] (axis cs:\NAVERBackboneGFLOPs,\NAVERThreeDPW) -- (axis cs:\NAVERBackboneGFLOPs+300,\NAVERThreeDPW);
+  \node[font=\scriptsize, anchor=north east, align=right] at (axis cs:\NAVERBackboneGFLOPs+250,\NAVERThreeDPW-2) {NAVER\\(backbone only)};
+  \addplot[only marks, mark=*, color=blue!70!black] coordinates {(\FinalGFLOPs,\FinalThreeDPW)};
+  \node[font=\scriptsize, anchor=north, blue!70!black] at (axis cs:\FinalGFLOPs,\FinalThreeDPW-2) {Final};
   \draw[dashed, red!70!black] (axis cs:\StudentGFLOPs,70) -- (axis cs:\StudentGFLOPs,140);
-  \node[font=\scriptsize, red!70!black, rotate=90, anchor=south] at (axis cs:\StudentGFLOPs,105) {Student: PVE pending};
-  \draw[densely dotted, black!60] (axis cs:400,\BarThreeDPW) -- (axis cs:2200,\BarThreeDPW);
+  \node[font=\scriptsize, red!70!black, anchor=north west, align=left] at (axis cs:\StudentGFLOPs,138) {Student:\\PVE pending};
 \end{groupplot}
 \end{tikzpicture}
 \caption{Model size and compute against 3DPW-test PVE (corrected labels, all 8,190 images). NAVER's GFLOPs count its

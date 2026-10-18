@@ -7,7 +7,7 @@
 %   Hand size: 2.25 tokens median at 672 px, 41% under 2 tokens (3571960:287); person crop 4.2 / 0%, children's hands
 %   0.7 / 80% (deck slide 17, D slide 17).
 %   Hands' share of the rotation loss ~70% (with x4 boost) -> 33% (deck notes slide 17, handover 3.3).
-\begin{table}[tbp]
+\begin{table}[htbp]
 \centering\footnotesize
 \begin{tabular}{@{}lrr@{}}
 \toprule
@@ -16,12 +16,12 @@ setting & fingers (deg) & reference (deg) \\
 \midrule
 Base, predicted fingers                                   & 17.3 & -- \\
 Base, fingers set to rest pose                             & 15.1 & -- \\
-Base, test-time person crop $\times$1.3 (body PVE 124.8\,mm) & 17.2 & 17.3 (same people) \\
-2-ep.\ fine-tune, region-normalised rotation loss          & 17.5 & 17.4 (2-ep.\ control) \\
+Base, test-time person crop (PVE 124.8\,mm) & 17.2 & 17.3 (paired) \\
+region-normalised rotation loss, 2 ep. & 17.5 & 17.4 (control) \\
 Base + bone correction, no training                        &  8.2 & 17.3 (Base) \\
-Base + bone correction, 2-ep.\ fine-tune                   &  8.3 & 17.4 (2-ep.\ control) \\
+Base + bone correction, 2-ep.\ fine-tune &  8.3 & 17.4 (control) \\
 Final (10 ep., 30\% 3DPW)                                  &  8.3 & 17.4 (Control) \\
-fresh-head run + correction of three metacarpals, no training & 17.8 & 32.0 (same run) \\
+fresh-head run, three metacarpals corrected & 17.8 & 32.0 (uncorr.) \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{(b) hand size in tokens (14-px patches of the 672-px input)}} \\
  & median length & under 2 tokens \\

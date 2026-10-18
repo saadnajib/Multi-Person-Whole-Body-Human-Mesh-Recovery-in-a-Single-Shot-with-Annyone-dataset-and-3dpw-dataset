@@ -6,12 +6,12 @@
 %   age bias -0.015 / abs 0.037, gender -0.008 / 0.068 (3570222:75); in-sample babies (youngest 50, GT age 0.015)
 %   predicted 0.10 (3569950:61; 3571955:174-175), height -0.25 traded (3569950:61,76); training medians gender 0.588,
 %   age 0.601, height 0.500 (3569948:8-18); holdout youngest person 0.513 (3569948:33).
-\begin{table}[tbp]
+\begin{table}[htbp]
 \centering\footnotesize
 \begin{tabular}{@{}lrrrrl@{}}
 \toprule
 \multicolumn{6}{@{}l}{\emph{(a) predicted minus true phenotype, 10 holdout images (draft measurement)}} \\
-phenotype & true mean & true std & shape weight 1 & shape weight 20 (Base) & reading \\
+phenotype & true mean & true std & weight 1 & weight 20 (Base) & reading \\
 \midrule
 age         & 0.553 & 0.036 & $+0.199$ & $-0.002$ & near the mode \\
 height      & 0.579 & 0.026 & $-0.154$ & $-0.026$ & near the mode \\
@@ -21,12 +21,10 @@ gender      & 0.694 & --    & $-0.042$ & $-0.063$ & $\approx$ \\
 weight      & 0.382 & --    & $+0.056$ & $+0.064$ & $\approx$ \\
 \midrule
 \multicolumn{6}{@{}l}{\emph{(b) Base on the full holdout and in the young tail}} \\
-\multicolumn{4}{@{}l}{set} & \multicolumn{2}{l}{result} \\
-\midrule
-\multicolumn{4}{@{}l}{holdout, all 222 people (nobody younger than 0.513)} & \multicolumn{2}{l}{age bias $-0.015$ (abs.\ 0.037); gender $-0.008$ (0.068)} \\
-\multicolumn{4}{@{}l}{holdout, true age 0.6--0.8 ($n = 53$, mean 0.67)}   & \multicolumn{2}{l}{predicted age 0.57} \\
-\multicolumn{4}{@{}l}{50 youngest training people (in-sample, true age 0.015)} & \multicolumn{2}{l}{predicted age 0.10; height $-0.25$} \\
-\multicolumn{4}{@{}l}{training medians (AnnyOne)}                          & \multicolumn{2}{l}{gender 0.588, age 0.601, height 0.500} \\
+\multicolumn{3}{@{}p{0.47\linewidth}}{holdout, all 222 people (nobody younger than 0.513)} & \multicolumn{3}{p{0.38\linewidth}}{age bias $-0.015$ (abs.\ 0.037); gender $-0.008$ (0.068)} \\
+\multicolumn{3}{@{}p{0.47\linewidth}}{holdout, true age 0.6--0.8 ($n = 53$, mean 0.67)} & \multicolumn{3}{p{0.38\linewidth}}{predicted age 0.57} \\
+\multicolumn{3}{@{}p{0.47\linewidth}}{50 youngest training people (in-sample, true age 0.015)} & \multicolumn{3}{p{0.38\linewidth}}{predicted age 0.10; height $-0.25$} \\
+\multicolumn{3}{@{}p{0.47\linewidth}}{training medians (AnnyOne)} & \multicolumn{3}{p{0.38\linewidth}}{gender 0.588, age 0.601, height 0.500} \\
 \bottomrule
 \end{tabular}
 \caption[Shape head: shape weight and the pull to the median]{Shape head. (a) The draft's comparison of the stage
