@@ -329,7 +329,14 @@ of the masked arm [Certain, `logs/eval_rh_3613616_0.out`, job 3613616]: recall 5
 49.3% (64.2%; men 0.717, women 0.860), children AUC 0.708 (0.719), ages adult 0.638 / kid 0.611 / baby 0.524 (unmasked
 0.536 / 0.500 / 0.438), babies below 0.45: 16.9% (49.3%). So the mask loses the gender gain and most of the children
 shift: [Likely] the 3DPW age label (0.55) was doing the useful work of pulling real-photo ages down, and with age masked
-adults return to v5's 0.63. The masked arm's demo `[shape]` spread (if the student ran it) is informational only.
+adults return to v5's 0.63. The masked arm's demo [Certain, `logs/demo-compare-3613617.out`, job 3613617, 12 images, 118 `[shape]` lines vs 127]
+shows the other side of the trade: the mask DOES restore per-person shape variation on real photos: std of muscle 0.04 ->
+0.06 (median 0.48 -> 0.31), weight 0.04 -> 0.11, cupsize 0.05 -> 0.11, firmness 0.04 -> 0.11, age 0.03 -> 0.08; gender
+median 0.96 (std 0.20). So: unmasked = better gender/children on Relative Human, collapsed muscle/weight; masked = varied
+muscle/weight (requirement 1a 'shape visibly changes'), gender back to chance and children weaker. [Likely] the age label
+0.55 carries the children/gender benefit and the 0.5 constants carry the collapse. Next experiment (one 5-h run, after the
+meeting): mask only the seven 0.5 constants and KEEP age supervised (`--mask_3dpw_shape_names`, being added to loss.py;
+exp7 env `MASK_3DPW_SHAPE_NAMES=muscle,weight,cupsize,firmness,african,asian,caucasian`), then Relative Human + demo again.
 Consequence for exp8: TEACHER = the unmasked 3611336 checkpoint (the script default); do NOT pass MASK_3DPW_SHAPE=1 to
 the student by default either (same reasoning; the plan's 'student masks its own shape loss' is now an ablation, not the
 default). For the thesis: the shape mask is a measured negative result (one run each, noise applies).
