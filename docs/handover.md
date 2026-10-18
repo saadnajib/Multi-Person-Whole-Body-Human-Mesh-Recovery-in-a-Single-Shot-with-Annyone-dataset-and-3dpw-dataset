@@ -1188,6 +1188,16 @@ check is done: the image folders of the 8 sequences were re-extracted. File coun
   (54%) -> new 0 of 6,055. The shared frame grid fixes the missing actor completely. 0 expected frames unfitted.
 - Frames: men 17,626 -> 17,633, women 5,289 -> 5,279 (the grid changed which frames, not how many).
 
+**v23 labels built, 18 Oct, on the login node** [Certain, builder output]: train 5,882 images / 7,584 people (rebuilt old
+labels: 6,437 / 7,589), validation 2,622 / 3,311 (2,777 / 3,314), test 8,190 / 11,854 (9,722 / 11,850); 16,694 label
+files, 22,749 people, in `threedpw_anny_v23/labels/`. Fewer images, the same people: both actors now sit on the same
+frames. Dropped: 0 for error, 0 for box, 163 for `visible<0.3`, all in validation. **Open:**
+`validation/outdoors_crosscountry_00` has 0 label images: all 163 of its fitted frames were dropped by the visibility
+filter, and its joint error went 14.9 -> 17.8 mm (the only sequence +3 mm on every paired frame). [Guessing] the new fit
+of this far-away person projects partly outside the image or the visible fraction is computed wrongly; check
+`visible_frac` old vs new in its two `.npz` before exp7 (one sequence of 12 in validation; it affects only the per-epoch
+3DPW-validation number, not training). Conversion check on these labels: job 3611284; Relative Human full run: 3611285.
+
 **Next, in this order:** (1) Re-fit with the converter fix, which is on `main` (v2.3: gender by Anny's convention,
 one shared frame grid for both actors): all 87 tasks into a **new** folder, rebuild, re-check, steps 0-5 in 4e
 (section 5, item 7). The test on `courtyard_captureSelfies_00` ran on 17 Oct (job 3589270; 0b): man gender 0.0 and
