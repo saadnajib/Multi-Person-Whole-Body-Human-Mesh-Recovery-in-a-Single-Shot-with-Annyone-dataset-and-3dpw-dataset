@@ -2563,6 +2563,10 @@ in the "If asked" part of note 10; "short adults" in notes 10 and 16 and "0 of 1
 before 18 Oct prints `0`). The 17-Oct evening copy prints `18`, `2`, `1`, `0`, `3`, `2`, `3`, `1`, `0`, `0`; copies
 from before that evening print `0` for "one real child" and still have the wrong "0.57–0.67, 5 small people"
 tile.
+Later on 18 Oct (exp7 running): `grep -c "started training on 18 October" docs/supervisor_talk_notes_2026-10-16.md`
+prints `2` (notes 10 and 16/17 now say the final model and its control are training, mask off); slide 16 item 7 ends
+"In use: the final model started training on them 18 Oct."; slide 17's question box starts "Chosen: fix gender and
+frame grid ..." and asks "write up, or also add weak age labels for children". Earlier 18-Oct copies print `0`.
 Anything else is an
 older copy: ask the student to `git pull` again. If no
 current copy can be had before the meeting, hand-edit the pptx in PowerPoint from the slide list below (slide text
