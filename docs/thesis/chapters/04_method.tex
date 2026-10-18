@@ -49,7 +49,7 @@ I did not change the backbone, the detection or the cross-attention head. For re
 that is not exactly Multi-HMR, the architecture alone is therefore no answer; the route to 1b is the smaller student
 of Section~\ref{sec:method-kd}.
 
-\begin{figure}[tbp]
+\begin{figure}[!tbp]
   \centering
   \input{figures/tikz/F01_architecture}
   \caption{The network. A $\MethodImgSize$-pixel image passes through a DINOv2 ViT-L backbone ($\MethodTokenGrid\times
@@ -94,7 +94,7 @@ and needs $\num{\MethodGflopsL}$ GFLOPs for one image with one person, one multi
 forward pass takes \MethodMsL\,ms on an A40 GPU. NAVER's released Anny model has the same backbone and a larger head
 (\MethodParamsHeadNaver\,M parameters). Table~\ref{tab:io} lists inputs and outputs.
 
-\begin{table}[tbp]
+\begin{table}[!tbp]
 \centering\small
 \begin{tabular}{@{}lll@{}}
 \toprule
@@ -199,7 +199,7 @@ short pilots (Chapter~\ref{ch:diagnostics}).
 \paragraph{Model names.} Table~\ref{tab:model-names} defines the names used from here on. Each name is one run;
 Appendix~\ref{app:reproduction} maps names to jobs, logs and checkpoints.
 
-\begin{table}[tbp]
+\begin{table}[!tbp]
 \centering\footnotesize
 \begin{tabular}{@{}>{\raggedright}p{2.7cm}>{\raggedright}p{6.3cm}>{\raggedright\arraybackslash}p{3.1cm}@{}}
 \toprule
@@ -242,7 +242,7 @@ bodies are drawn at \MethodBaseSize{} of their size, although their 3D height is
 \MethodBaseHeightTrue\,m). PVE cannot see this, because it aligns the pelvises, and the real-photo demos hide it,
 because they place each body from its detection box (Chapter~\ref{ch:diagnostics}).
 
-\begin{figure}[tbp]
+\begin{figure}[!tbp]
   \centering
   \input{figures/tikz/F03_anchor}
   \caption{The depth-anchor bug. The model places each body by its head (left); the training targets were built at
@@ -274,7 +274,7 @@ The half-turns cancel, so the head points the right way (\MethodBaseGlobalHead$^
 flip, but the neck skin between them is twisted to \MethodBaseGirth{} of its true girth (Figure~\ref{fig:neck-chain}).
 The rig is not the cause: every single-joint perturbation moves the right body part.
 
-\begin{figure}[tbp]
+\begin{figure}[!tbp]
   \centering
   \input{figures/tikz/F04_neck_chain}
   \caption{The neck chain neck01--neck02--neck03--head. Top: in Base, neck02 and the head bone are each turned about
@@ -346,7 +346,7 @@ model regained body variety but lost the gains in gender and part of those in ch
 A frozen teacher supervises a smaller student on the same image, on top of the task loss
 (Figure~\ref{fig:distillation}). Three mechanisms carry over from the first students to the final one.
 
-\begin{figure}[tbp]
+\begin{figure}[!tbp]
   \centering
   \input{figures/tikz/F05_distillation}
   \caption{Distillation of the Student. The frozen ViT-L teacher (Final, backbone in bf16) and the ViT-B student see

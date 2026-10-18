@@ -1,26 +1,72 @@
-% F16 Predicted Anny age per Relative Human group (adult, teen, kid, baby) for Base and Final, with the child
-% threshold 0.45 (Results 6.7). PLACEHOLDER: data pending.
-% Waits for (REWRITE_PLAN.md section 3 "F15 and F16, CSVs"; section 7 Q11):
-%   data/F16_rh_base.csv    <- results/diagnostics/relative_human_val_anny_s2_shape_v5_00099/per_person.csv
-%   data/F16_rh_final.csv   <- results/diagnostics/relative_human_val_exp7_v5_final_00009/per_person.csv
-%   data/F16_rh_masked.csv  <- the masked arm's per_person.csv (optional third model)
-% Column names known (data/CLUSTER_ANSWERS.md): age_group, pred_age, matched (keep matched rows).
-% Then one \addplot[boxplot] table[y=pred_age] per age_group and model (pgfplots statistics library is loaded).
-\begin{figure}[tbp]
-\centering
+% F16 Predicted Anny age per Relative Human age group (adult, teen, kid, baby), Base, Final and Final-masked,
+% Relative Human validation set, matched (detected) people only. Generated from data/rh_per_person_{base,final,masked}.csv
+% (rows with matched true) by the scratchpad script thesis_plots/gen.py; numbers also in data/plot_stats.md.
+% Box: quartiles and median; whiskers: 5th and 95th percentile; points outside the whiskers are not drawn.
+% Percentiles: numpy linear interpolation. Dashed line: age 0.45 ("child line", child-shaped below it).
+% n / median / mean / share below 0.45 per group and model (matched people only):
+%   Base: matched 1003 of 2130 labelled people (incl. age group 'unknown', not drawn)
+%     adult n =  821  median 0.606  mean 0.631  below 0.45: 0.0% (0)
+%     teen  n =   53  median 0.579  mean 0.597  below 0.45: 0.0% (0)
+%     kid   n =   89  median 0.583  mean 0.613  below 0.45: 0.0% (0)
+%     baby  n =   38  median 0.608  mean 0.624  below 0.45: 2.6% (1)
+%   Final: matched 1379 of 2130 labelled people (incl. age group 'unknown', not drawn)
+%     adult n = 1113  median 0.530  mean 0.536  below 0.45: 1.2% (13)
+%     teen  n =   72  median 0.518  mean 0.524  below 0.45: 1.4% (1)
+%     kid   n =  119  median 0.505  mean 0.500  below 0.45: 16.8% (20)
+%     baby  n =   73  median 0.456  mean 0.438  below 0.45: 49.3% (36)
+%   Final-masked: matched 1219 of 2130 labelled people (incl. age group 'unknown', not drawn)
+%     adult n = 1002  median 0.580  mean 0.638  below 0.45: 0.1% (1)
+%     teen  n =   61  median 0.563  mean 0.616  below 0.45: 0.0% (0)
+%     kid   n =   96  median 0.563  mean 0.611  below 0.45: 6.2% (6)
+%     baby  n =   59  median 0.515  mean 0.524  below 0.45: 16.9% (10)
+% Comparison with the handover (which quotes means):
+%   Base: handover means adult 0.631 / kid 0.613 / baby 0.624, babies below 0.45 3.0%; recomputed means 0.631 / 0.613 / 0.624, 2.6%; medians 0.606 / 0.583 / 0.608
+%   Final: handover means adult 0.536 / kid 0.500 / baby 0.438, babies below 0.45 49.3%; recomputed means 0.536 / 0.500 / 0.438, 49.3%; medians 0.530 / 0.505 / 0.456
+%   Final-masked: handover means adult 0.638 / kid 0.611 / baby 0.524, babies below 0.45 16.9%; recomputed means 0.638 / 0.611 / 0.524, 16.9%; medians 0.580 / 0.563 / 0.515
+%   Recomputed means equal the handover means to three decimals; Base babies below 0.45 is 1 of 38 = 2.6% (handover "3%").
+% Medians that differ from the means by more than 0.03 (the box shows medians, the handover quotes means):
+%   Base kid: median 0.583 vs mean 0.613 (-0.030)
+%   Final-masked adult: median 0.580 vs mean 0.638 (-0.059)
+%   Final-masked teen: median 0.563 vs mean 0.616 (-0.052)
+%   Final-masked kid: median 0.563 vs mean 0.611 (-0.048)
+% Needs: pgfplots (compat 1.18) with \usepgfplotslibrary{statistics}. Colours defined locally.
+\definecolor{plFinal}{HTML}{2A78D6}% blue: Final
+\definecolor{plControl}{HTML}{EB6834}% orange: Control
+\definecolor{plBase}{HTML}{7A7A76}% grey: Base
+\definecolor{plMasked}{HTML}{1BAF7A}% aqua: Final-masked
 \begin{tikzpicture}
 \begin{axis}[
-  width=0.8\linewidth, height=5.5cm,
-  ylabel={Predicted Anny age}, ymin=0, ymax=1,
+  width=0.9\linewidth, height=6cm,
+  ylabel={predicted Anny age}, ymin=0.2, ymax=0.9, ytick={0.2,0.3,...,0.9},
+  yticklabel style={/pgf/number format/fixed, /pgf/number format/precision=1},
   xmin=0.5, xmax=4.5, xtick={1,2,3,4}, xticklabels={adult, teen, kid, baby},
-  grid=major, grid style={gray!25},
+  xlabel={Relative Human age group},
+  ymajorgrids, grid style={gray!20},
   tick label style={font=\footnotesize}, label style={font=\small},
+  plbox/.style={solid, line width=0.6pt, boxplot/box extend=0.22, boxplot/whisker extend=0.12},
+  legend style={font=\footnotesize, at={(0.5,1.02)}, anchor=south, legend columns=3, draw=none,
+    /tikz/every even column/.append style={column sep=0.8em}},
+  legend image code/.code={\draw[#1] (0cm,-0.1cm) rectangle (0.3cm,0.1cm);},
 ]
-\draw[dashed, red!60!black] (axis cs:0.5,0.45) -- (axis cs:4.5,0.45) node[pos=0.01, anchor=south west, font=\scriptsize] {child threshold 0.45};
-\node[font=\small\bfseries, red!70!black, align=center] at (axis cs:2.5,0.8) {data pending\\[-1pt]\footnotesize Relative Human per\_person.csv};
+\addlegendimage{color=plBase!85!black, fill=plBase!35}\addlegendentry{Base}
+\addlegendimage{color=plFinal!85!black, fill=plFinal!35}\addlegendentry{Final}
+\addlegendimage{color=plMasked!85!black, fill=plMasked!35}\addlegendentry{Final-masked}
+\draw[dashed, thick, red!60!black] (axis cs:0.5,0.45) -- (axis cs:4.5,0.45);
+\node[anchor=south east, font=\scriptsize, text=red!60!black, inner sep=1.5pt] at (axis cs:4.48,0.45) {child line};
+% Base
+\addplot[plbox, color=plBase!85!black, fill=plBase!35, boxplot prepared={draw position=0.73, lower whisker=0.553, lower quartile=0.580, median=0.606, upper quartile=0.699, upper whisker=0.756}] coordinates {}; % adult, n = 821
+\addplot[plbox, color=plBase!85!black, fill=plBase!35, boxplot prepared={draw position=1.73, lower whisker=0.542, lower quartile=0.558, median=0.579, upper quartile=0.605, upper whisker=0.719}] coordinates {}; % teen, n = 53
+\addplot[plbox, color=plBase!85!black, fill=plBase!35, boxplot prepared={draw position=2.73, lower whisker=0.523, lower quartile=0.548, median=0.583, upper quartile=0.693, upper whisker=0.754}] coordinates {}; % kid, n = 89
+\addplot[plbox, color=plBase!85!black, fill=plBase!35, boxplot prepared={draw position=3.73, lower whisker=0.494, lower quartile=0.552, median=0.608, upper quartile=0.706, upper whisker=0.767}] coordinates {}; % baby, n = 38
+% Final
+\addplot[plbox, color=plFinal!85!black, fill=plFinal!35, boxplot prepared={draw position=1.00, lower whisker=0.485, lower quartile=0.511, median=0.530, upper quartile=0.562, upper whisker=0.606}] coordinates {}; % adult, n = 1113
+\addplot[plbox, color=plFinal!85!black, fill=plFinal!35, boxplot prepared={draw position=2.00, lower whisker=0.475, lower quartile=0.501, median=0.518, upper quartile=0.548, upper whisker=0.581}] coordinates {}; % teen, n = 72
+\addplot[plbox, color=plFinal!85!black, fill=plFinal!35, boxplot prepared={draw position=3.00, lower whisker=0.343, lower quartile=0.478, median=0.505, upper quartile=0.551, upper whisker=0.593}] coordinates {}; % kid, n = 119
+\addplot[plbox, color=plFinal!85!black, fill=plFinal!35, boxplot prepared={draw position=4.00, lower whisker=0.281, lower quartile=0.382, median=0.456, upper quartile=0.505, upper whisker=0.578}] coordinates {}; % baby, n = 73
+% Final-masked
+\addplot[plbox, color=plMasked!85!black, fill=plMasked!35, boxplot prepared={draw position=1.27, lower whisker=0.537, lower quartile=0.560, median=0.580, upper quartile=0.772, upper whisker=0.833}] coordinates {}; % adult, n = 1002
+\addplot[plbox, color=plMasked!85!black, fill=plMasked!35, boxplot prepared={draw position=2.27, lower whisker=0.526, lower quartile=0.552, median=0.563, upper quartile=0.619, upper whisker=0.811}] coordinates {}; % teen, n = 61
+\addplot[plbox, color=plMasked!85!black, fill=plMasked!35, boxplot prepared={draw position=3.27, lower whisker=0.434, lower quartile=0.538, median=0.563, upper quartile=0.715, upper whisker=0.821}] coordinates {}; % kid, n = 96
+\addplot[plbox, color=plMasked!85!black, fill=plMasked!35, boxplot prepared={draw position=4.27, lower whisker=0.399, lower quartile=0.472, median=0.515, upper quartile=0.550, upper whisker=0.798}] coordinates {}; % baby, n = 59
 \end{axis}
 \end{tikzpicture}
-\caption{Predicted Anny age per Relative Human age group, Base and Final; detected people only. \TODO{plot pending:
-Relative Human per-person CSVs}}
-\label{fig:rh-age}
-\end{figure}
