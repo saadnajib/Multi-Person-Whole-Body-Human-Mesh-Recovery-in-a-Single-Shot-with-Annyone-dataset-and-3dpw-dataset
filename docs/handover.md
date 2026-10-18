@@ -373,12 +373,21 @@ numbers are helper-masked everywhere):
   - Caveats. [Likely] NAVER's model was trained on the whole AnnyOne release, so our 100 holdout images are probably in
     ITS training set (in-sample for NAVER, held out for us): its 60.3 is not a fair test number for it. [Certain] On real
     3DPW it is far worse than our final model (126.9 vs 89.0 mm PVE; 68.8 vs 57.6 PA-PVE), about v5's level (121.8).
-    [Certain] Its params / GFLOPs / ms are still NOT measured (pending). The login node cannot run model_cost.py
-    (model.py imports the renderer, which needs EGL: `ImportError: Unable to load EGL library`, seen 18 Oct), so it runs as
-    a GPU job: `cd /netscratch/najib/multi-hmr && git pull && bash slurm/diagnostics/model_cost.sh` (new script, 18 Oct
-    evening; defaults: NAVER's checkpoint + the final model, `--bench`, 30 min; log `logs/model_cost_<jobid>.out`, json
-    `results/diagnostics/model_cost_naver_vs_final.json`). Latency is measured for our class only; NAVER's ms cell stays
-    empty by design (model_cost.py bench()). When the log arrives: slide 24 NAVER row (params, GFLOPs), plan 3.2, this block.
+  - Cost, MEASURED [Certain, job 3614947, `logs/model_cost_3614947.out`, json
+    `results/diagnostics/model_cost_naver_vs_final.json`; `scripts/analysis/model_cost.py` on an NVIDIA A100-PCIE-40GB,
+    fp32 + TF32, batch 1, 20 warm-up + 50 timed]. NAVER `multiHMR_672_L_anny.pt` (class Multi_HMR, weights 518/518), ViT-L/14:
+    backbone 304.37 M params, heads 76.57 M, network 380.94 M; backbone 1,917.2 GFLOPs; head FLOPs and latency NOT counted
+    for this class (bench() and the head counter support model.py's `Model` only). Our final model
+    (`v5_pc_dist5_bonefix_v23_e10/00009.pt`, class Model), ViT-L/14: backbone 304.37 M, heads 14.01 M, network 318.38 M
+    (0.836 of NAVER's); 1,917.2 + 10.16 = 1,927.4 GFLOPs; latency backbone 60.8 ms, full forward with one person 77.9 ms
+    median (78.0 mean), peak memory 1.54 GB. Reading: same backbone, so the whole difference is the head (NAVER's 8-layer
+    cross-attention decoder 76.6 M vs our 14.0 M); our final model already has 16% fewer parameters than NAVER's, which by
+    itself is not the "significantly smaller" model 1b asks for. The ViT-B student (101.38 M) is 3.76x smaller than NAVER's
+    model and 3.14x smaller than ours. GPUs differ: the exp8 smoke-test pair (teacher 110 ms, student 51.4 ms, 2.14x) is on
+    an A40 (job 3613926); 77.9 ms is the same teacher on an A100. In the deck: slide 24 (NAVER row, footnote, how-to-read,
+    recipe bullet, notes), 23 (row 1b, notes), 30 (row 3614192 / 3614947, notes).
+    Why a GPU job (`slurm/diagnostics/model_cost.sh`): the login node cannot run model_cost.py, because model.py imports
+    the renderer, which needs EGL (`ImportError: Unable to load EGL library`, seen 18 Oct).
   - Consequence for the 95% bar (1b). Against NAVER on AnnyOne the bar would be 60.3 / 0.95 = 63.5 mm, which no student of
     a 73.7 mm teacher can reach; against our ViT-L it is 77.6 mm. Against NAVER on 3DPW it is 126.9 / 0.95 = 133.6 mm,
     trivially met (against ours 93.7). So slide 26's question 1 ("which baseline") now has numbers: the AnnyOne gap to
@@ -659,7 +668,10 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   model 73.7 / 50.3 / recall 87.0); 3DPW test (v23, 8,190 images) PVE 126.9, PA-PVE 68.8, MPJPE 129.4, recall 97%,
   precision 75% (final 89.0 / 57.6 / 99 / 64). [Likely] in-sample for NAVER on AnnyOne (trained on all of it). 95% bars
   against NAVER: 63.5 mm AnnyOne (unreachable for a student of a 73.7 mm teacher), 133.6 mm 3DPW (already met); against
-  our ViT-L: 77.6 / 93.7. Params / GFLOPs / ms: pending (0a has the command).
+  our ViT-L: 77.6 / 93.7. Cost [Certain, job 3614947, A100, 0a]: 380.94 M params (backbone 304.37 + head 76.57),
+  backbone 1,917.2 GFLOPs, head FLOPs and ms not measured for its class; final model 318.38 M (head 14.01), 1,927.4 GFLOPs,
+  77.9 ms median one-person forward (backbone 60.8 ms), 1.54 GB peak: 16% fewer params than NAVER's; the student
+  (101.38 M) 3.76x fewer than NAVER's, 3.14x fewer than ours. The 110 / 51.4 ms teacher / student pair is on an A40 (3613926).
 - Pilot noise: two identical configs differ by 7.6 mm PVE and 1.9 deg global head. One pilot resolves ~10 mm, ~3 deg,
   ~2 recall points.
 - Neck, v5 (all eight v5-line checkpoints alike): neck02 175.6 deg (half-turn), head 177.9 deg, global head only
@@ -3180,21 +3192,23 @@ pptx gone. A copy without `docs/supervisor_update_2026-10-19.pptx` is the 21-sli
 22. Pilots: four results and the noise floor (old 14, retitled). The result column of the table and the noise box.
 23. Thesis requirements: where we stand (old 20, retitled). Tight table: every row at most two lines; the "how to read"
     line above the footer.
-24. Plan for 1b: a smaller model by distillation (new). Tight: the four-row cost table and three bullets.
+24. Plan for 1b: a smaller model by distillation (new). Tight: the four-row cost table, a four-line "how to read" and
+    three bullets; the Risk bullet ends at about 4.97 in (19 Oct render, after the 3614947 cost numbers went in).
 25. Plan: the next four weeks (new). The six-row week table and the "how to read" line.
 26. What I claim, what I do not, and my questions (old 19; dark closing slide). The claims end above the question box.
 27. Still open, and what I test next (old 18; appendix). The seven numbered items.
 28. Corrections to the draft and the repo (old 15, retitled; appendix). The Wording card ended at the card's bottom
     edge in the old render.
 29. Backup: before and after, holdout image 579860 (old 21; appendix). The figure and its caption.
-30. Jobs and checkpoints (new; appendix). Tight: the 13-row job table; no path wraps to a third line.
+30. Jobs and checkpoints (new; appendix). Tight: the 13-row job table at font 8 (was 8.5); the cost job 3614947 is
+    folded into the 3614192 row, because a 14th row would run into the "how to read" line at 5.0 in.
 
 **Results still to come: the lines they make stale.** When a result arrives, edit these lines in `build.js` and
 rebuild (or hand-edit the pptx as above).
 
 | result | slide text | speaker notes | what changes |
 |---|---|---|---|
-| NAVER baseline `multiHMR_672_L_anny`, job 3614192: **DONE 18 Oct evening** (errors in the deck; params / GFLOPs / ms still pending) | now carried by 20 (3DPW line "NAVER 126.9"; source line), 23 (row 1b evidence), 24 (NAVER row "60.3 mm*" / "126.9 mm", footnote *, the bars 63.5 / 133.6 in the rule line), 26 (question 1), 30 (row 3614192); also 25 (week 1 "done 18 Oct") | 20, 23 (main + If asked), 24, 25, 26 (main + If asked), 30 | still pending: the NAVER row's parameters, GFLOPs and ms (`model_cost.py`, command in 0a); then replace the three "pending" cells on slide 24 |
+| NAVER baseline `multiHMR_672_L_anny`, job 3614192: **DONE 18 Oct evening** (errors in the deck); its cost, job 3614947: **DONE** (380.9 M params, head 76.6 M; in the deck) | now carried by 20 (3DPW line "NAVER 126.9"; source line), 23 (row 1b evidence), 24 (NAVER row "60.3 mm*" / "126.9 mm", footnote *, the bars 63.5 / 133.6 in the rule line), 26 (question 1), 30 (row 3614192); also 25 (week 1 "done 18 Oct") | 20, 23 (main + If asked), 24, 25, 26 (main + If asked), 30 | nothing pending: slide 24's NAVER row reads 380.9 M / 1,917 (backbone) / not measured (ms and head FLOPs are not measured for NAVER's class, by design), job 3614947 |
 | exp8, the ViT-B student, job 3614191 (pending; smoke test 3613926 passed) | 24 (student row "pending (this week)"; the timeline bullet), 30 (row 3614191); also 1 ("ViT-B student running"), 2 (row 1b), 23 (row 1b, next), 25 (weeks 1 and 3) | 24, 23 (main), 25, 30 | the student's holdout and 3DPW-test PVE / MPJPE and its ratio against both ViT-Ls (bar <= 77.6 mm and <= 93.7 mm against ours); if it misses with a still-falling curve, week 3's longer run |
 | partial mask, age kept, job 3614042 (queued) | 19 ("Reading and next step": "job 3614042, queued; result after this meeting"), 30 (row 3614042, "queued"); also named in 23 (row 1a shape, next) and 25 (week 1) | 19 ("It is queued; the result comes after this meeting"), 25, 30 | Relative Human gender, AUC and babies' age, and the demo spread of muscle / weight with age supervised; whether it becomes the final ViT-L (decision on Sun 25 Oct, slide 25) |
 | the other four demo images of the 2-epoch model (runForBus, sitOnStairs, fencing frames, one photo; job 3581312) | none | 16 (If asked: "I have looked at 8 of these 12 images so far ..."), 27 (main: "the 8 real images I have seen so far"; If asked: "I have looked at 8 of these 12 images so far"), 26 (If asked: "in the 8 of its 12 images I have seen") | how many of the 12 show normal necks with the fix |
@@ -3205,7 +3219,8 @@ rebuild (or hand-edit the pptx as above).
 Done and in the deck, nothing pending: the 3DPW re-fit and the v23 check (slide 6), the Relative Human evaluations of
 v5, exp6 and the final model (slide 18), the final model (exp7; slides 8, 14, 15, 17 and 20), the v23 3DPW-test
 re-evaluations of v5, v9 e62 and exp6 (slide 20), the demo of the final model (slide 21), the masked arm (slides 18
-and 19), the exp8 smoke test (slide 24) and the NAVER baseline's errors (job 3614192; slides 20, 23, 24, 26, 30).
+and 19), the exp8 smoke test (slide 24), the NAVER baseline's errors (job 3614192; slides 20, 23, 24, 26, 30) and its cost (job
+3614947; slides 23, 24, 30).
 
 **The question on slide 26:** last week's question was: fine-tune v9 now (fixed targets, depth loss x5), or first
 fix the 3DPW labels, re-fit, then fine-tune? The student chose the second and did it before the meeting: the re-fit
@@ -3317,7 +3332,8 @@ commands, the Monday bullets, the writing and clean-up list). Read it before pla
 - 1b route: a ViT-B student distilled from the final model (exp8; 101 M / 603 GFLOPs vs 318 M / 1927), ratios vs our
   ViT-L and vs NAVER-L, bar x1.05; AnnyOne 95% about 50/50 [Guessing]. Get his yes first. NAVER-L measured 18 Oct
   (job 3614192, 0a): 60.3 mm AnnyOne holdout [Likely in-sample for it] / 126.9 mm 3DPW, so its bars are 63.5 (out of
-  reach for a student of our 73.7 mm teacher) and 133.6 (met); ours 77.6 / 93.7. Its params / GFLOPs / ms: pending.
+  reach for a student of our 73.7 mm teacher) and 133.6 (met); ours 77.6 / 93.7. Its cost (job 3614947, 0a): 380.9 M
+  params (head 76.6 M) vs our 318.4 M (head 14.0 M), so ours is already 16% smaller; the student is 3.76x smaller than NAVER's.
 - Fixed/committed on 18 Oct (`a9db35c`, on `main`): the NAVER adapter now exposes nearness / img_size / patch_size /
   person_center_idx; exp8, model_cost.py and the baseline script are committed, reviewed twice, never run on the cluster.
   Still to write: a masked-eval flag; `kd_shp` masking of the 8 constants.
