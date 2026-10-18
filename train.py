@@ -897,6 +897,67 @@ class HandLabelFlag(torch.utils.data.Dataset):
         return getattr(self.dataset, name)
 
 
+class OriginalMultiHMREval(torch.nn.Module):
+    """--model_class multi_hmr_original: NAVER's original Multi_HMR (multi_hmr_anny/multi_hmr.py) behind the call that
+    evaluate() makes. Its forward returns ({}, []) when nothing is detected; evaluate() expects an empty list there."""
+
+    def __init__(self, net):
+        super().__init__()
+        self.net = net
+        self.body_model = net.body_model
+
+    def forward(self, x, K=None, det_thresh=0.3, nms_kernel_size=3, is_training=False, **kwargs):
+        out = self.net(x, K=K, det_thresh=det_thresh, nms_kernel_size=nms_kernel_size, is_training=is_training, **kwargs)
+        if isinstance(out, tuple):
+            return []
+        return out
+
+
+def build_original_multi_hmr(args, device):
+    """--model_class multi_hmr_original (eval only): build the ORIGINAL repo class from --pretrained's own saved args
+    (as demo.py's load_model does: xat_dim 1024, person_center head) and load ALL its weights, verified >= 95%."""
+    if not args.eval_only:
+        raise ValueError("--model_class multi_hmr_original is for --eval_only 1 (no training path for that class here)")
+    if not args.pretrained or not os.path.isfile(args.pretrained):
+        raise FileNotFoundError(f"--model_class multi_hmr_original needs --pretrained <original-repo checkpoint>, "
+                                f"got {args.pretrained}")
+    from multi_hmr_anny.multi_hmr import Multi_HMR
+    ckpt = torch.load(args.pretrained, map_location='cpu', weights_only=False)   # args = argparse.Namespace
+    sd = ckpt.get('model_state_dict', ckpt.get('state_dict', ckpt)) if isinstance(ckpt, dict) else ckpt
+    n_orig = sum(1 for k in sd if k.startswith(('encoder.backbone.', 'decoder.', 'dec_to_token.', 'mlp_pose.')))
+    n_model = sum(1 for k in sd if k.startswith(('backbone.encoder.', 'x_attention_head.', 'mlp_classif.')))
+    if n_orig <= n_model:
+        raise RuntimeError(f"{args.pretrained} is not an original-repo Multi_HMR checkpoint ({n_orig} original-style vs "
+                           f"{n_model} model.py-style keys): evaluate it with --model_class model")
+    a = ckpt.get('args') if isinstance(ckpt, dict) else None
+    kw = dict(vars(a)) if hasattr(a, '__dict__') else dict(a or {})
+    if not kw:
+        raise RuntimeError(f"{args.pretrained} has no saved 'args'; cannot rebuild the original Multi_HMR")
+    kw.setdefault('simple_depth_encoding', 1)
+    kw['pretrained_backbone'] = False        # every weight comes from the checkpoint
+    kw['person_center'] = 'head'             # demo.py does the same override
+    kw['xat_dim'] = 1024                     # demo.py: the original checkpoints were trained with xat_dim 1024
+    kw['xat_mlp_dim'] = 4 * 1024
+    kw.pop('pretrained', None)
+    for k in ('backbone', 'img_size'):
+        if k in kw and kw[k] != getattr(args, k, None):
+            print(f"[model_class] note: --{k} {getattr(args, k, None)} ignored; the checkpoint's own {k} = {kw[k]} "
+                  f"is used", flush=True)
+    net = Multi_HMR(**kw)
+    msd = net.state_dict()
+    matched = [k for k, v in sd.items() if k in msd and hasattr(v, 'shape') and msd[k].shape == v.shape]
+    net.load_state_dict(sd, strict=False)
+    pct = 100.0 * len(matched) / max(len(msd), 1)
+    print(f"[model_class] multi_hmr_original: Multi_HMR(backbone={kw.get('backbone')}, img_size={kw.get('img_size')}, "
+          f"xat_dim 1024) from {args.pretrained}: loaded {len(matched)}/{len(msd)} tensors ({pct:.1f}%)", flush=True)
+    if pct < 95.0:
+        missing = [k for k in msd if k not in sd][:8]
+        raise RuntimeError(f"only {pct:.1f}% of Multi_HMR was initialised from {args.pretrained}; missing e.g. {missing}")
+    if args.bone_fix and not bone_fix_lib.is_off(args.bone_fix):
+        print("[bone_fix] ignored: the original Multi_HMR class has no bone fix", flush=True)
+    return OriginalMultiHMREval(net).to(device)
+
+
 def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # --- matmul precision (apply_speed_fix.py) -------------------------------
@@ -915,11 +976,14 @@ def main(args):
     args.bone_fix_spec = None
     if args.bone_fix and not bone_fix_lib.is_off(args.bone_fix):
         args.bone_fix_spec = bone_fix_lib.load(args.bone_fix)
-    model = Model(pretrained_backbone=1, **vars(args))
-    model = model.to(device)
+    if getattr(args, 'model_class', 'model') == 'multi_hmr_original':
+        model = build_original_multi_hmr(args, device)   # eval only; weights loaded there (baseline evaluation)
+    else:
+        model = Model(pretrained_backbone=1, **vars(args))
+        model = model.to(device)
 
     # Load from a pretrained model
-    if args.pretrained is not None and os.path.isfile(args.pretrained):
+    if args.model_class == 'model' and args.pretrained is not None and os.path.isfile(args.pretrained):
         print(f"Loading weights from {args.pretrained}", flush=True)
         ckpt = torch.load(args.pretrained, map_location='cpu')
 
@@ -1527,6 +1591,12 @@ if __name__ == "__main__":
     parser.add_argument('--lr_decay_gamma', type=float, default=0.5,
                         help='multiply LR by this factor every --lr_decay_every epochs')
     parser.add_argument('--eval_only', type=int, default=0, choices=[0,1])
+    parser.add_argument('--model_class', type=str, default='model', choices=['model', 'multi_hmr_original'],
+                        help="'model' (default) = model.py's Model, every train.py run. 'multi_hmr_original' = with "
+                             "--eval_only 1 only: build the ORIGINAL repo class (multi_hmr_anny/multi_hmr.py, xat_dim 1024 "
+                             "as demo.py) from --pretrained's own saved args and load all of its weights (e.g. NAVER's "
+                             "multiHMR_672_L_anny.pt) for the baseline evaluation; --pretrained_remap, "
+                             "--load_only_backbone, --backbone, --head_dim and --bone_fix are then ignored.")
     # ---- knowledge distillation ----
     parser.add_argument('--distill_teacher_ckpt', type=str, default='',
                         help='path to a trained checkpoint used as the FROZEN TEACHER. '

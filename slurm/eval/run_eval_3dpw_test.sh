@@ -17,6 +17,18 @@
 #   MODEL_ENTRY="ckpt|head_dim|backbone|label"   evaluate this one model instead of the list
 #                            (only array task 0 runs it: submit with --array=0)
 #   EVAL_LABELS=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels MODEL_ENTRY="/netscratch/najib/multi-hmr/models/multiHMR/anny_teacher_v9_mixed_00062.pt|0|dinov2_vitl14|teacher_v9_e62" sbatch --array=0 run_eval_3dpw_test.sh
+#   EVAL_BONE_FIX=<json> | none | inherit   bone fix for the evaluated model (unset or inherit = the checkpoint's own
+#                            fix from its saved args, the behaviour above; none = --bone_fix none; a JSON written by
+#                            scripts/diagnostics/compute_bone_fix.py = --bone_fix <json>, which replaces the checkpoint's
+#                            own). Used by exp8 for the student's re-estimated fix. Not called BONE_FIX on purpose (exp7
+#                            reads a BONE_FIX of its own, which must never switch this script).
+#   EVAL_MODEL_CLASS=multi_hmr_original   evaluate an ORIGINAL-repo checkpoint (multi_hmr_anny/multi_hmr.py, e.g. NAVER's
+#                            multiHMR_672_L_anny.pt) through the same evaluate(): train.py --model_class
+#                            multi_hmr_original builds that class from the checkpoint's own args and loads all of its
+#                            weights (head_dim / backbone of MODEL_ENTRY are then ignored). Unset = model (as before).
+#                            slurm/eval/run_eval_baseline_naver.sh submits it.
+#   EVAL_3DPW_N=<n>          evaluate only n evenly spaced 3DPW-test images (smoke tests); unset = 0 = all (as before).
+#                            With n > 0 the run name gets _n<n> appended.
 # Scores against different labels cannot be compared with each other. The log prints the labels used.
 #
 # 3DPW-test (all 9,722 converted images, every third frame of the 24 test
@@ -82,9 +94,26 @@ if [ "$LABELS" != "$DEFAULT_LABELS" ]; then
   LTAG=$(basename "$LABELS"); [ "$LTAG" = labels ] && LTAG=$(basename "$(dirname "$LABELS")")
   EVAL_NAME="${EVAL_NAME}__${LTAG}"
 fi
-echo "labels: $LABELS   run name: $EVAL_NAME"
 VAL_3DPW_SPLIT="test"
-VAL_3DPW_N=0        # 0 = all 9,722 test images
+VAL_3DPW_N="${EVAL_3DPW_N:-0}"   # 0 = every test image of the labels (9,722 old / 8,190 v23)
+[[ "$VAL_3DPW_N" =~ ^[0-9]+$ ]] || { echo "ERROR: EVAL_3DPW_N=$VAL_3DPW_N (a non-negative integer)"; exit 1; }
+[ "$VAL_3DPW_N" = 0 ] || EVAL_NAME="${EVAL_NAME}_n${VAL_3DPW_N}"
+echo "labels: $LABELS   run name: $EVAL_NAME"
+# optional overrides (header); unset = the command below is exactly the one before them
+EVAL_BONE_FIX="${EVAL_BONE_FIX:-}"
+case "$EVAL_BONE_FIX" in
+  ''|inherit) BF_ARG=""; BF_DESC="the checkpoint's own (inherited from its saved args)" ;;
+  none)       BF_ARG="--bone_fix none"; BF_DESC="forced off (--bone_fix none)" ;;
+  *)          [ -f "$EVAL_BONE_FIX" ] || { echo "ERROR: EVAL_BONE_FIX=$EVAL_BONE_FIX not found"; exit 1; }
+              BF_ARG="--bone_fix $EVAL_BONE_FIX"; BF_DESC="$EVAL_BONE_FIX (replaces the checkpoint's own)" ;;
+esac
+EVAL_MODEL_CLASS="${EVAL_MODEL_CLASS:-model}"
+case "$EVAL_MODEL_CLASS" in
+  model)              MC_ARG="" ;;
+  multi_hmr_original) MC_ARG="--model_class multi_hmr_original" ;;
+  *) echo "ERROR: EVAL_MODEL_CLASS=$EVAL_MODEL_CLASS (model | multi_hmr_original)"; exit 1 ;;
+esac
+echo "bone fix: $BF_DESC   model class: $EVAL_MODEL_CLASS   3DPW-$VAL_3DPW_SPLIT images: $VAL_3DPW_N (0 = all)"
 
 COMMAND=$(cat <<EOF
 set -euo pipefail
@@ -96,6 +125,9 @@ CKPT="${CKPT_ARG}"
 echo "Evaluating \$CKPT on the last ${TEST_N} AnnyOne samples and ${VAL_3DPW_N} 3DPW-${VAL_3DPW_SPLIT} images (0 = all) of ${LABELS}"
 [ -f "${LABELS}/index_${VAL_3DPW_SPLIT}.txt" ] || { echo "ERROR: no 3DPW labels at ${LABELS}"; exit 1; }
 grep -q "mix_3dpw_labels" train.py || { echo "ERROR: train.py lacks apply_mixed_data_fix.py"; exit 1; }
+if [ -n "${MC_ARG}" ] && ! grep -q -- "--model_class" train.py; then
+  echo "ERROR: EVAL_MODEL_CLASS=${EVAL_MODEL_CLASS} but this train.py has no --model_class (git pull)"; exit 1
+fi
 
 # --eval_only 1 : no training, just run evaluate() and print the metrics.
 # --test_anny_n : builds the AnnyOne test split (see header).
@@ -110,7 +142,7 @@ python train.py \\
     --pretrained_remap 0 \\
     --load_only_backbone 0 \\
     --backbone ${BACKBONE} \\
-    --head_dim ${HEAD_DIM} \\
+    --head_dim ${HEAD_DIM} ${MC_ARG} ${BF_ARG} \\
     --mix_3dpw_labels "${LABELS}" \\
     --val_3dpw_split ${VAL_3DPW_SPLIT} \\
     --val_3dpw_n ${VAL_3DPW_N} \\

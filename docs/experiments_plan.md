@@ -850,6 +850,70 @@ adds no child signal (3DPW has no children); the v3d/v2d mesh terms still carry 
 mesh is built from the constants; and the 3DPW-test PVE is computed against the same neutral-body GT meshes, so a
 masked model can score worse there.
 
+### exp8: ViT-B student distilled from the final model (requirement 1b) (uncommitted, never run)
+
+**Purpose.** Supervisor requirement 1b, smaller-model route: a model that is not exactly Multi-HMR because it is much
+smaller (fewer parameters AND FLOPs, faster inference) while its PVE and MPJPE stay within 95% of the large model on
+BOTH the AnnyOne holdout and 3DPW test. Script: `slurm/experiments/exp8_distill_vitb.sh` (exp7's structure, guards and
+modes). Cost table: `scripts/analysis/model_cost.py`. Baseline: `slurm/eval/run_eval_baseline_naver.sh`.
+
+**Recipe.** Teacher = the final model (exp7 fix arm, `v5_pc_dist5_bonefix_v23_e10/train/checkpoints/00009.pt`),
+frozen, its ViT-L in bf16. Student = DINOv2 ViT-B/14 with NAVER's HMR-trained ViT-B weights
+(`models/multiHMR/multiHMR_672_B.pt`, backbone only), fully trained. `--head_dim 1024` puts a 768 -> 1024 projector
+(`feat_proj`) in front of heads built at the teacher width, so `--init_heads_from_teacher` copies every head tensor (at
+head_dim 0 the head's input layers cannot transfer: the v3-v5 failure). The copied heads stay frozen for 5 epochs.
+The student trains with the teacher's own bone fix, because its heads start as the teacher's (train.py warns
+otherwise). Targets are exactly the teacher's: `--gt_center_joint person_center --alpha_dist 5 --alpha_transl 5`, the 55
+manifest images excluded, 30% 3DPW-train from the v23 labels, `--mask_3dpw_hands 1`, the v5 loss weights. KD as v8:
+feature KL 1.0 (T 4), output L1 1.0. Batch 8, lr 3e-5, 30 epochs x 1000 iterations = 240,000 images.
+
+**After training (the student's own bone fix).** `diag_holdout_trace.py --select train_sample` on 200 seeded training
+images with `--bone_fix none`, then `compute_bone_fix.py` (auto) -> `<RUN>/bone_fix.json`. It replaces the training fix
+in the holdout trace and in the 3DPW-test evaluation (`run_eval_3dpw_test.sh` gained `EVAL_BONE_FIX`). No qualifying
+bone = no fix (`--bone_fix none`), recorded in the JSON. The GLOBAL GUARD (exit 4) continues by default, as the teacher's
+own exp6 fix did (`ON_GLOBAL_RISE=safe` re-estimates with the safe subset). The teacher is re-measured in the same job
+(holdout trace + 3DPW test), so the 95% targets never come from constants.
+
+**The 95% rule.** For PVE and MPJPE on the AnnyOne holdout (V1 trace) and on 3DPW test (v23, `evaluate()`):
+student error <= teacher error / 0.95. PASS = all four met, fewer params AND FLOPs, and faster when the benchmark ran.
+PA-PVE and recall get the same column for information. With exp7's numbers the targets would be PVE <= 77.6 (AnnyOne)
+and <= 93.7 (3DPW). The job's last block prints the table and the verdict (`<RUN>/final_table.json`).
+
+**Commands** (repo root on the cluster, after `git pull` and `conda activate multihmr`):
+
+```
+CHECK_ONLY=1 bash slurm/experiments/exp8_distill_vitb.sh      # guards only (labels, teacher args, weights, queue)
+SMOKE=1 bash slurm/experiments/exp8_distill_vitb.sh           # 20 iterations + every post-step on small inputs
+bash slurm/experiments/exp8_distill_vitb.sh                   # the real run (--time 14:00:00)
+TEACHER=/netscratch/najib/multi-hmr/results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask/train/checkpoints/00009.pt \
+  MASK_3DPW_SHAPE=1 bash slurm/experiments/exp8_distill_vitb.sh   # student of the shape-masked teacher
+TABLE_ONLY=1 bash slurm/experiments/exp8_distill_vitb.sh      # rebuild the final table (same env as the run)
+bash slurm/eval/run_eval_baseline_naver.sh                    # NAVER multiHMR_672_L_anny on AnnyOne test-100 + 3DPW test v23
+python scripts/analysis/model_cost.py --no-build --all        # analytic backbone table (anywhere)
+```
+
+The shape-masked teacher needs `MASK_3DPW_SHAPE=1` too: the teacher check refuses a student whose targets differ from
+its teacher's. If the job times out during step 5, rerun that evaluation alone (the `MODEL_ENTRY` / `EVAL_BONE_FIX`
+lines it printed), copy its log to `<RUN>/eval_3dpw_test_{student,teacher}.log`, then run `TABLE_ONLY=1`.
+
+**What PASS means.** The student meets 1b's smaller-model clause on our two test sets: within 95% of the final model on
+PVE and MPJPE on the AnnyOne holdout and on 3DPW test (v23 labels), with about 3.1x fewer parameters and 3.2x fewer
+FLOPs (analytic: ViT-B student 101.4 M / 603 GFLOPs vs teacher 318.4 M / 1927 GFLOPs at 672 px, one person). It
+says nothing about other datasets, and the 3DPW numbers hold only against our converted labels.
+
+**Risks.**
+- Student bone fix: the fix is a fresh estimate on 200 training images. A compensated chain (neck02 -> head) or a bone
+  that flips only in the student can still cost PVE. Compare `holdout_student/` with `holdout_student_trainfix/`.
+- ViT-B may miss 95% on 3DPW even if AnnyOne passes. The ViT-S students stayed far from their teachers (v8 3DPW-val
+  123.6 vs ~95-103), and 30 epochs is 10% of v8's images. A FAIL there calls for a longer run (`EPOCHS=60`) before any
+  claim.
+- FLOPs are analytic for the backbone (+ hooked linear layers for the heads). The Anny mesh is not counted. Latency is
+  batch 1 on whatever GPU the job got (teacher and student on the same one).
+- Memory: batch 8 with a fully trained ViT-B next to the ViT-L teacher may not fit 40 GB [Guessing]. The smoke test shows
+  it in minutes if it lands on such a card; else `BATCH=4`.
+- Throughput is a guess (~10 images/s on an A100: the ViT-L teacher still runs every step), so the 14:00 limit assumes
+  6 images/s. Read the smoke test's `[throughput]` line.
+
 ## 3. Verified in code
 
 Readers' facts. Line numbers refer to `89db760`, whose `.py` files are identical to `0d8ef72`. The experiment

@@ -42,10 +42,15 @@ confirm the three. To check a copy of this file:
 - `grep -c '728 mm' docs/handover.md` prints a number above `0` in the 18-Oct evening version and later (the exp7
   results, jobs 3611336 / 3611339; the 19-slide deck with the final-model slide 16; 0a step 6, section 5 item 7,
   section 9). `0` means an older copy: it still calls exp7 queued or running and the deck 18 slides long.
-- `grep -c '121.8' docs/handover.md` prints a number above `0` only in this version (18 Oct, midday: the v23
+- `grep -c '121.8' docs/handover.md` prints a number above `0` in the midday 18-Oct version and later (the v23
   comparison, jobs 3612073 / 3612074 / 3612075, and the real-photo slide, demo job 3612078; the 20-slide deck; 0a
   step 6, section 5 item 7, section 9). `0` means an older copy: it still calls the 3DPW-test re-evaluations of v5,
   v9 and exp6 pending, has no demo of the final model and a 19-slide deck.
+- `grep -c 'thesis_requirements_plan' docs/handover.md` prints a number above `0` only in this version (18 Oct,
+  evening: the supervisor's thesis requirements, the status matrix and the 4-week plan in
+  `docs/thesis_requirements_plan.md`; section 11). `0` means an older copy: it has no plan for requirement 1b (a
+  smaller or a new model), temporal modelling or the release, and does not know that the NAVER baseline adapter
+  crashes as written.
 
 The student should attach this file to the chat directly, not rely on you browsing GitHub. Download links: section 8.
 
@@ -100,6 +105,8 @@ file were merged into `main` (section 8).
   16:00): 3611333 smoke test, 3611336 fix arm, 3611339 control arm, all queued on A100 / L40S / RTXA6000;
   `MASK_3DPW_SHAPE=0` (0a, step 6).
 - Deck: slides 1, 6, 10, 14, 18, 19 and notes 1, 6, 8, 10, 14, 18, 19 updated with these results (section 9).
+- Evening: the supervisor's thesis requirements arrived (necessary / recommended / best grade). Status matrix, gaps,
+  4-week plan with commands and the Monday bullets: `docs/thesis_requirements_plan.md`; summary in section 11.
 
 **What happened on the evening of 18 Oct** (this version; details in 0a step 6, section 5 item 7, 3.1-3.3, 9):
 - exp7, the final model, finished both arms [Certain, `logs/exp7_final_model_3611336.out` and `_3611339.out`]:
@@ -3345,3 +3352,25 @@ in the old-GPU queue, and writing).
 - Before calling a 2-epoch difference real, compare it with the noise floor (3.6).
 - Put key numbers into the docs: the next assistant will not see the logs unless the student uploads them.
 - After the meeting: write the supervisor's answers into section 9 of this file.
+
+---
+
+## 11. Thesis requirements (18 Oct) and the 4-week plan
+
+Full text: `docs/thesis_requirements_plan.md` (his requirements, status matrix, gaps and feasibility, the plan with
+commands, the Monday bullets, the writing and clean-up list). Read it before planning anything after the meeting.
+- His e-mail (18 Oct). (1) Necessary, 100% within a month: correct Anny pose and visibly person-specific shape on
+  3DPW test and any real photo; a model "not exactly Multi-HMR" (a new architecture beating it on AnnyOne and 3DPW,
+  or a much smaller one within 95%, with params / FLOPs / speed); Anny-space evaluation on 3DPW. (2) Recommended:
+  3DPW train + test in Anny and trained on; temporal modelling. (3) Best grade: an own-voice report, clean code,
+  models he can verify.
+- Status [Certain]: met 1c, 2a, training on AnnyOne shape labels. Partly 1a-pose (3DPW 89.0; photos by eye only;
+  fingers never shown, `--relax_hands 1`). At risk 1a-shape (5 phenotypes on the converter constants). Not met: 1b,
+  2b, the release.
+- 1b route: a ViT-B student distilled from the final model (exp8; 101 M / 603 GFLOPs vs 318 M / 1927), ratios vs our
+  ViT-L and vs NAVER-L, bar x1.05; AnnyOne 95% about 50/50 [Guessing]. Get his yes first.
+- Blocking, all small: the NAVER adapter crashes at `train.py:242` (4 attributes missing); no masked-eval flag;
+  `kd_shp` unmasked. Six files uncommitted, none run.
+- Order: Mon evening adapter fix, commit, NAVER smoke test, `MASK_3DPW_SHAPE=1` arm, Relative Human of the final
+  model; Tue 20 exp8 as one ~42-h job (never 5-h chunks). Student ~8 Nov, fallback 10 Nov, (1) closed 15 Nov, no
+  buffer. Weeks 5-6 temporal refiner; weeks 7-8 writing, release, buffer. Write his answers into section 9.
