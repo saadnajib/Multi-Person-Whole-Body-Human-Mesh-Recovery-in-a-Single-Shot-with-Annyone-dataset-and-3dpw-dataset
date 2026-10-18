@@ -17,19 +17,19 @@
 PVE (mm) & \BasePVE & 74.8 & 68.8 & \ControlPVE & \FinalPVE \\
 PA-PVE (mm) & \BasePAPVE & 54.0 & 50.9 & \ControlPAPVE & \textbf{\FinalPAPVE} \\
 Recall (\%) & \BaseRecall & 87.8 & 89.4 & \ControlRecall & \FinalRecall \\
-Root error (mm) & 1208 & 544 & 1429 & 1402 & 728 \\
-Depth slope & 0.33 & 0.38 & 0.34 & 0.28 & 0.42 \\
-Depth intercept (m) & 2.36 & 1.59 & 2.56 & 2.66 & 1.75 \\
-Size ratio & 0.63 & 0.84 & 0.58 & 0.59 & 0.78 \\
-Neck girth pred/GT & 0.461 & 0.457 & 0.997 & 0.464 & 0.996 \\
-PVE\textsubscript{neck} (mm) & 27.3 & 27.7 & 10.7 & 27.7 & 11.0 \\
-Global head direction (deg) & 12.0 & 12.7 & 14.4 & 13.0 & 13.1 \\
-Fingers (deg) & 17.3 & 17.4 & 8.3 & 17.4 & 8.3 \\
-neck02 bone (deg) & 175.6 & 175.5 & 4.7 & 175.8 & 4.8 \\
-head bone (deg) & 177.9 & 178.0 & 11.2 & 177.7 & 8.9 \\
+Root error (mm) & \BaseRootErr & \DepthPilotRootErr & 1429 & \ControlRootErr & \textbf{\FinalRootErr} \\
+Depth slope & \BaseSlope & 0.38 & 0.34 & \ControlSlope & \FinalSlope \\
+Depth intercept (m) & \BaseIntercept & 1.59 & 2.56 & \ControlIntercept & \FinalIntercept \\
+Size ratio & \BaseSize & 0.84 & 0.58 & \ControlSize & \FinalSize \\
+Neck girth pred/GT & \BaseGirth & 0.457 & 0.997 & \ControlGirth & \FinalGirth \\
+PVE\textsubscript{neck} (mm) & 27.3 & 27.7 & 10.7 & \ControlNeckSkin & \FinalNeckSkin \\
+Global head direction (deg) & \BaseHeadDir & 12.7 & \NeckPilotHeadDir & \ControlHeadDir & \FinalHeadDir \\
+Fingers (deg) & \BaseFingers & 17.4 & 8.3 & \ControlFingers & \FinalFingers \\
+neck02 bone (deg) & \BaseNeckTwo & 175.5 & 4.7 & \ControlNeckTwo & \FinalNeckTwo \\
+head bone (deg) & 177.9 & 178.0 & 11.2 & \ControlHeadBone & \FinalHeadBone \\
 \bottomrule
 \end{tabular}
-\caption{AnnyOne holdout, 100 images, setting V1 (helper bones masked, matched people).}
+\caption{AnnyOne holdout, 100 images, setting V1 (helper bones masked, matched people); root error, depth fit and size ratio with each body at the model's own predicted depth.}
 \label{tab:final-annyone}
 \end{subtable}
 
@@ -40,21 +40,21 @@ head bone (deg) & 177.9 & 178.0 & 11.2 & 177.7 & 8.9 \\
 \toprule
  & Base & \shortstack[r]{Base+3DPW\\(old labels)} & \shortstack[r]{Neck\\pilot} & Control & Final & \shortstack[r]{Multi-HMR-\\Anny} \\
 \midrule
-PVE (mm) & \BaseThreeDPW & \BaseOldThreeDPW & 120.2 & \ControlThreeDPW & \textbf{\FinalThreeDPW} & \NAVERThreeDPW \\
-PA-PVE (mm) & \BasePAThreeDPW & 62.9 & 68.7 & \ControlPAThreeDPW & \textbf{\FinalPAThreeDPW} & \NAVERPAThreeDPW \\
-MPJPE (mm)$^{b}$ & 126.9 & 94.8 & 124.8 & 90.9 & \textbf{\FinalMPJPEThreeDPW} & 129.4 \\
-Precision (\%) & 54 & 73 & 53 & 62 & \FinalPrecThreeDPW & 75 \\
-Recall (\%) & 100 & 94 & 100 & 99 & \FinalRecallThreeDPW & 97 \\
+PVE (mm) & \BaseThreeDPW & \BaseOldThreeDPW & \NeckPilotThreeDPW & \ControlThreeDPW & \textbf{\FinalThreeDPW} & \NAVERThreeDPW \\
+PA-PVE (mm) & \BasePAThreeDPW & \BaseOldPAThreeDPW & 68.7 & \ControlPAThreeDPW & \textbf{\FinalPAThreeDPW} & \NAVERPAThreeDPW \\
+MPJPE (mm)$^{b}$ & 126.9 & 94.8 & 124.8 & \ControlMPJPEThreeDPW & \textbf{\FinalMPJPEThreeDPW} & \NAVERMPJPEThreeDPW \\
+Precision (\%) & \BasePrecThreeDPW & \BaseOldPrecThreeDPW & 53 & 62 & \FinalPrecThreeDPW & \NAVERPrecThreeDPW \\
+Recall (\%) & 100 & \BaseOldRecallThreeDPW & 100 & 99 & \FinalRecallThreeDPW & \NAVERRecallThreeDPW \\
 \addlinespace
-AnnyOne test-100 PVE$^{c}$ & 74.3 & 78.5 & 72.7 & 81.2 & 77.5 & (\NAVERAnnyOne)$^{a}$ \\
+AnnyOne test-100 PVE$^{c}$ & \BaseVzeroPVE & \BaseOldVzeroPVE & 72.7 & 81.2 & \FinalTestHundredPVE & (\NAVERAnnyOne)$^{a}$ \\
 \bottomrule
 \end{tabular}
-\caption{3DPW test, corrected (v23) labels, all 8,190 images, setting V0, same evaluation script for every model.}
+\caption{3DPW test, corrected (v23) labels, all 8,190 images, setting V0, same evaluation script for every model. Base+3DPW (old labels) was trained on the labels before their correction and is tested on the corrected ones, like every model here.}
 \label{tab:final-3dpw}
 \end{subtable}
-\caption{Final model against its Control and against Base. One run per model, no seed; two identical runs differed
+\caption[Final against Control and Base on the AnnyOne holdout and the 3DPW test]{Final against its Control and against Base. One run per model, no seed; two identical runs differed
 by \NoisePVE\,mm PVE, so the PVE gap between Control and Final (\ControlPVE{} vs \FinalPVE) is within run-to-run
-variation, while root error, neck and fingers are not. Depth pilot: depth fix, depth weight $\times$5, 10 epochs;
+variation, while PA-PVE, root error, neck and fingers are not. Depth pilot: depth fix, depth weight $\times$5, 10 epochs;
 neck pilot: bone correction and a 2-epoch fine-tune. 3DPW numbers are against our converted labels and are not
 comparable with published 3DPW results. $^{a}$Multi-HMR-Anny masks the helper bones by design, so its number is V1 and
 compares with Final's \FinalPVE{} in (a); it was most likely trained on these 100 images. $^{b}$Mean over all 163 Anny

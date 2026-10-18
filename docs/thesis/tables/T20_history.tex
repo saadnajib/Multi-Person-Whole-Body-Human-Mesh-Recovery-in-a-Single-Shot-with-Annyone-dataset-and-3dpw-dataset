@@ -1,0 +1,59 @@
+% T20 History: the staged schedule to Base and the ViT-S students (Results 6.11). Owner: Results writer.
+% Source: the draft's tab:main (draft main.tex:674-694; tables/draft_main.tex) and tab:kd_eval (main.tex:789-810;
+% tables/draft_kd_eval.tex). All numbers are setting V0 (helper bones unmasked) on the 100-image AnnyOne holdout,
+% measured before the depth fix, the bone correction and the corrected 3DPW labels.
+% Dropped on purpose: (1) the draft's TODO cells of tab:main (v2-v4 never re-evaluated, plan 7 Q6) -> "--";
+% (2) the v10 row of tab:kd_eval (87.4 mm V0 at epoch 299 cannot be reconciled with the V1 74.1 mm at epoch 290
+% of H 3.1 without the logs; v10 is not a named model of this thesis); (3) the 3DPW table tab:test3dpw (old labels,
+% retired; the v23 re-evaluation of S6c and S8, job 3615020, had not returned).
+% Cross-checks: Base 74.3 / 57.5 / recall 90 and Base+3DPW (old labels) 78.5 / 57.4 / 89 equal the AnnyOne test-100
+% V0 numbers of the v23 3DPW-test logs (3612073:25-32, 3612074:25-32; H 0b).
+% Names: stages as in Chapter 4 (stage 4 = Base); students S1-S8 = v1-v8 in the code (numbers_method.tex).
+\begin{table}[tbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{subtable}{\linewidth}
+\centering
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Stage & Change against the previous stage & PVE & PA-PVE & MPJPE & Recall \\
+\midrule
+1 & heads only, backbone frozen & \HistStageOnePVE & -- & -- & -- \\
+2 & + last 4 of 24 blocks, helper bones masked & \HistStageTwoPVE & -- & -- & -- \\
+3 & + neck and hand loss $\times$4 & 73.6 & 56.5 & 73.2 & -- \\
+4 (Base) & + shape loss weight 20 & \BaseVzeroPVE & 57.5 & 74.4 & 90 \\
+\bottomrule
+\end{tabular}
+\caption{The staged schedule that produced Base; recall in \%. Stages 1--3: evaluation during training; Base: the standalone
+script (the same numbers as the AnnyOne column of Table~\ref{tab:final-3dpw}).}
+\label{tab:history-stages}
+\end{subtable}
+
+\vspace{0.8em}
+\begin{subtable}{\linewidth}
+\centering
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+Model & Teacher & Params & PVE & PA-PVE & MPJPE & Prec. & Recall \\
+\midrule
+Base (ViT-L) & -- & 318.4 & \BaseVzeroPVE & 57.5 & 74.4 & 81 & 90 \\
+Base+3DPW, old labels & -- & 318.4 & \BaseOldVzeroPVE & 57.4 & 78.6 & 83 & 89 \\
+\addlinespace
+S2: features only & Base & 32.8 & 193.4 & 128.2 & 210.7 & -- & 86 \\
+S6b: projector$^{a}$ & Base & 37 & 126.9 & 92.1 & 132.0 & 77 & 88 \\
+S6c: batch 16 & Base & 37 & \textbf{114.5} & \textbf{84.6} & \textbf{118.4} & 81 & 89 \\
+S7: S6b + 3DPW$^{b}$ & Base & 37 & 120.6 & 88.2 & 125.2 & 78 & 87 \\
+S8: S6c + 3DPW$^{b}$ & Base+3DPW & 37 & 120.6 & 86.9 & 125.0 & 76 & 87 \\
+\bottomrule
+\end{tabular}
+\caption{The ViT-S students (Student-S, ViT-S backbone) against their ViT-L teachers; parameters in millions,
+precision and recall in \%. S2: feature distillation only; S6b: heads fed through a projector at the teacher's width.
+Standalone script except $^{a}$S6b (evaluation during training). $^{b}$30\,\% 3DPW images per batch, old labels.}
+\label{tab:history-students}
+\end{subtable}
+\caption[History: the schedule to Base and the ViT-S students (V0)]{History, before the depth fix, the bone
+correction and the corrected 3DPW labels. AnnyOne holdout (100 images), setting V0 (helper bones unmasked), errors in
+mm; one run per model, no seed. ``--'': not measured with the same script. The students' 3DPW numbers were measured on
+the old labels, which are retired, and are not reported.}
+\label{tab:history}
+\end{table}

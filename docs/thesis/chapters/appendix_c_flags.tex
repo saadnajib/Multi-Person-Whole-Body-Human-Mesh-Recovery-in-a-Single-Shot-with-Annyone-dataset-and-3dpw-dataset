@@ -1,11 +1,135 @@
-% appendix_c_flags.tex -- Appendix C Flags and weights.
-% Skeleton from REWRITE_PLAN.md section 2. Writing rules: section 5 of the plan.
-% "absorbs" = lines of draft_2026-10_original/main.tex (or the named draft file) whose content moves here.
+% appendix_c_flags.tex -- Appendix C Flags and weights. Owner: Appendix writer.
+% Sources: Final / Control: slurm/experiments/exp7_final_model.sh header (ENV defaults), :207-257 (settings, RUN,
+%   BONE_FIX_ARG, HANDS_ARG, SHAPE_ARG, TIME), :759-771 (the train.py command). Student:
+%   slurm/experiments/exp8_distill_vitb.sh header (RECIPE, ENV) and :319-331 (TRAIN_CMD); TIME=20:00:00 from the
+%   submission (H 0a, 18 Oct 17:15). Defaults: train.py:1558-1725 and loss.py:440-500 (add_specific_args).
+%   Colour-jitter flags: parsed at train.py:1722-1725, read nowhere (grep "args.brightness" over the repo: no hit;
+%   data/CLUSTER_ANSWERS.md: no augmentation). Loss weights: tables/T02_loss_weights.tex (not repeated here).
+% No job ids and no old run names in this file (plan section 5); Table~\ref{tab:names} maps names to runs.
 
 \chapter{Flags and Weights}
 \label{app:flags}
 
-% absorbs - (new)
-% needs: every training flag of Final and of the Student, default vs used: slurm/experiments/exp7_final_model.sh:759-771;
-%   exp8_distill_vitb.sh header; loss weights from loss.py:436-463 (T2 is the plain-words version in Chapter 4)
-\TODO{Table of every flag of Final, Control and Student: name, default, value used, what it does.}
+This appendix lists every command-line flag of the training runs of Final and Control (Table~\ref{tab:flags-final})
+and of the Student (Table~\ref{tab:flags-student}), with the default in the code, the value used and what the flag
+does. The loss weights appear in Table~\ref{tab:loss-weights} of Chapter~\ref{ch:method} and are only named here.
+Flags that are not passed keep their default. The commands that start the runs are in Section~\ref{sec:app-commands}.
+
+\begingroup
+\expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}%
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{@{}>{\raggedright}p{3.6cm}>{\raggedright}p{1.55cm}>{\raggedright}p{2.4cm}>{\raggedright\arraybackslash}p{4.7cm}@{}}
+\caption[Training flags of Final and Control]{Training flags of Final and Control. ``Value'' is Final's; where Control
+differs, its value follows in brackets. Paths are relative to the project folder on the cluster. Both runs start from
+Base and see 10 epochs of 1,000 iterations at batch 4, that is 40,000 images.}
+\label{tab:flags-final}\\
+\toprule
+Flag & Default & Value (Control) & Meaning \\
+\midrule
+\endfirsthead
+\toprule
+Flag & Default & Value (Control) & Meaning \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\multicolumn{4}{@{}l}{\emph{Start and network}} \\
+\path{--pretrained} & none & Base checkpoint & weights the run starts from \\
+\path{--pretrained_remap} & 1 & 0 & no renaming of weight names; Base was saved by this code \\
+\path{--load_only_backbone} & 0 & 0 & load the heads too, not only the backbone \\
+\path{--backbone} & ViT-S & \texttt{dinov2\_vitl14} & DINOv2 ViT-L with 14-pixel patches \\
+\path{--img_size} & 336 & 672 & input side in pixels (48 $\times$ 48 tokens) \\
+\path{--person_center} & head & head & the joint each detection and its predicted position refer to \\
+\path{--freeze_backbone} & 0 & 1 & freeze the backbone \ldots \\
+\path{--unfreeze_last_n_blocks} & 0 & 4 & \ldots except its last 4 of 24 blocks and final norm \\
+\path{--bone_fix} & off & \path{results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/bone_fix.json} (\texttt{none}) & constant output rotation on neck02, head, metacarpal1.L and finger4-1.R, saved in every checkpoint and re-applied on load (Section~\ref{sec:method-bonefix}) \\
+\addlinespace
+\multicolumn{4}{@{}l}{\emph{Targets and losses}} \\
+\path{--gt_center_joint} & root & \texttt{person\_center} (\texttt{root}) & the joint the depth, translation, detection-cell and offset targets describe: the head, as the network anchors (Control: the pelvis) \\
+\path{--alpha_dist}, \path{--alpha_transl} & 1, 1 & 5, 5 (1, 1) & weights of the depth and translation terms (Table~\ref{tab:loss-weights}) \\
+\path{--alpha_shape}, \path{--alpha_rotmat}, \path{--alpha_j2d}, \path{--alpha_v2d}, \path{--alpha_global_rot} & 1, 0.1, 1, 1, 0 & 20, 0.1, 0.1, 0.1, 0 & loss weights (Table~\ref{tab:loss-weights}) \\
+\path{--boost_neck_weight}, \path{--boost_hand_weight} & 1, 1 & 4, 4 & extra weight on neck, head and hand bones, renormalised to mean 1 (Table~\ref{tab:loss-weights}) \\
+\path{--rotmat_loss} & l1 & l1 & rotation term as L1 over the nine matrix entries \\
+\path{--global_rot_bones} & head, neck03, wrists & default & bones of the global-rotation term; unused at weight 0 \\
+\path{--start_2d_epoch} & 10 & 0 & 2D terms from the first epoch (the epoch counter restarts in every run) \\
+\path{--mask_helper_joints_train} & 0 & 1 & hold the 88 helper bones at identity and drop their rotation targets \\
+\path{--use_anny_shape} & 0 & 1 & take the phenotype targets from the dataset \\
+\path{--mask_3dpw_hands} & 0 & 1 & drop the 38 finger, thumb and metacarpal bones of 3DPW people from the rotation terms \\
+\path{--mask_3dpw_shape} & 0 & not passed (0) & shape mask for 3DPW people; on only in Final-masked and Final-partial-mask \\
+\path{--debug_anchor} & 0 & 2 & print predicted and target anchors for the first 2 iterations (a check, no effect on training) \\
+\addlinespace
+\multicolumn{4}{@{}l}{\emph{Data}} \\
+\path{--train_data} & BEDLAM & AnnyOne & synthetic training set \\
+\path{--train_n}, \path{--val_anny_n} & 0, 0 & 0, 100 & all AnnyOne images except the last 100, which form the holdout \\
+\path{--exclude_indices_file} & none & the 55 manifest images & never sample the diagnostic-manifest images; sampling is then with replacement \\
+\path{--mix_3dpw_labels} & none & \path{threedpw_anny_v23/labels} & corrected 3DPW-Anny labels mixed into training \\
+\path{--mix_3dpw_ratio}, \path{--mix_3dpw_split} & 0.3, train & 0.3, train & 30\,\% of the images of a batch from 3DPW train, on average \\
+\path{--val_3dpw_split}, \path{--val_3dpw_n} & validation, 0 & validation, 300 & evaluate on 300 evenly spaced 3DPW validation images at every evaluation \\
+\addlinespace
+\multicolumn{4}{@{}l}{\emph{Optimisation and bookkeeping}} \\
+\path{--batch_size} & 2 & 4 & images per step \\
+\path{--n_iters_per_epoch}, \path{--max_iter} & 100, 10,000 & 1,000, 10,000 & 10 epochs of 1,000 steps \\
+\path{--learning_rate} & $5\cdot10^{-6}$ & $10^{-5}$ & Adam learning rate \\
+\path{--lr_decay_every}, \path{--lr_decay_gamma} & 30, 0.5 & 30, 0.5 & halve every 30 epochs, so constant over the 10 epochs \\
+\path{--amp}, \path{--tf32} & 1, 1 & 0, 1 & no mixed precision (it produced NaNs with the Anny layer); TF32 matrix products \\
+\path{--num_workers} & 0 & 12 & data-loader processes \\
+\path{--eval_freq}, \path{--nb_max_ckpt}, \path{--log_freq} & 1, 10, 100 & 1, 2, 50 & evaluate every epoch, keep the last 2 checkpoints, log every 50 steps \\
+\path{--save_dir}, \path{--name} & logs, trainval & run folder, train & output folder \path{results/experiments/exp7_final_model/<run>/train} \\
+\addlinespace
+\multicolumn{4}{@{}l}{\emph{Job settings of the script (environment variables)}} \\
+\path{EVAL_TEST}, \path{N_VIS} & 1, 12 & 1, 12 & after training: holdout trace with 12 panels, then the 3DPW test on the v23 labels \\
+\path{TIME}, \path{PARTITIONS} & from the epochs & 5 h; A100, L40S, RTX A6000 & Slurm time limit (60 + 60 + 18 min per epoch) and GPU types \\
+\end{longtable}
+
+\begin{longtable}{@{}>{\raggedright}p{3.6cm}>{\raggedright}p{1.55cm}>{\raggedright}p{2.4cm}>{\raggedright\arraybackslash}p{4.7cm}@{}}
+\caption[Training flags of the Student]{Training flags of the Student. Flags with the same value as in Final are
+grouped in the last block; the targets, masks and loss weights equal Final's so that the Student learns the corrected
+depth. 30 epochs of 1,000 iterations at batch 8, that is 240,000 images.}
+\label{tab:flags-student}\\
+\toprule
+Flag & Default & Value & Meaning \\
+\midrule
+\endfirsthead
+\toprule
+Flag & Default & Value & Meaning \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\multicolumn{4}{@{}l}{\emph{Student network and its start}} \\
+\path{--backbone} & ViT-S & \texttt{dinov2\_vitb14} & DINOv2 ViT-B with 14-pixel patches \\
+\path{--pretrained} & none & \path{models/multiHMR/multiHMR_672_B.pt} & NAVER's mesh-recovery ViT-B as the backbone start \\
+\path{--pretrained_remap}, \path{--load_only_backbone} & 1, 0 & 1, 1 & rename NAVER's weight names; keep only the backbone \\
+\path{--min_backbone_match} & 90 & 90 & stop if less than 90\,\% of the backbone loads \\
+\path{--freeze_backbone} & 0 & 0 & train the whole backbone \\
+\path{--head_dim} & 0 & 1024 & build the heads at the teacher's width, fed by a 768 to 1024 linear projector \\
+\addlinespace
+\multicolumn{4}{@{}l}{\emph{Teacher and distillation}} \\
+\path{--distill_teacher_ckpt} & none & Final checkpoint & frozen teacher; turns the run into distillation \\
+\path{--teacher_bf16} & 0 & 1 & teacher backbone in bfloat16 (no gradients) \\
+\path{--init_heads_from_teacher} & 0 & 1 & copy every head tensor of matching name and shape from the teacher \\
+\path{--freeze_heads_epochs} & 0 & 5 & keep the copied heads frozen for 5 epochs while backbone and projector adapt \\
+\path{--lambda_kd}, \path{--kd_temperature}, \path{--kd_softmax_dim} & 1.0, 4.0, channel & 1.0, 4.0, channel & feature distillation: KL divergence between softened per-token channel distributions (Table~\ref{tab:loss-weights}) \\
+\path{--lambda_kd_out} & 0 & 1.0 & output distillation: L1 to the teacher's rotations, phenotypes and depth (Table~\ref{tab:loss-weights}) \\
+\path{--bone_fix} & off & the teacher's correction & the four-bone correction of Final during training; after training the Student's own correction is estimated on 200 training images (seed 0) and used for every evaluation \\
+\addlinespace
+\multicolumn{4}{@{}l}{\emph{Optimisation and bookkeeping}} \\
+\path{--batch_size} & 2 & 8 & images per step \\
+\path{--n_iters_per_epoch}, \path{--max_iter} & 100, 10,000 & 1,000, 30,000 & 30 epochs of 1,000 steps \\
+\path{--learning_rate} & $5\cdot10^{-6}$ & $3\cdot10^{-5}$ & Adam learning rate \\
+\path{--lr_decay_every}, \path{--lr_decay_gamma} & 30, 0.5 & 12, 0.5 & halve after epochs 12 and 24 \\
+\path{--eval_freq}, \path{--nb_max_ckpt}, \path{--log_freq} & 1, 10, 100 & 5, 3, 50 & evaluate every 5 epochs, keep the last 3 checkpoints \\
+\path{--brightness}, \path{--contrast}, \path{--saturation}, \path{--hue} & 0 & 0.2, 0.2, 0.2, 0.05 & parsed but read nowhere in the code: no effect, no augmentation was used \\
+\path{TIME} & 14 h & 20 h & Slurm time limit \\
+\addlinespace
+\multicolumn{4}{@{}l}{\emph{As in Final (Table~\ref{tab:flags-final})}} \\
+\multicolumn{4}{@{}p{12.3cm}@{}}{\raggedright \texttt{--train\_data AnnyOne --train\_n 0 --val\_anny\_n 100 --person\_center head --img\_size 672
+--mask\_helper\_joints\_train 1 --use\_anny\_shape 1 --alpha\_shape 20 --alpha\_j2d 0.1 --alpha\_v2d 0.1
+--boost\_neck\_weight 4 --boost\_hand\_weight 4 --rotmat\_loss l1 --alpha\_rotmat 0.1 --alpha\_global\_rot 0
+--start\_2d\_epoch 0 --gt\_center\_joint person\_center --alpha\_dist 5 --alpha\_transl 5 --debug\_anchor 2
+--exclude\_indices\_file} (the 55 manifest images) \path{--mix_3dpw_labels} (v23) \texttt{--mix\_3dpw\_ratio 0.3
+--mix\_3dpw\_split train --val\_3dpw\_split validation --val\_3dpw\_n 300 --mask\_3dpw\_hands 1 --num\_workers 12
+--amp 0 --tf32 1}; no shape mask.} \\
+\end{longtable}
+\endgroup

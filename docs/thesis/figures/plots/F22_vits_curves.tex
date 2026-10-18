@@ -14,18 +14,20 @@
   legend style={font=\footnotesize, at={(0.98,0.97)}, anchor=north east}, legend columns=2,
 ]
 \addplot[color=gray, mark=o] coordinates {(0,377) (30,305) (60,228) (100,213) (130,199)};
-\addlegendentry{v3}
+\addlegendentry{S3}
 \addplot[color=orange!80!black, mark=square] coordinates {(0,298) (30,239) (60,197) (100,179) (130,163)};
-\addlegendentry{v4}
+\addlegendentry{S4}
 \addplot[color=green!50!black, mark=triangle] coordinates {(0,378) (30,240) (60,205) (100,175) (130,159)};
-\addlegendentry{v5}
+\addlegendentry{S5}
 \addplot[color=blue!70!black, mark=*, thick] coordinates {(0,327) (30,221) (60,186) (100,175) (130,155)};
-\addlegendentry{v6}
-\draw[dashed, black!60] (axis cs:-5,193) -- (axis cs:135,193) node[pos=0.02, anchor=south west, font=\scriptsize] {v2 (random heads), final: 193};
+\addlegendentry{S6}
+\draw[dashed, black!60] (axis cs:-5,193) -- (axis cs:135,193) node[pos=0.02, anchor=south west, font=\scriptsize] {S2 (random heads), final: 193};
 \end{axis}
 \end{tikzpicture}
-\caption{Held-out PVE of the ViT-S head-transfer students at equal epochs (setting V0; history, before the depth and
-bone fixes and the corrected 3DPW labels). Each student adds one change to the previous one: v4 an HMR-trained
-student backbone, v5 a 5-epoch head freeze, v6 projector-fed heads.}
+\caption[The ViT-S students' holdout PVE over epochs (V0, history)]{AnnyOne holdout PVE of the ViT-S head-transfer
+students at equal epochs (100 images, setting V0; one run each, no seed; history, before the depth and bone fixes and
+the corrected 3DPW labels). Each student adds one change to the previous one: S4 a student backbone trained for mesh
+recovery, S5 a 5-epoch head freeze, S6 projector-fed heads. Their teacher Base reads \BaseVzeroPVE\,mm in the same
+setting.}
 \label{fig:vits-curves}
 \end{figure}

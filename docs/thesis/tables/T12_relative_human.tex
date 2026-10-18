@@ -1,8 +1,11 @@
 % T12 Relative Human (Results 6.7 / 6.8). Owner: Results writer.
 % Source: REWRITE_PLAN.md section 4 (T12); H 0a "DECIDED"; H 0b; H 3.4.
 % Base = 3611285_0 (:23-31), Final = 3612131 (:25-33), Final-masked = 3613616 (logs/eval_rh_3613616_0.out).
-% Demo spread: jobs 3612078 (Final) vs 3613617 (Final-masked), 12 images, [shape] lines (H 0a).
-% "--" = not reported in the sources.
+% Checked 18 Oct against data/rh_per_person_{base,final,masked}.csv (matched == 1): recall, gender accuracy, mean
+% gender of men/women, AUC (kids + babies vs adults on pred_age), mean ages and heights all reproduce to the digits
+% shown. The Final-masked teen age (0.616), heights (0.505 / 0.461 / 0.478) and matched count (1002 + 96 + 59 = 1,157)
+% were "--" in the plan and are recomputed here from rh_per_person_masked.csv (ages also in data/plot_stats.md).
+% Demo spread: jobs 3612078 (Final) vs 3613617 (Final-masked), 12 images, [shape] lines (H 0a); Base not reported.
 \begin{table}[tbp]
 \centering\small
 \begin{tabular}{@{}lrrr@{}}
@@ -11,32 +14,35 @@
 \midrule
 Recall (\%) & \RHRecallBase & \RHRecallFinal & \RHRecallMasked \\
 Gender accuracy (\%) & \RHGenderBase & \RHGenderFinal & \RHGenderMasked \\
-\quad mean gender, men (male = 0) & 0.535 & 0.551 & 0.717 \\
-\quad mean gender, women (female = 1) & 0.551 & 0.861 & 0.860 \\
+\quad mean gender, men (male = 0) & \RHMenGenderBase & \RHMenGenderFinal & \RHMenGenderMasked \\
+\quad mean gender, women (female = 1) & \RHWomenGenderBase & \RHWomenGenderFinal & \RHWomenGenderMasked \\
 Child-vs-adult AUC & \RHAUCBase & \RHAUCFinal & \RHAUCMasked \\
 \addlinespace
-Mean age, adult & 0.631 & 0.536 & 0.638 \\
-\quad teen & 0.597 & 0.524 & -- \\
-\quad kid & 0.613 & 0.500 & 0.611 \\
-\quad baby & 0.624 & 0.438 & 0.524 \\
-Babies with age $<$ 0.45 (\%) & 2.6 & 49.3 & 16.9 \\
-Mean height, adult & 0.507 & 0.500 & -- \\
-\quad kid & 0.451 & 0.466 & -- \\
-\quad baby & 0.394 & 0.464 & -- \\
-Matched children + adults & 948 & 1,305 & -- \\
+Mean age, adult & \RHAgeAdultBase & \RHAgeAdultFinal & \RHAgeAdultMasked \\
+\quad teen & 0.597 & 0.524 & 0.616 \\
+\quad kid & \RHAgeKidBase & \RHAgeKidFinal & \RHAgeKidMasked \\
+\quad baby & \RHAgeBabyBase & \RHAgeBabyFinal & \RHAgeBabyMasked \\
+Babies with age $<$ 0.45 (\%) & \RHBabiesBelowBase & \RHBabiesBelowFinal & \RHBabiesBelowMasked \\
+Mean height, adult & \RHHeightAdultBase & 0.500 & 0.505 \\
+\quad kid & \RHHeightKidBase & 0.466 & 0.461 \\
+\quad baby & \RHHeightBabyBase & 0.464 & 0.478 \\
+Matched children + adults & 948 & 1,305 & 1,157 \\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Demo images: standard deviation of the prediction}} \\
-Muscle & -- & 0.04 & 0.06 \\
-Weight & -- & 0.04 & 0.11 \\
-Cup size & -- & 0.05 & 0.11 \\
-Firmness & -- & 0.04 & 0.11 \\
-Age & -- & 0.03 & 0.08 \\
+Muscle & -- & \SpreadMuscleFinal & \SpreadMuscleMasked \\
+Weight & -- & \SpreadWeightFinal & \SpreadWeightMasked \\
+Cup size & -- & \SpreadCupFinal & \SpreadCupMasked \\
+Firmness & -- & \SpreadFirmFinal & \SpreadFirmMasked \\
+Age & -- & \SpreadAgeFinal & \SpreadAgeMasked \\
 \bottomrule
 \end{tabular}
-\caption{Body shape on real photos. Upper part: Relative Human validation split (635 images, 2,130 labelled people),
-detected people only, matched to the labelled boxes at IoU $\geq$ 0.3; ``child'' means a predicted age below 0.45;
-the matched sets differ between models because recall differs. Lower part: spread of the predicted phenotypes over all
-detected people of the 12 demo images (4 photos and 8 3DPW test frames), not matched to people. The neck pilot
-(bone correction and a 2-epoch fine-tune) is the same as Base within run-to-run variation (AUC 0.613).}
+\caption[Body shape on real photos: Relative Human and the demo images]{Body shape on real photos. Upper part:
+Relative Human validation split (635 images, 2,130 labelled people), detected people only, matched to the labelled
+boxes at IoU $\geq$ 0.3; ages and heights are Anny phenotype values in $[0, 1]$, not years; ``child-shaped'' means a
+predicted age below 0.45; the AUC ranks kids and babies against adults by predicted age (0.5 = chance). The matched
+sets differ between models because recall differs. Lower part: spread of the predicted phenotypes over all detected
+people of the 12 demo images (4 photos and 8 3DPW test frames), not matched to people; not reported for Base. One run
+per model, no seed. The neck pilot (bone correction and a 2-epoch fine-tune) is the same as Base within run-to-run
+variation (AUC 0.613).}
 \label{tab:relhuman}
 \end{table}

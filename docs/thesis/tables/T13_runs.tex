@@ -1,50 +1,67 @@
-% T13 Runs, jobs and checkpoints (Appendix A). Owner: skeleton / Appendix writer.
-% Source: REWRITE_PLAN.md section 4 (T13); deck slide 30 (D slide 30); H 8 job index; H 0a.
-% The only place in the thesis where job ids appear (plan section 5). Paths are relative to the
-% project folder on the cluster (/netscratch/najib/multi-hmr); logs are logs/<script>_<job>.out unless named.
-% Uses longtable (one table may break across pages); \path breaks long paths at slashes.
-\begin{small}
+% T13 Runs, jobs and checkpoints (Appendix A). Owner: Appendix writer (first version by the skeleton writer).
+% Sources: REWRITE_PLAN.md section 4 (T13); deck explanation slide 30 (D slide 30); handover section 8 "Job index",
+% 0a (state on 18 Oct, NAVER baseline, model cost, partial mask, student), 0b, 3.1-3.4; data/CLUSTER_ANSWERS.md
+% (jobs submitted on the evening of 18 Oct: 3615018, 3615019, 3615020_[2,4]).
+% Checked against H 8 on 18 Oct (evening); added since the skeleton: Base re-trace 3571596, Mixed-L / Fresh-heads-L traces,
+% Final smoke test 3611333, crashed NAVER try 3613928, model cost 3614947 as its own row, partial mask 3614042, student
+% smoke 3613926, the three 18-Oct evening jobs, the per-run log names, diag jobs 3569948 / 3569950 / 3569949 / 3572419 /
+% 3572420, exp2 measurement 3571601, RH smoke 3608336, re-fit crashes 3587852 / 3587853.
+% The only place in the thesis where job ids appear (plan section 5), together with T19 and Appendix A's text.
+% Paths are relative to the project folder on the cluster (/netscratch/najib/multi-hmr). Log = logs/<name>_<job>.out
+% as written in each row; array jobs log as <name>_<job>_<task>.out.
+\begingroup
+\expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}% let \path break after _ and - here
+\small
 \setlength{\tabcolsep}{3pt}
-\begin{longtable}{@{}>{\raggedright}p{2.1cm}>{\raggedright}p{2.0cm}>{\raggedright}p{3.1cm}>{\raggedright\arraybackslash}p{4.8cm}@{}}
-\caption{Run names, Slurm jobs, what each produced, and where the log and the checkpoint or output lie.}
+\begin{longtable}{@{}>{\raggedright}p{2.05cm}>{\raggedright}p{1.95cm}>{\raggedright}p{3.3cm}>{\raggedright\arraybackslash}p{4.95cm}@{}}
+\caption[Runs, jobs, logs and checkpoints]{Run names, Slurm jobs, what each produced, and where the log and the
+checkpoint or output lie. Model names as in Table~\ref{tab:names}. Paths are relative to the project folder on the
+cluster; logs lie in \path{logs/}.}
 \label{tab:runs}\\
 \toprule
-Thesis name & Job(s) & What & Checkpoint, output or log \\
+Thesis name or item & Job(s) & What & Log; checkpoint or output \\
 \midrule
 \endfirsthead
 \toprule
-Thesis name & Job(s) & What & Checkpoint, output or log \\
+Thesis name or item & Job(s) & What & Log; checkpoint or output \\
 \midrule
 \endhead
 \bottomrule
 \endfoot
 \multicolumn{4}{@{}l}{\emph{Models}} \\
-Base & 3570222 (trace) & \texttt{anny\_s2\_shape\_v5}, epoch 99; synthetic only & \path{logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt} \\
-Base+3DPW (old labels) & -- & v9, epoch 62; Base + 30\,\% 3DPW on the old labels & \path{models/multiHMR/anny_teacher_v9_mixed_00062.pt} \\
-Final & 3611336 & depth fix + bone correction + 30\,\% 3DPW (v23), 10 epochs & \path{results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10/train/checkpoints/00009.pt}; copy \path{models/multiHMR/exp7_v5_final_00009.pt}; log \path{logs/exp7_final_model_3611336.out} \\
-Control & 3611339 & same training, no depth fix, no bone correction & \path{results/experiments/exp7_final_model/v5_root_dist1_nofix_v23_e10/}; log \path{logs/exp7_final_model_3611339.out} \\
-Final-masked & 3612325 & Final with \texttt{--mask\_3dpw\_shape 1} & \path{results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask/}; log \path{logs/exp7_final_model_3612325.out} \\
-Final-masked-7 & 3614042 & mask the seven 0.5 constants, keep age (pending) & \path{results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/} \\
-Student & 3614191 (smoke 3613926) & ViT-B student of Final, 30 epochs (pending) & \path{results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/}; log \path{logs/exp8_distill_vitb_3614191.out} \\
-Multi-HMR-Anny (NAVER) & 3614192; cost 3614947 & NAVER's checkpoint evaluated with our code; model cost & \path{models/multiHMR/multiHMR_672_L_anny.pt}; \path{logs/eval-test3dpw-3614192_0.out}; \path{logs/model_cost_3614947.out}; \path{results/diagnostics/model_cost_naver_vs_final.json} \\
+Base & 3570222; re-trace 3571596 & holdout trace (V1 PVE, placement) & \path{diag_holdout_3570222.out}; checkpoint \path{logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt} \\
+Mixed-L & 3571963, 3571964 & holdout traces of epochs 62 and 149 & \path{diag_holdout_<job>.out}; \path{models/multiHMR/anny_teacher_v9_mixed_00062.pt} \\
+Fresh-heads-L & 3571794 & holdout trace of epoch 290 & \path{diag_holdout_3571794.out}; \path{logs/anny_model/anny_v10_scratch_mixed/checkpoints/00290.pt} \\
+Final & 3611336 (smoke test 3611333) & training, holdout trace, 3DPW test, all in one job & \path{exp7_final_model_3611336.out}; \path{results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10/train/checkpoints/00009.pt}, copy \path{models/multiHMR/exp7_v5_final_00009.pt} \\
+Control & 3611339 & the same without the two fixes & \path{exp7_final_model_3611339.out}; \path{results/experiments/exp7_final_model/v5_root_dist1_nofix_v23_e10/} \\
+Final-masked & 3612325 & Final with the shape mask & \path{exp7_final_model_3612325.out}; \path{results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask/} \\
+Final-partial-mask & 3614042 & Final with the seven 0.5 constants masked, age kept (running on 18 Oct) & \path{exp7_final_model_3614042.out}; \path{results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/} \\
+Student & 3614191 (smoke test 3613926) & ViT-B student of Final, 30 epochs, with its own evaluation (running on 18 Oct) & \path{exp8_distill_vitb_3614191.out}; \path{results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/} (\path{final_table.json}) \\
+Multi-HMR-Anny & 3614192 (first try 3613928 crashed, FFN width) & NAVER's checkpoint evaluated with our code: holdout and 3DPW test & \path{eval-test3dpw-3614192_0.out}; \path{models/multiHMR/multiHMR_672_L_anny.pt} \\
+Model cost & 3614947 & parameters, GFLOPs, latency of Multi-HMR-Anny and Final (A100) & \path{model_cost_3614947.out}; \path{results/diagnostics/model_cost_naver_vs_final.json} \\
 \addlinespace
-\multicolumn{4}{@{}l}{\emph{Evaluations}} \\
-3DPW test (v23) & 3612073, 3612074, 3612075 & Base, Base+3DPW (old labels), neck pilot; Final and Control inside their own jobs & \path{logs/eval-test3dpw-<job>_0.out}, lines 117--124 \\
-Relative Human & 3611285\_0, 3611285\_1, 3612131, 3613616 & Base, neck pilot, Final, Final-masked & \path{logs/eval_rh_<job>_<task>.out} \\
-Demos & 3581312, 3612078, 3613617 & neck pilot, Final, Final-masked (each next to Base) on 4 photos + 8 3DPW test frames & \path{logs/demo-compare-<job>.out} \\
+\multicolumn{4}{@{}l}{\emph{Evaluations and demos}} \\
+3DPW test (v23) & 3612073, 3612074, 3612075 & Base, Mixed-L, neck pilot; Final and Control inside their own jobs & \path{eval-test3dpw-<job>_0.out}, lines 117--125 \\
+3DPW test (v23), Student-S & 3615020\_2, 3615020\_4 & Student-S/6c and Student-S/final on the v23 labels (submitted 18 Oct evening) & \path{eval-test3dpw-3615020_2.out}, \path{_4.out} \\
+Relative Human & 3611285\_0, 3611285\_1, 3612131, 3613616; smoke test 3608336 & Base, neck pilot, Final, Final-masked & \path{eval_rh_<job>_<task>.out}; \path{results/diagnostics/relative_human_val_<tag>/} \\
+Demos & 3581312, 3612078, 3613617 & neck pilot, Final, Final-masked, each next to Base, on 4 photos + 8 3DPW test frames & \path{demo-compare-<job>.out}; montages \path{demo_montage_photos/}, \path{demo_montage_3dpwtest/} \\
+Demo, fingers & 3615018 & Base and Final with predicted fingers (\texttt{--relax\_hands 0}; submitted 18 Oct evening) & \path{demo-compare-3615018.out}; script \path{slurm/demo/run_demo_compare_hands.sh} (a copy made on the cluster) \\
+Demo, rest pose & 3615019 & Base, Final, Final-masked in rest pose, shape only (submitted 18 Oct evening) & \path{demo-compare-3615019.out}; script \path{slurm/demo/run_demo_compare_rest.sh} (a copy made on the cluster) \\
 \addlinespace
 \multicolumn{4}{@{}l}{\emph{3DPW labels}} \\
-Label check & 3575369 (old), 3611284 (v23) & conversion check before and after the re-fit & \path{results/diagnostics/check_3dpw_conversion_v23/} \\
-Re-fit (v2.3) & 3589270 (test), 3590385 + 3602813 & converter v2.3 on all 87 person-sequences & \path{threedpw_anny_v23/labels/}; \path{logs/check_refit_all_v23.log} \\
-Label rebuilds & 3579266, 3581320 & rebuilds from the old fits & \path{threedpw_anny_full/labels_rebuilt/} \\
+Label check & 3575369 (old), 3611284 (v23) & conversion check before and after the re-fit & \path{check_3dpw_conversion_<job>.out}; \path{results/diagnostics/check_3dpw_conversion_v23/} \\
+Re-fit (v2.3) & 3589270 (test), 3590385 + 3602813; crashes 3587852, 3587853 & converter v2.3 on all 87 person-sequences & \path{smpl2anny-all-<job>_<task>.out}; \path{threedpw_anny_v23/labels/}; \path{logs/check_refit_all_v23.log} \\
+Label rebuilds & 3579266, 3581320 & rebuilds from the old fits & \path{3dpw-labels-<job>.out}; \path{threedpw_anny_full/labels_rebuilt/} \\
 \addlinespace
 \multicolumn{4}{@{}l}{\emph{Pilots and diagnostics}} \\
-exp1 depth fix & 3571598, 3571599, 3572418, 3572483, 3571933, 3571934, 3572482 & 2- and 10-epoch arms and controls & \path{results/experiments/exp1_*} \\
-exp2 children sampler & 3571955, 3571956 (measurement 3571601) & sampler pilot and control & \\
-exp3 global head loss & 3571957; controls 3571958, 3571960 & loss pilot and two identical controls (noise) & \\
-exp4 fingers & 3571959 & region-normalised loss & \\
-exp5 geodesic loss & 3573520, 3573521 & geodesic rotation loss vs L1 & \\
-Per-bone dumps & 3573518, 3573519 & per-bone angle dump & \\
-exp6 bone correction & 3579014 (Base), 3579015 (v10) & correction without training and with a 2-epoch fine-tune & \path{results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/bone_fix.json} \\
+Phenotypes, youngest 50 & 3569948, 3569950 & AnnyOne phenotype distribution; in-sample youngest people & \path{diag_pheno_3569948.out}, \path{diag_young_3569950.out} \\
+Real-photo ages & 3569949, 3572419, 3572420 & crop-camera read: Base, sampler pilot, its control & \path{diag_cropK_<job>.out} \\
+Depth pilots (exp1) & 3571598, 3571599, 3572418, 3572483; 3571933, 3571934, 3572482 & 2-epoch fix $\times$1 / control / $\times$5 / $\times$20; 10-epoch fix $\times$1 / control / $\times$5 & \path{exp1_depth_anchor_<job>.out}; \path{results/experiments/exp1_depth_anchor/<run>/} \\
+Sampler pilot (exp2) & 3571955, 3571956; measurement 3571601 & sampler pilot and control; batch ages only & \path{exp2_children_<job>.out}; \path{results/experiments/exp2_children/} \\
+Head loss pilot (exp3) & 3571957; controls 3571958, 3571960 & loss pilot and two identical controls (noise) & \path{exp3_neck_global_rot_<job>.out}, \path{exp4_fingers_3571960.out} \\
+Finger pilot (exp4) & 3571959 (control 3571960) & region-normalised loss; crop trace and hand size in the control job & \path{exp4_fingers_<job>.out}; \path{results/experiments/exp4_fingers/} \\
+Geodesic pilot (exp5) & 3573520, 3573521 & geodesic rotation loss and its L1 control & \path{exp5_neck_fix_<job>.out}; \path{results/experiments/exp5_neck_fix/} \\
+Per-bone dumps & 3573518, 3573519 & per-bone angles of eight checkpoints & \path{diag_neck_bones_<job>.out}; \path{results/diagnostics/neck_bones/} \\
+Bone correction (exp6) & 3579014 (Base), 3579015 (Fresh-heads-L) & correction without training and with a 2-epoch fine-tune (the neck pilot) & \path{exp6_bone_fix_<job>.out}; \path{results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/bone_fix.json}; neck pilot \path{models/multiHMR/exp6_v5_bonefix_00001.pt} \\
 \end{longtable}
-\end{small}
+\endgroup
