@@ -49,8 +49,7 @@ confirm the three. To check a copy of this file:
 - `grep -c 'thesis_requirements_plan' docs/handover.md` prints a number above `0` in the 18-Oct evening version and
   later (the supervisor's thesis requirements, the status matrix and the 4-week plan in
   `docs/thesis_requirements_plan.md`; section 11). `0` means an older copy: it has no plan for requirement 1b (a
-  smaller or a new model), temporal modelling or the release, and does not know that the NAVER baseline adapter
-  crashes as written.
+  smaller or a new model), temporal modelling or the release.
 - `grep -c 3612131 docs/handover.md` prints a number above `0` only in this version (18 Oct afternoon: the Relative
   Human result of the final model, job 3612131, and the 21-slide deck with the requirements slide 20; 3.4, section 9,
   section 11). `0` means an older copy: it still calls the final model's Relative Human run pending, says children
@@ -314,7 +313,17 @@ control 3611339; result in step 6 and in section 5, item 7), the three 3DPW-test
 (jobs 3612073-3612075: final model 89.0, v9 95.5, v5 121.8 mm PVE), a demo of the final model (job 3612078) and the
 Relative Human evaluation of the final model (job 3612131: gender 64%, children AUC 0.72, recall 65%; 3.4). The
 deck shows them on slides 10, 16, 17, 19 and 20 (section 9). Left before Monday: step 7 (open the deck once).
-Running: the `MASK_3DPW_SHAPE=1` arm [Likely, the student's message; no job id here yet].
+**`MASK_3DPW_SHAPE=1` arm DONE** [Certain, `logs/exp7_final_model_3612325.out`; job 3612325, L40S serv-3313, 3,717 s,
+10 NaN steps; run `v5_pc_dist5_bonefix_v23_e10_shpmask`]: AnnyOne holdout V1 PVE 71.7 / PA-PVE 50.7 / recall 86.2, root
+error 682 mm, slope 0.42, size 0.78, neck02 4.8 deg, girth 0.997, fingers 8.3 (unmasked final: 73.7 / 50.3 / 87.0, 728 mm);
+3DPW test (v23) PVE 91.1 / PA-PVE 59.0 / precision 68 / recall 99 (unmasked 89.0 / 57.6 / 64 / 99); AnnyOne test-100 V0
+75.4 / 54.8 (unmasked 77.5 / 54.4). All inside the 7.6 mm noise; the 3DPW drop is the expected one (its GT meshes keep
+the neutral body). Decides nothing yet: its phenotype spread and Relative Human numbers are pending (the student submits
+`MODEL=.../v5_pc_dist5_bonefix_v23_e10_shpmask/train/checkpoints/00009.pt TAG=exp7_shpmask_00009 sbatch --array=0
+slurm/diagnostics/eval_relative_human.sh` and a demo `DEMO_MODELS="exp7_v5_final|00009 exp7_shpmask|00009"` after copying
+the checkpoint to `models/multiHMR/exp7_shpmask_00009.pt`). Rule: masked becomes the final model and the student's
+teacher if Relative Human gender >= 60% and children AUC >= 0.7 hold AND the demo `[shape]` muscle/weight spread opens
+(std > 0.08); otherwise the unmasked final stays and the student uses its own `--mask_3dpw_shape 1`.
 
 Paste this section with section 0. Each step names the section with the details.
 
@@ -3601,8 +3610,9 @@ commands, the Monday bullets, the writing and clean-up list). Read it before pla
   shift is the 3DPW age label 0.55, so the `MASK_3DPW_SHAPE=1` arm (running) can go either way.
 - 1b route: a ViT-B student distilled from the final model (exp8; 101 M / 603 GFLOPs vs 318 M / 1927), ratios vs our
   ViT-L and vs NAVER-L, bar x1.05; AnnyOne 95% about 50/50 [Guessing]. Get his yes first.
-- Blocking, all small: the NAVER adapter crashes at `train.py:242` (4 attributes missing); no masked-eval flag;
-  `kd_shp` unmasked. Six files uncommitted, none run.
+- Fixed/committed on 18 Oct (`a9db35c`, on `main`): the NAVER adapter now exposes nearness / img_size / patch_size /
+  person_center_idx; exp8, model_cost.py and the baseline script are committed, reviewed twice, never run on the cluster.
+  Still to write: a masked-eval flag; `kd_shp` masking of the 8 constants.
 - Order: Mon evening adapter fix, commit, NAVER smoke test; the `MASK_3DPW_SHAPE=1` arm is already running (then its
   own Relative Human run, with a `TAG`); the final model's Relative Human run is done (3612131); Tue 20 exp8 as one
   ~42-h job (never 5-h chunks). Student ~8 Nov, fallback 10 Nov, (1) closed 15 Nov, no buffer. Weeks 5-6 temporal

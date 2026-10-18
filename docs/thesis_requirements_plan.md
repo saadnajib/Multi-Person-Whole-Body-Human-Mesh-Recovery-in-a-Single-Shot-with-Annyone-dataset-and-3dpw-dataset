@@ -21,15 +21,15 @@ checks without a GPU: `python3 scripts/analysis/model_cost.py --no-build --all` 
 
 **Tags** as in the handover: [Certain] = read in code or in a log line; [Likely]; [Guessing]; [Unverified] = from a
 report or the task text, not in the repo or the handover. `3611336:224` = line 224 of that job's `.out` log.
-`file.py:L` = that line in the current working tree (the uncommitted `train.py` included).
+`file.py:L` = that line in `main` at `a9db35c` (18 Oct) or later.
 
 **Repo state that matters** [Certain, `git status`, 18 Oct, 09:18]. Not committed: `train.py` and
 `slurm/eval/run_eval_3dpw_test.sh` (modified: `--model_class multi_hmr_original`, `EVAL_MODEL_CLASS`, `EVAL_BONE_FIX`,
 `EVAL_3DPW_N`), `docs/experiments_plan.md` (an exp8 section, being written), and three new files:
 `scripts/analysis/model_cost.py` (params / FLOPs / latency), `slurm/eval/run_eval_baseline_naver.sh` (the NAVER
 baseline) and `slurm/experiments/exp8_distill_vitb.sh` (the ViT-B student). None of them has run on the cluster. The
-cluster sees them only after a commit, a push to `main` and `git pull`. The NAVER adapter in `train.py` crashes on its
-first batch as written (3.4, item 1): fix it before that commit.
+They are on `main` since `a9db35c` (18 Oct), reviewed twice; the adapter crash of 3.4 item 1 is fixed in that commit
+(the four attributes are exposed). Still never run on the cluster: first `CHECK_ONLY=1`, then the smoke tests.
 
 ---
 
@@ -86,13 +86,13 @@ met. [1a-pose] is close on 3DPW. Not met: [1b] (the model is Multi-HMR with an A
 | 1a-shape, visible change | partly / at risk | Men look male now, by eye [Likely]. Medians moved onto the 3DPW converter constants: muscle 0.28 -> 0.48, weight 0.59 -> 0.48, age 0.61 -> 0.56 (demo `[shape]` lines, not matched to people; handover 3.4) [Certain, log]; spreads of muscle, weight, cup size, firmness, age <= 0.05 [Unverified]. Relative Human, final model (3612131:26-32) [Certain, log]: gender accuracy 0.642 (v5 0.465; mean women 0.861, men 0.551 = still mid-range); children AUC 0.719 (v5 0.606), babies 0.438 vs adults 0.536. No correlation, slope or R² exists for any phenotype [Certain] | the `MASK_3DPW_SHAPE=1` arm (running); per-phenotype r / slope / R² on AnnyOne; a rest-pose lineup |
 | 1a-shape, trained on AnnyOne labels | met | `--use_anny_shape 1 --alpha_shape 20`, L1 on all 11 values (`loss.py:319-326`; `exp7_final_model.sh:751-752`) [Certain] | nothing |
 | 1b, not exactly Multi-HMR | **not met** | `model.py` is the upstream paper model with the output resized to 163x6 rotations and 11 phenotypes, plus a 0-parameter bone fix [Certain] | a route (3.2) and the supervisor's yes |
-| 1b-i, new architecture | not started | no candidate. NAVER's `multiHMR_672_L_anny.pt` never evaluated here; the adapter is written (uncommitted) and crashes at `train.py:242` [Certain] | the adapter fix; the baseline row |
+| 1b-i, new architecture | not started | no candidate. NAVER's `multiHMR_672_L_anny.pt` never evaluated here; the adapter is on `main` (`a9db35c`), fixed, never run [Certain] | the adapter fix; the baseline row |
 | 1b-ii, smaller model | partly (code only) | distillation ran 4 times (v6-v8). The old ViT-S students had 1.17-1.54x their teacher's error (bar 1.05x), on the retired labels [Certain]. Cost: ViT-B student 101.4 M params / 603 GFLOPs vs 318.4 M / 1927 for our ViT-L, 3.1x / 3.2x (investigator count; backbone part reproduced by `model_cost.py --no-build`). exp8 written, untracked, never run | the exp8 run; latency in ms; v23 numbers for every student |
 | 1c, 3DPW in Anny space | met, with caveats | v23 labels, test 8,190 images / 11,854 people; conversion check OVERALL WARN (old labels FAIL), body joints median 14.1 mm (3611284; handover 3.5) [Certain] | state the caveats in the thesis (3.1, item 4) |
 | 2a, 3DPW train + test in Anny, trained on | met | train 5,882 images / 7,584 people, validation 2,622 / 3,311; the final model trains on 30% 3DPW-train (`exp7_final_model.sh:215,757`) [Certain] | nothing (a 50% mix ablation is optional) |
 | 2b, temporal | **not started** | no temporal code in the repo (grep) [Certain]; AnnyOne is single images, multi-view, no motion [Likely] | design in section 4, weeks 5-6 |
 | 3-report | at risk | draft outside the repo; its 74 mm headline is stale (the thesis model is now 73.7 V1 / 89.0 3DPW) [Certain] | chapter plan (6.1); the current numbers |
-| 3-code | **not met** | README describes old labels and models; 0 checkpoints or results committed; 98 tracked files contain `/netscratch`; 79 of 89 commits authored "Claude"; 6 files uncommitted [Certain] | list 6.2 |
+| 3-code | **not met** | README describes old labels and models; 0 checkpoints or results committed; 98 tracked files contain `/netscratch`; 79 of 89 commits authored "Claude"; exp8 package committed 18 Oct (`a9db35c`) [Certain] | list 6.2 |
 
 ---
 
@@ -203,7 +203,7 @@ than its L on synthetic BEDLAM-val (67.2 vs 58.6), and AnnyOne is synthetic.
 
 ### 3.4 Small code changes that block the plan
 
-1. **NAVER adapter crash** [Certain, read]. `prepare_gt` reads `self.model.nearness` (`train.py:242`), `.img_size`
+1. **NAVER adapter crash** [Certain, read; FIXED in `a9db35c` on 18 Oct, exactly as below]. `prepare_gt` reads `self.model.nearness` (`train.py:242`), `.img_size`
    (`:246`), `.patch_size` (`:256-261`) and `.person_center_idx` (`:232`, `:336`). `OriginalMultiHMREval` exposes only
    `net` and `body_model`, so `nn.Module.__getattr__` raises on the first batch. So the baseline evaluation has
    never run, whatever a task list says. Fix, in `OriginalMultiHMREval.__init__`:
