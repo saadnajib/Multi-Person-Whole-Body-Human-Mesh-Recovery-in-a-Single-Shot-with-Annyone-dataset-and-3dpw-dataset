@@ -553,3 +553,9 @@ adapter (3.4, item 1), commit the pending files, submit the baseline smoke test 
     has "WIP, not for main" commits.
 
 Items 1, 2 and 9 in weeks 4-5 (he needs them for his independent check); items 3-8 and 10 in weeks 7-8.
+
+
+**Update 18 Oct 15:30.** The MASK_3DPW_SHAPE=1 arm (job 3612325) is a negative result on real photos: Relative Human
+recall 57% (unmasked 65%), gender accuracy 49% (64%), children AUC 0.71 (0.72), babies 0.52 vs 0.44 (job 3613616). The
+unmasked model 3611336 stays the final model and the exp8 teacher; the student runs WITHOUT --mask_3dpw_shape by default
+(a masked student is an ablation). Handover 0a has the numbers.
