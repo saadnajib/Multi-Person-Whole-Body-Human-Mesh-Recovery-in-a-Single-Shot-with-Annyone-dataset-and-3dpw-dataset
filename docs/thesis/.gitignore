@@ -1,4 +1,4 @@
-# LaTeX build products (latexmk -c removes these; thesis.pdf is kept and tracked)
+# LaTeX build products (latexmk -c removes these). thesis.pdf is NOT tracked while the text is in flux: it is rebuilt by latexmk; a milestone PDF is committed by hand with git add -f when a version is sent to the supervisor.
 *.aux
 *.bbl
 *.bcf
@@ -19,3 +19,4 @@
 *-figure*.md5
 *-figure*.pdf
 *.makefile
+thesis.pdf
