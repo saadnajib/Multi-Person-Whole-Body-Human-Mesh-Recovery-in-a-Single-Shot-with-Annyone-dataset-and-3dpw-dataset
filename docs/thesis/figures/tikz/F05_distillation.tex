@@ -21,7 +21,7 @@
 % student row
 \node[ours, text width=19mm, below right=4mm and 6mm of img] (svit) {student ViT-B\\ trained};
 \node[ours, text width=14mm, right=of svit] (sproj) {projector\\ $\MethodWidthB\to\MethodWidthL$};
-\node[ours, text width=17mm, right=of sproj] (shead) {heads copied from the teacher};
+\node[ours, text width=17mm, right=of sproj] (shead) {student heads};
 \node[ours, text width=14mm, right=of shead] (sout) {$R^{s}$, $\phi^{s}$, $d^{s}$};
 % data flow
 \draw[arr] (img) |- (tvit);
@@ -35,8 +35,7 @@
 % losses
 \draw[loss] (ttok) -- node[lname] {feature KL\\ $T=\MethodKDTemp$, $\lambda=\MethodKDLambda$} (sproj);
 \draw[loss] (tout) -- node[lname] {L1 on rotations,\\ shape, depth; $\lambda=\MethodKDOutLambda$} (sout);
-\draw[arr, densely dotted, gray] (thead.south) -- node[right, font=\scriptsize, text=gray, pos=0.5] {copy at start} (shead.north);
+\draw[arr, densely dotted, gray] (thead.south) -- (shead.north);
 % labels and task loss
-\node[font=\scriptsize, align=left, below=3mm of sout, text width=24mm] {plus the task loss of Table~\ref{tab:loss-weights} against the labels};
-\node[font=\scriptsize, align=left, below=3mm of shead, text width=27mm] {frozen for the first \MethodStudentFreeze{} epochs};
+\node[font=\scriptsize, align=left, anchor=north west, text width=62mm] at ([yshift=-2mm]sproj.south west) {dotted: heads copied from the teacher at the start, then frozen for \MethodStudentFreeze{} epochs; the student also gets the task loss of Table~\ref{tab:loss-weights} against the labels};
 \end{tikzpicture}

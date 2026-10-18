@@ -1,0 +1,21 @@
+# LaTeX build products (latexmk -c removes these; thesis.pdf is kept and tracked)
+*.aux
+*.bbl
+*.bcf
+*.bcf-SAVE-ERROR
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+*.auxlock
+*-figure*.dpth
+*-figure*.md5
+*-figure*.pdf
+*.makefile

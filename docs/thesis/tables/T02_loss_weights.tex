@@ -23,12 +23,12 @@ Translation (\texttt{transl}; 345) & L1 on the anchor's 3D position in the camer
 3D vertices (\texttt{v3d}; 378) & the same for the mesh vertices & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD \tabularnewline
 2D joints (\texttt{j2d}; 383--384) & L1 in pixels on the projected joints, placed by the predicted anchor and depth & \MethodWTwoDDefault & \MethodWTwoD & \MethodWTwoD & \MethodWTwoD \tabularnewline
 2D vertices (\texttt{v2d}; 381--382) & the same for the projected vertices & \MethodWTwoDDefault & \MethodWTwoD & \MethodWTwoD & \MethodWTwoD \tabularnewline
-\quad first epoch of the 2D terms & \texttt{--start\_2d\_epoch} & \MethodStartTwoDDefault & \MethodStartTwoD & \MethodStartTwoD & \MethodStartTwoD \tabularnewline
+\quad first epoch of the 2D terms & \texttt{-{}-start\_2d\_epoch} & \MethodStartTwoDDefault & \MethodStartTwoD & \MethodStartTwoD & \MethodStartTwoD \tabularnewline
 Global rotation (\texttt{global\_rot}; 350--363) & L1 on the camera-frame orientation of head, neck03 and both wrists & 0 & 0 & 0 & 0 \tabularnewline
 Feature distillation (\texttt{kd}) & KL divergence between the softened channel distributions of student and teacher tokens, $T=\MethodKDTemp$ & -- & -- & -- & \MethodKDLambda \tabularnewline
 Output distillation (\texttt{kd\_out}) & L1 to the teacher's rotations, phenotypes and depth on the same people & -- & -- & -- & \MethodKDOutLambda \tabularnewline
 \midrule
-Joint the targets describe & \texttt{--gt\_center\_joint}: transl, dist, detection token and offset targets & pelvis & head & pelvis & head \tabularnewline
+Joint the targets describe & \texttt{-{}-gt\_center\_joint}: transl, dist, detection token and offset targets & pelvis & head & pelvis & head \tabularnewline
 Bone correction & constant output rotation on neck02, head, metacarpal1.L, finger4-1.R & none & on & none & on \tabularnewline
 \bottomrule
 \end{tabular}

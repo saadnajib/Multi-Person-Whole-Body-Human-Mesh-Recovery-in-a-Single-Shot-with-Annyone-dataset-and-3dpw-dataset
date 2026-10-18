@@ -11,20 +11,20 @@
   tag/.style={font=\scriptsize\itshape, text=teal!50!black, align=left},
 ]
 % row 1: image -> backbone -> detection
-\node[box, text width=15mm] (img) {RGB image\\ $\MethodImgSize\times\MethodImgSize$\,px};
+\node[box, text width=19mm] (img) {RGB image\\ $\MethodImgSize\times\MethodImgSize$\,px};
 \node[box, text width=25mm, right=of img] (vit) {DINOv2 ViT-L/14\\ $\MethodTokenGrid\times\MethodTokenGrid$ tokens\\ width \MethodWidthL};
 \node[box, text width=27mm, right=of vit] (det) {per token: detection score and 2D offset of the anchor joint (head)};
 % row 2 (right to left): HPH -> Anny head -> bone correction
 \node[box, text width=27mm, below=7mm of det] (hph) {HPH: cross-attention, \MethodHPHDepth{} blocks, \MethodHPHHeads{} heads, width \MethodHPHDim; one query per person};
 \node[ours, text width=25mm, left=of hph] (out) {Anny head: $\MethodNumBones\times\MethodRotDims$ rotation values, \MethodNumPheno{} phenotypes, depth};
-\node[ours, text width=15mm, left=of out] (fix) {bone correction\\ $R_b \leftarrow R_b C_b$\\ 0 parameters};
+\node[ours, text width=19mm, left=of out] (fix) {bone correction\\ $R_b \leftarrow R_b C_b$\\ 0 parameters};
 % row 3: body model
 \node[ours, text width=44mm, below=6mm of out.south west, anchor=north] (body) {Anny body layer: mesh and joints, anchor joint placed at the predicted 2D position and depth};
 % arrows
 \draw[arr] (img) -- (vit);
 \draw[arr] (vit) -- (det);
 \draw[arr] (det) -- node[right, font=\scriptsize, align=left] {detected\\ tokens} (hph);
-\draw[arr] (vit.south east) -- node[pos=0.45, above right, font=\scriptsize, inner sep=1pt] {all tokens} (hph.north west);
+\draw[arr] (vit.south east) -- node[pos=0.6, below left, font=\scriptsize, inner sep=1pt] {all tokens} (hph.north west);
 \draw[arr] (hph) -- (out);
 \draw[arr] (out) -- (fix);
 \draw[arr] (fix.south) -- (fix.south |- body.north);
