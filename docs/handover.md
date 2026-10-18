@@ -1191,12 +1191,16 @@ check is done: the image folders of the 8 sequences were re-extracted. File coun
 **v23 labels built, 18 Oct, on the login node** [Certain, builder output]: train 5,882 images / 7,584 people (rebuilt old
 labels: 6,437 / 7,589), validation 2,622 / 3,311 (2,777 / 3,314), test 8,190 / 11,854 (9,722 / 11,850); 16,694 label
 files, 22,749 people, in `threedpw_anny_v23/labels/`. Fewer images, the same people: both actors now sit on the same
-frames. Dropped: 0 for error, 0 for box, 163 for `visible<0.3`, all in validation. **Open:**
-`validation/outdoors_crosscountry_00` has 0 label images: all 163 of its fitted frames were dropped by the visibility
-filter, and its joint error went 14.9 -> 17.8 mm (the only sequence +3 mm on every paired frame). [Guessing] the new fit
-of this far-away person projects partly outside the image or the visible fraction is computed wrongly; check
-`visible_frac` old vs new in its two `.npz` before exp7 (one sequence of 12 in validation; it affects only the per-epoch
-3DPW-validation number, not training). Conversion check on these labels: job 3611284; Relative Human full run: 3611285.
+frames. Dropped: 0 for error, 0 for box, 163 for `visible<0.3`, all in validation. **Explained, not a v2.3 problem:**
+`validation/outdoors_crosscountry_00` has 0 label images: all 163 of its fitted frames have `visible_frac` 0.00 and
+`tight_bbox` [0 0 0 0], in the OLD fit too (162 frames, same values), and the old label sets never had it either
+(`grep -c crosscountry` on `threedpw_anny_full/labels*/index_validation.txt` prints 0). Cause [Certain, from the 3DPW
+pkl itself]: with 3DPW's own `cam_poses` and `cam_intrinsics`, the GT joints of this sequence sit at depth -0.3 m
+(behind the camera) and project to pixel values in the thousands, far outside the 1080x1920 image, on frames 0, 80
+and 160 alike. So 3DPW's camera for this sequence is unusable; the converter's 0% visibility is the right answer, and
+the fit's 3D joint error (17.8 mm) is real but its image labels cannot exist. Every other fit has median visibility
+well above 0.3 (the 5%-below-0.3 scan lists only this one). 3DPW-validation therefore has 11 usable sequences; nothing
+to fix on our side. Conversion check on these labels: job 3611284; Relative Human full run: 3611285.
 
 **Next, in this order:** (1) Re-fit with the converter fix, which is on `main` (v2.3: gender by Anny's convention,
 one shared frame grid for both actors): all 87 tasks into a **new** folder, rebuild, re-check, steps 0-5 in 4e
