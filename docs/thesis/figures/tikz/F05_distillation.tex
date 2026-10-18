@@ -1,0 +1,42 @@
+% F5 Distillation (Method 4.7). Owner: Method writer. tikzpicture only.
+% Sources: slurm/experiments/exp8_distill_vitb.sh header (teacher frozen bf16, ViT-B student, --head_dim 1024 projector
+% 768 -> 1024, heads copied and frozen 5 epochs, lambda_kd 1.0 T 4, lambda_kd_out 1.0); model.py:62-74 (feat_proj),
+% :356-367 (KD tap on the tokens the heads see); train.py:505-539 (feature KL and output L1); distill.py (KL, T^2).
+\begin{tikzpicture}[
+  font=\footnotesize,
+  node distance=4mm and 4mm,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=3pt, minimum height=10mm},
+  frozen/.style={box, fill=gray!15},
+  ours/.style={box, fill=teal!12, draw=teal!60!black},
+  arr/.style={-{Stealth[length=2mm]}, semithick},
+  loss/.style={draw=red!60!black, dashed, {Stealth[length=2mm]}-{Stealth[length=2mm]}, semithick},
+  lname/.style={font=\scriptsize, text=red!50!black, align=center, fill=white, inner sep=1pt},
+]
+\node[box, text width=10mm] (img) {image\\ $\MethodImgSize$\,px};
+% teacher row
+\node[frozen, text width=19mm, above right=4mm and 6mm of img] (tvit) {teacher ViT-L\\ frozen, bf16};
+\node[frozen, text width=14mm, right=of tvit] (ttok) {tokens\\ width \MethodWidthL};
+\node[frozen, text width=17mm, right=of ttok] (thead) {teacher heads\\ (frozen)};
+\node[frozen, text width=14mm, right=of thead] (tout) {$R^{t}$, $\phi^{t}$, $d^{t}$};
+% student row
+\node[ours, text width=19mm, below right=4mm and 6mm of img] (svit) {student ViT-B\\ trained};
+\node[ours, text width=14mm, right=of svit] (sproj) {projector\\ $\MethodWidthB\to\MethodWidthL$};
+\node[ours, text width=17mm, right=of sproj] (shead) {heads copied from the teacher};
+\node[ours, text width=14mm, right=of shead] (sout) {$R^{s}$, $\phi^{s}$, $d^{s}$};
+% data flow
+\draw[arr] (img) |- (tvit);
+\draw[arr] (img) |- (svit);
+\draw[arr] (tvit) -- (ttok);
+\draw[arr] (ttok) -- (thead);
+\draw[arr] (thead) -- (tout);
+\draw[arr] (svit) -- (sproj);
+\draw[arr] (sproj) -- (shead);
+\draw[arr] (shead) -- (sout);
+% losses
+\draw[loss] (ttok) -- node[lname] {feature KL\\ $T=\MethodKDTemp$, $\lambda=\MethodKDLambda$} (sproj);
+\draw[loss] (tout) -- node[lname] {L1 on rotations,\\ shape, depth; $\lambda=\MethodKDOutLambda$} (sout);
+\draw[arr, densely dotted, gray] (thead.south) -- node[right, font=\scriptsize, text=gray, pos=0.5] {copy at start} (shead.north);
+% labels and task loss
+\node[font=\scriptsize, align=left, below=3mm of sout, text width=24mm] {plus the task loss of Table~\ref{tab:loss-weights} against the labels};
+\node[font=\scriptsize, align=left, below=3mm of shead, text width=27mm] {frozen for the first \MethodStudentFreeze{} epochs};
+\end{tikzpicture}

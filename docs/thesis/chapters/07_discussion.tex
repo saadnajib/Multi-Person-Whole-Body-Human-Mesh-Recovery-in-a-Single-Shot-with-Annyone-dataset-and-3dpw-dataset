@@ -1,0 +1,32 @@
+% 07_discussion.tex -- Chapter 7 Discussion (6 pages). Owner: Discussion writer (plan section 6, step 3).
+% Skeleton from REWRITE_PLAN.md section 2. Writing rules: section 5 of the plan.
+% "absorbs" = lines of draft_2026-10_original/main.tex (or the named draft file) whose content moves here.
+
+\chapter{Discussion}
+\label{ch:discussion}
+
+\section{The requirements, one by one}
+\label{sec:disc-requirements}
+% absorbs draft main.tex lines 1244-1253 ("What improved", rewritten with the new numbers)
+% needs: T1 (full form); one short paragraph per requirement in the order 1a-pose, 1a-shape, 1b, 1c, 2a, 2b, 3: his wording, status word (met / met with caveats / partly / not met / not started), evidence by section and table, what is missing and where Chapter 8 plans it (plan section 5, "The requirements map")
+\TODO{Table~\ref{tab:requirements}, then one paragraph per requirement.}
+\input{tables/T01_requirements}
+
+\section{Why PVE barely moved while everything else did}
+\label{sec:disc-pve}
+% absorbs draft main.tex lines 1255-1283 (the PVE plateau bullet; the neck bullet is deleted; the firmness bullet becomes the collapse onto converter constants)
+% needs: PVE is pelvis-aligned; neck and fingers are few vertices; restart cost (~2.4 mm); PA-PVE did move; 3DPW did move
+\TODO{Why the headline PVE is blind to the depth, neck and finger fixes.}
+
+\section{Limitations}
+\label{sec:disc-limitations}
+% absorbs draft main.tex lines 1333-1343 (rewritten)
+% needs: children (AUC 0.72, men mid-range 0.55); depth slope 0.42 (pulled toward ~2.5-2.9 m, the training mean); one run, no seed; fingers never shown on real photos; recall cost; 3DPW precision 64% (bystanders + ghosts, split unknown); labels: 8 constants, hands and head at rest, ~14 mm floor; 163-joint MPJPE; 100-image holdout; NAVER's AnnyOne number likely in-sample
+\TODO{Every limitation with its number.}
+
+\section{Engineering lessons}
+\label{sec:disc-engineering}
+% absorbs draft main.tex lines 1285-1331 (pipeline-bug list, kept and extended)
+% needs: add: anchor/target mismatch; reversed gender convention; per-person stride phase; missing image files (8 sequences); NAVER adapter FFN width (2048 vs 4096); evaluate() unmasked vs demo masked; "silent failure is the dominant failure mode"
+\TODO{The pipeline-bug list, extended.}
+

@@ -178,9 +178,9 @@ $= \DiagDepthSlopeBase \times \text{true} + \DiagDepthInterceptBase$\,m (Figure~
 is drawn at \DiagSizeBase{} of its true size. Its pelvis lands near the right pixel, its head does not. PVE is blind to
 all of this: its correlation with the depth error is \DiagCorrPVEDepth.
 
-Three threads led to the cause. The gradient check had shown that only the first of three camera outputs receives
-gradient; the overfit test had shown the translation and 2D terms rising; and the trace showed the placement above.
-Reading the code then gave the mismatch. The model places each mesh by its head joint and reports the head as its
+The trace was not the only sign. The gradient check had shown that two of the three camera outputs receive no
+gradient, and the overfit test had shown the translation and 2D terms rising. A read of the training code gave the
+mismatch. The model places each mesh by its head joint and reports the head as its
 position, but the training code built the translation, distance, detection-cell and offset targets at joint 0, the
 pelvis. A one-batch debug print confirmed it: the predicted vertical offsets were \DiagOffsetMin{} to
 \DiagOffsetMax{} cells where the legal range is $\pm$0.5. The likely mechanism, which I did not test on its own, is
@@ -203,7 +203,7 @@ fresh-head run, carry the same bug (\DiagOldRootErrA{} and \DiagOldRootErrB\,m).
 PVE and PA-PVE align the pelvis before measuring. The real-photo demos place every body from its detection box, so
 only the synthetic demo and the trace panels ever used the model's own depth.
 
-The table does not show a solved depth. The fix moved the offset and the body size, not the slope: \DiagSlopeSwitch{}
+The table does not show a solved depth. The fix moved the offset and the body size, not the slope (Final: \DiagFinalSlope): \DiagSlopeSwitch{}
 with the switch alone and \DiagSlopeStrongLow--\DiagSlopeStrongHigh{} with a stronger depth loss, far from 1.
 Predictions are still pulled toward about 2.5 to 2.9\,m, for a reason I have not found. The pelvis 2D error rose from
 about 23 to 31--41 pixels; the likely reason is that the head is now pinned while the body is still drawn too small,
@@ -315,7 +315,7 @@ had the 2-epoch fine-tune.
 Table~\ref{tab:fingers} collects every finger measurement. Predicted fingers are \DiagFingersBase\,deg off; fingers set
 to rest pose are \DiagFingersRest\,deg off, so the prediction was worse than no prediction. Hands are small: the
 median hand is \DiagHandTokens{} tokens long in the 672-pixel input and \DiagHandUnderTwo\,\% of hands are shorter than
-two tokens. A person crop at test time doubles that to 4.2 tokens, but the finger error stays at \DiagFingersZoom\,deg
+two tokens. A person crop at test time raises the median to 4.2 tokens, but the finger error stays at \DiagFingersZoom\,deg
 while body PVE nearly doubles to \DiagZoomPVE\,mm, because the model never saw such a camera. A region-normalised
 rotation loss gave \DiagFingersRegion\,deg against \DiagFingersRegionCtrl\,deg for its control. The per-bone search on
 200 training images then found two hand bones turned half a turn, metacarpal1.L (180\,deg) and finger4-1.R
@@ -426,7 +426,7 @@ no gain over $\times$5; the 10-epoch $\times$20 run was never confirmed \\
 Table~\ref{tab:diag-pilots} lists the changes that did not fix a failure. The age-balanced sampler raised the share of
 children per batch about fivefold; after 2 epochs the 10 in-sample manifest children improved by 4.6\,mm against the
 control, and the floor of the predicted baby age did not move. The global head loss passed its own rule of 12\,deg, but
-the two identical controls bracket it. The region-normalised hand loss and the geodesic rotation loss changed nothing
+it differs from the two identical controls by less than they differ from each other. The region-normalised hand loss and the geodesic rotation loss changed nothing
 measurable. A depth weight of 20 matched the weight of 5 trained five times longer and did not improve the slope.
 
 Each of these changed the loss or the sampling around a fault that the loss could not see: a half-turned bone, a

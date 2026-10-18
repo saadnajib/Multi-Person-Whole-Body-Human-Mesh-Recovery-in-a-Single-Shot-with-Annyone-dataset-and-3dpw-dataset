@@ -1,0 +1,89 @@
+% =============================================================================
+% numbers_background.tex  --  numbers stated in Chapter 2 (Background)
+% Owner: Background writer. Prefix Bg. Source of each number in the comment.
+% Source key as in REWRITE_PLAN.md: H = docs/handover.md, D = docs/deck_explained_2026-10-19.md,
+% F = docs/diagnostics_findings.md, P = docs/thesis_requirements_plan.md,
+% CE = the children-evidence task note (anny 0.6.1 code read + rest-pose probe),
+% MH-README = github.com/naver/multi-hmr README.md (read 18 Oct 2026),
+% ANNY-README = github.com/naver/anny README.md and CHANGELOG.md (read 18 Oct 2026),
+% AF-README = github.com/naver/anny-fit README.md (read 18 Oct 2026).
+% =============================================================================
+
+% --- SMPL family -------------------------------------------------------------
+\newcommand{\BgSmplVertices}{6890}      % SMPL mesh vertices; Loper et al. 2015; draft main.tex:123
+\newcommand{\BgSmplJoints}{24}          % SMPL joints (23 + root); draft main.tex:123
+\newcommand{\BgSmplBetas}{10}           % SMPL shape coefficients used by most HMR work; draft main.tex:124
+\newcommand{\BgSmplxJoints}{55}         % SMPL-X joints; draft main.tex:129
+\newcommand{\BgSmplxVertices}{10475}    % SMPL-X mesh vertices; Pavlakos et al. 2019 % TODO verify against the paper
+\newcommand{\BgManoHandJoints}{15}      % articulated joints per hand in SMPL-H / MANO; draft main.tex:126
+
+% --- Anny --------------------------------------------------------------------
+\newcommand{\BgAnnyBones}{163}          % full MakeHuman rig used by AnnyOne labels and our model; H 1
+\newcommand{\BgAnnyHelperBones}{88}     % helper bones kept at rest in training; H 1
+\newcommand{\BgAnnyActiveBones}{75}     % bones actually predicted; H 1
+\newcommand{\BgAnnyPhenotypes}{11}      % phenotype values used here; H 1
+\newcommand{\BgAnnyVertices}{13718}     % mesh vertices as loaded by the repo (unattached vertices kept); draft main.tex:133 and draft_io.tex:20 % TODO verify with anny 0.6.1
+\newcommand{\BgAnnyDefaultRigBones}{104}% bones of the pruned "anny" rig, default since anny v0.6; ANNY-README
+\newcommand{\BgAnnyVersion}{0.6.1}      % anny package version read for this chapter; CE section 1; ANNY-README CHANGELOG
+\newcommand{\BgStatureGenderZero}{1.753}% m, rest stature at gender 0 (male end); H 3.5 defect 1 (3575369:24, :313)
+\newcommand{\BgStatureGenderOne}{1.632} % m, rest stature at gender 1 (female end); same source
+\newcommand{\BgAgeAnchorChild}{0.333}   % age value of the "child" blend shape; linspace(-1/3,1,5), phenotype.py:187-196; CE 1, H 3.4
+\newcommand{\BgAgeAnchorYoung}{0.667}   % age value of the "young" blend shape; same source
+\newcommand{\BgSweepHeightAgeZero}{0.53}% m, skeletal height at age 0, dataset-mean shape, rest pose; D slide 11; F "Checks 2+3" (0.528)
+\newcommand{\BgSweepHeightAgeHalf}{1.37}% m, skeletal height at age 0.5; F "Checks 2+3" (1.374)
+\newcommand{\BgSweepHeightAgeOne}{1.54} % m, skeletal height at age 1; D slide 11
+\newcommand{\BgShoulderHeadChild}{2.24} % shoulder width / head width at age 0.1, height 0.5; CE 1 probe; H 3.4
+\newcommand{\BgShoulderHeadAdult}{3.00} % same at age 0.6; CE 1 probe; H 3.4
+\newcommand{\BgSmallestAdultStature}{1.22} % m, smallest stature reachable at age 0.6 (height 0); CE 1 probe; H 3.4
+\newcommand{\BgChildShapeAge}{0.45}     % "child-shaped" threshold used in the thesis (Relative Human eval); D part 3; plan section 5
+\newcommand{\BgElevenYearsScaleA}{0.333}% age value read as 11 years by diag_common.py:526-527 / train.py:1604; H 3.4 "Age scales"
+\newcommand{\BgElevenYearsScaleB}{0.19} % age value read as 11 years by the MakeHuman slider (build_manifest.py:6); H 3.4
+\newcommand{\BgElevenYearsScaleC}{0.415}% age value read as 11 years by Anny's own calibration (boys.pth); H 3.4; CE 1
+
+% --- AnnyOne -----------------------------------------------------------------
+\newcommand{\BgAnnyOnePublished}{780{,}000} % "780K+" images as described by the authors; AF-README "Our other works"
+\newcommand{\BgAnnyOneImages}{579{,}960}% images in the release copy used here; H 1
+\newcommand{\BgAnnyOneRes}{1280}        % px, render side length; H 1; D part 2
+\newcommand{\BgInputRes}{672}           % px, network input side length; H 1
+\newcommand{\BgTokenGrid}{48}           % 672 / 14 tokens per side; H 1 "Terms"
+\newcommand{\BgPatch}{14}               % px, ViT patch size; H 1 "Terms"
+\newcommand{\BgBackboneParams}{304}     % M params, DINOv2 ViT-L backbone; D slide 3
+
+% --- Multi-HMR README (released checkpoints, SMPL-X; runtime on a V100-32GB) -----
+\newcommand{\BgMhrLEightNineSixPVE}{89.9}  % PVE 3DPW-test, multiHMR_896_L; MH-README table
+\newcommand{\BgMhrLEightNineSixMs}{126}    % ms, same checkpoint; MH-README
+\newcommand{\BgMhrLPVE}{94.1}              % PVE 3DPW-test, multiHMR_672_L; MH-README
+\newcommand{\BgMhrLMs}{74}                 % ms, multiHMR_672_L; MH-README
+\newcommand{\BgMhrBPVE}{94.0}              % PVE 3DPW-test, multiHMR_672_B; MH-README
+\newcommand{\BgMhrBMs}{43}                 % ms, multiHMR_672_B; MH-README
+\newcommand{\BgMhrSPVE}{102.4}             % PVE 3DPW-test, multiHMR_672_S; MH-README
+\newcommand{\BgMhrSMs}{29}                 % ms, multiHMR_672_S; MH-README
+\newcommand{\BgMhrLBedlamPVE}{58.6}        % PVE BEDLAM-val, multiHMR_672_L; MH-README
+\newcommand{\BgMhrBBedlamPVE}{67.2}        % PVE BEDLAM-val, multiHMR_672_B; MH-README
+
+% --- 3DPW and the converted labels ---------------------------------------------
+\newcommand{\BgThreeDPWSequences}{60}   % 3DPW sequences; D part 3 (re-fit check covers all 60)
+\newcommand{\BgThreeDPWPeople}{87}      % person-sequences fitted by the converter; D part 1 item 6; H 3.5
+\newcommand{\BgFixedAge}{0.55}          % constant age in the converted labels; D part 3; run_smpl_to_anny_task.sh:95
+\newcommand{\BgFixedPhenotypes}{seven}  % muscle, weight, cupsize, firmness, african, asian, caucasian = 0.5; D part 3
+\newcommand{\BgConstPhenotypes}{eight}  % phenotypes that are constants in the labels (age + the seven); D part 7 "1c"
+\newcommand{\BgRestBones}{144}          % of 163 bones left at rest by the converter; D part 3; H 3.5
+\newcommand{\BgFitFloor}{14}            % mm, approx. conversion floor (body joints median 14.1 mm); D part 3; H 3.5
+\newcommand{\BgMixReal}{30}             % percent of each training batch from 3DPW-train in the final model; D part 3
+
+% --- Distillation and cost (exp8 smoke test; H 0a) ------------------------------
+\newcommand{\BgKDTemperature}{4}        % feature-KL temperature; REWRITE_PLAN 1.5 row 3.5; E exp8
+\newcommand{\BgProjIn}{768}             % ViT-B token width; REWRITE_PLAN 1.5; F5 caption
+\newcommand{\BgProjOut}{1024}           % ViT-L token width the projector maps to; same
+\newcommand{\BgFinalParams}{318.38}     % M params, our ViT-L model; H 0a (smoke test 3613926)
+\newcommand{\BgStudentParams}{101.38}   % M params, ViT-B student; H 0a (smoke test 3613926)
+\newcommand{\BgStudentParamRatio}{3.14} % x fewer params; H 0a
+\newcommand{\BgNinetyFive}{95}          % percent: supervisor's bar for a smaller model; P 1 "[1b-ii]"
+
+% --- Multi-HMR-Anny (NAVER) vs our head ------------------------------------------
+\newcommand{\BgNaverHeadLayers}{8}      % cross-attention blocks in NAVER's Anny head; naver/multi-hmr multi_hmr_anny/multi_hmr.py:29 (xat_depth=8)
+\newcommand{\BgOurHeadLayers}{2}        % HPH blocks in our model; model.py:222-229 (REWRITE_PLAN 1.1 row 8)
+\newcommand{\BgNaverParams}{380.94}     % M params, multiHMR_672_L_anny as built by our cost script; D part 7 "1b" (model_cost job, H 0a)
+\newcommand{\BgNaverHeadParams}{76.57}  % M params of its head; same source
+\newcommand{\BgOurHeadParams}{14.01}    % M params of our HPH head; same source
+\newcommand{\BgThreeDPWTestSeq}{24}     % 3DPW test sequences; H 1 (run_eval_3dpw_test.sh:11-12)

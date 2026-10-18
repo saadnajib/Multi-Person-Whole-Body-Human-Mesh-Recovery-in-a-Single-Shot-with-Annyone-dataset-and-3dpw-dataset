@@ -1,0 +1,144 @@
+% 06_results.tex -- Chapter 6 Experiments and results (14 pages). Owner: Results writer (plan section 6, step 2).
+% Skeleton from REWRITE_PLAN.md section 2. Writing rules: section 5 of the plan.
+% "absorbs" = lines of draft_2026-10_original/main.tex (or the named draft file) whose content moves here.
+
+\chapter{Experiments and Results}
+\label{ch:results}
+
+% Writer-owned tables used here (input them where they belong, owned by other writers): T8 depth, T9 neck, T10 fingers
+% (Diagnostics writer), T11 student recipe (Method writer). Tables owned by this chapter: T12, T15, T16, T17.
+% Figures: F6, F7, F9, F13 exist (figures/img/); F10, F11, F12, F17 wait for the student's files (plan section 3).
+
+\section{Setup recap}
+\label{sec:res-setup}
+% absorbs - (new)
+% needs: one paragraph: sets (AnnyOne holdout V1, 3DPW test v23, Relative Human val), settings V0/V1, noise floor (\NoisePVE\,mm, \NoiseHeadDeg\,deg, about \NoiseRecall{} recall points), one run per arm
+\TODO{Sets, settings, noise floor, one run per arm and no seed.}
+
+\section{Depth fix: pilots and final model}
+\label{sec:res-depth}
+% absorbs - (new; draft has nothing on the depth bug)
+% needs: T8 (Diagnostics writer), F7, F8 (appendix), F15; root 1.21 -> 0.54 m (pilot), 1402 -> 728 mm (Final vs Control); slope 0.42; size 0.78; pelvis px 26.7 -> 41.1 (H 3.1). Rule: quote the absolute root error, never the signed offset; "the fix moved the offset and the body size, not the slope"
+\TODO{Depth pilots and Final vs Control on root error, size, slope.}
+% F7 (plan section 3). Source docs/figures/depth_before_after_579862.jpg.
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{depth_before_after_579862}
+\caption{Holdout image 579862 rendered at each model's own predicted depth: ground truth, Base, and the depth-fix pilot (depth weight $\times$5, 10 epochs). The predicted body goes from 0.76 to 0.95 of its true height. Synthetic image; a good case, not a typical one.}
+\label{fig:depth-579862}
+\end{figure}
+% F15 (also cited by Diagnostics 5.3; input it once, here or there)
+\input{figures/plots/F15_depth_scatter}
+
+\section{Bone correction: zero-training, fine-tuned, final}
+\label{sec:res-bone}
+% absorbs draft main.tex lines 1006-1045 (only the four eliminations survive, as "what is not the cause", in Chapter 5; the LBS conclusion is deleted)
+% needs: T9 (Diagnostics writer), F6, F9; girth 0.46 -> 1.00; head direction 19.1 (no training) -> 14.4 -> 13.1 (3579014:113; 3611336:200). Rules: "no sign of a PVE cost", never "PVE improved"; the correction "adds no parameters", "its origin is unknown"
+\TODO{The correction without training, after a 2-epoch fine-tune, and in Final.}
+% F6 (plan section 3; also cited in Diagnostics 5.1). Source docs/figures/neck_before_after_v5.jpg.
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.85\linewidth]{neck_before_after_v5}
+\caption{Holdout images 579862 and 579863: the same Base checkpoint without (top) and with (bottom) the bone correction, no training; necks ringed. Correction only: the depth error is still present; synthetic images.}
+\label{fig:neck-v5}
+\end{figure}
+% F9 (plan section 3; caption must say "fine-tuned 2 epochs with the fix", H 9). Office pair in Appendix D.
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.85\linewidth]{neck_before_after_3dpw_bar}
+\caption{Real 3DPW test frame \texttt{downtown\_bar\_00} 701: Base next to the model fine-tuned for 2 epochs with the bone correction; bodies placed from the detector box; judged by eye, no metric. The two columns also differ by the fine-tune.}
+\label{fig:neck-3dpw-bar}
+\end{figure}
+
+\section{Fingers}
+\label{sec:res-fingers}
+% absorbs - (new; draft line 946 claimed demos show neck elongation on all)
+% needs: T10 (Diagnostics writer), F11 (pending); 17.3 -> 8.2 / 8.3 deg (3579014:114; 3611336:201). Rule: "predicted fingers have not been shown on a real photo" until F11 exists
+\TODO{Finger angles before and after the correction; no real-photo render yet.}
+% F11: cluster demo with --relax_hands 0 (plan section 3 command)
+\begin{figure}[tbp]
+\centering
+\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F11 pending: \texttt{\detokenize{cluster demo with --relax_hands 0 (plan section 3 command)}}}}}
+\caption{Predicted fingers on the 12 demo images, Final with predicted (not rest-pose) fingers next to Base.}
+\label{fig:fingers-demo}
+\end{figure}
+
+\section{Final model vs Control vs Base on AnnyOne}
+\label{sec:res-final}
+% absorbs draft main.tex lines 665-694 (the 145 -> 73.6 -> 74.3 history moves to Section~\ref{sec:res-history} as a V0 table)
+% needs: T15 part A, F12 (pending), F20; 73.7 / 50.3 / 87.0 vs 77.4 / 56.4 / 89.0 vs 70.5 / 53.3 / 90.2 (H 5/7); what is inside noise (PVE -3.7) and what is not (PA-PVE -6.1, root -48%); recall cost -2 / -3.2
+\TODO{The full V1 table and its reading against the noise floor.}
+\input{tables/T15_final_results}
+\input{figures/plots/F20_val_curves}
+% F12: trace panels stacked on the cluster (plan section 3 command)
+\begin{figure}[tbp]
+\centering
+\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F12 pending: \texttt{\detokenize{trace panels stacked on the cluster (plan section 3 command)}}}}}
+\caption{Six holdout images: photo, ground truth, Base, Final, each at its own predicted depth.}
+\label{fig:holdout-montage}
+\end{figure}
+
+\section{3DPW test on the corrected labels}
+\label{sec:res-3dpw}
+% absorbs draft main.tex lines 1131-1221 (old-label numbers retired; validation-trajectory text moves to history)
+% needs: T15 part B, F10 (pending); 121.8 / 95.5 / 120.2 / 91.5 / 89.0 (3612073-5; 3611339; 3611336); most of the gain is training on 3DPW (Control 91.5); the fixes add 2.5 mm; precision 64% explained (bystanders not labelled). Wording: "lowest error on our 3DPW-Anny labels", "not comparable with published 3DPW numbers"
+\TODO{Every model on the v23 test labels with the same script.}
+% F10: montages of demo job 3612078 (student sends the 12 files)
+\begin{figure}[tbp]
+\centering
+\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F10 pending: \texttt{\detokenize{montages of demo job 3612078 (student sends the 12 files)}}}}}
+\caption{Eight 3DPW test frames, Base next to Final, bodies placed from the detector box.}
+\label{fig:3dpw-overlays}
+\end{figure}
+
+\section{Real photos: Relative Human and the demo}
+\label{sec:res-rh}
+% absorbs - (new)
+% needs: T12, F13, F16, F17 (pending); gender 46.5 -> 64.2; AUC 0.61 -> 0.72; babies 0.44 vs adults 0.54; recall 47 -> 65; by-eye reading of the 12 images. Rule: children "a measured improvement, not solved"; never convert Anny ages to years
+\TODO{Relative Human numbers and the by-eye reading of the demo images.}
+\input{tables/T12_relative_human}
+% F13 (plan section 3). Source docs/figures/final_model_real_photos.jpg (labels baked in).
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.8\linewidth]{final_model_real_photos}
+\caption{Three real photos, Base (left) and Final (right), bodies placed from the detector box: most men get male bodies, women stay female, the boy stays an adult body. Judged by eye; no metric exists for these images.}
+\label{fig:real-photos}
+\end{figure}
+\input{figures/plots/F16_rh_age}
+% F17: cluster demo with --rest_pose 1 (plan section 3 command)
+\begin{figure}[tbp]
+\centering
+\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F17 pending: \texttt{\detokenize{cluster demo with --rest_pose 1 (plan section 3 command)}}}}}
+\caption{Rest-pose line-up: every detected person of the 12 demo images in rest pose, Final, so only body shape differs.}
+\label{fig:rest-lineup}
+\end{figure}
+
+\section{The shape-mask trade-off}
+\label{sec:res-mask}
+% absorbs - (new)
+% needs: T12 (masked column and demo spread); variety back (std 0.04 -> 0.11) vs gender back to 49.3% and children weaker; the decision (H 0a "DECIDED"); the partial mask (pending, Final-masked-7)
+\TODO{Final-masked against Final: shape variety against gender and children.}
+
+\section{Baseline comparison and model cost}
+\label{sec:res-baseline}
+% absorbs draft main.tex lines 631-652 (paper table replaced by the measured Multi-HMR-Anny row)
+% needs: T16, F18; 60.3 / 126.9 vs 73.7 / 89.0; cost measured: NAVER 380.94 M (head 76.57 M), backbone 1917.2 GFLOPs, ms not measurable for its class; Final 318.38 M, 1927.4 GFLOPs, 77.9 ms (A100) / 110 ms (A40). Fixed wording on the in-sample 60.3 (plan section 5)
+\TODO{Multi-HMR-Anny against Final on both sets, with the in-sample caveat; parameters, FLOPs and time.}
+\input{tables/T16_baseline_cost}
+\input{figures/plots/F18_cost_pve}
+
+\section{The ViT-B student}
+\label{sec:res-student}
+% absorbs draft main.tex lines 1122-1129 (student backbone size; "a ViT-B student was not trained" is deleted)
+% needs: T11 (Method writer), T17, F19; recipe recap; teacher / student / ratio / bar; verdict as measured; the 95% rule against both baselines (bars \BarPVE{} / \BarThreeDPW{} and \BarNAVERAnnyOne{} / \BarNAVERThreeDPW). Pending job 3614191
+\TODO{The Student against its teacher and the 95\,\% rule (pending).}
+\input{tables/T17_student}
+\input{figures/plots/F19_student}
+
+\section{History: the ViT-S students and the v2--v5 schedule}
+\label{sec:res-history}
+% absorbs draft main.tex lines 665-810 and 1131-1221
+% needs: draft tables tab:main (label it V0), tab:kd_eval, tab:kd_epochs (tables/draft_*.tex); old 3DPW table only if re-run on v23 (plan section 7 Q5), else "old labels, retired" or dropped; F22; one paragraph on what they taught
+\TODO{The draft's schedule and student tables, labelled V0 and old labels.}
+\input{figures/plots/F22_vits_curves}
+

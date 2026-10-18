@@ -1,0 +1,40 @@
+% F4 The neck chain (Method 4.5 / Diagnostics 5.4). Owner: Method writer. tikzpicture only.
+% Sources: H 3.2 (per-bone dump 3573518:12-15, :69: neck02 175.6, head 177.9, global head 12.0 deg, girth 0.46);
+% 3579014:12, :37 (C_b 178.8 / 179.2 deg); 3579014:107 (girth 1.004 with the correction, no training);
+% 3611336:198-207 (Final: girth 0.996); bone_fix.py docstring (R_b <- R_b C_b). Numbers from numbers_method.tex.
+\begin{tikzpicture}[
+  font=\footnotesize,
+  bone/.style={draw, rounded corners=2pt, minimum width=15mm, minimum height=7mm, align=center},
+  flip/.style={bone, fill=red!12, draw=red!60!black},
+  okb/.style={bone, fill=teal!12, draw=teal!60!black},
+  arr/.style={-{Stealth[length=2mm]}, semithick},
+  turn/.style={-{Stealth[length=2mm]}, thick},
+  note/.style={align=left, font=\scriptsize},
+]
+% ---- row 1: Base, before the correction
+\node[font=\footnotesize\bfseries, anchor=west] at (-0.9,1.35) {Base, raw output};
+\node[bone] (a1) at (0,0) {neck01};
+\node[flip] (b1) at (2.4,0) {neck02};
+\node[bone] (c1) at (4.8,0) {neck03};
+\node[flip] (d1) at (7.2,0) {head};
+\draw[arr] (a1) -- (b1);
+\draw[arr] (b1) -- (c1);
+\draw[arr] (c1) -- (d1);
+\draw[turn, red!60!black] ([xshift=-4mm]b1.north) arc[start angle=180, end angle=0, radius=4mm];
+\node[red!60!black, note, above=4mm of b1] {$\approx$\,180$^\circ$ twist (\MethodBaseNeckTwo$^\circ$)};
+\draw[turn, red!60!black] ([xshift=4mm]d1.north) arc[start angle=0, end angle=180, radius=4mm];
+\node[red!60!black, note, above=4mm of d1] {$\approx$\,180$^\circ$ back (\MethodBaseHead$^\circ$)};
+\node[note, text width=3.0cm, anchor=west] at (8.3,0) {the two half-turns cancel: the head points right (\MethodBaseGlobalHead$^\circ$ error)};
+\node[note, red!60!black, anchor=north] at (3.6,-0.55) {skin between neck02 and head twisted thin: girth \MethodBaseGirth{} of the true value};
+% ---- row 2: with the correction
+\node[font=\footnotesize\bfseries, anchor=west] at (-0.9,-1.75) {With the correction $R_b \leftarrow R_b C_b$};
+\node[bone] (a2) at (0,-3.0) {neck01};
+\node[okb] (b2) at (2.4,-3.0) {neck02\\[-1pt] {\scriptsize $\cdot\,C$ (\MethodCNeckTwo$^\circ$)}};
+\node[bone] (c2) at (4.8,-3.0) {neck03};
+\node[okb] (d2) at (7.2,-3.0) {head\\[-1pt] {\scriptsize $\cdot\,C$ (\MethodCHead$^\circ$)}};
+\draw[arr] (a2) -- (b2);
+\draw[arr] (b2) -- (c2);
+\draw[arr] (c2) -- (d2);
+\node[note, text width=3.0cm, anchor=west] at (8.3,-3.0) {both bones turned back by one constant each; 0 parameters};
+\node[note, teal!50!black, anchor=north] at (3.6,-3.6) {girth \MethodFixGirth{} with no training; \MethodFinalGirth{} in Final};
+\end{tikzpicture}

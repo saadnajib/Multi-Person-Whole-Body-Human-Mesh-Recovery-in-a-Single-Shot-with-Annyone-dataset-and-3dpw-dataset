@@ -120,7 +120,7 @@
 % \InputIfExists{file}{chapter title}: \input a writer-owned chapter, or, while the
 % file does not exist yet, print a placeholder chapter with that title, so the
 % skeleton always compiles and the chapter numbers stay right.
-\newcommand{\InputIfExists}[2]{\IfFileExists{#1.tex}{\input{#1}}{\chapter{#2}\TODO{chapter pending (#1.tex)}}}
+\newcommand{\InputIfExists}[2]{\IfFileExists{#1.tex}{\input{#1}}{\chapter{#2}\TODO{chapter pending (\texttt{\detokenize{#1.tex}})}}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Headline numbers: one macro per number, source in a comment (see numbers.tex)

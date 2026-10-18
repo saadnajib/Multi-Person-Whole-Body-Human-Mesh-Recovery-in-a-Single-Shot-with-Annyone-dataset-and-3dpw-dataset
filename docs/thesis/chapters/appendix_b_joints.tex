@@ -1,0 +1,51 @@
+% appendix_b_joints.tex -- Appendix B SMPL-Anny joint correspondence.
+% Skeleton from REWRITE_PLAN.md section 2 (Appendices) and 1.8 (verdict: keep).
+% absorbs draft_2026-10_original/appendix.tex lines 36-64 (chapter text and tab:mapping, copied and corrected)
+% needs: draft tab:mapping + the virtual-joint offsets (plan section 2, Appendix B); the v2.3 facts of
+%   Data 3.3 / T6 (H 3.5: only the root and 18 bones move, 144 of 163 bones stay at rest).
+% Corrections against the draft (plan 1.1 #9-11, T6; scripts/data/smpl_to_anny.py):
+%   * the caption now states which bones the fit rotates (root + 18 bones; 144 of 163 at rest incl. neck02,
+%     neck03, head, jaw and every finger bone; H 3.5 / handover.md:1695, :1854);
+%   * the "first converter" note adds that the hips sat on pelvis.L/R, whose heads lie 4 cm from the hip
+%     joint (draft main.tex:491-501);
+%   * section reference updated to the Data chapter (the converter moved there, plan 1.5 3.6).
+% TODO verify before submission (could not be checked from the repo alone):
+%   * spine rows: the static name list in smpl_to_anny.py:239-262 gives spine1/2/3 -> spine04/spine03/spine02;
+%     the geometry step (refine_mapping_by_geometry, :477-490) re-picks them by height at run time and prints
+%     "AUTO-MAPPING ... changed"; the draft's spine03/spine02/spine01 must be confirmed from a converter log;
+%   * the neck row: the default --offset_joints list (smpl_to_anny.py:957-958) includes neck, so its offset
+%     may not be exactly 0; confirm from the "VIRTUAL-JOINT OFFSETS" table of a converter log;
+%   * the scale factor 0.864 and the offsets themselves (same log table).
+
+\chapter{SMPL--Anny Joint Correspondence}
+\label{app:joints}
+
+\TODO{One paragraph: how the correspondence was chosen (rest skeletons compared by geometry) and how the virtual-joint offsets were measured; point to Chapter~3.}
+
+The correspondence used by the final converter (v2.3), with the rest-pose offset of each virtual joint.
+Offsets are measured on the two rest skeletons after aligning them at the hip midpoint and scaling SMPL to Anny's
+hip--neck length (factor 0.864); limb joints use the bone head.
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabular}{llr}
+\toprule
+SMPL joint & Anny bone & virtual-joint offset (cm) \\
+\midrule
+pelvis & \texttt{root} & 11.6 \\
+left / right hip & \texttt{upperleg01.L/R} & 4.3 \\
+spine1 / spine2 / spine3 & \texttt{spine03} / \texttt{spine02} / \texttt{spine01} & 3--7 \\
+neck & \texttt{neck01} & 0 (reference) \\
+left / right collar & \texttt{clavicle.L/R} & 5 \\
+head & \texttt{head} & --- \\
+shoulder / elbow / wrist / hand & \texttt{upperarm01} / \texttt{lowerarm01} / \texttt{wrist} / \texttt{finger2-1} & --- \\
+knee / ankle / foot & \texttt{lowerleg01} / \texttt{foot} / \texttt{toe1-1} & --- \\
+\bottomrule
+\end{tabular}
+\caption{SMPL$\rightarrow$Anny correspondence of the final converter. The fit rotates only the root and 18 bones;
+the other 144 of Anny's 163 bones stay at their rest rotation, including \texttt{neck02}, \texttt{neck03},
+\texttt{head}, the jaw and every finger bone, so the head, hand and foot targets are reached through their parent
+bones. The first converter mapped \texttt{spine1} to \texttt{spine01}, 25\,cm too high, and the hips to
+\texttt{pelvis.L/R}, whose heads lie 4\,cm from the hip joints.}
+\label{tab:mapping}
+\end{table}
