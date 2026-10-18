@@ -24,3 +24,9 @@
 - Jobs submitted 18 Oct evening for thesis figures: 3615018 (demo, predicted fingers, `run_demo_compare_hands.sh`),
   3615019 (demo, rest pose, Base + Final + Final-masked, `run_demo_compare_rest.sh`), 3615020_[2,4] (ViT-S students
   v6c and v8 on the v23 3DPW test labels). Run 3 (3614042) was RUNNING (33 min) at that time; student 3614191 pending.
+
+## Demo montages received (job 3612078, Base v5 | Final, box placement, 18 Oct)
+Saved under docs/thesis/figures/img/ as F10_photo_{garden,tennis,stage,party}_v5_vs_final.jpg and
+F10_3dpw_{guitar,office,fencing}_v5_vs_final.jpg. Each montage: photo | Base | photo | Final, labels baked in
+(anny_s2_shape_v5_00099 = Base, exp7_v5_final_00009 = Final). Still missing: downtown_bar, downtown_walking,
+stairs (downtown_sitOnStairs), downtown_walkBridge/walking pair, weekly market (5 of the 8 3DPW frames).
