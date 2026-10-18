@@ -1178,6 +1178,16 @@ check is done: the image folders of the 8 sequences were re-extracted. File coun
   images, ~16,900, with about the same number of labelled people (22,753 here), because both actors then share one
   image.
 
+**Re-fit v2.3 result, 18 Oct** [Certain, `logs/check_refit_all_v23.log`, 60 sequences, 87 people, `RESULT: PASS`]:
+- Gender: every man 0.0001 and every woman 0.9999 (Anny convention); the old fits had them reversed.
+- Joint error, all fitted frames, mean over people: men (62) 19.0 -> 14.7 mm; women (25) 15.0 -> 15.2 mm. So the
+  gender fix is worth ~4 mm on men and costs nothing on women; 9 single-person outdoor sequences got 1-3 mm worse
+  (climbing_00/01/02, freestyle_00, slalom_01, crosscountry_00, freestyle_01, golf_00, parcours_01) [Guessing: a
+  different warm start, not the flags; none is a woman].
+- Two-person coverage: frames where both actors are valid in 3DPW but only one was fitted: old 4,457 of 8,274
+  (54%) -> new 0 of 6,055. The shared frame grid fixes the missing actor completely. 0 expected frames unfitted.
+- Frames: men 17,626 -> 17,633, women 5,289 -> 5,279 (the grid changed which frames, not how many).
+
 **Next, in this order:** (1) Re-fit with the converter fix, which is on `main` (v2.3: gender by Anny's convention,
 one shared frame grid for both actors): all 87 tasks into a **new** folder, rebuild, re-check, steps 0-5 in 4e
 (section 5, item 7). The test on `courtyard_captureSelfies_00` ran on 17 Oct (job 3589270; 0b): man gender 0.0 and
