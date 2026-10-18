@@ -67,7 +67,7 @@ the data I have; Section~\ref{sec:future} plans the partial mask and the line-up
 
 \paragraph{1b: a model that is not exactly Multi-HMR.} His wording: ``The model must not be exactly the same as the
 Multi-HMR (or any other existing) model.'' Two routes count: a new architecture that beats the baseline in PVE and
-MPJPE on both the AnnyOne test and the 3DPW test, or a significantly smaller model, in parameters, FLOPs and
+MPJPE on both the AnnyOne test and the 3DPW test, or a ``significantly smaller'' model, in parameters, FLOPs and
 inference time, whose errors stay within 95\,\% of the larger model's on both sets. The status is \emph{not met}.
 Final is Multi-HMR with its output resized to Anny's \MethodNumBones{} bone rotations and \MethodNumPheno{}
 phenotypes and a correction that adds no parameters (Chapter~\ref{ch:method}). Section~\ref{sec:res-baseline}
@@ -308,5 +308,5 @@ reproducible, made every control a change of one setting, and let the masked arm
 code (Appendix~\ref{app:flags}).
 
 In this pipeline silent failure was far more common than loud failure. A check that fails loudly, such as a load
-percentage or a geometric comparison of two skeletons, costs minutes to write; each silent fault here cost days to
-weeks before a measurement exposed it.
+percentage or a geometric comparison of two skeletons, costs minutes to write. The silent faults stayed hidden until
+a measurement aimed at them: the depth bug sat in every checkpoint trained before this thesis.
