@@ -70,7 +70,6 @@ Pending results (fill the macro or the cell, then delete the `\TODO`):
   `tables/T16_baseline_cost.tex`, `figures/plots/F19_student.tex` (+ `data/F19_student.csv`), `figures/plots/F18_cost_pve.tex`
   (replace the dashed line by a point), chapter 6.10, chapter 7 (1b paragraph, T01 status word), chapter 8.
 - Final-partial-mask (job 3614042): chapter 6.8, chapter 7 (1a-shape, T01), chapter 8.
-- Student-S/6c and Student-S/final on the v23 3DPW labels (job 3615020): chapter 6.11.
 - Figures: F11 `figures/img/F11_hands_photos.jpg` (job 3615018), F17 `figures/img/F17_restpose_photos.jpg`
   (job 3615019), F14 `figures/img/F14_label_check.jpg`, F24 `figures/img/F24_gt_decode_1.jpg`.
 

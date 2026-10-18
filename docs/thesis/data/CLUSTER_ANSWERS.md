@@ -47,7 +47,7 @@ stairs (downtown_sitOnStairs), downtown_walkBridge/walking pair, weekly market (
   for the Base line of F15; the gt_decode overlays (F24; folder name unknown); the v7/v8 ViT-L run folders' contents.
 
 ## 18 Oct, 22:40: more logs from the student
-- Student-S on the v23 3DPW test labels (job 3615020, `logs/eval-test3dpw-3615020_{2,4}.out`, all 8,190 images, V1 setting):
+- Student-S on the v23 3DPW test labels (job 3615020, `logs/eval-test3dpw-3615020_{2,4}.out`, all 8,190 images, V0 setting: run_eval_3dpw_test.sh, helper bones unmasked, as handover 0b states):
   - Student-S/6c (`anny_distill_vits_v6c_00149.pt`): AnnyOne test-100 PVE 114.5 / PA-PVE 84.6 / MPJPE 118.4, precision 81, recall 89;
     3DPW test PVE 142.6 / PA-PVE 91.0 / MPJPE 147.5, precision 45, recall 98.
   - Student-S/final (`anny_distill_vits_v8_final_00052.pt`): AnnyOne 120.6 / 86.9 / 125.0, precision 76, recall 87;

@@ -1,7 +1,7 @@
 % T13 Runs, jobs and checkpoints (Appendix A). Owner: Appendix writer (first version by the skeleton writer).
 % Sources: REWRITE_PLAN.md section 4 (T13); deck explanation slide 30 (D slide 30); handover section 8 "Job index",
 % 0a (state on 18 Oct, NAVER baseline, model cost, partial mask, student), 0b, 3.1-3.4; data/CLUSTER_ANSWERS.md
-% (jobs submitted on the evening of 18 Oct: 3615018, 3615019, 3615020_[2,4]).
+% (jobs submitted on the evening of 18 Oct: 3615018, 3615019, 3615020_[2,4]; 3615020_[2,4] returned 22:40).
 % Checked against H 8 on 18 Oct (evening); added since the skeleton: Base re-trace 3571596, Mixed-L / Fresh-heads-L traces,
 % Final smoke test 3611333, crashed NAVER try 3613928, model cost 3614947 as its own row, partial mask 3614042, student
 % smoke 3613926, the three 18-Oct evening jobs, the per-run log names, diag jobs 3569948 / 3569950 / 3569949 / 3572419 /
@@ -42,7 +42,8 @@ Model cost & 3614947 & parameters, GFLOPs, latency of Multi-HMR-Anny and Final (
 \addlinespace
 \multicolumn{4}{@{}l}{\emph{Evaluations and demos}} \\
 3DPW test (v23) & 3612073, 3612074, 3612075 & Base, Mixed-L, neck pilot; Final and Control inside their own jobs & \path{eval-test3dpw-<job>_0.out}, lines 117--125 \\
-3DPW test (v23), Student-S & 3615020\_2, 3615020\_4 & Student-S/6c and Student-S/final on the v23 labels (submitted 18 Oct evening) & \path{eval-test3dpw-3615020_2.out}, \path{_4.out} \\
+3DPW test (v23), Student-S/6c & 3615020\_2 & \path{anny_distill_vits_v6c_00149.pt} on all 8,190 v23 test images and the AnnyOne test-100 (Table~\ref{tab:history-students}) & \path{eval-test3dpw-3615020_2.out}, line 119 \\
+3DPW test (v23), Student-S/final & 3615020\_4 & \path{anny_distill_vits_v8_final_00052.pt}, the same two sets & \path{eval-test3dpw-3615020_4.out}, line 118 \\
 Relative Human & 3611285\_0, 3611285\_1, 3612131, 3613616; smoke test 3608336 & Base, neck pilot, Final, Final-masked & \path{eval_rh_<job>_<task>.out}; \path{results/diagnostics/relative_human_val_<tag>/} \\
 Demos & 3581312, 3612078, 3613617 & neck pilot, Final, Final-masked, each next to Base, on 4 photos + 8 3DPW test frames & \path{demo-compare-<job>.out}; montages \path{demo_montage_photos/}, \path{demo_montage_3dpwtest/} \\
 Demo, fingers & 3615018 & Base and Final with predicted fingers (\texttt{--relax\_hands 0}; submitted 18 Oct evening) & \path{demo-compare-3615018.out}; script \path{slurm/demo/run_demo_compare_hands.sh} (a copy made on the cluster) \\

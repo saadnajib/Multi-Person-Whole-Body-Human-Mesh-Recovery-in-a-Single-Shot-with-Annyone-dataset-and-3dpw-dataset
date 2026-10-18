@@ -403,10 +403,12 @@ and the abstract checked against 0b / 0a / 3.x and `data/plot_stats.md`, banned 
 "Use of AI tools" paragraph added after the Eigenstaendigkeitserklaerung with a TODO for the student's wording). The
 build ends with zero errors, zero undefined references and zero undefined citations. Pending in the text (each a
 `\TODO`): the Student's result (job 3614191: T17, T16, F18, F19, 6.10, 7.1, 8), the partial-mask result (job 3614042:
-6.8, 7.1, 8), Student-S/6c and /final on the v23 labels (job 3615020: 6.11), the figures F11 (hands, job 3615018),
+6.8, 7.1, 8), the figures F11 (hands, job 3615018),
 F17 (rest pose, job 3615019), F14 (label-check panel) and F24 (gt-decode overlays), the `% TODO verify` fields of
 `references.bib`, Appendix B's spine rows, and the supervisor's answers (95 % bar, smaller student, temporal
 refiner, children path). `docs/thesis/README.md` has the layout, the naming rule, the numbers rule and this TODO list.
+Student-S on the v23 labels returned at 22:40 (job 3615020; 0b 3DPW table: Student-S/final 121.6 / 83.7 mm PVE / PA-PVE,
+Base's level, Student-S/6c 142.6 / 91.0, final model 89.0 / 57.6) and is in thesis 6.11 / Table 6.5b; that TODO is closed.
 **Deck rebuilt, 18 Oct (evening):** 30 slides in story order (overview, data, training, findings and fixes, final
 model, requirements and plan, appendix), replacing the 21-slide deck. Three files: `docs/supervisor_update_2026-10-19.pptx`,
 `docs/supervisor_talk_notes_2026-10-19.md` (speaker script, generated from `docs/deck_src/build.js`) and
@@ -805,7 +807,9 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   | final model (3611336) | **89.0** | **57.6** | **88.3** | 64.0 | 99.0 | 77.5 / 54.4 / 87 |
   | NAVER `multiHMR_672_L_anny` (3614192; helper bones always masked) | 126.9 | 68.8 | 129.4 | 75.0 | 97.0 | 60.3 / 44.6 / 89 (masked = V1; likely in-sample) |
 
-  Lines: 3612073:25-32 and :117-124; 3612074 the same; 3612075:26-33 and :118-125; 3611339:209-220; 3611336:218-229.
+  ViT-S students, same script and images (job 3615020, 18 Oct 22:40) [Certain, logs]: Student-S/final (v8 e52) 121.6 / 83.7,
+  Student-S/6c (v6c e149) 142.6 / 91.0 PVE / PA-PVE (MPJPE 123.3 / 147.5, precision 56 / 45, recall 98 / 98; AnnyOne 120.6, 114.5).
+  Lines: 3612073:25-32 and :117-124; 3612074 the same; 3612075:26-33 and :118-125; 3611339:209-220; 3611336:218-229. 3615020_2:119, 3615020_4:118.
   The AnnyOne column is the same script's last-100 AnnyOne test (V0, unmasked), not the V1 holdout above; NAVER's row
   is the exception: Multi_HMR masks the helper bones by design, so its 60.3 compares with the V1 73.7, not with 77.5.
   [Certain] The final model is the best on these labels (6.5 mm better than v9) and finds more 3DPW people than v9

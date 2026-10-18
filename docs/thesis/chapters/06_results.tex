@@ -443,7 +443,7 @@ setting.
 \input{tables/T20_history}
 \input{figures/plots/F22_vits_curves}
 
-Table~\ref{tab:history} keeps the draft's measurements, all in setting V0 and all from before the depth fix, the bone
+Table~\ref{tab:history} keeps the draft's holdout measurements, all in setting V0 and all from before the depth fix, the bone
 correction and the corrected labels. The staged schedule went from \HistStageOnePVE\,mm with the backbone frozen to
 \HistStageTwoPVE\,mm once the last four blocks trained and the helper bones were masked, and ended at
 \BaseVzeroPVE\,mm for Base (Table~\ref{tab:history-stages}). The ViT-S students started at \MethodStudentSOnePVE\,mm with feature
@@ -461,8 +461,11 @@ had seen rather than by their size, so the Student trains on six times the image
 schedule shows that helper-bone masking and partial unfreezing together halved the error, but the two changes were
 made in one step and are not separated.
 
-Not shown: 3DPW numbers for these students. They were measured on the old labels, which are retired; a re-evaluation
-of Student-S/6c and Student-S/final on the corrected labels was submitted and had not returned: \TODO{Student-S/6c and Student-S/final on the corrected 3DPW
-labels, job pending}. The students also predate both fixes and so carry the depth bug and, likely, the neck flip of
+The two 3DPW columns of Table~\ref{tab:history-students} are the only Student-S numbers on the corrected labels:
+Student-S/6c and Student-S/final re-scored with the script of Table~\ref{tab:final-3dpw}; the students' old-label
+numbers are retired and not shown. Student-S/final, which saw 3DPW training images with the old labels, is at Base's
+level on the real test images (\StudentSFinalThreeDPW{} against \BaseThreeDPW\,mm PVE), and Student-S/6c, trained on
+synthetic images only, is at \StudentSSixcThreeDPW\,mm; both are far from Final's \FinalThreeDPW\,mm. Neither is the
+thesis's answer to requirement 1b; that is the ViT-B Student of Section~\ref{sec:res-student}. The students also predate both fixes and so carry the depth bug and, likely, the neck flip of
 their teachers, which was not measured for them. Their holdout numbers are V0 and read about \MethodVzeroGap\,mm higher
 than V1 would.

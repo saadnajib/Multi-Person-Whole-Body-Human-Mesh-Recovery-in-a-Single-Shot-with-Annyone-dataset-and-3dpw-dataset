@@ -5,13 +5,16 @@
 % Dropped on purpose: (1) the draft's TODO cells of tab:main (v2-v4 never re-evaluated, plan 7 Q6) -> "--";
 % (2) the v10 row of tab:kd_eval (87.4 mm V0 at epoch 299 cannot be reconciled with the V1 74.1 mm at epoch 290
 % of H 3.1 without the logs; v10 is not a named model of this thesis); (3) the 3DPW table tab:test3dpw (old labels,
-% retired; the v23 re-evaluation of S6c and S8, job 3615020, had not returned).
+% retired). Its v23 re-evaluation of S6c and S8 (job 3615020, 3615020_2:119 and 3615020_4:118, the script of
+% tab:final-3dpw) is the two 3DPW columns of part (b); the same jobs re-measured the AnnyOne cells of S6c and S8 and
+% gave exactly the draft's values (114.5 / 84.6 / 118.4 / 81 / 89; 120.6 / 86.9 / 125.0 / 76 / 87). Base and Mixed-L
+% 3DPW cells: tab:final-3dpw (3612073, 3612074).
 % Cross-checks: Base 74.3 / 57.5 / recall 90 and Mixed-L 78.5 / 57.4 / 89 equal the AnnyOne test-100
 % V0 numbers of the v23 3DPW-test logs (3612073:25-32, 3612074:25-32; H 0b).
 % Names: stages as in Chapter 4 (stage 4 = Base); students S1-S8 = v1-v8 in the code (numbers_method.tex).
 \begin{table}[tbp]
 \centering\footnotesize
-\setlength{\tabcolsep}{2.5pt}
+\setlength{\tabcolsep}{2pt}
 \begin{subtable}{\linewidth}
 \centering
 \begin{tabular}{@{}llrrrr@{}}
@@ -33,28 +36,36 @@ script (the same numbers as the AnnyOne column of Table~\ref{tab:final-3dpw}).}
 \vspace{0.8em}
 \begin{subtable}{\linewidth}
 \centering
-\begin{tabular}{@{}llrrrrrr@{}}
+\begin{tabular}{@{}llrrrrrrrr@{}}
 \toprule
-Model & Teacher & Params & PVE & PA-PVE & MPJPE & Prec. & Rec. \\
+ & & & \multicolumn{5}{c}{AnnyOne holdout, V0} & \multicolumn{2}{c@{}}{3DPW test, v23$^{c}$} \\
+\cmidrule(lr){4-8}\cmidrule(l){9-10}
+Model & Teacher & Params & PVE & PA-PVE & MPJPE & Prec. & Rec. & PVE & PA-PVE \\
 \midrule
-Base (ViT-L) & -- & 318.4 & \BaseVzeroPVE & 57.5 & 74.4 & 81 & 90 \\
-Mixed-L & -- & 318.4 & \BaseOldVzeroPVE & 57.4 & 78.6 & 83 & 89 \\
+Base (ViT-L) & -- & 318.4 & \BaseVzeroPVE & 57.5 & 74.4 & 81 & 90 & \BaseThreeDPW & \BasePAThreeDPW \\
+Mixed-L & -- & 318.4 & \BaseOldVzeroPVE & 57.4 & 78.6 & 83 & 89 & \BaseOldThreeDPW & \BaseOldPAThreeDPW \\
 \addlinespace
-Student-S/2 (features only) & Base & 32.8 & 193.4 & 128.2 & 210.7 & -- & 86 \\
-Student-S/6b (projector)$^{a}$ & Base & 37 & 126.9 & 92.1 & 132.0 & 77 & 88 \\
-Student-S/6c (batch 16) & Base & 37 & \textbf{114.5} & \textbf{84.6} & \textbf{118.4} & 81 & 89 \\
-Student-S/mixed (/6b + 3DPW)$^{b}$ & Base & 37 & 120.6 & 88.2 & 125.2 & 78 & 87 \\
-Student-S/final (/6c + 3DPW)$^{b}$ & Mixed-L & 37 & 120.6 & 86.9 & 125.0 & 76 & 87 \\
+Student-S/2 & Base & 32.8 & 193.4 & 128.2 & 210.7 & -- & 86 & -- & -- \\
+Student-S/6b$^{a}$ & Base & 37 & 126.9 & 92.1 & 132.0 & 77 & 88 & -- & -- \\
+Student-S/6c & Base & 37 & \textbf{114.5} & \textbf{84.6} & \textbf{118.4} & 81 & 89 & \StudentSSixcThreeDPW & \StudentSSixcPAThreeDPW \\
+Student-S/mixed$^{b}$ & Base & 37 & 120.6 & 88.2 & 125.2 & 78 & 87 & -- & -- \\
+Student-S/final$^{b}$ & Mixed-L & 37 & 120.6 & 86.9 & 125.0 & 76 & 87 & \StudentSFinalThreeDPW & \StudentSFinalPAThreeDPW \\
 \bottomrule
 \end{tabular}
 \caption{The ViT-S students (Student-S, ViT-S backbone) against their ViT-L teachers; parameters in millions,
-precision (Prec.) and recall (Rec.) in \%. Student-S/2: feature distillation only; Student-S/6b: heads fed through a projector at the teacher's width.
-Standalone script except $^{a}$Student-S/6b (evaluation during training). $^{b}$30\,\% 3DPW images per batch, old labels.}
+precision (Prec.) and recall (Rec.) in \%. Student-S/2: feature distillation only; Student-S/6b: heads fed through a projector at the teacher's width;
+Student-S/6c: Student-S/6b continued at batch 16; Student-S/mixed and Student-S/final: Student-S/6b and Student-S/6c
+continued with 3DPW images.
+Standalone script except $^{a}$Student-S/6b (evaluation during training). $^{b}$30\,\% 3DPW images per batch, old labels.
+$^{c}$Corrected labels, all \num{\ThreeDPWTestImages} test images, the script and setting of
+Table~\ref{tab:final-3dpw}; the only Student-S numbers on these labels (Student-S/6c and Student-S/final were
+re-scored, the other students were not). Final on the same images: \FinalThreeDPW{} / \FinalPAThreeDPW\,mm.}
 \label{tab:history-students}
 \end{subtable}
 \caption[History: the schedule to Base and the ViT-S students (V0)]{History, before the depth fix, the bone
 correction and the corrected 3DPW labels. AnnyOne holdout (100 images), setting V0 (helper bones unmasked), errors in
-mm; one run per model, no seed. ``--'': not measured with the same script. The students' 3DPW numbers were measured on
-the old labels, which are retired, and are not reported.}
+mm; one run per model, no seed. ``--'': not measured with the same script. The 3DPW columns of (b) are on the
+corrected labels; the students' earlier 3DPW numbers were measured on the old labels, which are retired, and are not
+reported.}
 \label{tab:history}
 \end{table}
