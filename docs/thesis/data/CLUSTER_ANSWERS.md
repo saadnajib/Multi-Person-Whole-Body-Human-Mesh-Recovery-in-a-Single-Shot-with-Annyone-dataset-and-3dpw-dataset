@@ -30,3 +30,18 @@ Saved under docs/thesis/figures/img/ as F10_photo_{garden,tennis,stage,party}_v5
 F10_3dpw_{guitar,office,fencing}_v5_vs_final.jpg. Each montage: photo | Base | photo | Final, labels baked in
 (anny_s2_shape_v5_00099 = Base, exp7_v5_final_00009 = Final). Still missing: downtown_bar, downtown_walking,
 stairs (downtown_sitOnStairs), downtown_walkBridge/walking pair, weekly market (5 of the 8 3DPW frames).
+
+## Zip batch 1 received (18 Oct, 21:20; thesis_figs_batch1.zip, 33 images + 5 CSVs)
+- figures/img/F10_3dpw_{bar,runforbus,stairs,walking,market}_v5_vs_final.jpg: the 5 missing demo montages (job 3612078).
+  All 12 montages are now present (4 photos + 8 3DPW test frames).
+- figures/img/F21_age_sweep.jpg (diag_bodymodel), F14_label_check_{courtyard_arguing_00024 (two-person frame),
+  downtown_walking_00771, climbing_00633, basketball_00570}.jpg (check_3dpw_conversion_v23/vis; 12 panels exist, 4 copied),
+  exp6_compare_579864.jpg and exp6_compare_579866.jpg (F23), F12_holdout_<idx>_img_gt_v5_final.jpg x 6
+  (panels: image | GT | Base | Final, each at its own depth; Base = v5 trace job 3570222, Final = exp7 holdout_ft).
+- data/holdout_per_person_{final,control}.csv (exp7 final 3611336 and control 3611339 holdout traces; 834/836 rows;
+  the per-person rows carry `variant` in {V0_eval_unmasked, V1_eval_masked, V2_demo, V3_demo_relaxhands}; use
+  V1_eval_masked for the headline setting; columns gt_depth_m, pred_depth_m, root_err_mm, pve, ...).
+- data/rh_per_person_{base,final,masked}.csv (Relative Human val, 2,130 people each; columns age_group, gender, matched,
+  pred_age, pred_gender, ...; base = v5 job 3611285_0, final = job 3612131, masked = job 3613616).
+- Not yet received: the v5 (Base) holdout trace per_person.csv (results/diagnostics/holdout_anny_s2_shape_v5_00099/per_person.csv)
+  for the Base line of F15; the gt_decode overlays (F24; folder name unknown); the v7/v8 ViT-L run folders' contents.
