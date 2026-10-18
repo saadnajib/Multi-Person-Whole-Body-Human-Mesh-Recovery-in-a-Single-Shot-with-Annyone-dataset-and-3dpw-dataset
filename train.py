@@ -928,6 +928,12 @@ class OriginalMultiHMREval(torch.nn.Module):
         return out
 
 
+def original_ffn_width(sd, default=2 * 1024):
+    """Decoder FFN width of an original-repo Multi_HMR state dict (first HPH layer's first FFN Linear)."""
+    w = sd.get('decoder.transformer.layers.0.2.fn.net.0.weight')
+    return int(w.shape[0]) if hasattr(w, 'shape') and len(w.shape) == 2 else default
+
+
 def build_original_multi_hmr(args, device):
     """--model_class multi_hmr_original (eval only): build the ORIGINAL repo class from --pretrained's own saved args
     (as demo.py's load_model does: xat_dim 1024, person_center head) and load ALL its weights, verified >= 95%."""
@@ -952,7 +958,8 @@ def build_original_multi_hmr(args, device):
     kw['pretrained_backbone'] = False        # every weight comes from the checkpoint
     kw['person_center'] = 'head'             # demo.py does the same override
     kw['xat_dim'] = 1024                     # demo.py: the original checkpoints were trained with xat_dim 1024
-    kw['xat_mlp_dim'] = 4 * 1024
+    # decoder FFN width: read from the checkpoint (NAVER's multiHMR_672_L_anny.pt has 2048 = 2*1024, not 4*1024)
+    kw['xat_mlp_dim'] = original_ffn_width(sd)
     kw.pop('pretrained', None)
     for k in ('backbone', 'img_size'):
         if k in kw and kw[k] != getattr(args, k, None):

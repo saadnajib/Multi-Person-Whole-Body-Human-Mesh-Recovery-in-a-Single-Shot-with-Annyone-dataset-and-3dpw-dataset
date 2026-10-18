@@ -330,6 +330,24 @@ v23 labels); `SMOKE=1` submitted as job 3613926 (RUN student_vitb_from_v5_pc_dis
 NAVER baseline check PASS (485 original-class keys) and submitted as job 3613928 (40-min limit, `logs/eval-test3dpw-3613928_0.out`);
 `model_cost.py --no-build --all` printed the ViT-S/B/L table (B: 86.58 M params, 589.5 GFLOPs backbone; L: 304.37 M, 1917.2).
 Read the smoke log for the end-of-job table and 'every check passed'; the full run is `bash slurm/experiments/exp8_distill_vitb.sh`.
+**Results of both, 18 Oct 17:00** [Certain, `logs/exp8_distill_vitb_3613926.out`, `logs/eval-test3dpw-3613928_0.err`]:
+(1) exp8 SMOKE 3613926 ran every stage end to end on serv-9225 (A100): 19 training iterations at 4.1 img/s (startup included;
+exp7's smoke read 4.78 vs 10.9 img/s in the real run, so the auto 14:00:00 limit is probably fine; `TIME=20:00:00` is the safe
+override, exp8 line 298), student bone fix estimated (neck02 178.0 deg, head 179.0, metacarpal1.L 179.2, finger4-1.R 179.6, within
+0.6-5.4 deg of the teacher's), holdout traces, model cost WITH latency (student 101.38 M params / 603.3 GFLOPs / 51.4 ms vs
+teacher 318.38 M / 1927.4 GFLOPs / 110 ms on A40 = 3.14x fewer params, 3.19x fewer FLOPs, 2.14x faster), 50-image 3DPW test,
+final table with 'VERDICT ... FAIL [SMOKE: not a result]' as designed. The full student run may launch:
+`cd /netscratch/najib/multi-hmr && conda activate multihmr && git pull && TIME=20:00:00 bash slurm/experiments/exp8_distill_vitb.sh`.
+(2) NAVER baseline 3613928 CRASHED in `build_original_multi_hmr` (train.py `net.load_state_dict`): size mismatch on all 8 decoder
+FFN layers, checkpoint [2048, 1024] vs model [4096, 1024]. Cause: train.py, demo.py and model_cost.py all hard-coded
+`xat_mlp_dim = 4*1024`; NAVER's checkpoint uses 2*1024. FIXED (commit 'baseline adapter: decoder FFN width read from the
+checkpoint'): all three now read `decoder.transformer.layers.0.2.fn.net.0.weight`.shape[0] (fallback 2048); helper
+`original_ffn_width(sd)` in train.py. Consequence: any earlier NAVER-L cost number from model_cost.py built the wrong FFN
+(the 'L: 304.37 M' line above is the ViT-L BACKBONE table and is unaffected). Resubmit after `git pull`:
+`CHECK_ONLY=1 bash slurm/eval/run_eval_baseline_naver.sh && bash slurm/eval/run_eval_baseline_naver.sh`.
+(3) Run 3 (partial mask, keep age) is queued as job 3614042 (RUN v5_pc_dist5_bonefix_v23_e10_shpmask_noage); the exp7 script's
+duplicate guard REFUSES a second submission while it is pending, which is correct, not an error. The student, the baseline and
+run 3 are independent jobs: submit all at once, no waiting.
 **DECIDED 18 Oct, 15:30: the UNMASKED model (3611336) stays the final model and the student's teacher.** Relative Human
 of the masked arm [Certain, `logs/eval_rh_3613616_0.out`, job 3613616]: recall 57.2% (unmasked 64.7%), gender accuracy
 49.3% (64.2%; men 0.717, women 0.860), children AUC 0.708 (0.719), ages adult 0.638 / kid 0.611 / baby 0.524 (unmasked

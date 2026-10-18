@@ -191,7 +191,8 @@ def build_from_args(torch, Model, backbone, head_dim, img_size, ckpt_path=None):
     if n_orig > n_model:
         from multi_hmr_anny.multi_hmr import Multi_HMR
         kw['xat_dim'] = 1024            # demo.py: the original checkpoints were trained with xat_dim 1024
-        kw['xat_mlp_dim'] = 4 * 1024
+        w = sd.get('decoder.transformer.layers.0.2.fn.net.0.weight')   # FFN width from the checkpoint (NAVER: 2048)
+        kw['xat_mlp_dim'] = int(w.shape[0]) if hasattr(w, 'shape') and len(w.shape) == 2 else 2 * 1024
         model = Multi_HMR(**kw)
         info['cls'] = 'Multi_HMR (original repo)'
     else:

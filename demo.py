@@ -181,7 +181,8 @@ def load_model(model_name, device=torch.device('cuda'), bone_fix=''):
         # Multi_HMR-specific arch params (the original checkpoints were trained
         # with xat_dim=1024; these kwargs are meaningless for Model).
         kwargs['xat_dim'] = 1024
-        kwargs['xat_mlp_dim'] = 4 * 1024
+        w = sd.get('decoder.transformer.layers.0.2.fn.net.0.weight')   # FFN width from the checkpoint (NAVER: 2048)
+        kwargs['xat_mlp_dim'] = int(w.shape[0]) if hasattr(w, 'shape') and len(w.shape) == 2 else 2 * 1024
         if fix_spec is not None:
             print("[load_model] WARNING: --bone_fix is implemented in model.py's Model only; "
                   "Multi_HMR (original repo class) ignores it")
