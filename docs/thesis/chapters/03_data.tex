@@ -55,8 +55,8 @@ nobody younger than \DataHoldoutMinAge. It tests adults only, which is why I add
 
 3DPW~\cite{vonmarcard2018_3dpw} is a real video dataset of \DataThreeDPWSequences{} sequences filmed with a
 hand-held phone camera, outdoors and indoors, at \DataThreeDPWWidth{}$\times$\DataThreeDPWHeight{} pixels
-(portrait) and \DataThreeDPWFps{} frames per second. Inertial sensors on the actors give SMPL ground truth for every
-frame. The standard release has \DataThreeDPWTrainSeq{} training, \DataThreeDPWValSeq{} validation and
+(portrait) and \DataThreeDPWFps{} frames per second. Inertial sensors on the actors give SMPL ground
+truth. The standard release has \DataThreeDPWTrainSeq{} training, \DataThreeDPWValSeq{} validation and
 \DataThreeDPWTestSeq{} test sequences, with one or two labelled actors each: \DataThreeDPWPersonSeq{}
 person-sequences in total (\DataThreeDPWMen{} men, \DataThreeDPWWomen{} women). Bystanders have no labels.
 
@@ -359,7 +359,7 @@ neither teach nor test them.
     \fbox{\parbox{0.9\linewidth}{\centering\vspace{2em}Figure pending: \texttt{F21\_age\_sweep.jpg}, Anny at the
     dataset-mean shape with age swept from 0 to 1 (body-model probe).\vspace{2em}}}%
   }
-  \caption{Anny at the AnnyOne mean shape in rest pose, with only the age phenotype changed from 0 to 1. Skeletal
+  \caption{Anny in rest pose at the dataset-mean shape, with only the age phenotype changed from 0 to 1. Skeletal
   height (head joint to mean ankle) rises from \DataSweepHeightAgeZero\,m at age 0 to \DataSweepHeightAgeHigh\,m at
   0.8; the child shape appears below about \DataChildAgeLow{} to \DataChildAgeHigh. The 3DPW labels fix age at
   \DataFixedAge. Body model only, no network.}

@@ -4,7 +4,8 @@
 %   data/F15_base_per_person.csv     <- v5 trace (job 3570222) per_person.csv
 %   data/F15_final_per_person.csv    <- results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10/holdout_ft/per_person.csv
 %   data/F15_control_per_person.csv  <- results/experiments/exp7_final_model/v5_root_dist1_nofix_v23_e10/holdout_ft/per_person.csv
-% Then: \addplot[only marks] table[x=<true depth col>, y=<pred depth col>, col sep=comma] {data/F15_final_per_person.csv};
+% Column names known (data/CLUSTER_ANSWERS.md): gt_depth_m, pred_depth_m; keep rows with variant = V1.
+% Then: \addplot[only marks] table[x=gt_depth_m, y=pred_depth_m, col sep=comma] {data/F15_final_per_person.csv};
 \begin{figure}[tbp]
 \centering
 \begin{tikzpicture}

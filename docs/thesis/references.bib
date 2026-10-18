@@ -4,12 +4,18 @@
 % memory: every field marked "% TODO verify" must be checked against the paper.
 % =============================================================================
 
-@article{bregier2025anny,
-  title   = {Human Mesh Modeling for Anny Body},
-  author  = {Br{\'e}gier, Romain and Fiche, Gu{\'e}nol{\'e} and Bravo-S{\'a}nchez, Laura and Lucas, Thomas and Armando, Matthieu and Weinzaepfel, Philippe and Rogez, Gr{\'e}gory and Baradel, Fabien},
-  journal = {arXiv preprint arXiv:2511.03589},
-  year    = {2025},
-  url     = {https://github.com/naver/anny}
+@inproceedings{bregier2025anny,
+  title     = {Human Mesh Modeling for {A}nny {B}ody},
+  author    = {Br{\'e}gier, Romain and Fiche, Gu{\'e}nol{\'e} and Bravo-S{\'a}nchez, Laura and Lucas, Thomas and Armando, Matthieu and Weinzaepfel, Philippe and Rogez, Gr{\'e}gory and Baradel, Fabien},
+  booktitle = {Computer Vision -- ECCV 2026},
+  publisher = {Springer Nature Switzerland},
+  address   = {Cham},
+  pages     = {170--188},
+  isbn      = {978-3-032-37314-4},
+  year      = {2026},
+  eprint    = {2511.03589},
+  eprinttype = {arxiv},
+  url       = {https://github.com/naver/anny}
 }
 
 @inproceedings{baradel2024multihmr,
@@ -204,12 +210,83 @@
   year      = {2024}
 }
 
-% TODO verify: title and authors not checked; arXiv id and repository from docs/handover.md
-% section 5 (item "Anny-Fit, for figures only"). NAVER group; non-commercial licence.
-@misc{annyfit2026,
-  title        = {{Anny-Fit}: test-time fitting of {Anny} body models with vision-language age and gender cues}, % TODO verify title
-  author       = {{NAVER LABS Europe}}, % TODO verify authors
-  howpublished = {arXiv preprint arXiv:2605.04728},
-  year         = {2026}, % TODO verify year
-  url          = {https://github.com/naver/anny-fit}
+% ---------------------------------------------------------------------------
+% Merged from references_background.bib (Background writer, verified against the
+% official repositories where stated; 18 Oct 2026). bregier2025anny above updated
+% from the same source (Anny README v0.6.1). annyfit2026 replaced by bravo2026annyfit.
+% ---------------------------------------------------------------------------
+
+@inproceedings{bravo2026annyfit,
+  title     = {All-Age Human Mesh Recovery},
+  author    = {Bravo-S{\'a}nchez, Laura and Armando, Matthieu and Br{\'e}gier, Romain and Rogez, Gr{\'e}gory and Yeung-Levy, Serena and Baradel, Fabien},
+  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), Findings track}, % TODO verify: README bibtex says "Proceedings of the IEEE/CVF CVPR", the README text says "CVPR 2026 Findings"
+  pages     = {3677--3687},
+  year      = {2026},
+  eprint    = {2605.04728},
+  eprinttype = {arxiv},
+  url       = {https://github.com/naver/anny-fit},
+  note      = {Code released as Anny-Fit}
+}
+
+@misc{naver2024multihmrcode,
+  author       = {{NAVER LABS Europe}},
+  title        = {{Multi-HMR}: official code and pre-trained checkpoints, including \texttt{multiHMR\_672\_L\_anny}},
+  howpublished = {\url{https://github.com/naver/multi-hmr}},
+  year         = {2026},
+  note         = {README model table and news entry of 17 Feb 2026 (Anny checkpoint); accessed 18 Oct 2026}
+}
+
+@misc{naver2025annycode,
+  author       = {{NAVER LABS Europe}},
+  title        = {Anny: a free-to-use human body model for all ages, version 0.6.1},
+  howpublished = {\url{https://github.com/naver/anny}},
+  year         = {2026},
+  note         = {Code under Apache License 2.0; MakeHuman-derived assets under CC0 1.0; accessed 18 Oct 2026}
+}
+
+@misc{makehuman,
+  author       = {{MakeHuman Community}},
+  title        = {{MakeHuman}: open-source tool for creating {3D} human characters},
+  howpublished = {\url{https://static.makehumancommunity.org/}},
+  note         = {Accessed 18 Oct 2026} % TODO verify title wording on the project page
+}
+
+@inproceedings{hesse2018smil,
+  title     = {Learning an Infant Body Model from {RGB-D} Data for Accurate Full Body Motion Analysis},
+  author    = {Hesse, Nikolas and Pujades, Sergi and Romero, Javier and Black, Michael J. and Bodensteiner, Christoph and Arens, Michael and Hofmann, Ulrich G. and Tacke, Uta and Hadders-Algra, Mijna and Weinberger, Raphael and M{\"u}ller-Felber, Wolfgang and Schroeder, A. Sebastian}, % TODO verify author list
+  booktitle = {Medical Image Computing and Computer Assisted Intervention (MICCAI)},
+  pages     = {792--800}, % TODO verify pages
+  year      = {2018}
+}
+
+@inproceedings{bogo2016smplify,
+  title     = {Keep it {SMPL}: Automatic Estimation of {3D} Human Pose and Shape from a Single Image},
+  author    = {Bogo, Federica and Kanazawa, Angjoo and Lassner, Christoph and Gehler, Peter and Romero, Javier and Black, Michael J.},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  pages     = {561--578}, % TODO verify pages
+  year      = {2016}
+}
+
+@inproceedings{dosovitskiy2021vit,
+  title     = {An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale},
+  author    = {Dosovitskiy, Alexey and Beyer, Lucas and Kolesnikov, Alexander and Weissenborn, Dirk and Zhai, Xiaohua and Unterthiner, Thomas and Dehghani, Mostafa and Minderer, Matthias and Heigold, Georg and Gelly, Sylvain and Uszkoreit, Jakob and Houlsby, Neil},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2021}
+}
+
+@inproceedings{choutas2022shapy,
+  title     = {Accurate {3D} Body Shape Regression using Metric and Semantic Attributes},
+  author    = {Choutas, Vasileios and M{\"u}ller, Lea and Huang, Chun-Hao P. and Tang, Siyu and Tzionas, Dimitrios and Black, Michael J.},
+  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {2718--2728}, % TODO verify pages (not in the repository's bibtex)
+  year      = {2022}
+}
+
+% Cited by the Method chapter (detection loss = CornerNet-style focal loss, loss.py:17, 314).
+@inproceedings{law2018cornernet,
+  title     = {{CornerNet}: Detecting Objects as Paired Keypoints},
+  author    = {Law, Hei and Deng, Jia},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  pages     = {734--750},
+  year      = {2018}
 }

@@ -4,7 +4,8 @@
 %   data/F16_rh_base.csv    <- results/diagnostics/relative_human_val_anny_s2_shape_v5_00099/per_person.csv
 %   data/F16_rh_final.csv   <- results/diagnostics/relative_human_val_exp7_v5_final_00009/per_person.csv
 %   data/F16_rh_masked.csv  <- the masked arm's per_person.csv (optional third model)
-% Then one \addplot[boxplot] table[y=<age col>] per group and model (pgfplots statistics library is loaded).
+% Column names known (data/CLUSTER_ANSWERS.md): age_group, pred_age, matched (keep matched rows).
+% Then one \addplot[boxplot] table[y=pred_age] per age_group and model (pgfplots statistics library is loaded).
 \begin{figure}[tbp]
 \centering
 \begin{tikzpicture}
