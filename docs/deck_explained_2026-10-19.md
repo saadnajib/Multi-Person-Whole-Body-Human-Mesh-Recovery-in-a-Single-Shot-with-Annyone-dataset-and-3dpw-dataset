@@ -2,7 +2,10 @@
 
 This document explains the deck for the meeting of Monday 19 October 2026, 16:00, slide by slide, in simple words.
 It is written for the presenter, who must also defend the work and later reuse the text in the thesis. Part 6 follows
-the 30-slide outline of the new deck: each block starts with the slide number and title, so the two can be matched.
+the final 30-slide deck (`docs/supervisor_update_2026-10-19.pptx`, speaker script
+`docs/supervisor_talk_notes_2026-10-19.md`): each block starts with the slide number and the exact slide title, so the
+two can be matched. This file was first written against the planned outline and reconciled with the final deck on the
+evening of 18 October.
 
 **State of the facts:** Sunday 18 October 2026, evening. Nothing here was measured again for this document. Every
 number comes from a file in this repository, and the source is given next to it.
@@ -21,8 +24,9 @@ Definitions (what a word means) get no tag. Facts and results get one.
   holds the newest results of 18 October. `H 0b` = "Numbers at a glance".
 - `P 2` = `docs/thesis_requirements_plan.md`, section 2.
 - `E exp8` = `docs/experiments_plan.md`, section on exp8. `F` = `docs/diagnostics_findings.md` (older).
-- `D slide N` / `D notes N` = the OLD 21-slide deck, `docs/deck_src/build.js`: the slide text / the speaker notes.
-  Old slide numbers are not the new ones.
+- `D slide N` / `D notes N` = the final 30-slide deck: the text on slide N of `docs/supervisor_update_2026-10-19.pptx`
+  (built by `docs/deck_src/build.js`) / the speaker notes of slide N in `docs/supervisor_talk_notes_2026-10-19.md`.
+  All slide numbers in this file are the new ones; `docs/deck_src/README.md` has the old -> new map.
 - `3611336:191` = line 191 of the log of cluster job 3611336. The logs are on the cluster, not in the repo; these line
   numbers are quoted from the handover, which was checked against the logs.
 - `loss.py:343` = that line of the file in this repository today.
@@ -43,7 +47,7 @@ Definitions (what a word means) get no tag. Facts and results get one.
    from the SMPL-X body model to the new Anny body model, and trains it on the synthetic AnnyOne images and on real
    3DPW images converted to Anny by our own fitting script [Certain, H 1].
 2. Last week the model showed three visible failures: thin, twisted necks, claw-like fingers, and children who got
-   adult bodies [Certain, D slide 2].
+   adult bodies [Certain, D slide 10].
 3. We first checked what is *not* the cause: the labels decode correctly, the body model reacts correctly, and every
    bone and shape output receives a training signal, so it is not a rig or decoding problem [Certain, H 1 "What is
    not the cause"].
@@ -159,7 +163,7 @@ metres. It shows depth and placement errors that PVE cannot see (H 1).
 size; 0.63 = drawn at 63% of the true size (H 1).
 
 **Depth slope.** We fit a straight line: predicted depth = slope x true depth + intercept. A perfect model has slope
-1 and intercept 0. Slope 0 would mean the same depth for everyone, near or far (H 1; D slide 12).
+1 and intercept 0. Slope 0 would mean the same depth for everyone, near or far (H 1; D slide 13).
 
 **AUC (here: child-vs-adult AUC).** Take a random child and a random adult. AUC is the chance that the model gives
 the child the lower predicted age. 0.5 = no better than a coin; 1.0 = always right (H 3.4;
@@ -410,50 +414,71 @@ gradients) [Certain, H 0a step 6]. Checkpoint:
 ## Part 6. Slide by slide
 
 Each block: what is on the slide, what we did, why, the result, the numbers with sources, and what is NOT claimed.
-"On the slide" describes the content the outline asks for; the final wording is the deck's.
+"On the slide" describes what the final deck shows; where this file gives a number that the slide does not show, it
+says so ("not on the slide", "in the notes"). The deck is the reference: if the two ever differ, the deck wins.
 
-### Slide 1. Title
+### Slide 1. Multi-HMR with Anny: what we changed and what we measured
 
-- **On the slide:** "Multi-HMR with Anny", the presenter's name, "supervisor update, 19 October 2026", and four or
-  five one-line findings.
-- **What we did / why:** one line per result, so the supervisor knows the story before the details.
-- **Result, in lines the old deck used (D slide 1):** one hidden depth bug found and partly fixed; 3DPW labels:
-  three defects found and fixed; neck: two bones turned half a turn, fixed; fingers: half the error was two flipped
-  bones; final model: all fixes hold together, recall costs 2 points.
-- **Numbers:** none needed on the title slide.
+- **On the slide** (dark title slide): the title, five one-line results and the byline "Saad Najib, supervisor update,
+  19 October 2026" [D slide 1]:
+  1. a hidden depth bug: bodies were drawn at 0.63 of their true size; now 0.78;
+  2. neck and finger bones were half a turn off; a 0-parameter fix turns them back;
+  3. 3DPW converted to Anny, three label defects fixed, and 30% of every training batch;
+  4. final model: best on 3DPW test, 89.0 mm (v5 121.8); real photos: gender 46 -> 64%;
+  5. not yet: a model that is not Multi-HMR (ViT-B student running) and temporal modelling.
+- **What we did / why:** one line per result, so the supervisor knows the story before the details. The notes add that
+  the depth bug is fixed for size, not yet for near-versus-far depth [D notes 1].
+- **Numbers:** size 0.63 -> 0.78 (H 3.1, final model 3611336), 3DPW test PVE 121.8 -> 89.0 mm (H 0b), Relative Human
+  gender 46.5 -> 64.2% (3612131) [Certain].
 - **Not claimed:** that anything is "solved".
 
 ### Slide 2. The goal and your requirements
 
-- **On the slide:** the thesis goal and the supervisor's three tiers from his e-mail of 18 October (P 1).
-  - (1) necessary within one month: **1a** correct Anny pose on the 3DPW test and on any real photo, and shape that
-    visibly changes per person; **1b** a model "not exactly Multi-HMR": either a new architecture that beats it on
-    the AnnyOne and 3DPW tests, or a much smaller model (fewer params and FLOPs, faster) whose PVE/MPJPE stay "more
-    than 95%" of the large model's on both; **1c** evaluation with Anny values on the real 3DPW test.
-  - (2) recommended: **2a** 3DPW train and test converted to Anny and used in training; **2b** temporal information
-    (the model understands motion in video).
-  - (3) best grade: a report in the student's own voice, clean code, models he can check.
-- **What we did:** read the e-mail and matched each item to evidence (slide 23 shows the status).
+- **On the slide** [D slide 2]: on the left, the task in one sentence (from one photo, find every person and predict
+  their Anny pose, 11 shape values and distance), a four-step strip (photo, 672 px -> find people on a 48 x 48 grid ->
+  predict pose, shape, depth per person -> Anny body mesh), the four test sets (AnnyOne holdout, 3DPW test, Relative
+  Human, demo photos; slide 4) and the status-dot legend. On the right, the six requirements of the e-mail of
+  18 October, each with a status dot: **1a** correct pose, visibly varying body shape (partly); **1b** a model that is
+  not exactly Multi-HMR (not met; a ViT-B student is running, slide 24); **1c** 3DPW evaluated in Anny space (met);
+  **2a** train on 3DPW converted to Anny (met); **2b** temporal modelling (not started; designed, weeks 5-6); **3**
+  well-written report, clean and verifiable code (partly).
+- **Background, not on the slide** (P 1): the e-mail has three tiers. (1) necessary within one month: 1a, 1b and 1c;
+  1b is either a new architecture that beats Multi-HMR on the AnnyOne and 3DPW tests, or a much smaller model (fewer
+  params and FLOPs, faster) whose PVE/MPJPE stay "more than 95%" of the large model's on both. (2) recommended: 2a and
+  2b. (3) best grade: a report in the student's own voice, clean code, models he can check.
+- **What we did:** read the e-mail and matched each item to evidence (slide 23 shows the evidence for each dot).
 - **Why:** the supervisor said the thesis is not ready without tier (1) [Certain, P 1].
-- **Result:** 1c and 2a met; 1a partly; 1b and 2b not met yet (slide 23).
+- **Result:** 1c and 2a met; 1a and 3 partly; 1b not met; 2b not started (slides 2 and 23).
 - **Not claimed:** a submission date; it is still unknown, and we ask on slide 26 [Certain, H 10].
 
 ### Slide 3. The model in one picture
 
-- **On the slide:** image (672 px) -> DINOv2 ViT-L/14 backbone (48 x 48 tokens) -> HPH cross-attention head ->
-  per detected person: 163 bone rotations, 11 shape values, a 3D position (anchored at the head joint) -> Anny body
-  model -> mesh. A small box after the rotation output: "bone fix (0 parameters)".
+- **On the slide** [D slide 3]: five boxes, left to right: photo (672 x 672 px) -> DINOv2 ViT-L backbone (14-px
+  patches, a 48 x 48 grid, 304 M parameters) -> detection (per cell: is a person's head here? plus a 2D offset) ->
+  per-person cross-attention head HPH (163 bone rotations, 75 trained and 88 helper bones fixed; 11 shape values;
+  distance) -> Anny body (mesh at the predicted distance). Teal tags mark what is ours: "head anchor fix" under the
+  detection, "Anny output, bone fix" under the head, "3DPW -> Anny labels" under the body. A teal box lists the four
+  changes (output layer sized for Anny; head-anchor fix in the training code, slide 12; the 0-parameter bone fix on
+  neck02, head and two hand bones, slide 15; the 3DPW conversion and the 30% recipe, slides 5-6 and 8). Bottom line
+  "Honest for 1b": still Multi-HMR's architecture, backbone weights from NAVER's Anny checkpoint; the route to 1b is a
+  much smaller model (slide 24).
 - **What it is:** the upstream Multi-HMR architecture with its output resized for Anny (163 x 6 rotation values and
   11 phenotypes) [Certain, P 2 row 1b; H 1 "Model"]. The bone fix is a fixed rotation, not a new layer [Certain,
   H 3.2].
 - **Why show it:** the supervisor must see that our network is still Multi-HMR. That is why requirement 1b is open.
-- **Numbers:** 318.38 M parameters, 1,927.4 GFLOPs, 110 ms per image on an A40 [Certain, exp8 smoke test 3613926,
-  H 0a]. Of the FLOPs, the ViT-L backbone alone is about 1,917 [Certain, `model_cost.py` docstring; D notes 20].
+- **Numbers:** on the slide only the backbone's 304 M parameters. The whole model is 318.38 M parameters,
+  1,927.4 GFLOPs and 110 ms per image on an A40 [Certain, exp8 smoke test 3613926, H 0a]; these are on slide 24, not
+  here. Of the FLOPs, the ViT-L backbone alone is about 1,917 [Certain, `model_cost.py` docstring; D slide 24,
+  D notes 23].
 - **Not claimed:** a new architecture.
 
 ### Slide 4. The datasets
 
-- **On the slide:** the table of Part 3 (AnnyOne, 3DPW-Anny v23, Relative Human, plus the holdout).
+- **On the slide** [D slide 4]: a short form of the table in Part 3, with four rows (AnnyOne; 3DPW -> Anny, v23
+  labels, 60 sequences; Relative Human val; demo photos, 4 photos + 8 3DPW test frames, judged by eye only), a
+  "how to read" line (every number names its dataset; 3DPW numbers are against our converted labels; Relative Human
+  counts detected people only) and three tiles: 100 holdout images, 8,190 3DPW test images (11,854 people; one
+  sequence yields no labels), 2,130 Relative Human people (635 photos). The diagnostic manifest is not on the slide.
 - **What we did:** trained on AnnyOne (70%) and 3DPW-train (30%); tested on the AnnyOne holdout, the 3DPW test split
   and Relative Human validation.
 - **Why:** AnnyOne has exact labels but is synthetic; 3DPW is real but has to be converted; Relative Human is real
@@ -465,50 +490,67 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
 
 ### Slide 5. 3DPW to Anny: how the labels are made
 
-- **On the slide:** the six steps and the three boxes "matched / free / fixed" (Part 3).
+- **On the slide:** the six steps and the three boxes "matched / free / fixed" (Part 3). The footnote names the code
+  as `smpl_to_anny.py` v2.2 and the "fixed" box says the gender is reversed ("next slide"): this slide shows the
+  conversion as it was before the v2.3 re-fit [D slide 5].
 - **What we did:** wrote the converter: per frame, Anny is fitted so its joints land on 3DPW's 24 SMPL joints; one
   median body per person; then the pose again.
 - **Why:** 3DPW only exists in SMPL; requirement 1c asks for Anny values on 3DPW.
 - **Numbers:** fitted: root, 18 of 23 mapped bones, height and proportions; gender from metadata; age fixed at 0.55;
-  the other 7 values at 0.5; 144 of 163 bones at rest; dropped: fits > 80 mm, people < 30% visible, boxes < 40 px
-  [Certain, H 3.5; D slide 5].
+  the other 7 values at 0.5; 144 of 163 bones at rest; dropped: fits > 80 mm (on the slide), people < 30% visible and
+  boxes < 40 px (in the notes only) [Certain, H 3.5; D slide 5, D notes 5].
 - **Not claimed:** that the 3DPW labels tell the true body build (muscle, weight, age), finger pose or head turn
   beyond neck01. They do not.
 
-### Slide 6. 3DPW labels: checked, three defects fixed
+### Slide 6. 3DPW labels: three defects found and fixed
 
-- **On the slide:** three columns: "measured: pass", "defects: fixed", "limits".
+- **On the slide:** three columns: "Measured: pass", "Defects: fixed", "Limits and grades"; the source line names job
+  3611284 on the re-fit labels (old labels: 3575369), 3,314 people, 2,360 images, 59 sequences [D slide 6].
 - **What we did:** an independent conversion check (15 Oct, job 3575369) found three defects. We re-extracted the
   missing images (16 Oct), added two switches to the converter (gender convention, shared frame grid), re-fitted all
   87 people (jobs 3590385 + 3602813), built the v23 labels and ran the same check again (job 3611284).
 - **Why:** 3DPW is 30% of each batch. With reversed gender, every man would keep learning a female body
-  [Certain, D notes 19 "Option 2"].
+  [Certain, D notes 26 "Option 2"].
 - **Result:** the three defects are gone and the overall grade moved from FAIL to WARN.
-- **Numbers (H 3.5, H 0b):** body joints median 14.1 mm (was 18.7), p95 21.1 (was 24.5); surface 18.9 / 16.1 mm
-  (was 18.9 / 18.3); 2D +0.4 px over raw 3DPW (was +1.1); gender flip now worse (men 13.9 -> 20.0 mm); two-person
-  images missing an actor 0 of 1,080 (was 407 of 960); re-fit check PASS on 60 sequences; men 19.0 -> 14.7 mm mean
-  joint error, women 15.0 -> 15.2; new labels 16,694 images / 22,749 people.
+- **Numbers (H 3.5, H 0b):** on the slide: body joints median 14.1 mm (was 18.7), p95 21.1; surface 18.9 / 16.1 mm
+  (was 18.9 / 18.3); 2D +0.4 px over raw 3DPW (was +1.1); gender flip now worse (men 13.9 -> 20.0 mm; was better for
+  72 of 73); two-person images missing an actor 0 of 1,080 (was 407 of 960); new labels 16,694 images / 22,749 people;
+  head turn vs chest 19.6 deg in the labels vs 19.3 in SMPL (was 9.5). In the notes only: re-fit check PASS on 60
+  sequences, men's mean joint error 19.0 -> 14.7 mm, women "about 15". Not in the deck: the old p95 (24.5) and the
+  women's exact 15.0 -> 15.2 (H 3.5).
 - **Not claimed:** perfect labels. Still WARN: limb-length ratios (forearm 0.948, thigh 1.064) and 3.2% of people
   with a joint more than 100 mm off (mostly the left hip in one climbing sequence) [Certain, H 3.5]. These are
   Anny-vs-SMPL differences, not bugs [Likely].
 
 ### Slide 7. What the model learns: the losses in plain words
 
-- **On the slide:** the loss table of Part 4, short form: what each term compares and its weight in the final model.
+- **On the slide** [D slide 7]: a ten-row table (loss | what it compares | plain meaning | weight in the final model):
+  detection, 2D offset, bone rotation, shape, distance, position, 3D joints, 3D mesh points, 2D joints, 2D mesh
+  points; a "how to read" line (the total is the weighted sum; "default" is Multi-HMR's value where ours differs; the
+  control keeps distance and position at 1; all distances are L1); and a line on what is masked for 3DPW people (the
+  38 hand bones; in the masked arm, slide 19, also the 8 constant shape values). The global-rotation and distillation
+  terms of Part 4 are not on the slide.
 - **What we did:** read `loss.py` and the final model's flags.
 - **Why:** the supervisor will ask why a change in one loss (depth x5, hand mask, shape mask) changes the result.
-- **Numbers:** detection 10, offset 1, rotations 0.1 (neck and hands boosted x4), shape 20, distance 5, translation
-  5, 3D joints 100, 3D vertices 100, 2D joints 0.1, 2D vertices 0.1, global rotation 0 [Certain, `loss.py:436-463`,
+- **Numbers:** detection 10, offset 1, rotations 0.1 (neck and hands boosted x4), shape 20 (default 1), distance 5
+  (default 1), position/translation 5 (default 1), 3D joints 100, 3D vertices 100, 2D joints 0.1 (default 1), 2D
+  vertices 0.1 (default 1); global rotation 0 is not on the slide [Certain, `loss.py:436-463`,
   `exp7_final_model.sh:211-213, 762-766`].
 - **Key points:** the 3D terms are pelvis-aligned, so only the 2D terms see depth (F); the shape loss is an L1
   through a sigmoid, which pulls toward the median (H 3.4); for 3DPW people the 38 hand bones are masked (Part 4).
 - **Not claimed:** that these weights are tuned. They are the v5 recipe plus the depth x5 [Certain, exp7 header
   :11-12].
 
-### Slide 8. What we changed in training: v5 -> final model
+### Slide 8. What we changed in training: v5 → final model
 
-- **On the slide:** v5 on the left; four changes in the middle (depth anchor + x5, bone fix, 30% 3DPW v23, hand mask);
-  the final model on the right; a control row with the same training minus the two fixes.
+- **On the slide** [D slide 8]: a six-row table (change | why | what it does, final vs control): (1) depth targets
+  at the head + distance and position losses x5: drawn size 0.78 (control 0.59), root error 0.73 m (control 1.40 m);
+  (2) bone fix on 4 bones at the output, 0 parameters: neck02 4.8 deg (175.8), neck thickness 1.00 (0.46), fingers
+  8.3 deg (17.4); (3) 30% real 3DPW-train frames in every batch, v23 labels: 3DPW test PVE 89.0 mm, control 91.5,
+  v5 121.8; (4) 3DPW hand losses masked: fingers learned from AnnyOne only; (5) the schedule, 10 epochs from v5,
+  40,000 images, batch 4, lr 1e-5, last 4 backbone blocks + heads, 72 min on an A100: both arms end above v5's 70.5 mm
+  on the holdout (restart cost); (6) a control with the same recipe minus rows 1 and 2. The notes call rows 1-5 "five
+  changes" [D notes 8].
 - **What we did:** see Part 5.
 - **Why:** each change answers one measured failure; the control separates the fixes from the 3DPW training and the
   restart cost.
@@ -518,52 +560,66 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
 
 ### Slide 9. How we measure
 
-- **On the slide:** the measures (PVE, PA-PVE, recall, root error, drawn size, depth slope, AUC), the test sets
-  (holdout V1, 3DPW test v23, Relative Human val), and the noise box.
+- **On the slide** [D slide 9]: a ten-row table (metric | what it measures | how to read it): PVE, PA-PVE,
+  recall / precision, root error, drawn size ratio, depth slope, bone angle error (about 180 deg = a flipped bone),
+  neck girth ratio (0.46 = half as thick), children AUC, gender accuracy (50% = chance); a "how to read" line on the
+  test sets (AnnyOne: 100-image holdout, helper bones masked, matched people; 3DPW: all 8,190 test images against our
+  labels); and the noise-floor line.
 - **What we did:** a fixed 100-image holdout and fixed settings for every model; a trace script adds root error, size
   and slope because PVE cannot see placement [Certain, H 1 "Metrics"].
 - **Why:** the depth bug stayed hidden for months because PVE removes the body position.
 - **Numbers:** pilot noise 7.6 mm PVE, 1.9 deg head direction; one run resolves about 10 mm, 3 deg, 2 recall points;
-  restart cost about 2.4 mm [Certain, H 3.6].
+  root error has no measured floor (all on the slide); restart cost about 2.4 mm (not on this slide; slide 22)
+  [Certain, H 3.6].
 - **Not claimed:** confidence intervals. Each model ran once, without a seed [Certain, H 3.6].
 
 ### Slide 10. Where we started: three visible failures
 
 - **On the slide:** three cards: neck (too long or twisted, thin), fingers (claw-like), children (adult bodies).
 - **What was believed before:** a rig or body-model problem for the neck; too few pixels for the hands; age not learned
-  for children [Certain, D slide 2].
+  for children [Certain, D slide 10].
 - **What we did:** tested each belief on its own before changing anything (slide 11).
-- **Result in one line each:** neck = two half-turned bones (slides 15-16); fingers = about half the error was two
-  flipped bones (slide 17); children = read as short adults on real photos (slide 18).
+- **Result in one line each** (the "this week" line of each card): neck = v5's neck02 and head bone are half a turn
+  off, the neck skin half as thick, a pilot fix restores it (slides 15-16); fingers = test-time zoom and a loss
+  rebalance did not help, half the error was two flipped bones (slide 17); children = child-like on training images,
+  adult on real photos (slide 18) [D slide 10].
 - **Not claimed:** that all three are fixed. Children are not.
 
 ### Slide 11. Checked first: what is NOT the cause
 
-- **On the slide:** four checks with a tick, the last with a warning.
-- **What we did and the results** [Certain, D slide 4 and D notes 4; H 1 "What is not the cause"]:
+- **On the slide:** a strip of the six checks (ground truth, body model, training signal, predictions vs truth on
+  the 100-image holdout + 55-image set, shape swap, overfit test on 40 images), then four results: three with a tick,
+  the last with a warning, and a closing line (not rig, decoding or body-model problems; the cause had to be in
+  training). The slide merges the old deck's slides 3 and 4.
+- **What we did and the results** [Certain, D slide 11 and D notes 11; H 1 "What is not the cause"]:
   - ground truth decodes correctly: AnnyOne labels render onto the people; the camera matches on 100% of images;
   - the body model is fine: all 16 single-joint moves move the right body part; age 0 to 1 changes the skeletal
     height from 0.53 m to 1.54 m;
   - gradients reach all 75 active bones and all 11 shape outputs (two of the three camera outputs get none);
-  - the optimiser works: on 40 training images the error falls by 36%.
+  - the optimiser works: on 40 training images the error falls by 36%; the summed rotation loss barely moved
+    (44.6 -> 40.8).
 - **Why:** to stop guessing. If the labels or the rig were wrong, no training change could help.
 - **Not claimed:** that the overfit test's rising translation and 2D losses (1.67 -> 1.89; 58 -> 75) were a sign of
-  the depth bug. The old deck said "probably"; the handover rates it a guess, because those are single-batch prints
-  and the half-averages fall instead (2.10 -> 1.96, 69 -> 63) [Guessing, H 1]. Say "possibly".
+  the depth bug. The slide says "possibly" (the old deck said "probably"); the handover rates it a guess, because
+  those are single-batch prints and the half-averages fall instead (2.10 -> 1.96, 69 -> 63) [Guessing, H 1].
 
-### Slide 12. The hidden depth bug
+### Slide 12. The hidden depth bug: anchor vs target
 
 - **On the slide:** two stick figures: the model's anchor at the head; the training target at the pelvis; the line
-  "predicted depth = 0.33 x true + 2.36 m".
+  "predicted depth = 0.33 x true + 2.36 m" (v5, all 222 holdout people too far); three bullets: confirmed (with
+  targets at the head the bodies are drawn much closer to the right size; a same-schedule control does not improve,
+  10 epochs: size 0.59, root error 1.44 m); size (3D height right, drawn at 0.63, head 64 px off); hidden from
+  pelvis-centred PVE and from the box-placed demos, and v9 and v10 have it too [D slide 12].
 - **What we found:** `model.py` places each mesh by the head joint and reports the head as its position, but
   `train.py prepare_gt` built the position, distance, detection-square and offset targets at the pelvis [Certain,
   H 3.1]. A one-batch debug print showed predicted offsets of -2 to -19 squares, where the legal range is +/-0.5
   [Certain, 3571599:9-14].
 - **Why it stayed hidden:** PVE and PA-PVE align the pelvis first; the real-photo demos place bodies from the detection
   box. Only the synthetic demo and the trace panels use the model's own depth [Certain, H 3.1].
-- **Numbers (v5, holdout):** depth slope 0.33, intercept 2.36 m; all 222 people too far; drawn size 0.63; root error
-  1.21 m; head 64.5 px off; 3D body height right (1.405 vs 1.409 m) [Certain, H 3.1; D notes 11]. v9 and v10 have the
-  same bug (root error 1.39-1.49 m) [Certain, H 3.1].
+- **Numbers (v5, holdout):** depth slope 0.33, intercept 2.36 m; all 222 people too far; drawn size 0.63; head
+  64.5 px off (64 on the slide); 3D body height right (1.405 vs 1.409 m, in the notes) [Certain, H 3.1; D notes 12].
+  Not on this slide: v5's root error 1.21 m (slides 13 and 14) and the v9 / v10 root errors of 1.39-1.49 m (H 3.1);
+  the deck only says that v9 and v10 have the bug and that v10 is slightly worse [Certain, H 3.1].
 - **Not claimed:** that the mechanism (2D losses push the body away) is proven; it is [Likely] (H 3.1).
 
 ### Slide 13. Depth fix: before and after
@@ -571,16 +627,19 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
 - **On the slide:** holdout image 579862: ground truth | v5 | fix (x5, 10 epochs), drawn with the model's own depth.
 - **What we did:** targets at the head joint, depth loss x5, a 10-epoch fine-tune of v5 (pilot `long_pc_dist5`).
 - **Result:** the bodies are drawn much closer to their true size; in this image the blue mesh goes from 0.76 to 0.95
-  of its true height [Certain, D slide 12].
+  of its true height [Certain, D slide 13].
 - **Numbers (whole holdout):** root error 1.21 -> 0.54 m; drawn size 0.63 -> 0.84; slope 0.33 -> 0.38 [Certain,
-  H 3.1, job 3572482].
+  H 3.1, job 3572482]. The notes add the final model: root error 0.73 m vs 1.40 for its control and 1.21 for v5
+  [D notes 13].
 - **Not claimed:** a full fix. Bodies are still about 16% too small at the median in this pilot (22% in the final
   model, size 0.78), and near and far people still get similar depths. The image was picked because no ground-truth
-  person is missed: a good case, not a typical one [Certain, D notes 12].
+  person is missed: a good case, not a typical one [Certain, D notes 13].
 
 ### Slide 14. Depth fix: the numbers
 
-- **On the slide:** the pilot table (2-epoch and 10-epoch fix runs next to their controls) and the final model line.
+- **On the slide:** the pilot table (v5, then the 10-epoch and the 2-epoch fine-tunes, each control next to its fix
+  runs; rows root error, depth slope, drawn size, head and pelvis pixel error, PVE, recall), a legend line and a
+  "not fixed / likely cost / final model" box [D slide 14].
 - **Numbers** [Certain, H 3.1 table]:
   - fix runs: root error 0.53-0.73 m; controls 1.11-1.44 m;
   - size 0.78-0.87 with the fix, 0.59-0.66 without;
@@ -588,16 +647,23 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
   - x20 for 2 epochs (0.53 m) ties x5 for 10 epochs (0.54 m);
   - cost in the pilots: every fix run is worse than its control by +2.6 to +4.9 mm PVE and -1.6 to -2.4 recall points
     (each inside noise, all the same direction) [Likely cost];
-  - final model vs its control: root error 1402 -> 728 mm, size 0.59 -> 0.78, slope 0.28 -> 0.42, PVE 77.4 -> 73.7,
-    recall 89.0 -> 87.0 [Certain, 3611336:175-193, 3611339:166-184].
-- **Why x5:** before the fix, distance and translation were only about 2.5% of the loss [Certain, F].
+  - final model vs its control (box on the slide): root error 1.40 -> 0.73 m (v5 1.21), size 0.59 -> 0.78, slope
+    0.28 -> 0.42; its PVE 77.4 -> 73.7 and recall 89.0 -> 87.0 are on slide 20, not here (the notes only say "2
+    recall points, PVE inside the noise") [Certain, 3611336:175-193, 3611339:166-184].
+- **Why x5** (not in the deck): before the fix, distance and translation were only about 2.5% of the loss
+  [Certain, F].
 - **Not claimed:** that exp1 met its own success rule. It did not: every run, controls too, misses "PVE <= 71.5 and
   recall >= 89.2" [Certain, H 3.1]. The x20 run for 10 epochs was never confirmed [Certain, H 3.1, H 4d].
 
-### Slide 15. Neck: two half-turned bones
+### Slide 15. Neck: two half-turned bones, and a pilot fix
 
-- **On the slide:** the neck chain (neck01, neck02, neck03, head) with neck02 and head in red; the per-bone table;
-  the pilot fix table.
+- **On the slide** [D slide 15]: one table (v5 before | fix, no training | fix + 2-epoch fine-tune | control, no fix;
+  flipped values in red, the fine-tuned column in teal), a definitions line, four bullets (cause, measured: all 8
+  v5-line checkpoints; the exp6 fix, one constant turn of about 179 deg per bone, estimated on 200 training images,
+  also turns back two hand bones; fix with no training fails the 15-deg head-direction limit; fix + fine-tune passes
+  the fine-tune checks), and three lines: caveat (one run, no seed, no PVE gain claimed), open (why the bones
+  flipped), final model (neck02 4.8 deg, head 8.9 deg, thickness 1.00, neck-skin error 11.0 mm, head direction
+  13.1 deg). There is no neck-chain drawing.
 - **What we found:** in all 8 v5-line checkpoints neck02 is 175.6 deg off (a half-turn about its own axis) and the head
   bone 177.9 deg; the two cancel, so the head still points right (12.0 deg) and PVE never showed it; but the neck skin
   is twisted thin [Certain, H 3.2].
@@ -610,14 +676,16 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
   | head bone, deg | 177.9 | 12.4 | 11.2 | 177.9 | 8.9 |
   | neck thickness, pred / true | 0.46 | 1.00 | 1.00 | 0.46 | 1.00 |
   | neck-skin error, mm | 27.3 | 10.8 | 10.7 | 27.9 | 11.0 |
+  | body PVE, mm | 70.5 | 71.3 | 68.8 | 76.9 | (73.7, slide 20) |
   | head direction, deg | 12.0 | 19.1 | 14.4 | 13.8 | 13.1 |
 
-  The final-model column is from 3611336:198-207.
+  The first four columns are the slide's table. The final-model column is a line under the table on the slide, from
+  3611336:198-207 (its PVE is on slide 20).
 - **Not claimed:** "no training needed" (the head direction gets worse without the fine-tune, 19.1 deg); a PVE gain
   (68.8 vs 76.9 for the control is inside noise: say "no sign of a PVE cost"); why the bones flipped (origin unknown;
   the singular start value of the rotation output would give a tilt, not this twist) [Certain, H 3.2].
 
-### Slide 16. Neck: before and after
+### Slide 16. Neck: before and after the fix
 
 - **On the slide:** two before | after pairs, necks ringed in yellow. Left: synthetic holdout image 579862, v5 vs the
   same model with the correction alone, no training (`docs/figures/neck_before_after_v5.jpg`). Right: real 3DPW test
@@ -630,42 +698,53 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
 - **Not claimed:** a neck number on real images (there is no neck ground truth there); that the correction, and not
   the 2-epoch fine-tune, makes the real-image difference (the right pair differs by both; on the holdout the same
   fine-tune without the fix keeps thickness 0.461, so the correction is the [Likely] cause) [H 3.2]. 4 of the 12 demo
-  images were not looked at [Certain, D notes 8].
+  images were not looked at [Certain, D notes 16].
 
-### Slide 17. Fingers
+### Slide 17. Fingers: about half the error was two flipped bones
 
-- **On the slide:** three numbers: 17.3 deg (predicted fingers, v5), 15.1 deg (fingers left at rest), 8.3 deg (with
-  the bone fix, pilot and final model).
+- **On the slide:** three numbers: 17.3 deg (predicted fingers, v5), 8.3 deg (with the bone fix, 2-epoch pilot and
+  10-epoch final model; controls 17.4), 15.1 deg (fingers set to rest pose, before the fix; the index-base flip
+  stays); a hand-size table (median hand size 2.3 tokens in the full 672-px image, 4.2 with a person crop at test
+  time, 0.7 for children's hands; 41% / 0% / 80% under 2 tokens); bullets on the two flipped bones (not yet checked by
+  eye), test-time zoom (17.2 vs 17.3; body error nearly doubles) and the loss rebalance (17.5 vs 17.4) [D slide 17].
 - **What we did:** first tested the old beliefs: magnifying the person at test time (17.3 -> 17.2) and a rebalanced
   loss (17.5 vs 17.4 for its control); neither helped [Certain, H 3.3]. Then the per-bone search found two hand bones
   turned half a turn: metacarpal1.L (180 deg) and finger4-1.R (178.8 deg) [Certain, H 3.2, H 3.3].
 - **Result:** correcting them halves the finger error: 17.3 -> 8.2 deg without training, 8.3 after the 2-epoch
   fine-tune, and 8.3 in the final model against 17.4 for its control [Certain, 3579014:114; 3611336:201,
-  3611339:192]. On v10, correcting three flipped hand bones takes the finger error 32.0 -> 17.8 deg [Certain,
-  3579015:80].
+  3611339:192]. On v10, correcting three flipped hand bones takes the finger error 32.0 -> 17.8 deg (in the notes,
+  not on the slide) [Certain, 3579015:80; D notes 17].
 - **Not claimed:** better-looking fingers on real photos. Every real-photo demo so far sets the fingers to rest pose
   (`--relax_hands 1`), so predicted hands have never been shown [Certain, P 2 row 1a; H 3.3].
 
 ### Slide 18. Children and gender on real photos
 
-- **On the slide:** v5 vs the final model on Relative Human validation; three tiles (gender accuracy, children AUC,
-  recall).
-- **What we did:** ran both models on 635 Relative Human photos with 2,130 labelled people (jobs 3611285_0 for v5 and
-  3612131 for the final model) [Certain, H 3.4].
+- **On the slide** [D slide 18]: a table with three columns, v5 | final model | masked arm (slide 19), rows recall,
+  gender accuracy, children AUC, mean predicted age of adults / kids / babies, babies below the child line 0.45; three
+  tiles from the synthetic side and the summary (2% -> 10% children per batch with a balanced sampler, unproven after
+  2 epochs; 0.10 predicted age of training babies, true 0.015; children AUC 0.61 -> 0.72, measured improvement, not
+  solved); and three bullets (v5 reads children as short adults, gender at chance; final: women recognised 0.86, men
+  mid-range 0.55, babies 0.44 vs adults 0.54, likely pulled down by the 3DPW age label; not solved, with the
+  limitation-or-labels question).
+- **What we did:** ran the models on 635 Relative Human photos with 2,130 labelled people (jobs 3611285_0 for v5,
+  3612131 for the final model and 3613616 for the masked arm) [Certain, H 3.4, H 0a].
 - **Why:** our own photos hold only one real child, so they cannot measure children; earlier "five small people" turned
   out to be mostly crouching or seated adults [Likely, by eye, H 3.4].
 - **Result:** v5 reads children as short adults: their predicted age is adult, only their height value drops; and it
   has no gender signal. The final model is better on every line, but not solved.
 - **Numbers** [Certain, H 3.4 tables; 3611285_0:23-31, 3612131:25-33]:
 
-  | Relative Human val | v5 | final model |
-  |---|---|---|
-  | recall (people found) | 47% | 65% |
-  | gender accuracy | 46.5% (men 0.535, women 0.551) | 64.2% (men 0.551, women 0.861) |
-  | child-vs-adult AUC | 0.61 | 0.72 |
-  | predicted age: adult / kid / baby | 0.63 / 0.61 / 0.62 | 0.54 / 0.50 / 0.44 |
-  | babies below the child threshold 0.45 | 3% | 49% |
-  | height value: adult / kid / baby | 0.51 / 0.45 / 0.39 | 0.50 / 0.47 / 0.46 |
+  | Relative Human val | v5 | final model | masked arm |
+  |---|---|---|---|
+  | recall (people found) | 47% | 65% | 57% |
+  | gender accuracy | 46.5% | 64.2% | 49.3% |
+  | child-vs-adult AUC | 0.61 | 0.72 | 0.71 |
+  | predicted age: adult / kid / baby | 0.63 / 0.61 / 0.62 | 0.54 / 0.50 / 0.44 | 0.64 / 0.61 / 0.52 |
+  | babies below the child threshold 0.45 | 3% | 49% | 17% |
+
+  Not in the table on the slide (H 3.4): the mean predicted gender of men / women, v5 0.535 / 0.551 (in the notes of
+  slide 16), final 0.551 / 0.861 (on the slide as 0.55 / 0.86); and the height value of adults / kids / babies, v5
+  0.51 / 0.45 / 0.39, final 0.50 / 0.47 / 0.46.
 
 - **Why children fail (v5):** the shape head regresses to the training median, in the synthetic tails and on real
   photos; AnnyOne has few children; an L1 through a sigmoid learns extreme values slowly [Certain for the pull; the
@@ -677,8 +756,12 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
 
 ### Slide 19. Masked shape labels: a trade-off
 
-- **On the slide:** two columns, "unmasked (final model)" vs "masked arm", with Relative Human numbers and the demo's
-  spread of body-build values; a decision line.
+- **On the slide** [D slide 19]: two boxes, "What the mask does" (the problem: 8 constant shape values in every
+  3DPW label; the final model learned them, spread about 0.04 on real photos; the mask: do not learn these 8 values
+  from 3DPW people, keep gender, height and proportions; training job 3612325) and "What happened (one run each)"
+  (variety comes back; gender and children fall back; error unchanged within noise), and a bottom line "Reading and
+  next step" (the age label likely does the useful work, the seven 0.5 constants cause the collapse; decided 18 Oct:
+  the unmasked model stays the final model and the student's teacher; next: the partial mask, job 3614042, queued).
 - **What we did:** one extra run with `--mask_3dpw_shape 1`, which stops the shape loss on the 8 constant 3DPW values
   (job 3612325); then Relative Human (job 3613616) and the demo (job 3613617) [Certain, H 0a].
 - **Why:** on real photos the final model's muscle, weight, cup size and firmness sit at about 0.5, the converter
@@ -692,8 +775,11 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
   | gender accuracy | 64.2% | 49.3% |
   | children AUC | 0.719 | 0.708 |
   | babies' predicted age | 0.438 | 0.524 |
-  | demo spread (std) of muscle / weight / cup size / firmness | about 0.04 each | 0.06 / 0.11 / 0.11 / 0.11 |
+  | demo spread (std) of muscle / weight / cup size / firmness | 0.04 / 0.04 / 0.05 / 0.04 | 0.06 / 0.11 / 0.11 / 0.11 |
   | holdout V1 PVE / 3DPW test PVE | 73.7 / 89.0 | 71.7 / 91.1 (inside noise) |
+
+  All of these are on the slide, as rounded values (gender 64 -> 49%, recall 65 -> 57%, babies 0.44 -> 0.52 with
+  adults at 0.64, AUC 0.72 -> 0.71). The age spread (0.03 -> 0.08, H 0a) is not on the slide.
 
 - **Result:** body variety vs gender and children. The unmasked model stays the final model and the teacher
   [Certain, H 0a "DECIDED"].
@@ -705,7 +791,11 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
 
 ### Slide 20. Final model: all fixes together, with a control
 
-- **On the slide:** the table v5 | control | final model, and the 3DPW line under it.
+- **On the slide** [D slide 20]: the table v5 | control | final model (the rows below, without the depth-slope row;
+  the slide says "size ratio" and "neck girth"), a box (fixes hold together; the cost: recall -2 points vs the
+  control, -3 vs v5, PVE -3.7 mm inside the noise, depth slope still 0.42), the 3DPW line, the recipe line (10 epochs,
+  40,000 images, 70% AnnyOne + 30% 3DPW-train, one run each, noise about 7.6 mm / 2 recall points) and the source
+  line (jobs 3611336, 3611339, 3612073-75).
 - **What we did:** exp7: fix arm 3611336 and control 3611339 (Part 5).
 - **Numbers** [Certain, H 5 item 7; 3611336:191-229, 3611339:182-220; 3612073-3612075]:
 
@@ -716,14 +806,15 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
   | recall | 90.2% | 89.0% | 87.0% |
   | root error, mm | 1208 | 1402 | 728 |
   | drawn size (1 = right) | 0.63 | 0.59 | 0.78 |
-  | depth slope (1 = right) | 0.33 | 0.28 | 0.42 |
+  | depth slope (1 = right; not a table row on the slide) | 0.33 | 0.28 | 0.42 |
   | neck02, deg | 175.6 | 175.8 | 4.8 |
   | neck thickness | 0.46 | 0.46 | 1.00 |
   | fingers, deg | 17.3 | 17.4 | 8.3 |
   | 3DPW test PVE, mm (v23, 8,190 images) | 121.8 | 91.5 | 89.0 |
 
   3DPW test, all on the same labels and script: v5 121.8, v9 (old best) 95.5, 2-epoch neck pilot 120.2, control 91.5,
-  final 89.0 mm PVE; PA-PVE 72.0 / 62.9 / 68.7 / 59.7 / 57.6; final recall 99% vs v9 94% [Certain, H 0b].
+  final 89.0 mm PVE; PA-PVE 72.0 / 62.9 / 68.7 / 59.7 / 57.6; final recall 99% vs v9 94% [Certain, H 0b]. The slide
+  shows the PVE line and the recall; the PA-PVE values are in the notes.
 - **Result:** all fixes hold together; PA-PVE 50.3 is the best of every model with a V1 PA-PVE; the final model is the
   best on our 3DPW-Anny labels, mostly because of the 3DPW training (control 91.5); the fixes add 2.5 mm PVE
   [Certain, H 5 item 7].
@@ -734,10 +825,12 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
   item 7]. Precision on 3DPW is low for every model (final 64%), partly because 3DPW labels only the actors, not the
   bystanders [Likely, H 5 item 7].
 
-### Slide 21. Final model on real photos
+### Slide 21. Final model on real photos: v5 vs final (by eye)
 
 - **On the slide:** `docs/figures/final_model_real_photos.jpg` (tennis photo, `downtown_walking_00`,
-  `downtown_runForBus_00`; v5 left, final right) and bullets.
+  `downtown_runForBus_00`; v5 left, final right) and bullets: men look male (tennis 3 of 4, walking, office, guitar);
+  women stay female (stage photo, weekly market); bodies a little larger (0.63 -> 0.78); unchanged (the boy, placement
+  offsets, ghost bodies, hard poses); the Relative Human line; source demo job 3612078 [D slide 21].
 - **What we did:** demo job 3612078: v5 next to the final model on 4 photos and 8 3DPW test frames; the bone fix is
   applied from the checkpoint's settings [Certain, H 3.4 "Final model, by eye"].
 - **Result (by eye) [Likely]:** most men now get male bodies (flat chest, broader shoulders): 3 of 4 men on the tennis
@@ -751,41 +844,55 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
   0.05-0.99) but are not matched to bodies, and on the tennis photo most values are above 0.7 although the men look
   male [Certain, H 3.4]. The pictures stay a by-eye judgement.
 
-### Slide 22. Pilot experiments: four results and the noise floor
+### Slide 22. Pilots: four results and the noise floor
 
-- **On the slide:** a table of the four 2-epoch / 10-epoch experiments with their success rule and result, and a box
-  on pilot noise.
-- **Results** [Certain, H 3.1-3.4, H 3.6; D slide 14]:
+- **On the slide:** a table of the four 2-epoch / 10-epoch experiments (experiment | what it changes | success rule |
+  result), and a box on pilot noise.
+- **Results** [Certain, H 3.1-3.4, H 3.6; D slide 22]:
   - **exp1 depth anchor:** rule not met (PVE and recall miss in every run, controls too; x5 for 10 epochs 74.8 mm,
     87.8%); outside the rule clearly better: root error 1.21 -> 0.54 m, size 0.63 -> 0.84.
   - **exp2 children sampler** (5 times more synthetic children per batch, 2.1% -> 9.7-11%): inconclusive after 2
-    epochs (10 training children 48.5 vs 53.1 mm; baby age floor 0.100 -> 0.102).
+    epochs (10 training children 48.5 vs 53.1 mm; both arms with age loss x3 and height x2; baby age floor
+    0.100 -> 0.102, not in the deck). The slide adds v5 on 127 real Relative Human children: adult age, AUC 0.61.
   - **exp3 neck, global-head loss:** 11.3 deg passes the < 12 rule, but two identical controls gave 11.7 and 13.6:
-    inside noise.
+    inside noise. Its safety limit (PVE <= 71.5 mm, recall >= 89.2%) was just missed, 71.8 mm and 89.0%; all five
+    control runs miss it too.
   - **exp4 fingers, rebalanced loss:** no effect, 17.5 vs 17.4 deg.
 - **Noise box:** two identical runs differed by 7.6 mm PVE and 1.9 deg; one run resolves about 10 mm, 3 deg, 2 recall
-  points; restart cost about 2.4 mm [Certain, H 3.6].
+  points; restart cost about 2.4 mm (controls average 72.9 vs 70.5 mm); root error has no measured noise floor, but
+  every fix run (0.53-0.73 m) is below every control (1.11-1.44 m) [Certain, H 3.6; D slide 22].
 - **Not claimed:** that the sampler cannot work (unproven at 2 epochs, not "no effect"); that exp3 improved the head.
   The later fixes (depth targets, bone fix) came from diagnostics, not from these loss changes.
 
 ### Slide 23. Thesis requirements: where we stand
 
-- **On the slide:** a table requirement | status | evidence | next (see Part 7 for the full text).
+- **On the slide:** a table requirement | status | evidence (18 Oct) | next (see Part 7 for the full text), in the
+  order 1c, 2a, 1a pose, 1a shape, 1b, 2b, 3, and a "how to read" line. The evidence and next cells name the partial
+  mask (job 3614042), NAVER's model (job 3614192, running) and the ViT-B student (job 3614191, slide 24); the report
+  row says "draft exists (74 mm -> 70.5); 98 files hard-code /netscratch; no results or models committed"
+  [D slide 23].
 - **Status words:** 1c met; 2a met; 1a pose partly; 1a shape partly, at risk; 1b not met; 2b not started; 3 partly
-  [Certain, P 2; D slide 20].
+  [Certain, P 2; D slide 23].
 - **Not claimed:** that 1b is met by the current model. It is still Multi-HMR [Certain, P 3.1 item 1].
 
 ### Slide 24. Plan for 1b: a smaller model by distillation
 
-- **On the slide:** teacher (final model, ViT-L) -> student (ViT-B), the cost table, the 95% rule, the job ids.
+- **On the slide** [D slide 24]: one table with four rows: our ViT-L (final model, the teacher: 318.4 M params,
+  1,927 GFLOPs, 110 ms on an A40, holdout PVE 73.7 mm, 3DPW test PVE 89.0 mm); the ViT-B student (101.4 M, 603,
+  51.4 ms, errors pending this week); NAVER's ViT-L Anny model (all pending, job 3614192); and "student vs teacher"
+  (3.14x fewer params, 3.19x fewer FLOPs, 2.14x faster; bars <= 77.6 mm and <= 93.7 mm). Under it: a "how to read"
+  line (cost measured in smoke test 3613926, 1 multiply-add = 2 FLOPs, 672 px, one person; the backbone alone is
+  304 M params and 1,917 GFLOPs), the 95% rule, and three bullets: recipe, timeline, risk with the question for the
+  supervisor. There is no teacher -> student drawing.
 - **What we did:** wrote exp8 (`slurm/experiments/exp8_distill_vitb.sh`). The student is a DINOv2 ViT-B initialised
   from NAVER's Multi-HMR ViT-B; a small projector (768 -> 1024) feeds heads copied from the teacher; it learns from the
   normal labels plus the teacher's features (weight 1.0) and outputs (weight 1.0); same targets as the teacher (depth
   fix, 30% 3DPW, hand mask, teacher's bone fix); batch 8, learning rate 3e-5, 30 epochs x 1,000 steps = 240,000 images
-  [Certain, exp8 header; E exp8].
-- **Status:** smoke test 3613926 passed end to end; full run job 3614191 submitted 18 Oct (30 epochs, 20-hour limit); the result comes
-  a day or two after the queue starts it; NAVER's own Anny model on the same labels: job 3614192, pending (the first try, 3613928, crashed on
-  a head-size mismatch, now fixed) [Certain, H 0a].
+  [Certain, exp8 header; E exp8]. The slide's recipe bullet adds the distillation temperature, T 4.
+- **Status:** smoke test 3613926 passed end to end; full run job 3614191 launched 18 Oct (30 epochs, 20-hour limit);
+  the slide says "result this week once the queue runs it"; if it misses the bar with a still-falling curve: train
+  longer and report the ratio as measured. NAVER's own Anny model on the same labels: job 3614192, pending (the first
+  try, 3613928, crashed on a head-size mismatch, now fixed; that job id is not in the deck) [Certain, H 0a].
 - **Numbers** [Certain, exp8 smoke test 3613926, H 0a]:
 
   | | teacher ViT-L (final model) | student ViT-B | ratio |
@@ -794,40 +901,51 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
   | GFLOPs per image | 1,927.4 | 603.3 | 3.19x fewer |
   | ms per image (A40) | 110 | 51.4 | 2.14x faster |
 
-  The student's 101.38 M is its ViT-B backbone (86.58 M) plus the teacher-sized heads (about 14.0 M) and the projector
-  (0.79 M) [Certain, `model_cost.py` table in H 0a; exp8 header "heads"].
+  The slide rounds these to 318.4 M / 101.4 M and 1,927 / 603 GFLOPs. The student's 101.38 M is its ViT-B backbone
+  (86.58 M) plus the teacher-sized heads (about 14.0 M) and the projector (0.79 M); this split is not in the deck
+  [Certain, `model_cost.py` table in H 0a; exp8 header "heads"].
 - **The 95% rule:** for PVE and MPJPE on both the AnnyOne holdout and the 3DPW test, student error <= teacher error /
   0.95 (exp8's rule; targets about 77.6 mm and 93.7 mm), plus fewer params and FLOPs and faster [Certain, exp8 header
   "THE 95% RULE"]. The deck uses only this /0.95 form; the ratio is reported against both our ViT-L and NAVER's
   [Certain, P 3.2].
-- **Why ViT-B:** NAVER's own ViT-B equals its ViT-L on 3DPW (PVE 94.0 vs 94.1) [Certain, fetched NAVER README, P 3.2];
-  our old ViT-S students had 1.17-1.54x their teacher's error [Certain, P 2].
+- **Why ViT-B:** NAVER's own ViT-B equals its ViT-L on 3DPW (PVE 94.0 vs 94.1; the slide says "equal on 3DPW", the
+  numbers are in the notes of slide 23) [Certain, fetched NAVER README, P 3.2]; our old ViT-S students had 1.17-1.54x
+  their teacher's error (notes of slide 23) [Certain, P 2].
 - **Not claimed:** that the student will pass. [Guessing] likely on 3DPW, about 50/50 on AnnyOne, because NAVER's ViT-B
   is about 15% worse than its ViT-L on synthetic BEDLAM data (P 3.2). Whether a smaller Multi-HMR-style student counts
   as "not exactly Multi-HMR" is the supervisor's decision (question 1, slide 26).
 
 ### Slide 25. Plan: the next four weeks
 
-- **On the slide:** four week rows (P 4, updated with what already happened on 18 Oct).
-- **Monday evening:** write down the supervisor's answers; check jobs 3614042 (partial mask), 3614191 (student),
-  3614192 (NAVER).
-- **Week 1 (19-25 Oct):** the NAVER baseline row; a masked-evaluation flag (to be written) so NAVER and ours use the
-  same setting; phenotype responsiveness numbers on the holdout (CPU only); the partial-mask run, its Relative Human
-  run and demo; decide the shape mask by 25 Oct [P 4 week 1; H 0a].
-- **Week 2 (26 Oct-1 Nov):** a rest-pose lineup figure (every person in rest pose, side by side, for "shape visibly
-  changes"); predicted fingers on real photos (`--relax_hands 0`); old students on the v23 labels; a body-joint MPJPE;
-  write the Method and Data chapters [P 4 week 2].
-- **Week 3 (2-8 Nov):** the student's result if the queue was slow (otherwise it is in by week 2); check its bone fix; the 95% table against both ViT-Ls;
-  bootstrap confidence intervals; write the Experiments chapter [P 4 week 3].
-- **Week 4 (9-15 Nov):** fallback decision on 10 Nov (train the student longer if it misses AnnyOne); the final table
-  with one protocol for every row; optional second seed; freeze the numbers; start the release [P 4 week 4].
-- **After:** weeks 5-6 temporal refiner (2b); weeks 7-8 writing, clean-up, presentation, buffer [P 4].
-- **Not claimed:** a buffer. Tier (1) closes around 15 Nov with no slack [Likely, P 3.6]. The plan text still says the
-  student launches Tue 20 Oct with 100 epochs; it was in fact submitted on 18 Oct with 30 epochs (see the report on
-  contradictions).
+- **On the slide** [D slide 25]: a table week | dates | what happens | for, with six rows (weeks 1, 2, 3, 4, 5-6 and
+  7-8), and a "how to read" line: part (1) of the list closes around 15 Nov; dropped: the ViT-S student, the children
+  sampler runs and the depth-slope investigation (slope 0.42 becomes a stated limitation).
+- **Week 1 (19-25 Oct; 1a shape, 1b):** NAVER baseline result (job 3614192); the partial-mask run (job 3614042) and its
+  Relative Human run; decide the final ViT-L on Sunday 25 Oct; the student's result (job 3614191) once the queue runs
+  it: holdout, 3DPW test, the 95% table; code: a masked-evaluation flag and the student's shape-distillation mask;
+  phenotype statistics on AnnyOne (r, slope, R^2) [D slide 25; P 4 week 1; H 0a].
+- **Week 2 (26 Oct-1 Nov; 1a, 3):** a rest-pose line-up of predicted bodies (the "visibly changes" figure); predicted
+  fingers on real photos (`--relax_hands 0`; every demo so far forces rest-pose hands); the old ViT-S students on the
+  new labels; a body-joint MPJPE; write the Method and Data chapters [D slide 25; P 4 week 2].
+- **Week 3 (2-8 Nov; 1b, 3):** if the student missed the bar and its curve still fell, train it longer from its last
+  checkpoint; the 95% table against our ViT-L and NAVER's; paired bootstrap confidence intervals; write the
+  Experiments chapter (depth, neck, shape mask, Relative Human) [D slide 25; P 4 week 3].
+- **Week 4 (9-15 Nov; 1b, 3):** one final table, one protocol, every model; one more seed of the final ViT-L if a slot
+  is free; architecture figure and module table; freeze the numbers; start the model release with checksums
+  [D slide 25; P 4 week 4].
+- **After:** weeks 5-6 (16-29 Nov) the temporal refiner (2b); weeks 7-8 (30 Nov-13 Dec) introduction, related work,
+  conclusion, limitations, revision, code clean-up and the presentation, week 8 as buffer [D slide 25; P 4].
+- **Not on the slide:** Monday evening, write down the supervisor's answers and check jobs 3614042 (partial mask),
+  3614191 (student) and 3614192 (NAVER).
+- **Not claimed:** a buffer before 15 Nov. Tier (1) closes around 15 Nov with no slack [Likely, P 3.6]. Parts of the
+  plan file still say the student launches Tue 20 Oct with 100 epochs; it was in fact launched on 18 Oct with
+  30 epochs, as the deck says.
 
 ### Slide 26. What I claim, what I do not, and my questions
 
+- **On the slide** (dark closing slide): one block "Claimed, measured / Not claimed" and a box with the four
+  questions. Relative Human recall 47 -> 65% is in the notes, not on the slide; the notes also answer last week's
+  question: labels first, then the v5 fine-tune, which is the final model [D slide 26, D notes 26].
 - **Claim (measured) [Certain]:** the failures are not rig or decoding problems; a training-target bug put people too
   far away in v5, v9 and v10, and the fix draws them much closer to their true size; neck02, the head bone and two
   hand bones were half a turn off, and a fixed correction turns them back; the 3DPW labels had three defects, now
@@ -835,25 +953,33 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
   fingers 8.3 deg, PA-PVE 50.3 vs 56.4 mm) and is the best on our 3DPW-Anny labels (89.0 vs v9 95.5, v5 121.8); on
   Relative Human it is better than v5 on every line (gender 46.5 -> 64.2%, AUC 0.61 -> 0.72, recall 47 -> 65%).
 - **Not claimed:** results proven over seeds; why the bones flipped; children or gender solved; correct near/far depth
-  (slope 0.42); fixes without cost (recall -2 points vs control, -3.2 vs v5); that the fixes made most of the 3DPW gain
-  (3DPW training did); visibly varied body build on real photos (muscle, weight near 0.5); a model that is not
-  Multi-HMR (requirement 1b).
-- **Questions for the supervisor** (D slide 19, P 5):
+  (slope 0.42); fixes without cost (recall -2 points vs control on the slide; -3.2 vs v5 in the notes); that the fixes
+  made most of the 3DPW gain (3DPW training did); a model that is not Multi-HMR (requirement 1b). Not in the deck's
+  list but true: visibly varied body build on real photos is not claimed either (muscle, weight near 0.5; slide 19).
+- **Questions for the supervisor** (D slide 26, P 5):
   1. (1b) Is the 95% bar against our ViT-L, NAVER's ViT-L, or both? Does a smaller Multi-HMR-style student count as
      "not exactly Multi-HMR"?
   2. (2b) Does a temporal refiner on frozen per-frame features count as "understands motion"?
   3. Children: a stated limitation, or weak age labels from Relative Human (1-2 weeks of code)?
   4. When is the submission date?
-  - Possible extra questions from P 5: is our last-100 AnnyOne tail "the AnnyOne test set", or is there an official
-    split? Is a body-joint MPJPE acceptable on 3DPW?
+  - Possible extra questions from P 5, not on the slide: is our last-100 AnnyOne tail "the AnnyOne test set", or is
+    there an official split? Is a body-joint MPJPE acceptable on 3DPW?
 
-### Slide 27. Still open (appendix)
+### Slide 27. Still open, and what I test next
 
+- **On the slide** (appendix) [D slide 27]: seven numbered items: (1) bone flips, fix confirmed at 10 epochs (neck02
+  4.8 deg; real images by eye only; v10's left arm needs a two-sided fix, not built); (2) depth slope 0.42, cause
+  unknown, next: measure training depths and the slope on training images; (3) depth-fix cost, now measured (final vs
+  control: PVE within noise, recall -2 points, -3 vs v5; paired PVE not done; no x20 result at 10 epochs); (4) pilot
+  noise, no seed; (5) people very close to the camera (4 of 12 holdout renders, both models); (6) children and fingers
+  (AUC 0.61 -> 0.72, not solved; fingers: bone-fix hands, then larger crops); (7) 3DPW labels, three defects fixed
+  (re-extraction 16 Oct, re-fit and re-check 18 Oct, WARN, in use by the final model).
+Background to these items, and what else is open:
 - **Depth slope 0.42** (1 = right): predictions are pulled toward about 2.5-2.9 m; cause unknown; measuring the
   training depths properly needs new code [Certain, H 3.1, H 5 item 8].
 - **Recall cost:** -2 points vs the control, -3.2 vs v5; a PVE comparison paired on the same people and a recall on
   people with a visible head still need code; [Likely, untested] the drop comes from moving the detection square to
-  the head [H 5 item 9].
+  the head [H 5 item 9]; this cause is not on the slide, which gives only the measured cost (item 3).
 - **No seed:** `train.py` sets none; one run per arm [Certain, H 5 item 10].
 - **People very close to the camera:** both v5 and the depth-fix model miss them in 4 of 12 rendered holdout images;
   likely detection, not counted [Likely, H 3.1].
@@ -861,14 +987,23 @@ Each block: what is on the slide, what we did, why, the result, the numbers with
 - **Hands on real photos:** never shown with predicted fingers (slide 17).
 - **Why the bones flipped:** unknown; v10's left arm needs a two-sided correction, not built [Certain, H 3.2].
 - **The x20 depth run for 10 epochs:** command given on 14 Oct, never confirmed [Certain, H 3.1, H 4d].
-- **3DPW precision 64% and ghost bodies:** about a third of the detections match no label; the split between
-  bystanders and ghosts is unknown [Certain, P 3.1 item 4].
-- **NAVER baseline:** pending (job 3614192) [Certain, H 0a].
+- **3DPW precision 64% and ghost bodies** (not on this slide; slide 20 notes): about a third of the detections match
+  no label; the split between bystanders and ghosts is unknown [Certain, P 3.1 item 4].
+- **NAVER baseline** (not on this slide; slides 23-25): pending (job 3614192) [Certain, H 0a].
 
-### Slide 28. Corrections to the thesis draft (appendix)
+### Slide 28. Corrections to the draft and the repo
 
-The thesis draft is not in the repository; these lines come from H 1 "Headline", H 6 and H 7 [Certain that each old
-claim is wrong, as stated there]:
+- **On the slide** (appendix) [D slide 28]: four boxes. Headline number: done, the README gives AnnyOne holdout PVE
+  70.5 mm, helper bones masked; to do, replace the thesis draft's 74 mm (the unmasked evaluation, +3.8 mm on the same
+  people). Demos: done, all demo scripts zero the fingers and the README says so. Wording: done, neck, fingers and
+  children are no longer called rig or decoding problems, and the README's Known-defects section documents the depth
+  bug; to do, the README and the findings document still carry last week's neck story. Repository: done,
+  reorganised, one shared cluster setup, diagnostics and experiments documented. The notes add that the demo setting
+  gives 68.5 mm at a lower recall.
+
+The full list of corrections the thesis draft needs is longer than the slide. The draft is not in the repository;
+these lines come from H 1 "Headline", H 6 and H 7, and apart from the headline number they are not on the slide
+[Certain that each old claim is wrong, as stated there]:
 - **Headline number:** the draft says 74 mm. That is the unmasked V0 evaluation of v5. Use 70.5 mm (V1, helper bones
   masked; +3.8 mm on the same people when unmasked). The thesis model is now the final model: 73.7 mm holdout V1,
   89.0 mm 3DPW test (v23) [H 1; P 2 row 3-report].
@@ -886,16 +1021,27 @@ claim is wrong, as stated there]:
 - **Known issue:** every fine-tune skips a few steps for NaN/Inf gradients (1-7 per 2,000; 16 of 10,000 in the final
   model); gradient clipping absorbs it [H 1].
 
-### Slide 29. Backup: holdout image 579860 (appendix)
+### Slide 29. Backup: before and after, holdout image 579860
 
-- **On the slide:** ground truth | v5 | fix (x5, 10 epochs) on holdout image 579860, with the model's own depth.
+- **On the slide** (appendix): ground truth | v5 | fix (x5, 10 epochs) on holdout image 579860, with the model's own
+  depth.
 - **What it shows:** before the fix the boy's real head sticks out above a shrunken, floating mesh; after the fix the
-  top of the head is level with the truth [Certain, D notes 21].
+  top of the head is level with the truth [Certain, D notes 29].
 - **Not claimed:** an exact fit: here the fixed mesh is a little larger and wider than the truth, and it is cut off at
   the image edge, so its full height cannot be measured. The two people in front have no ground-truth mesh, so they
-  do not count as misses [Certain, D slide 21].
+  do not count as misses [Certain, D slide 29].
 
-### Slide 30. Jobs and checkpoints (appendix)
+### Slide 30. Jobs and checkpoints
+
+**On the slide** (appendix) [D slide 30]: one table, job | what | path under `/netscratch/najib/multi-hmr`, with 13
+rows: v5 epoch 99; 3611336 final model (3DPW test in its log); 3611339 control; 3612325 masked-shape arm; 3614042
+partial mask (queued); 3614191 ViT-B student (smoke test 3613926; `logs/exp8_distill_vitb_3614191.out`); 3614192
+NAVER's Anny model on both test sets (pending; `logs/eval-test3dpw-3614192_0.out`,
+`models/multiHMR/multiHMR_672_L_anny.pt`); 3611285 Relative Human v5 (_0) and neck pilot (_1); 3612131 / 3613616
+Relative Human final / masked; 3612078 / 3613617 demos; 3612073-75 3DPW test of v5, v9 e62 and the neck pilot;
+3611284 v23 label check; 3579014 exp6 bone fix. Checkpoints are not in git (release: week 4). The lists below are
+longer than the slide: the v9 checkpoint, the student's run folder, the model copy `exp7_v5_final_00009.pt` and every
+job before 3611284 except 3579014 are not on it.
 
 **Checkpoints** (relative to `/netscratch/najib/multi-hmr`; H 1, H 0a, exp7 and exp8 scripts):
 - v5 epoch 99: `logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt`
@@ -1065,7 +1211,7 @@ H 3.4; P 3.1 item 4]. A fit to the SMPL surface could recover more; we ask wheth
 We do not know the cause yet [Certain, H 3.1]. The fix moved the offset (intercept 2.66 -> 1.75 m) and the body size
 (0.59 -> 0.78), but the slope only from 0.28 to 0.42 against the control. Predictions are pulled toward about 2.5-2.9
 m, close to the average training depth, while holdout people stand at about 1.9 m on average [Certain for the numbers,
-H 3.1, D notes 13]. To find out, we must measure the training depth distribution properly, which needs new code
+H 3.1, D notes 14]. To find out, we must measure the training depth distribution properly, which needs new code
 [Certain, H 5 item 8]. [Guessing] it may need more trainable backbone blocks or a stronger depth signal. For the thesis
 it becomes a limitation with its mechanism [P 4 "What to drop"].
 
@@ -1104,4 +1250,4 @@ smaller than the noise [Certain, H 3.6].
 **Q15. Why ViT-B and not ViT-S for the student?**
 NAVER's own ViT-B equals its ViT-L on 3DPW (94.0 vs 94.1 PVE) [Certain, P 3.2]. Our earlier ViT-S students had 1.17-1.54
 times their teacher's error, far from the 95% bar [Certain, P 2]. ViT-B is the smallest step with a fair chance
-[Likely, D notes 20].
+[Likely, D notes 23].

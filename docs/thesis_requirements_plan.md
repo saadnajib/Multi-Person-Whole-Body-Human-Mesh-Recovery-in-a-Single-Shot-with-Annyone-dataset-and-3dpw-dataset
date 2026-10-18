@@ -10,7 +10,8 @@ checkpoint args; val split, 635 images, 2,130 labelled people, IoU 0.3, child th
 accuracy 0.642 (v5 0.465), children AUC 0.719 (v5 0.606), recall 0.647 (v5 0.471); table and reading in 3.1, item 7.
 Every "pending" for it in the first version of this file (the skeptic's review included) is replaced below. The
 `MASK_3DPW_SHAPE=1` arm is running [Likely, the student's message of 18 Oct; no job id or log here yet]. The deck has
-a requirements slide since this update (slide 20; handover section 9).
+a requirements slide since this update (slide 23 of the 30-slide deck `docs/supervisor_update_2026-10-19.pptx`,
+rebuilt on the evening of 18 Oct; handover section 9).
 
 **Sources.** The supervisor's e-mail (pasted by the student on 18 Oct); `docs/handover.md` (0b, 3.4, 3.5, 3.6, 4f,
 section 5 item 7); four read-only investigator reports (architecture and baseline, distillation, phenotypes,
@@ -148,7 +149,7 @@ met. [1a-pose] is close on 3DPW. Not met: [1b] (the model is Multi-HMR with an A
      detected sets. On the 12 demo images muscle, weight, cup size and firmness sit at ~0.5, the converter constants
      (demo 3612078 `[shape]` lines), so "shape visibly changes per person" holds for gender and partly for age and
      height only.
-   - Say it as "measured improvement, not solved" (deck slides 10, 19 and 20).
+   - Say it as "measured improvement, not solved" (deck slides 18, 23 and 26).
 
 ### 3.2 The route for [1b]
 
@@ -244,8 +245,9 @@ than its L on synthetic BEDLAM-val (67.2 vs 58.6), and AnnyOne is synthetic.
 ### 3.6 Verdict: can (1) be 100% done in 4 weeks?
 
 Feasible, with a real risk and no buffer [Likely]. The baseline, the shape mask and the shape evidence fit in weeks
-1-2. The student is the long pole: submitted Tue 20 Oct, a few days in the queue, ~24-42 h of training, so a result
-around Sun 8 Nov; the fallback decision on Tue 10 Nov; (1) closes on Sun 15 Nov. Say this on Monday.
+1-2. The student was submitted on 18 Oct (job 3614191, 30 epochs, 20 h limit), earlier and shorter than first planned
+(the Tue 20 / 100-epoch commands below are the superseded plan): its result comes a day or two after the queue starts it;
+if it misses the 95% bar, the fallback (train longer) is decided the same day; (1) closes by Sun 15 Nov. Say this on Monday.
 
 ---
 

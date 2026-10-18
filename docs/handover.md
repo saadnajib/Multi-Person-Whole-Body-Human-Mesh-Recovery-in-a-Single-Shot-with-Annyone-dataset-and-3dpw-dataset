@@ -3,9 +3,10 @@
 This file replaces the chat history. It is written for an assistant that cannot see that chat, the cluster or any
 temporary files. Everything you need is either here or in this repository. **Where this file disagrees with
 `README.md`, `docs/diagnostics_findings.md`, `docs/experiments_plan.md` or `docs/experiments/exp2_children.md`, trust
-this file** (section 7 lists the outdated lines). The deck `docs/supervisor_update_2026-10-16.pptx` (21 slides since
-the afternoon of 18 Oct) and the speaker notes `docs/supervisor_talk_notes_2026-10-16.md` match this file. Section 9
-lists the slides and the lines that will go stale when the pending results arrive.
+this file** (section 7 lists the outdated lines). The deck `docs/supervisor_update_2026-10-19.pptx` (30 slides since
+the evening of 18 Oct), the speaker notes `docs/supervisor_talk_notes_2026-10-19.md` and the slide-by-slide
+explanation `docs/deck_explained_2026-10-19.md` match this file. Section 9 lists the slides and the lines that will go
+stale when the pending results arrive.
 
 **Which version you have.** All code this file describes is on GitHub `main` as of the evening of 17 Oct
 (`a0926fd` and the docs commit after it): the 3DPW converter fix (v2.3 flags and the re-fit post-check, 4e); the
@@ -13,7 +14,7 @@ options that run the converter on H100/H200 (`GPUS`, `CONDA_ENV`, `PY_VENV`, 4f)
 `slurm/experiments/exp7_final_model.sh` together with the `MODEL_ENTRY` / `EVAL_LABELS` overrides of
 `slurm/eval/run_eval_3dpw_test.sh` it needs (`b188b63`; section 5, item 7; ran 18 Oct, jobs 3611333 / 3611336 /
 3611339); the default-off flag `--mask_3dpw_shape` (`loss.py`, `train.py`, exp7's `MASK_3DPW_SHAPE`; `a0926fd`;
-3.4); the deck (18 slides then; 21 now, section 9) with its source `docs/deck_src/`, the
+3.4); the deck (18 slides then; 30 now, section 9) with its source `docs/deck_src/`, the
 figures in `docs/figures/` and the corrected children slide (section 9). A `git pull` on the cluster gets all of it
 (the current deck and this file only once the student commits them). After the pull, `ls
 slurm/experiments/exp7_final_model.sh`,
@@ -38,9 +39,9 @@ confirm the three. To check a copy of this file:
   Human result, jobs 3611285_0/_1, 3.4; the v23 conversion check, job 3611284, 3.5; exp7 submitted, jobs 3611333 /
   3611336 / 3611339, 0a step 6; the deck updated, section 9).
   `0` means an older copy: it still rests the children claim on one boy in our own photos, calls the RH evaluation
-  and the v23 check not run, and has the "0.60 / one real child" tile on slide 10.
+  and the v23 check not run, and has the "0.60 / one real child" tile on the children slide (today's 18).
 - `grep -c '728 mm' docs/handover.md` prints a number above `0` in the 18-Oct evening version and later (the exp7
-  results, jobs 3611336 / 3611339; the 19-slide deck with the final-model slide 16; 0a step 6, section 5 item 7,
+  results, jobs 3611336 / 3611339; the 19-slide deck with the final-model slide (today's 20); 0a step 6, section 5 item 7,
   section 9). `0` means an older copy: it still calls exp7 queued or running and the deck 18 slides long.
 - `grep -c '121.8' docs/handover.md` prints a number above `0` in the midday 18-Oct version and later (the v23
   comparison, jobs 3612073 / 3612074 / 3612075, and the real-photo slide, demo job 3612078; the 20-slide deck; 0a
@@ -50,17 +51,21 @@ confirm the three. To check a copy of this file:
   later (the supervisor's thesis requirements, the status matrix and the 4-week plan in
   `docs/thesis_requirements_plan.md`; section 11). `0` means an older copy: it has no plan for requirement 1b (a
   smaller or a new model), temporal modelling or the release.
-- `grep -c 3612131 docs/handover.md` prints a number above `0` only in this version (18 Oct afternoon: the Relative
-  Human result of the final model, job 3612131, and the 21-slide deck with the requirements slide 20; 3.4, section 9,
-  section 11). `0` means an older copy: it still calls the final model's Relative Human run pending, says children
-  are unchanged in the final model and has a 20-slide deck.
+- `grep -c 3612131 docs/handover.md` prints a number above `0` in the afternoon 18-Oct version and later (the
+  Relative Human result of the final model, job 3612131, and the 21-slide deck with the requirements slide, today's
+  23; 3.4, section 9, section 11). `0` means an older copy: it still calls the final model's Relative Human run
+  pending, says children are unchanged in the final model and has a 20-slide deck.
+- `grep -c deck_explained docs/handover.md` prints a number above `0` only in this version (evening of 18 Oct: the
+  30-slide deck `docs/supervisor_update_2026-10-19.pptx`, its notes `docs/supervisor_talk_notes_2026-10-19.md` and the
+  explanation `docs/deck_explained_2026-10-19.md`; section 9, 0a). `0` means an older copy: it still points to the
+  21-slide `docs/supervisor_update_2026-10-16.pptx`, which is removed, and uses the old slide numbers.
 
 The student should attach this file to the chat directly, not rely on you browsing GitHub. Download links: section 8.
 
 **What happened on 16 Oct** (all in this version): the student sent the 12 exp6 compare panels (neck checked by eye
 on the holdout; 3.2, 4a). The real-image demo ran (job 3581312: v5 next to the exp6 fine-tuned checkpoint with the
 fix, on 4 photos and 8 3DPW-test frames; the student sent 8 of these 12 images). By eye, on those 8, the thin necks
-get normal width with the fix; the fixed side also had the 2-epoch fine-tune (3.2, "Real images"). Slide 8 shows a
+get normal width with the fix; the fixed side also had the 2-epoch fine-tune (3.2, "Real images"). Slide 16 shows a
 holdout pair and a real pair (section 9). The image folders of the 8 affected 3DPW sequences were re-extracted and a
 second label rebuild ran (job 3581320; 3.5, 4c): train 6,437 images (was 4,451), validation 2,777 (was 2,458), test
 9,722 unchanged, 18,936 in all, exactly what the current fits imply. So the missing-labels defect is fixed; the
@@ -89,7 +94,8 @@ file were merged into `main` (section 8).
   BEV-style weak labels (Path B, 1-2 weeks of code after exp7). Both are for the supervisor on Monday (0a, step 8).
 - `--mask_3dpw_shape` added (default off; exp7 env `MASK_3DPW_SHAPE`, default 0; commit `a0926fd`, on `main`). The
   first exp7 run (18 Oct) uses it off; a mask-on run is a possible follow-up (3.4).
-- Deck: slide 10 (children) corrected, slides 14 and 18 and notes 8, 10, 14, 18, 19 made consistent (section 9).
+- Deck: the children slide (today's 18) corrected, slides 22 and 27 and notes 16, 18, 22, 26, 27 made consistent
+  (section 9).
 
 **What happened on 18 Oct** (all in this version; details in 3.4, 3.5, 0a and section 8):
 - The full 3DPW re-fit is complete [Certain, logs]: the rerun job 3602813 (36 tasks, no V100) finished, 87 fits;
@@ -107,7 +113,7 @@ file were merged into `main` (section 8).
 - exp7 (the final model) passed its `CHECK_ONLY` guards and was submitted (the student wants it before Monday
   16:00): 3611333 smoke test, 3611336 fix arm, 3611339 control arm, all queued on A100 / L40S / RTXA6000;
   `MASK_3DPW_SHAPE=0` (0a, step 6).
-- Deck: slides 1, 6, 10, 14, 18, 19 and notes 1, 6, 8, 10, 14, 18, 19 updated with these results (section 9).
+- Deck: slides 1, 6, 18, 22, 26, 27 and notes 1, 6, 16, 18, 22, 26, 27 updated with these results (section 9).
 - Evening: the supervisor's thesis requirements arrived (necessary / recommended / best grade). Status matrix, gaps,
   4-week plan with commands and the Monday bullets: `docs/thesis_requirements_plan.md`; summary in section 11.
 
@@ -122,8 +128,9 @@ file were merged into `main` (section 8).
   87.0 (v5 90.2: a real cost).
 - [Certain] 3DPW test on the v23 labels: PVE 91.5 -> 89.0, PA-PVE 59.7 -> 57.6 (3611339:215-220, 3611336:224-229).
   v5, v9 e62 and exp6 on v23: pending then; done at midday (next block).
-- Deck: new slide 16 "Final model: all fixes together, with a control"; the old slides 16-18 became 17-19 (today's
-  18, 19 and 21); slides 1, 7, 9, 13, 14, 18, 19 and ten notes updated; footer and byline 19 Oct (section 9).
+- Deck: new slide "Final model: all fixes together, with a control" (today's 20); the 18-slide copy's slides 16-18
+  moved down one (today's 27, 26 and 29); slides 1, 14, 15, 17, 22, 26, 27 and ten notes updated; footer and byline
+  19 Oct (section 9).
 
 **What happened at midday on 18 Oct, after the exp7 results** (this version; details in 0a step 6, section 5 item 7,
 3.4 and section 9):
@@ -146,9 +153,9 @@ file were merged into `main` (section 8).
   spreads out (v5 0.32-0.76, final 0.05-0.99), but it cannot confirm the direction the eye sees (3.4).
 - Not run then: the Relative Human evaluation of the final model, its gender and children number. It ran in the
   afternoon (job 3612131, next block).
-- Deck: new slide 17 "Final model on real photos: v5 vs final (by eye)"; slide 16's v5 cell now 121.8 and a 3DPW line
-  under its table; slide 19's claims; notes 1, 8, 16, 17, 18, 19; the old slides 17-19 became 18-20 (today's 18, 19
-  and 21); 20 slides then (section 9).
+- Deck: new slide "Final model on real photos: v5 vs final (by eye)" (today's 21); the final-model slide's v5 cell
+  (today's 20) now 121.8 and a 3DPW line under its table; the claims (today's 26); notes 1, 16, 20, 21, 26, 27; the
+  19-slide copy's slides 17-19 moved down one (today's 27, 26 and 29); 20 slides then (section 9).
 
 **What happened on the afternoon of 18 Oct** (this version; details in 3.4, section 9 and section 11):
 - Relative Human val of the final model, job 3612131 [Certain, `logs/eval_rh_3612131_0.out`; 18 Oct, 09:40, node
@@ -165,36 +172,37 @@ file were merged into `main` (section 8).
   Say "measured improvement, not solved" (3.4, "Relative Human, final model").
 - `docs/thesis_requirements_plan.md`: its first version (and its skeptic's review) called this run pending and the
   numbers unverified; fixed (its 3.1 item 7 has the table now; section 11).
-- Deck, 21 slides: new slide 20 "Thesis requirements: where we stand, and the plan" (status table and the route for
-  1b); the appendix is now slide 21; slide 10 with the final model (tile "0.61 → 0.72"); slide 17's last bullet
-  measured; slide 18 item 6; slide 19's claims and its four questions; notes 1, 8, 10, 16, 17, 18, 19, 20 (section 9).
+- Deck, 21 slides: new requirements slide (today's 23, "Thesis requirements: where we stand"; status table and the
+  route for 1b); the appendix moved to slide 21 (today's 29); the children slide with the final model (today's 18, tile
+  "0.61 → 0.72"); the real-photo slide's last bullet measured (today's 21); still-open item 6 (today's 27); the claims
+  and the four questions (today's 26); notes 1, 16, 18, 20, 21, 23, 26, 27 (section 9).
+- Evening: the deck rebuilt as 30 slides in story order (0a, "Deck rebuilt"; section 9).
 
-**Meeting date: Monday 19 October 2026, 16:00** (the student), with the deck `docs/supervisor_update_2026-10-16.pptx`
-(21 slides; slides 10, 14 and 18 changed on the evening of 17 Oct with the children correction; slides 1, 6, 10, 14,
-18 and 19 and notes 1, 6, 8, 10, 14, 18 and 19 changed on 18 Oct with the results above; on the evening of 18 Oct the
-final-model slide 16 was added and slides 1, 7, 9, 13, 14, 18 and 19 and notes 1, 7, 9, 10, 12, 13, 14, 18 and 19
-changed; at midday on 18 Oct the real-photo slide 17 was added and slides 16 and 19 and notes 1, 8, 16, 18 and 19
-changed; in the afternoon of 18 Oct the requirements slide 20 was added, the appendix became slide 21, and slides 10,
-17, 18 and 19 and notes 1, 8, 10, 16, 17, 18 and 19 changed; section 9). In the deck: the real-image demo (slide 8),
-the re-fit and the v23 conversion check (slide 6, notes 6, 18, 19), the Relative Human result (slide 10, notes 10, 14,
-18; since the afternoon of 18 Oct with the final model, job 3612131, also on slides 17, 18, 19 and 20), the final
-model (slide 16; notes 7, 9, 12, 13, 14, 18, 19), the final model on real photos (slide 17; notes 8, 16, 19) and the
-thesis requirements (slide 20; note 20).
+**Meeting date: Monday 19 October 2026, 16:00** (the student), with the deck `docs/supervisor_update_2026-10-19.pptx`
+(30 slides, rebuilt on the evening of 18 Oct in story order), its speaker notes
+`docs/supervisor_talk_notes_2026-10-19.md` and the slide-by-slide explanation `docs/deck_explained_2026-10-19.md`
+(section 9). It replaces the 21-slide deck of 16-18 Oct, whose rebuilds are described in section 9 of this file as of
+commit `a2d236d`. In the deck: the goal and the requirements (slide 2), the model (3), the datasets (4), the 3DPW
+conversion, the re-fit and the v23 conversion check (5, 6; notes 6, 26, 27), the losses, the training changes and the
+metrics (7, 8, 9), the depth bug (12-14), the neck and the fingers (15-17; the real-image demo on 16), the Relative
+Human result (18; job 3612131 also on 21, 23, 26 and 27), the masked arm (19), the final model (20; notes 8, 13, 14,
+15, 17, 26, 27), the final model on real photos (21), the pilots (22), the thesis requirements (23), the plan for 1b
+and the four weeks (24, 25), the claims and questions (26) and the jobs (30).
 
 **Citation key** (used from section 1 on):
 - `3572482:126` = line 126 of that Slurm job's `.out` log. Job index in section 8. The student has every log; ask for
   one when you need to check a number.
 - `README :L` = `README.md`; `plan :L` = `docs/experiments_plan.md`; `findings` = `docs/diagnostics_findings.md`.
-- `notes, slide N` = the speaker notes of slide N in `docs/supervisor_talk_notes_2026-10-16.md` (21 slides);
+- `notes, slide N` = the speaker notes of slide N in `docs/supervisor_talk_notes_2026-10-19.md` (30 slides);
   "If asked" = that slide's second part. The notes are cited by slide, not by line: their line numbers moved with
-  every rebuild. Copies from before 16 Oct had 17 slides: the neck before/after slide (now 8) was added on 16 Oct.
-  The 18-slide copies (16-18 Oct) lack the final-model slide (now 16), added in the exp7 version ("the evening of 18
-  Oct"). The 19-slide copies (that exp7 version) lack the real-photo slide (now 17), added at midday on 18 Oct, after
-  it. The 20-slide copies (midday 18 Oct) lack the requirements slide (now 20), added in the afternoon of 18 Oct;
-  their slide 20 (the appendix) is today's 21. So a 20-slide copy's slide 20 is today's 21; a 19-slide copy's slides
-  17-19 are today's 18, 19 and 21; an 18-slide copy's slides 16-18 are today's 18, 19 and 21; a 17-slide copy's
-  slides 8-14 are today's 9-15 and its 15-17 today's 18, 19 and 21. This file uses today's numbers, also for
-  history; literal pptx part names (`slide16.xml`, ...) in section 9 keep the numbering of their own version.
+  every rebuild. This file uses the 30-slide numbers, also for history. A 21-slide copy (16-18 Oct) maps to them as
+  (old -> new, `docs/deck_src/README.md`): 2 -> 10, 3 + 4 -> 11, 5 -> 5, 6 -> 6, 7 -> 15, 8 -> 16, 9 -> 17, 10 -> 18,
+  11 -> 12, 12 -> 13, 13 -> 14, 14 -> 22, 15 -> 28, 16 -> 20, 17 -> 21, 18 -> 27, 19 -> 26, 20 -> 23, 21 -> 29; its
+  slide 1 was a different title slide. Older copies, first to the 21-slide numbers: a 20-slide copy's slide 20 is the
+  21-slide 21; a 19-slide copy's slides 17-19 are the 21-slide 18, 19 and 21; an 18-slide copy's slides 16-18 are the
+  21-slide 18, 19 and 21; a 17-slide copy's slides 8-14 are the 21-slide 9-15 and its 15-17 the 21-slide 18, 19 and
+  21. Literal pptx part names (`slide16.xml`, ...) in the old section 9 (commit `a2d236d`) keep the numbering of
+  their own version.
 - `file.py:L` = that file in the repo. Line numbers are as of `64266dc`, unless a commit is named next to them. Of
   the files cited by line, only these have changed on `main` since: `slurm/demo/run_demo_compare.sh` (`fbda1b4`, 4b;
   cited "at `fbda1b4`"); the two 3DPW converter files `scripts/data/smpl_to_anny.py` and
@@ -312,7 +320,7 @@ Human evaluation (jobs 3611285_0/_1; 3.4), the final model, exp7 (smoke test 361
 control 3611339; result in step 6 and in section 5, item 7), the three 3DPW-test re-evaluations on the v23 labels
 (jobs 3612073-3612075: final model 89.0, v9 95.5, v5 121.8 mm PVE), a demo of the final model (job 3612078) and the
 Relative Human evaluation of the final model (job 3612131: gender 64%, children AUC 0.72, recall 65%; 3.4). The
-deck shows them on slides 10, 16, 17, 19 and 20 (section 9). Left before Monday: step 7 (open the deck once).
+deck shows them on slides 18, 20, 21, 23 and 26 (section 9). Left before Monday: step 7 (open the deck once).
 **`MASK_3DPW_SHAPE=1` arm DONE** [Certain, `logs/exp7_final_model_3612325.out`; job 3612325, L40S serv-3313, 3,717 s,
 10 NaN steps; run `v5_pc_dist5_bonefix_v23_e10_shpmask`]: AnnyOne holdout V1 PVE 71.7 / PA-PVE 50.7 / recall 86.2, root
 error 682 mm, slope 0.42, size 0.78, neck02 4.8 deg, girth 0.997, fingers 8.3 (unmasked final: 73.7 / 50.3 / 87.0, 728 mm);
@@ -353,6 +361,12 @@ student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30, 20:00:00, check + teach
 (CHECK_ONLY PASS, 485 original-class keys), run 3 job 3614042; all PENDING (Priority) at submission. Logs:
 `logs/exp8_distill_vitb_3614191.out`, `logs/eval-test3dpw-3614192_0.out`, run 3 under
 `results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/`.
+**Deck rebuilt, 18 Oct (evening):** 30 slides in story order (overview, data, training, findings and fixes, final
+model, requirements and plan, appendix), replacing the 21-slide deck. Three files: `docs/supervisor_update_2026-10-19.pptx`,
+`docs/supervisor_talk_notes_2026-10-19.md` (speaker script, generated from `docs/deck_src/build.js`) and
+`docs/deck_explained_2026-10-19.md` (slide-by-slide explanation with sources); the old -> new slide map is in
+`docs/deck_src/README.md` and section 9. Rendered with LibreOffice only: the student opens the pptx once in PowerPoint
+and checks slides 9, 13, 24 and 30, the tightest in the render (step 7; section 9).
 **DECIDED 18 Oct, 15:30: the UNMASKED model (3611336) stays the final model and the student's teacher.** Relative Human
 of the masked arm [Certain, `logs/eval_rh_3613616_0.out`, job 3613616]: recall 57.2% (unmasked 64.7%), gender accuracy
 49.3% (64.2%; men 0.717, women 0.860), children AUC 0.708 (0.719), ages adult 0.638 / kid 0.611 / baby 0.524 (unmasked
@@ -446,7 +460,7 @@ Paste this section with section 0. Each step names the section with the details.
      `evaltest_exp6_v5_bonefix__threedpw_anny_v23` under `logs/anny_model/`. exp6 applied its bone fix from its args
      (3612075:10). PVE / PA-PVE / MPJPE: v5 121.8 / 72.0 / 126.9, v9 e62 95.5 / 62.9 / 94.8, exp6 120.2 / 68.7 / 124.8
      (3612073:117-124, 3612074:117-124, 3612075:118-125). Table and reading: 0b (last bullet) and section 5, item 7.
-     The slide-16 cell for v5 says 121.8 (was "pending"). The command, for the record (header of
+     The cell for v5 on the final-model slide (today's 20) says 121.8 (was "pending"). The command, for the record (header of
      `exp7_final_model.sh`, :164):
      ```
      cd /netscratch/najib/multi-hmr && for M in "logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt|teacher_v5" "models/multiHMR/anny_teacher_v9_mixed_00062.pt|teacher_v9_e62" "models/multiHMR/exp6_v5_bonefix_00001.pt|exp6_v5_bonefix"; do EVAL_LABELS=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels MODEL_ENTRY="/netscratch/najib/multi-hmr/${M%%|*}|0|dinov2_vitl14|${M##*|}" sbatch --array=0 slurm/eval/run_eval_3dpw_test.sh; done
@@ -457,7 +471,7 @@ Paste this section with section 0. Each step names the section with the details.
      `demo_out_anny_s2_shape_v5_00099_photos/`, `..._3dpwtest/`, `demo_out_exp7_v5_final_00009_photos/`,
      `..._3dpwtest/`; montages `demo_montage_photos/` and `demo_montage_3dpwtest/`, made on the login node with
      `scripts/analysis/make_montage.py` (the commands are printed at the end of the log, :815-823). Figure for the
-     deck (slide 17): `docs/figures/final_model_real_photos.jpg` (tennis photo, `downtown_walking_00`,
+     deck (slide 21): `docs/figures/final_model_real_photos.jpg` (tennis photo, `downtown_walking_00`,
      `downtown_runForBus_00`; v5 left, final model right). What changed and what did not: 3.4, "Final model, by
      eye". The command, for the record:
      ```
@@ -521,7 +535,7 @@ Paste this section with section 0. Each step names the section with the details.
      ```
    - Overtaken on 18 Oct (submitted before the meeting, above). The plan was: **Submit it after the meeting**, if the
      supervisor picks "labels first" (step 9) and step 5's check passed; then once, and leave it queued (commands in
-     section 5, item 7). Submitting it on Sunday would answer the slide-19 question for the supervisor.
+     section 5, item 7). Submitting it on Sunday would answer the slide-26 question for the supervisor.
    - If the student wants it queued before the meeting anyway (to gain queue time; [Guessing] about a day), say so
      plainly at the meeting. If the supervisor then picks option 1, cancelling it is allowed: it is a change of plan,
      not a cancel-and-resubmit to start sooner, so it duplicates nothing (section 10).
@@ -530,31 +544,28 @@ Paste this section with section 0. Each step names the section with the details.
    - New on the evening of 17 Oct: `MASK_3DPW_SHAPE` (default `0` = old behaviour; `1` passes `--mask_3dpw_shape 1`
      to both arms and adds `_shpmask` to the run names). Leave it at `0` until the supervisor decides (step 8; 3.4;
      section 5, item 7).
-7. Before the meeting: check that the deck is the 21-slide version with the final-model slide 16 (its table shows
-   121.8 for v5's 3DPW test), the real-photo slide 17 and the requirements slide 20 (section 9, "Check a copy"). Open
-   the pptx in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18, 19 and 20 for text that
-   wraps one line longer (slide 15's Wording card already ends at the card's bottom edge in the LibreOffice render;
-   slides 1, 7, 9, 13, 14, 18 and 19 were re-rendered on the evening of 18 Oct, slides 16-19 at midday and slides 10,
-   17, 18, 19 and 20 in the afternoon, and fit; slide 10's bullet box, slide 16's lines under the table, slide 19's
-   claims and slide 20's table are full). The
+7. Before the meeting: check that the deck is the 30-slide version, `docs/supervisor_update_2026-10-19.pptx`
+   (section 9, "Check a copy"). Open the pptx once in PowerPoint and check slides 9, 13, 24 and 30 first (the tightest
+   in the LibreOffice render), then the table slides 7, 8, 23 and 25 and the claims slide 26, for text that wraps one
+   line longer (section 9, "Slides", says what to look at on each). The
    Relative Human download (**done 17 Oct**, `/netscratch/najib/data/Relative_Human/RelativeHuman/`, 8,741 images,
    zip verified; labels for 5,218 train / 635 val / 1,836 test images) and the val evaluation (**done 18 Oct**, jobs
    3611285_0/_1; 3.4) need nothing more before the meeting. The test split (`SPLIT=test sbatch --array=0-1
    slurm/diagnostics/eval_relative_human.sh`, old GPUs only) is optional.
 8. In the meeting: the deck as it is. On 3DPW: the re-fit is done and the v23 labels passed their conversion check
-   (WARN, old labels FAIL; slide 6, notes 6, 18, 19): the three defects are fixed and confirmed by the check. On
-   training: the final model is done (slide 16; step 6; section 5, item 7). Say it as the slide does: all fixes hold
+   (WARN, old labels FAIL; slide 6, notes 6, 26, 27): the three defects are fixed and confirmed by the check. On
+   training: the final model is done (slide 20; step 6; section 5, item 7). Say it as the slide does: all fixes hold
    against the control [Certain]; PA-PVE 50.3 is the best so far [Certain]; recall is 2 points below the control and
    3.2 below v5, a real cost [Certain]; PVE is inside the noise; the depth slope is still 0.42; 3DPW test 89.0 vs
    91.5 for the control, 95.5 for v9 and 121.8 for v5, all on the corrected labels: the best on our 3DPW-Anny labels
    [Certain], mostly from training on 3DPW at all, the fixes add 2.5 mm [Certain]; never quote the retired 119.1 /
-   102.5. On real photos (slide 17): most men look male now, by eye [Likely]; measured on Relative Human (job
+   102.5. On real photos (slide 21): most men look male now, by eye [Likely]; measured on Relative Human (job
    3612131): gender 46 -> 64%, children AUC 0.61 -> 0.72, recall 47 -> 65% [Certain]; a measured improvement, not
-   solved (men still mid-range). Slide 19's question box holds the four questions (the 95% bar and whether a smaller
+   solved (men still mid-range). Slide 26's question box holds the four questions (the 95% bar and whether a smaller
    student counts for 1b; whether a refiner on frozen features counts as temporal; children; the submission date);
-   note 19 keeps "On last week's question ..." and "Option 1", in case the supervisor asks. Slide 20 (requirements):
+   note 26 keeps "On last week's question ..." and "Option 1", in case the supervisor asks. Slide 23 (requirements):
    say 1b "not met" and 2b "not started" plainly, as the slide does. Shape mask off in the final model; a mask-on
-   arm is running. On children (slide 10 and its notes; 3.4), three points:
+   arm is running. On children (slide 18 and its notes; 3.4), three points:
    - Children are now measured on real photos with labels: Relative Human val (jobs 3611285_0/_1; 3.4). Real
      children get adult age: kids 0.61, babies 0.62 vs adults 0.63; child-vs-adult AUC 0.61, near chance. The model
      reads them as short adults: height 0.45 kid / 0.39 baby vs 0.51 adult. Gender: men 0.535, women 0.551, no
@@ -568,9 +579,9 @@ Paste this section with section 0. Each step names the section with the details.
    - Decision: a limitation (Path A) or BEV-style weak labels from RH train (Path B, 1-2 weeks of code, after exp7).
      The 3DPW shape mask exists, default off; on or off in exp7 is a decision (with it on, exp7's 3DPW-test PVE can
      move for a reason unrelated to the depth and bone fixes).
-9. After the meeting: write the supervisor's answers into section 9: the four slide-19 questions (1b bar and route,
+9. After the meeting: write the supervisor's answers into section 9: the four slide-26 questions (1b bar and route,
    temporal, children path A or B, submission date) and `MASK_3DPW_SHAPE` on or off (the `MASK_3DPW_SHAPE=1` arm,
-   run names with `_shpmask`, is already running since 18 Oct; if on, update section 5, item 7 and note 19 when it
+   run names with `_shpmask`, is already running since 18 Oct; if on, update section 5, item 7 and note 26 when it
    is read). "Labels first" (the
    student's choice): done, the final model (step 6). "Fine-tune v9 now": section 5, item 6 is then a new run (it
    trains, so the old GPUs); the final model stays the v5 result. Steps 3-6 are done either way (18 Oct).
@@ -586,7 +597,8 @@ item 2).
 
 Done on 17 Oct: the re-fit test (job 3589270; 0b, 4e step 1) and the H100 route for the converter (4f). The full
 re-fit (job 3590385) made 51 of 87 fits; the 36 that ran on the V100 nodes gifu/glendale failed and are rerun (0a, 4).
-Evening: the children re-check, the ranked plan and the corrected slide 10 (3.4; section 5, item 12; section 9);
+Evening: the children re-check, the ranked plan and the corrected children slide (today's 18; 3.4; section 5, item
+12; section 9);
 the `--mask_3dpw_shape` flag (commit `a0926fd`, on `main`).
 
 Done on 18 Oct, nothing to ask for: the full re-fit (rerun job 3602813; 87 fits; `--seq all` post-check PASS on 60
@@ -594,12 +606,14 @@ sequences, `logs/check_refit_all_v23.log`; men 19.0 -> 14.7 mm, women 15.0 -> 15
 0; 3.5); the v23 labels (16,694 images / 22,749 people; 3.5); their conversion check (job 3611284: OVERALL WARN, old
 labels FAIL; the three defects fixed; 3.5); the Relative Human evaluation (jobs 3611285_0 = v5, _1 = exp6: real
 children read as short adults, AUC 0.61, height 0.45 / 0.39 vs 0.51, gender no signal, recall 47%; 3.4); the deck
-(slides 1, 6, 10, 14, 18, 19 and seven notes; section 9). In the evening: the final model, exp7 (smoke test 3611333
-PASS, fix arm 3611336, control 3611339; section 5, item 7), and the 19-slide deck with its slide 16 (section 9). At
+(slides 1, 6, 18, 22, 26, 27 and seven notes; section 9). In the evening: the final model, exp7 (smoke test 3611333
+PASS, fix arm 3611336, control 3611339; section 5, item 7), and the 19-slide deck with its final-model slide (today's
+20; section 9). At
 midday: the three 3DPW-test re-evaluations on v23 (jobs 3612073-3612075; section 5, item 7), the demo of the final
 model (job 3612078; figure `docs/figures/final_model_real_photos.jpg`; 3.4) and the 20-slide deck with the
-real-photo slide 17 (section 9). In the afternoon: the Relative Human evaluation of the final model (job 3612131;
-3.4) and the 21-slide deck with the requirements slide 20 (section 9).
+real-photo slide (today's 21; section 9). In the afternoon: the Relative Human evaluation of the final model (job
+3612131; 3.4) and the 21-slide deck with the requirements slide (today's 23; section 9). In the evening: the 30-slide
+deck in story order, with its notes and the explanation file (0a, "Deck rebuilt"; section 9).
 
 ## 0b. Numbers at a glance
 
@@ -756,7 +770,8 @@ the **head** joint (`--person_center head`). 88 helper bones (toes, breasts, fac
 - AnnyOne: 579,960 synthetic 1280x1280 renders. Indices 0-579,859 are training. The last 100 (579,860-579,959,
   `--val_anny_n 100`) are the **holdout**. It has no children.
 - Diagnostic manifest `results/diagnostics/manifest.json`: 40 training images (adults, children, visible hands, hard
-  necks) plus 15 held-out images with no children (notes, slide 3).
+  necks) plus 15 held-out images with no children (notes of the 21-slide deck, slide 3; the 30-slide notes, slide 11,
+  give only the 55).
 - 3DPW converted to Anny (`scripts/data/smpl_to_anny.py`, `scripts/data/build_threedpw_anny_labels.py`): labels for
   4,451 train / 2,458 validation / 9,722 test images (README :227), every third frame (README :212). Mixed into
   v9/v10 batches at 30%. The rebuild of 16 Oct (job 3581320, `labels_rebuilt`, same old fits) has 6,437 / 2,777 /
@@ -826,7 +841,7 @@ loss), exp5 geodesic rotation loss, exp6 bone correction. Results in section 3, 
 V0 (unmasked helper bones add +3.8 mm on the same people, README :321). Change the draft to 70.5. The thesis draft is
 **not in the repo** (the student's own file): ask for the section to be pasted.
 
-**What is not the cause** [Certain] (notes slide 4, `docs/diagnostics_findings.md`): GT parameters decode onto the
+**What is not the cause** [Certain] (notes slide 11, `docs/diagnostics_findings.md`): GT parameters decode onto the
 people; all 16 single-joint perturbations move the right body part; every active bone and shape output gets gradient
 (two of three camera outputs get none); no joint-mapping or rotation-convention error. The overfit test on 40 images
 lowers the error by 36%. [Guessing] its translation and 2D losses may have risen while memorising, an early sign of the
@@ -855,7 +870,7 @@ mention it in the thesis as a known issue.
   or sitting shortens it: it is not body size (3.4). The rest-pose value is computed there (:141) but not printed.
 - **trace panels** = the images the trace saves under `<output folder>/vis/`: GT next to the model's predictions, each
   drawn where the model places it in 3D. They show the depth bug; the real-photo demos do not.
-- **restart cost** = what 2 more epochs of fine-tuning v5 cost with nothing changed: ~2.4 mm PVE (notes, slide 14, If
+- **restart cost** = what 2 more epochs of fine-tuning v5 cost with nothing changed: ~2.4 mm PVE (notes, slide 22, If
   asked). This is why each pilot is read against its own control arm, not against v5.
 - **matched people**: GT people paired with a detection by the greedy 2D matcher of `train.py`; every mean is over
   them. Recall = matched / GT people.
@@ -1037,7 +1052,7 @@ What this says:
 - [Certain] The fix moves the root: 0.53-0.73 m in all five fix runs vs 1.11-1.44 m in both controls. Size goes from
   0.59-0.66 to 0.78-0.87. The head now lands within 7-10 px (v5: 64.5 px).
 - [Certain] Near vs far is still not separated: slope 0.30 with the switch alone, 0.38-0.44 with a stronger depth loss.
-  Predictions are pulled toward ~2.5-2.9 m; cause unknown (notes, slide 13, and its If asked). Holdout people are at
+  Predictions are pulled toward ~2.5-2.9 m; cause unknown (notes, slide 14, and its If asked). Holdout people are at
   1.92 m on average (README :114).
 - [Certain] By its own success rule exp1 **failed**: every run, controls included, prints
   `PVE <= 71.5 and recall >= 89.2: NO` (e.g. 3572482:150). The rule's slope clause prints `yes` for x5, x20,
@@ -1054,7 +1069,7 @@ What this says:
 - [Certain] v9 and v10 carry the same bug (table above). [Likely] the ViT-S students too (same training code; not
   measured).
 - In 4 of 12 rendered holdout images both v5 and the fix miss people very close to the camera [Likely detection; not
-  counted] (notes, slide 12).
+  counted] (notes, slide 13).
 
 **Final model (exp7, 18 Oct): the depth fix with the bone fix, 10 epochs, 30% real 3DPW, against its own control**
 (fix arm 3611336, control 3611339; V1 holdout, matched people; root = the PLACEMENT table, as above).
@@ -1198,7 +1213,7 @@ What this says:
   and PVE_hn 52.3 -> 63.1 mm. The guard predicted this rise before the holdout test (:31, :44). Do not claim "no
   training needed".
 - [Likely] Why: the compensated chain the guard warned about (:32-35). The head's offset differs per person (relSpr
-  15.5, :16; the log's own reading, :123), so one constant cannot undo it. The deck gives this one reason (slide 7;
+  15.5, :16; the log's own reading, :123), so one constant cannot undo it. The deck gives this one reason (slide 15;
   section 9).
 - [Certain] After 2 epochs with the fix in place, the head residual shrinks (head 11.2 deg, global head 14.4, PVE_hn
   51.8) and the fine-tune checks against the control pass (:119, :121): corrected bones under 15 deg, girth >= 0.9,
@@ -1243,11 +1258,11 @@ training** (step b of the script: same checkpoint, same images, only the output 
   normal width, in every panel where a neck is visible. This matches the measured girth 0.46 -> 1.00 (:107).
 - [Certain for these renders] So the thin-neck look is the flip: the rows differ only by the correction, and of the
   four corrected bones only neck02 and head sit on the neck (metacarpal1.L and finger4-1.R are hand bones).
-- Figure for the deck (slide 8, section 9): `docs/figures/neck_before_after_v5.jpg` (1254 x 1118; in git as
+- Figure for the deck (slide 16, section 9): `docs/figures/neck_before_after_v5.jpg` (1254 x 1118; in git as
   `8577bb2`). Left column "Before: v5 as trained", right column "After: correction on neck02 +
   head" (the hand bones are also corrected; hands not judged: the same correction turns back metacarpal1.L and
   finger4-1.R, so the blue person's hands differ between the columns too; the slide caption says "On the neck, only
-  ..."); top row holdout image 579862, bottom row 579863. Cut from two compare panels. Slide 8 shows only the 579862
+  ..."); top row holdout image 579862, bottom row 579863. Cut from two compare panels. Slide 16 shows only the 579862
   pair from this file, cropped out, next to the real pair of job 3581312 ("Real images" below), with the deck's own
   header bars (section 9). The 579863 pair is on no slide.
 - Caveats, say them with the figure:
@@ -1326,7 +1341,7 @@ the fine-tune the v5 head is already under 15 deg, so [Likely] it is no longer n
   (124.8, 3571960:294) because the model never saw such a camera.
 - exp4b, region-normalised rotation loss: 17.5 deg vs 17.4 for its control (3571959:316; 3571960:314). It cut the
   hands' share of the rotation loss from ~70% (with the x4 hand boost) to 33%, so it is a rebalance, not an
-  upweighting (notes, slide 9, If asked). The earlier x4 hand boost (v4) did not help either.
+  upweighting (notes, slide 17, If asked). The earlier x4 hand boost (v4) did not help either.
 - v5's `metacarpal1.L` is flipped 180 deg (3.2). `--relax_hands` does not reset metacarpals, so [Likely] the bent left
   index base is visible in the demos.
 
@@ -1467,7 +1482,7 @@ Reading:
    sets. The demo `[shape]` lines of the 12 images (job 3612078) show muscle, weight, cup size and firmness at ~0.5,
    the converter constants. So "shape visibly changes per person" holds for gender and partly for age and height,
    not for those four.
-5. Say it as "a measured improvement, not solved" (deck slides 10, 17, 19, 20). Children stay a decision for the
+5. Say it as "a measured improvement, not solved" (deck slides 18, 21, 23, 26). Children stay a decision for the
    supervisor (Path A or B; section 5, item 12).
 6. [Certain] The accuracy is above 0.5, so the gender direction is right on average (prediction < 0.5 = male, as in
    Anny). The demo-log puzzle on the tennis photo ("Final model, by eye", below) stays open.
@@ -1569,7 +1584,7 @@ Reading:
   possible outcomes ("Relative Human, final model", item 3). Caveat: with it on, exp7's 3DPW-test PVE can move for a
   reason unrelated to the depth and bone fixes, and it compares worse against the neutral-body GT. If on: re-evaluate
   the baselines with the 8 phenotypes neutralised at inference (`model.neutral_phenotype_names`, `model.py:470-477`)
-  or caveat the number; update section 5, item 7 and note 19.
+  or caveat the number; update section 5, item 7 and note 26.
 
 **Next:** section 5, item 12. In one line: Relative Human is measured (above, 18 Oct); the supervisor picks a
 limitation (Path A) or BEV-style weak labels from RH train (Path B, 1-2 weeks of code, after exp7). The final model
@@ -1599,7 +1614,7 @@ women 0.861, men 0.551 (job 3612131): women recognised, men still mid-range.
   0.513), and its 0.6-0.8 bucket already regresses (above).
 
 **Final model, by eye (18 Oct; demo job 3612078, v5 00099 next to the final model, 4 photos + 8 3DPW-test frames,
-12 images; figure `docs/figures/final_model_real_photos.jpg`, deck slide 17):**
+12 images; figure `docs/figures/final_model_real_photos.jpg`, deck slide 21):**
 - [Certain, log] The final model applies its bone fix from the checkpoint args (3612078:424, :427).
 - [Likely, by eye] Men now get male bodies, flat chest and broader shoulders: 3 of the 4 men on the tennis photo (the
   oldest, pink, still looks female-ish), both men in `downtown_walking_00`, `office_phoneCall_00`, `flat_guitar_01`,
@@ -1676,7 +1691,7 @@ I1-I4), unrelated to the V0-V4 evaluation settings of section 1. It comes from: 
 forearm 0.879, thigh 1.119 overall, failing only in the test split (train passes with 0.965 / 1.035) (:214-215, :335);
 and check V4e (people with a joint over 100 mm), 5.2% in train = FAIL there, 3.2% overall = WARN (:218, :337). Cause
 of the test-split limb ratios: unknown. All checked test people are men labelled 1, so a link to the gender defect is
-possible, not shown (notes, slide 6, If asked: Limb lengths).
+possible, not shown (notes, slide 6, If asked: Grades).
 
 **Label rebuild (job 3579266): the same counts, so it did not recover the missing labels.** Output
 `threedpw_anny_full/labels_rebuilt` (b395a10):
@@ -1812,7 +1827,7 @@ The exp3 control (3571958) and exp4 control (3571960) are identical configs. The
 68.7; 3571958:104, 3571960:320), 1.9 deg global head (13.6 vs 11.7) and 0.8 recall points. Over six 2-epoch v5-recipe
 arms: PVE 68.7-76.3, recall 88.6-90.2, global head 11.3-13.7 (`docs/experiments_plan.md:413-419`). So one pilot
 resolves only ~10 mm PVE, ~3 deg, ~2 recall points. `train.py` sets no random seed (the trace's `--seed` only picks
-which training images exp6 samples). Restarting a fine-tune alone costs ~2.4 mm (notes, slide 14, If asked). The exp5
+which training images exp6 samples). Restarting a fine-tune alone costs ~2.4 mm (notes, slide 22, If asked). The exp5
 L1 control, which is also exp6's control, sits just above that range (PVE 76.9, 3573521:98).
 
 ---
@@ -2332,17 +2347,17 @@ e62 and exp6 and the demo of the final model (18 Oct, midday; item 7, "3DPW test
 Relative Human evaluation of the final model (job 3612131; 3.4). Running: the `MASK_3DPW_SHAPE=1` arm. The plan for
 the four weeks after the meeting is in `docs/thesis_requirements_plan.md` (section 11). Everything below that trains
 or runs the model (training, demo, trace, evaluation) needs the old GPUs; only the 3DPW converter can use the
-H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19. The label rebuild (item 5) is done.
+H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 26. The label rebuild (item 5) is done.
 
 1. **exp6 panels: done (early 16 Oct).** The 12 v5 compare panels show thin-stalk necks without the correction and
-   normal width with it (3.2, "Visual check"; figure `docs/figures/neck_before_after_v5.jpg`, deck slide 8). So "the
+   normal width with it (3.2, "Visual check"; figure `docs/figures/neck_before_after_v5.jpg`, deck slide 16). So "the
    thin neck seen in renders is the flip" can be said for the synthetic holdout renders, with the caveats there (no
    fine-tune, depth bug still in, synthetic only). Nothing left to do here.
 2. **Real images with the fix: done (16 Oct, job 3581312).** The demo of the fine-tuned checkpoint
    `models/multiHMR/exp6_v5_bonefix_00001.pt` next to v5, on 4 photos and 8 3DPW-test frames.
    - Result: v5's thin, stalk-like necks have normal width with the fix [Certain for the 8 images the student sent;
      by eye, no metric] (3.2, "Real images"; figures `docs/figures/neck_before_after_3dpw_bar.jpg` and
-     `..._bar_office.jpg`, deck slide 8).
+     `..._bar_office.jpg`, deck slide 16).
    - So "the thin neck on real images goes away in the fine-tuned fixed model" can be said, by eye; that the
      correction rather than the 2-epoch fine-tune does it stays [Likely].
    - Optional: a correction-only real-image demo would remove the fine-tune confound: v5 00099 with
@@ -2353,7 +2368,7 @@ H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19. The label
      `demo_out_anny_s2_shape_v5_00099_<set>/` would overwrite v5's folders). Not run, not asked for yet.
    - Optional: `--relax_hands 0` for the hands (3.3).
    - The predicted gender on the holdout, for the new female-body observation (3.4), costs no job: ask for it.
-   - The final model's demo (18 Oct, job 3612078; 0a step 6; 3.4, "Final model, by eye"; deck slide 17): most men
+   - The final model's demo (18 Oct, job 3612078; 0a step 6; 3.4, "Final model, by eye"; deck slide 21): most men
      get male bodies by eye; the boy, placement offsets, ghost bodies and hard poses unchanged. The student's by-eye
      read covers body shape, placement and poses; the necks are not mentioned.
 3. **Longer fine-tune with the fix: answered by the final model (18 Oct).** exp7 ran 10 epochs with the fix (plus the
@@ -2376,12 +2391,12 @@ H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19. The label
      still missing. Do not train on it; the re-fit (item 7) is next.
    - The re-check of `labels_rebuilt` (4c) is optional and not run.
    - The label build after the re-fit (item 7) uses the same images, so they are ready for it.
-6. **Supervisor's decision (slide 19).** Since 18 Oct the student went ahead with labels first: the final model
+6. **Supervisor's decision (slide 26).** Since 18 Oct the student went ahead with labels first: the final model
    (item 7) is done. The text below stays for the case that the supervisor asks for the v9 fine-tune. Fine-tune v9 now
    with `--gt_center_joint person_center` and x5, or first fix
    the labels (item 7) and then fine-tune? The student proposes labels first, because 3DPW is 30% of each batch and the
    men would keep learning the wrong body. Expected from v5: size ~0.84, root ~0.5 m, cost ~2.6 mm PVE and ~1.6 recall
-   points (notes, slide 19, If asked: Option 1). **The v9 fine-tune script does not exist yet (NEEDS CODE).** Recipe:
+   points (notes, slide 26, If asked: Option 1). **The v9 fine-tune script does not exist yet (NEEDS CODE).** Recipe:
    - Copy the training call of `slurm/train/train_teacher_v9_mixed.sh` (it has the 3DPW mix flags), into a new
      script, e.g. `slurm/experiments/exp8_v9_depth.sh` (exp7 is the final model, item 7). Do **not** reuse
      `exp1_depth_anchor.sh`: it trains on AnnyOne only, so `CKPT=v9` would silently drop the 30% 3DPW. Do not run
@@ -2402,7 +2417,7 @@ H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19. The label
      Never `logs/anny_model/anny_teacher_v9_mixed`: `train.py` keeps only the `--nb_max_ckpt` highest epoch numbers of
      a folder (`train.py:400-410`), so a run written there deletes checkpoints (its own low epochs, or old v9 ones).
    - Control arm, same script and weight: `--gt_center_joint root` (still x5), output `.../exp8_v9_depth/v9e62_root_dist5`.
-   - Labels (`--mix_3dpw_labels`): slide-19 option 1 ("now") = `/netscratch/najib/multi-hmr/threedpw_anny_full/labels`
+   - Labels (`--mix_3dpw_labels`): slide-26 option 1 ("now") = `/netscratch/najib/multi-hmr/threedpw_anny_full/labels`
      (what v9 trained on; gender reversed, 31% of train missing). `labels_rebuilt` has that 31% back (job 3581320,
      item 5), but from the same old fits (gender reversed, second actor missing): do not train on it; the re-fit is
      next. Option 2 ("labels first") = `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels` after item 7.
@@ -2437,8 +2452,8 @@ H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19. The label
    `MODEL_ENTRY` / `EVAL_LABELS` change to `slurm/eval/run_eval_3dpw_test.sh` it needs (4e, "Using the v23 labels");
    ran 18 Oct. Read its header before the student submits it. Before submitting, check the four prerequisites in its
    header: its guards check the labels and the fits, but not the `--seq all` post-check (4e, step 3), which the
-   student runs by hand. This item follows the script's defaults (chosen on 17 Oct so that this file, note 19 and the
-   script say the same thing). If the review changes a default, change it here and in note 19 too.
+   student runs by hand. This item follows the script's defaults (chosen on 17 Oct so that this file, note 26 and the
+   script say the same thing). If the review changes a default, change it here and in note 26 too.
    - What it is: v9's 3DPW mixing (30% 3DPW-train in every batch, 3DPW-validation each epoch) on top of the exp6
      fine-tune recipe (v5, last 4 backbone blocks trained, lr 1e-5, batch 4). It is its own script: never edit or
      rerun `slurm/train/train_teacher_v9_mixed.sh` (it starts from v5, runs 150 epochs and writes to
@@ -2459,7 +2474,7 @@ H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19. The label
      The script stops before the trace and the
      test evaluation if `train.log` has no `[bone_fix] ON` line.
    - Depth fix: `--gt_center_joint person_center --alpha_dist 5 --alpha_transl 5` (x5, as long_pc_dist5, item 6 and
-     slide 19; x20 only if 4d clearly beats it). [Likely] both slide-19 options include the depth fix (the slide says
+     slide 26; x20 only if 4d clearly beats it). [Likely] both slide-26 options include the depth fix (the slide says
      so only for option 1). If the supervisor says otherwise, follow that.
    - Labels: `LABELS` defaults to `/netscratch/najib/multi-hmr/threedpw_anny_v23/labels`. The script refuses labels
      under `threedpw_anny_full` and fits not made with `--gender_convention anny --frame_grid shared`. Plus
@@ -2468,9 +2483,9 @@ H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19. The label
      `MASK_3DPW_SHAPE`, default `0` = unmasked, as all earlier runs. `1` passes `--mask_3dpw_shape 1` to both arms
      (fix and control stay matched) and adds `_shpmask` to the run names, so a masked run never shares a folder with
      an unmasked one. On or off is a Monday decision (0a, step 8; 3.4); the run submitted on 18 Oct uses `0`. The
-     default keeps this item, note 19 and the script in step. If the supervisor picks `1`: pass `MASK_3DPW_SHAPE=1` to
+     default keeps this item, note 26 and the script in step. If the supervisor picks `1`: pass `MASK_3DPW_SHAPE=1` to
      both submit commands below, read the 3DPW-test PVE with the caveat in 3.4 (it can move for a reason unrelated to
-     the two fixes), and update this item and note 19.
+     the two fixes), and update this item and note 26.
    - Length: **10 epochs by default** (`EPOCHS=10`, 1,000 iterations each; `--time` 5 h by the script's formula).
      Longer only with `EPOCHS=` set from the deadline (section 10), e.g. `EPOCHS=30` (`--time` 11 h). v9 ran up to 150
      epochs, and the student was distilled from epoch 62. [Guessing] ~6-10 min per epoch with 3DPW batches (never
@@ -2491,9 +2506,9 @@ H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19. The label
      ```
      cd /netscratch/najib/multi-hmr && ARM=control bash slurm/experiments/exp7_final_model.sh
      ```
-   - The deck describes a different fine-tune for option 1. Slide 19 and its notes frame it as one of v9 epoch 62
+   - The deck describes a different fine-tune for option 1. Slide 26's notes frame it as one of v9 epoch 62
      ("the planned start", "about 1 to 2 hours of training", a bone fix "estimated on v9 first"; notes, If asked:
-     "Option 1", "Bone flips in v9 and v10"). Since 17 Oct note 19's "Option 2" line says the fine-tune after the
+     "Option 1", "Bone flips in v9 and v10"). Since 17 Oct note 26's "Option 2" line says the fine-tune after the
      re-fit starts from v5 with v5's bone fix and the depth fix, 10 epochs, next to a control without the two fixes.
      If the supervisor wants the deck's v9 version, item 6's recipe with the option-2 labels is it.
    - Read the result:
@@ -2607,7 +2622,7 @@ H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19. The label
       babies 0.44 vs adults 0.54, recall 47 -> 65%; [Likely] part of the age shift is the 3DPW age label 0.55 (3.4,
       "Relative Human, final model").
 
-   Pilot noise (3.6; deck slide 14): two identical runs differed by 7.6 mm PVE and 1.9 deg head error, about 2
+   Pilot noise (3.6; deck slide 22): two identical runs differed by 7.6 mm PVE and 1.9 deg head error, about 2
    recall points. One run per arm, no seed.
 
    What stays open: the slope (item 8); the recall cost (item 9: paired PVE and head-visible recall still NEED
@@ -2619,7 +2634,7 @@ H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 19. The label
    `results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10/train/checkpoints/00009.pt`. The bone fix is in
    its saved args and applied on load (`[load_model] bone_fix: checkpoint args (bone_fix_spec)`, 3611336:169).
    Outputs in that folder: `train.log`, `settings.txt`, `holdout_ft/`, `compare.json`. Logs
-   `logs/exp7_final_model_3611336.out` and `logs/exp7_final_model_3611339.out`. Deck: slides 16 and 17 (section 9).
+   `logs/exp7_final_model_3611336.out` and `logs/exp7_final_model_3611339.out`. Deck: slides 20 and 21 (section 9).
 8. **Depth slope stuck at 0.3-0.44 (final model: 0.42, 3611336:195).** Measure the training-set depth distribution
    properly (so far only batch means of
    ~2.5-3.2 m) and the fix run's slope on training images. Both **NEED CODE**: extend
@@ -2928,11 +2943,11 @@ Trust this file over these. Fix them when there is time (one commit per doc).
   ~12 in most runs).
 - `slurm/data/run_smpl_to_anny_task.sh` header: "~6 s/frame", "a 1000-frame sequence takes ~35 min" (measured 17 Oct:
   ~4.4 s per frame on an H100, 4e).
-- Deck and notes: up to date (21 slides, rebuilt from `build.js` in the afternoon of 18 Oct with the final model's
-  Relative Human result and the requirements slide 20; the earlier rebuilds of 16-18 Oct are in section 9). Section 9
-  lists the slides, how to check a copy, and the lines that go stale when the pending results arrive.
-  `docs/deck_src/README.md` was brought up to date in the same version (21 slides, slide 20, the appendix now 21),
-  so it is no longer listed here.
+- Deck and notes: up to date (30 slides, rebuilt from `build.js` on the evening of 18 Oct in story order; the
+  explanation `docs/deck_explained_2026-10-19.md` reconciled with it; the earlier rebuilds of 16-18 Oct are in section
+  9 of commit `a2d236d`). Section 9 lists the slides, how to check a copy, and the lines that go stale when the
+  pending results arrive. `docs/deck_src/README.md` was brought up to date in the same version (30 slides, the old ->
+  new slide map), so it is no longer listed here.
 
 ---
 
@@ -2983,8 +2998,10 @@ need not be read one by one. (`a01eb5b`, the real-image figures, is a normal com
 docs/handover.md` and `grep -c 3612131 docs/handover.md` each a number above `0` (top of file). To
 give it to ChatGPT, download
 `https://raw.githubusercontent.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/main/docs/handover.md`
-(save the page as `handover.md`) and attach it. The deck (21 slides) is at
-`https://raw.githubusercontent.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/main/docs/supervisor_update_2026-10-16.pptx`.
+(save the page as `handover.md`) and attach it. The deck (30 slides) is at
+`https://raw.githubusercontent.com/saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset/main/docs/supervisor_update_2026-10-19.pptx`,
+its notes at `.../main/docs/supervisor_talk_notes_2026-10-19.md` and the slide-by-slide explanation at
+`.../main/docs/deck_explained_2026-10-19.md` (same prefix).
 
 **Job index** (log = `logs/<jobname>_<jobid>.out` on the cluster):
 
@@ -3044,524 +3061,135 @@ demo job 3612078; on Relative Human gender 46.5 -> 64%, children AUC 0.61 -> 0.7
 
 ## 9. Deck
 
-**Files:** `docs/supervisor_update_2026-10-16.pptx` (21 slides), `docs/supervisor_talk_notes_2026-10-16.md` (spoken
-part + "If asked:" part per slide), `docs/figures/depth_before_after_579860.jpg` and `_579862.jpg`,
-`docs/figures/neck_before_after_v5.jpg` and `docs/figures/neck_before_after_3dpw_bar.jpg` (the two pairs on slide 8),
-`docs/figures/final_model_real_photos.jpg` (slide 17; 1008 x 1000 px, made by the student from the demo-3612078
-montages: tennis photo, `downtown_walking_00`, `downtown_runForBus_00`, v5 left, final model right, labels baked in).
-The two-pair figure `docs/figures/neck_before_after_3dpw_bar_office.jpg` is not on a slide: keep it for the thesis or
-for questions. Its baked-in label "After: v5 + neck fix" leaves out the 2-epoch fine-tune; caption it "fine-tuned 2
-epochs with the fix" when shown (same for `neck_before_after_3dpw_bar.jpg`; slide 8 crops the label off).
+**Files** (since the evening of 18 Oct): `docs/supervisor_update_2026-10-19.pptx` (30 slides), the speaker script
+`docs/supervisor_talk_notes_2026-10-19.md` (one "## Slide N: title" per slide: spoken part + "If asked:" part) and the
+companion `docs/deck_explained_2026-10-19.md` (every slide explained in plain words, with what is on the slide, the
+numbers and their sources, and what is not claimed; reconciled with the final deck on the evening of 18 Oct; the deck
+wins where the two differ). Figures: `docs/figures/depth_before_after_579862.jpg` (slide 13) and `_579860.jpg`
+(slide 29), `docs/figures/neck_before_after_v5.jpg` and `docs/figures/neck_before_after_3dpw_bar.jpg` (the two pairs on
+slide 16), `docs/figures/final_model_real_photos.jpg` (slide 21; 1008 x 1000 px, made by the student from the
+demo-3612078 montages: tennis photo, `downtown_walking_00`, `downtown_runForBus_00`, v5 left, final model right, labels
+baked in). The two-pair figure `docs/figures/neck_before_after_3dpw_bar_office.jpg` is not on a slide: keep it for the
+thesis or for questions. Its baked-in label "After: v5 + neck fix" leaves out the 2-epoch fine-tune; caption it
+"fine-tuned 2 epochs with the fix" when shown (same for `neck_before_after_3dpw_bar.jpg`; slide 16 crops the label
+off). The 21-slide deck of 16-18 Oct (`docs/supervisor_update_2026-10-16.pptx` and
+`docs/supervisor_talk_notes_2026-10-16.md`) is removed; slides kept from it are reused unchanged apart from renumbered
+cross-references and a few titles.
 
-**Source:** `docs/deck_src/build.js` (pptxgenjs) and its theme helper `docs/deck_src/apply_theme.js`; instructions in
-`docs/deck_src/README.md`. No setup beyond `cd docs/deck_src && npm ci && node build.js`, on a machine with node >= 18
-and internet access for `npm ci` (probably the student's laptop; the cluster may lack node). Checked on 15 Oct: the
-rebuild gives the same slides, theme, media and layouts as the published pptx, and byte-identical notes. The notes
-and the pptx in `docs/` were rebuilt from the current `build.js` on 16 Oct (~11:40 UTC, with the label rebuild
-result on slides 6 and 18 and in notes 6, 18 and 19), and again on 17 Oct after notes-only edits: ~03:30 UTC, one
-sentence on the re-fit test (job 3589270) in notes 6, 18 and 19; later on 17 Oct, the measured re-fit time (about 28
-GPU hours at 4.4 s per frame, 3.5 to 4 hours on 8 free H100s) in place of the old 40-GPU-hour estimate in notes 18
-and 19, and in note 19 ("Option 2") the final model's start (v5 with v5's bone fix, 10 epochs, with a control).
-The slides were unchanged until then: every slide, layout, media and theme part of the morning 17-Oct pptx is
-byte-identical to the 16-Oct one; only `notesSlide6/16/17.xml` (18-slide part names: today's notes 6, 18, 19), the
-timestamps and the random section IDs differ.
-**Evening of 17 Oct, the children correction** (3.4): rebuilt again from `build.js`; against the morning pptx only
-`slide10.xml`, `slide14.xml`, `slide16.xml`, `notesSlide8/10/14/16/17.xml` (18-slide part names: today's slide 18
-and notes 18, 19), the timestamps and the section IDs differ [Certain, part-by-part diff]. Slide 10: the right stat
-tile "0.57–0.67 / predicted age of 5 small people in
-real photos ..." is now "0.60 / predicted age of the one real child in our photos: the training median, an adult
-body"; the left tile says "unproven after 2 epochs" instead of "no effect"; the bullets say "inconclusive" (48.5 vs
-53.1 mm, baby floor 0.10), "Diagnosis: ... falls back to the training median ... Domain gap or loss: not yet
-separable" and "three different scales". Slide 14, children row: "Inconclusive after 2 epochs: 10 training children
-48.5 vs 53.1 mm." Slide 18, item 6: "Children: measure on Relative Human first. Fingers: check the bone-fix hands,
-then larger crops." Notes: 10 rewritten (main part and "If asked"); 8 (the men: gender near the training median, the
-same pull as age); 14 and 18 (children inconclusive; Relative Human first; the 10-epoch run a low-priority option);
-19 ("Both options": the default-off 3DPW shape mask, a decision for the meeting). Slides 10, 14 and 18 were rendered
-with LibreOffice and fit in the same space as before. Notes are generated from `build.js`; never edit the `.md`
-alone.
-**18 Oct, the Relative Human result and the v23 labels** (3.4, 3.5): rebuilt again from `build.js`; against the
-17-Oct evening pptx only `slide1/6/10/14/16/17.xml`, `notesSlide1/6/8/10/14/16/17.xml` (18-slide part names: today's
-slides and notes 18 and 19), `docProps/core.xml` (the timestamp) and `presentation.xml` (the section IDs) differ
-[Certain, part-by-part diff]. The notes `.md` is
-byte-identical to the build's notes output. In short:
-- slide 1: the 3DPW line "3DPW labels: three defects found and fixed." (was "joints and surface pass, three
-  defects."); note 1 adds "and their fix";
-- slide 6: title "3DPW labels: three defects found and fixed"; the three cards show the v23 check (job 3611284) with
-  the 15-Oct numbers as "was"; the middle card is "Defects: fixed", green (was "Label defects", red); source line
-  "check_3dpw_conversion.sh, job 3611284 on the re-fit labels (old labels: 3575369); 3,314 people, 2,360 images, 59
-  sequences"; note 6 rewritten;
-- slide 10: right tile "0.61 vs 0.63 / predicted age of 127 real children vs 821 adults (Relative Human val);
-  separation AUC 0.61" (was "0.60 / predicted age of the one real child in our photos ..."); two new bullets,
-  "Children are read as short adults: height 0.45 kid / 0.39 baby vs 0.51 adult; age unchanged (Relative Human
-  val)." and "Gender: men 0.535, women 0.551: no gender signal on real photos."; the sampler bullet is folded into
-  "Diagnosis" ("2-epoch sampler pilot: inconclusive"); the caveat adds "real-photo numbers cover detected people
-  only (47%)"; note 10 rewritten;
-- slide 14: the children row adds "v5 on 127 real children (Relative Human): adult age, AUC 0.61 (slide 10)";
-- slide 18: item 6 "Children: measured on Relative Human (AUC 0.61, read as short adults); decision: limitation or
-  weak labels. Fingers: bone-fix hands, then larger crops."; item 7 "3DPW labels: three defects fixed (slide 6)",
-  green, re-fit and re-check done;
-- slide 19: the claim ended "3DPW labels: three defects found and fixed by a re-fit (slide 6)."; question box "best
-  on our old 3DPW-Anny labels, which had the gender defect" and "re-fit all 3DPW tasks (done 18 Oct)";
-- notes 8, 14, 18 and 19: one sentence or clause each (8: the RH gender numbers; 14: real photos, adult age; 18:
-  children measured, 3DPW re-fit and check done; 19: the re-fit is done, "Option 1" says "old labels", "Option 2"
-  in the past tense).
-Slides 1, 6, 10, 14, 18 and 19 were rendered with LibreOffice on 18 Oct and fit (slide 10's bullet box and slide 18's
-item 6 are full; do not add text there).
-**Evening of 18 Oct, the final model (exp7)** (section 5, item 7): rebuilt again from `build.js`, now 19 slides (part
-names in this paragraph are that version's; its slides 17-19 are today's 18, 19 and 21). Against the 18-Oct pptx
-(old slide N = new slide N up to 15; old 16-18 = new 17-19, today's 18, 19 and 21) only these parts differ [Certain, part-by-part diff]:
-slides 1, 7, 9, 13, 14 and old 16-18 (the appendix only by its image's part name); notes 1, 7, 9, 10, 12, 13, 14 and
-old 16-18; the new `slide16.xml` and `notesSlide16.xml` (and, by the shift, `slide19.xml`, `notesSlide19.xml` and the
-appendix image as `image-19-1.jpg`); the rels of `slide17.xml` and `slide18.xml` (the appendix image moved to
-`slide19.xml`); `slideLayout4.xml` (the footer); and `presentation.xml`, `[Content_Types].xml`, the presentation rels,
-`docProps/app.xml` and `core.xml` (the new slide, timestamps, section IDs). The notes `.md` is the build's output: 19
-slide headings, title "supervisor update, 19 October 2026". In short:
-- new slide 16, "Final model: all fixes together, with a control": a table v5 | control | final model: PVE 70.5 /
-  77.4 / 73.7, PA-PVE 53.3 / 56.4 / 50.3, recall 90.2 / 89.0 / 87.0% (the 87.0 in orange), root error 1208 / 1402 /
-  728 mm, size ratio 0.63 / 0.59 / 0.78, neck02 175.6 / 175.8 / 4.8° (the flips in red), neck girth 0.46 / 0.46 /
-  1.00, fingers 17.3 / 17.4 / 8.3°, 3DPW test PVE pending / 91.5 / 89.0 mm. Under it: "10 epochs, 40,000 images, 70%
-  AnnyOne + 30% 3DPW-train (corrected labels); same recipe for both arms; one run each, no seed (noise ~7.6 mm PVE,
-  ~2 recall points)." and a source line (jobs 3611336, 3611339). Right: "Fixes hold together: neck02 4.8°, neck girth
-  back to 1.00; root error −48%; finger error halved; PA-PVE 50.3 mm, the best of every model so far." and "The
-  cost: recall −2 points vs the control, −3 vs v5. PVE −3.7 mm vs the control: inside the noise. Depth slope still
-  0.42 (1 = perfect)." Notes: the reading in 8 sentences; "If asked": 3DPW test vs v5 / v9 pending (old-label
-  numbers not comparable), head direction and head bone, in-training 3DPW-val, NaN steps, training time, children
-  unchanged, the checkpoint path;
-- renumbering: old 16-18 became 17-19 (today's 18, 19 and 21); every slide reference in `build.js` (notes and comments) and
-  in this file used the new numbers;
-- slide 1: a fifth line, "Final model: all fixes hold together; recall costs 2 points." (the five lines at 16 pt,
-  were 18, so the byline still fits); byline "19 October 2026"; note 1 names the final model;
-- footer of every light slide: "Supervisor update, 19 Oct 2026" (was 16 Oct); the file names stay;
-- slide 7: the teal line "Next: a longer fine-tune with the fix (slide 16)." is now "Final model, 10 epochs (slide
-  16): neck02 4.8°, head 8.9°, thickness 1.00, neck-skin error 11.0 mm, head direction 13.1°."; note 7, main and
-  "If asked", says the same;
-- slide 9: the middle tile reads "8.3° / with the bone fix: 2-epoch pilot and 10-epoch final model (controls 17.4°)"
-  (was "... fine-tuned 2 epochs (8.2° with no training)"; the 8.2 is still in the notes); note 9 adds the final model;
-- slide 13: a third bullet, "Final model (slide 16): ×5 plus the bone fix, 30% real 3DPW, 10 epochs: root error
-  0.73 m vs 1.40 m for its own control (v5 1.21 m), size 0.78 vs 0.59, slope 0.42 vs 0.28."; the pilot's 0.54 m stays
-  in the table; the "Not fixed" bullet lost its switch-alone clause (still in note 13); note 13 adds the final model;
-- slide 14: the noise box ends "All fixes together, against a control: slide 16."; note 14 too;
-- slide 18 (Still open): item 1 "Bone flips: fix confirmed at 10 epochs"; item 2 "Depth slope: 0.42 in the final
-  model"; item 3 "Depth fix cost: now measured"; item 7 ends "In use: the final model trained on them (slide 16).";
-  note 18, main and "If asked", updated (fix holds, slope 0.42, cost measured, 3DPW test vs the control);
-- slide 19 (claims): the claim adds "The final model keeps every fix against its own control: root error −48%,
-  neck02 4.8°, fingers 8.3°, PA-PVE 50.3 vs 56.4 mm, 3DPW test PVE 89.0 vs 91.5 mm (slide 16)."; "Not claimed" now
-  reads "results proven over seeds (one run each) or why the bones flipped; better children; correct near/far depths
-  (slope 0.42); fixes without cost (recall −2 points vs the control, −3 vs v5); a 3DPW gain over v5 or v9 (not yet on
-  the new labels); head turn, age or limb lengths in the 3DPW labels."; the question box starts "Chosen: fix gender
-  and frame grid, re-fit all 3DPW tasks, then fine-tune v5 (done 18 Oct: slide 16)."; note 19 rewritten in its main
-  part and updated in "If asked";
-- notes 10 and 12: one clause each (10: "the final model, trained on 18 October, has it off (slide 16)"; 12: the
-  final model's 0.73 m next to 1.40 for its control).
-Slides 1, 7, 9, 13, 14, 16, 18 and 19 were rendered with LibreOffice on the evening of 18 Oct and fit their boxes
-(at 17 pt the slide-1 byline ran past the body box, so 16 pt; slide 19's body needed the shorter "not claimed"
-wording). All 19 slides rendered.
-**Midday of 18 Oct, the v23 comparison and the real-photo slide** (section 5, item 7; 3.4): rebuilt again from
-`build.js`, now 20 slides. Against the 19-slide pptx (old slide N = new slide N up to 16; old 17-19 = new 18-20) only
-these parts differ [Certain, part-by-part diff]: `slide16.xml` and `notesSlide16.xml`; `notesSlide1.xml` and
-`notesSlide8.xml`; the new slide 17 (`slide17.xml`, `notesSlide17.xml`, and the figure as `image-17-1.jpg`,
-byte-identical to `docs/figures/final_model_real_photos.jpg`); by the shift `slide18-20.xml` and `notesSlide18-20.xml`,
-of which only slide 19 (claims) and notes 18 and 19 changed in content (slides 18 and 20 and note 20 differ from the
-old 17 and 19 only by part name and slide number; the appendix image is now `image-20-1.jpg`, byte-identical to the
-old `image-19-1.jpg`); the slide rels; and `presentation.xml`, `[Content_Types].xml`, the presentation rels,
-`docProps/app.xml` and `core.xml`. The notes `.md` is the build's output: 20 slide headings. In short:
-- slide 16: the v5 cell of "3DPW test PVE (mm)" is 121.8 (was "pending"); the table rows are 0.26 in (were 0.29) to
-  make room for a line under the table: "3DPW test, corrected labels, 8,190 images: v5 121.8 · v9 (old best) 95.5 ·
-  neck pilot 120.2 · control 91.5 · final 89.0 mm; final model finds 99% of people, v9 94%."; the source line reads
-  "exp7, jobs 3611336 (final model) and 3611339 (control); v5, v9, neck pilot: jobs 3612073–75. Holdout: helper
-  bones masked." Note 16 adds the reading (best of our models on real photos, 6.5 mm better than v9, recall 99 vs
-  94; most of the gain from 3DPW training, control 91.5; the fixes add 2.5 mm PVE and 2.1 PA-PVE plus what a
-  pelvis-aligned PVE cannot see); "If asked": all five models on v23 (PVE, PA-PVE, MPJPE; the old numbers retired),
-  detection and precision on 3DPW (bystanders are not labelled), children unchanged but gender changed by eye;
-- new slide 17, "Final model on real photos: v5 vs final (by eye)": the figure on the left (3.93 x 3.9 in at x 0.5,
-  y 1.2, aspect kept; as tall as fits between title and footer; its column labels baked in, so no header bars), five
-  bullets on the right: "Men look male: tennis (3 of 4 men), walking, office, guitar: flat chest, broader shoulders.
-  v5 gave them breasts."; "Women stay female: stage photo, weekly market."; "Bodies a little larger: size ratio 0.63
-  → 0.78 on the synthetic holdout (slide 16)."; "Unchanged: the boy is still an adult body; placement offsets; ghost
-  bodies on half-visible people; hard poses."; "Gender on Relative Human: pending (v5: 46.5%, chance)."; source line
-  "demo job 3612078, 4 photos + 8 3DPW-test frames, never trained on. Shown: the tennis photo, downtown_walking_00,
-  downtown_runForBus_00. Judged by eye; no metric." Note 17: six spoken sentences; "If asked": the demo job, why
-  gender moved (a reading, untested), the log's gender spread and why it does not settle the direction (3.4),
-  muscle and proportions, the RH run, ghost bodies and offsets;
-- slide 19 (claims): the claim ends "3DPW test PVE 89.0 mm, best of all models (control 91.5, v9 95.5, v5 121.8;
-  slide 16)."; "Not claimed" has "that the fixes made most of the 3DPW gain (3DPW training did)" in place of "a 3DPW
-  gain over v5 or v9 (not yet on the new labels)"; note 19 says the same and adds "a gender number for the final
-  model: on real photos men now look male, but only by eye (slide 17)"; its "If asked" parts "3DPW test" and
-  "Option 1" give the v23 numbers;
-- note 18 (Still open), "If asked": the final model beats its control "and also v9, 95.5, and v5, 121.8, on the same
-  labels; most of that gain comes from the 3DPW training itself (slide 16)" (was "v5 and v9 ... still pending");
-- note 8, "If asked" (men): "The final model, trained with the corrected 3DPW gender labels, gives most men male
-  bodies, judged by eye (slide 17)."; note 1 adds "how it looks on real photos";
-- renumbering: old 17-19 became 18-20 (today's 18, 19 and 21); `build.js` comments (`// 18 still open`, `// 19 claims`, `// 20 appendix`,
-  "slides 12 and 20") and this file use the new numbers.
-Slides 16, 17, 18 and 19 were rendered with LibreOffice at midday on 18 Oct (60 dpi; 16 and 17 also at 110 dpi) and
-checked by eye: they fit. Slide 16's three lines under the table end at about 5.1 in, above the footer; slide 17's
-title stays on one line and its source block ends level with the figure's bottom edge; slide 19's claim keeps five
-lines (the fifth is full) and stays clear of the question box. All 20 slides render.
-**Afternoon of 18 Oct, the final model on Relative Human and the requirements slide** (3.4, "Relative Human, final
-model"; section 11): rebuilt again from `build.js`, now 21 slides. Against the 20-slide pptx (old slide N = new slide
-N up to 19; old 20, the appendix, = new 21) only these parts differ [Certain, part-by-part diff]: `slide10.xml`,
-`slide17.xml`, `slide18.xml`, `slide19.xml`; `notesSlide1/8/10/16/17/18/19.xml`; the new slide 20 (`slide20.xml`,
-`notesSlide20.xml`); the appendix as `slide21.xml` and `notesSlide21.xml` (it differs from the old slide 20 only in
-its slide number and part name) with its image as `image-21-1.jpg` (byte-identical to the old `image-20-1.jpg`); the
-slide rels; and `presentation.xml`, `[Content_Types].xml`, the presentation rels, `docProps/app.xml` and `core.xml`.
-The notes `.md` is the build's output: 21 slide headings. A copy of `docs/deck_src/` next to `docs/figures/` rebuilds
-it with the same parts (only `core.xml` and `presentation.xml` differ) and byte-identical notes. In short:
-- slide 10: title "Children and gender: v5 vs the final model on real photos" (was "Children: child-like in training,
-  adult on real photos"); right tile "0.61 → 0.72 / child-vs-adult separation (AUC), v5 → final model, Relative
-  Human val", teal (was "0.61 vs 0.63 / predicted age of 127 real children vs 821 adults ...", red); left tile label
-  "children per batch with the balanced sampler: unproven after 2 epochs"; five bullets: "v5 reads children as short
-  adults: age 0.61 kid / 0.62 baby vs 0.63 adult; only height drops (0.45 / 0.39 vs 0.51). Gender 46.5%: chance.";
-  "Final model: gender accuracy 46 → 64% (women recognised, men still mid-range); babies 0.44 vs adults 0.54; recall
-  47 → 65%."; "Why (v5): the shape head falls back to the training median, synthetic and real. Sampler pilot:
-  inconclusive."; "3DPW labels fix age at 0.55: likely part of the shift (adults 0.63 → 0.54). Run with those values
-  masked: in progress."; "Caveat: detected people only (948 v5, 1,305 final: different sets); synthetic child numbers
-  in-sample; ages are Anny's 0–1 value." (the bullet "The model can make a child: ... 10 training children 47.8 →
-  41.6 mm" is dropped for space; the training babies stay in the middle tile). Note 10 rewritten: 8 spoken sentences (v5, the final
-  model, the 0.55 anchor, the decision); "If asked": the caveats (detected sets, IoU matching), the 0.55 anchor (AUC
-  ranks, so a common shift cannot raise it; the mask has two outcomes), height vs age, the four phenotypes at ~0.5,
-  v5 details, the one real child, the synthetic tails and the sampler, Anny's child cue and the age scales, RH train
-  for weak labels and Anny-Fit;
-- slide 17: the last bullet "Relative Human: gender 46 → 64%, children AUC 0.61 → 0.72, recall 47 → 65% (job
-  3612131)." (was "Gender on Relative Human: pending (v5: 46.5%, chance)."); the title keeps "(by eye)", because the
-  other four bullets are by eye; source line "... Pictures judged by eye; the Relative Human line is measured (val
-  split)." (was "Judged by eye; no metric."). Note 17: the last spoken sentence gives the measured numbers; "If
-  asked": the RH run (accuracy 0.642, women 0.86, men 0.55, the direction right on average) and "The demo log alone
-  does not settle the direction; Relative Human does, on average";
-- slide 18: item 6 "Children: Relative Human AUC 0.61 (v5) → 0.72 (final), not solved; limitation or weak labels?
-  Fingers: bone-fix hands, then larger crops."; note 18: "v5 reads them as short adults ... the final model does
-  better, 0.72, but children still get near-adult ages";
-- slide 19: the claim keeps every measured line in shorter words and ends "Relative Human, v5 → final: gender 46 →
-  64%, children AUC 0.61 → 0.72 (slide 10)."; "Not claimed: results proven over seeds (one run each) or why the
-  bones flipped; children or gender solved (men still mid-range); correct near/far depths (slope 0.42); fixes
-  without cost (recall −2 points vs the control); that the fixes made most of the 3DPW gain; a model that is not
-  Multi-HMR (slide 20)." (dropped for space: "−3 vs v5" and "head turn, age or limb lengths in the 3DPW labels";
-  both stay in the notes); question box "Questions for you": "1. (1b) Is the 95% bar against our ViT-L, NAVER's, or
-  both? Does a smaller Multi-HMR-style student count as “not exactly Multi-HMR”?", "2. (2b) Does a temporal refiner
-  on frozen per-frame features count as “understands motion”?", "3. Children: a stated limitation, or weak age labels
-  from Relative Human (1–2 weeks)?", "4. When is the submission date?" (12 pt; was "Chosen: ... (done 18 Oct: slide
-  16). Next: write up, or also add weak age labels ..." and the v9 / v10 flip line, both still in note 19). Note 19:
-  the RH claim, "that children or gender are solved" and "a model that is not Multi-HMR" in what is not claimed (no
-  longer "a gender number for the final model"), the four questions; "If asked", "Both options": "a run with it on is
-  in progress (slide 10)";
-- new slide 20, "Thesis requirements: where we stand, and the plan": a table requirement | status | evidence | next,
-  seven rows, status words in the deck's colours (green met, orange partly, red not met, grey not started), and the
-  route line under it (slide list below). Note 20: 10 spoken sentences; "If asked": NAVER's checkpoint (different
-  8-layer head; adapter written, not run), FLOPs (analytic, 1 multiply-add = 2 FLOPs), why ViT-B first, whether a
-  student counts, the temporal design in one sentence, the timeline, the 1c limits;
-- notes 1, 8 and 16: note 1 adds "and where we stand on your thesis requirements"; note 8 ("If asked", men) adds "on
-  Relative Human its gender accuracy is 64 percent, against 46.5 for v5 (slide 10)"; note 16 ("If asked") "Children
-  and gender: ... AUC 0.72 against 0.61 ... 64 percent ... I do not call children solved" (was "Children: unchanged
-  ... The Relative Human number for the final model is not run yet.");
-- renumbering: the appendix is slide 21; `build.js` comments (`// 21 appendix`, "slides 12 and 21") and this file use
-  the new numbers.
-Slides 10, 17, 18, 19 and 20 were rendered with LibreOffice in the afternoon of 18 Oct (60 dpi; slide 20 also at
-110 dpi) and checked by eye: they fit. Slide 10's bullet box is full (eight lines); slide 19's claims end just above
-the question box; slide 20's table ends at about 4.3 in, its route line at about 5.0 in, above the footer. The first
-try of slide 20 at 11 pt with narrower evidence cells ran three-line rows into the route line; the table is now
-10.5 pt with the evidence column 3.7 in wide. All 21 slides render.
+**Source:** `docs/deck_src/build.js` (pptxgenjs 4.0.1) and its theme helper `docs/deck_src/apply_theme.js`;
+instructions, the build check and the old -> new slide map in `docs/deck_src/README.md`. No setup beyond
+`cd docs/deck_src && npm ci && node build.js`, on a machine with node >= 18 and internet access for `npm ci` (probably
+the student's laptop; the cluster may lack node). The notes `.md` is generated from the `N()` calls in `build.js`:
+never edit the `.md` alone. Small last-minute edits are faster in PowerPoint; port them into `build.js` afterwards and
+rebuild, so the notes match again (README, "Publish").
 
-**Before the meeting** (Monday 19 Oct): open the pptx once in PowerPoint and check slides 1, 2, 5, 6, 7, 8, 9, 10, 13,
-14, 15, 16, 17, 18, 19 and 20 for text that wraps one line longer. They were only rendered with LibreOffice. The
-newest tight spots: slide 10's bullet box, slide 19's claims (they end just above the question box) and slide 20's
-table (every row two lines at most); then slide 16's line under the table (two lines). Slide 8's header bars have
-an 11-pt second line sized to fit the bar; slide 15's Wording card already ends at the card's bottom edge in the
-LibreOffice render.
+**History.** The deck grew from 12 slides (14 Oct) to 21 (afternoon of 18 Oct); each rebuild of 16-18 Oct, with the
+pptx parts that changed, is described in section 9 of this file as of commit `a2d236d`
+(`git show a2d236d:docs/handover.md`), in the 21-slide numbering. On the evening of 18 Oct the deck was rebuilt as 30
+slides that tell the whole story in order (overview, data, training, findings and fixes, final model, requirements and
+plan, appendix). New: slides 1-4, 7-9, 11 (merges the old slides 3 and 4), 18 (the old children slide 10, rewritten
+with a masked-arm column), 19, 24, 25 and 30. Old -> new numbering of the reused slides (README): 2 -> 10, 3 + 4 -> 11,
+5 -> 5, 6 -> 6, 7 -> 15, 8 -> 16, 9 -> 17, 10 -> 18, 11 -> 12, 12 -> 13, 13 -> 14, 14 -> 22, 15 -> 28, 16 -> 20,
+17 -> 21, 18 -> 27, 19 -> 26, 20 -> 23, 21 -> 29. This file uses the 30-slide numbers. The 30-slide version was
+rendered with LibreOffice for the layout check (README); it has not been opened in PowerPoint yet.
+
+**Before the meeting** (Monday 19 Oct): open the pptx once in PowerPoint and check slides 9, 13, 24 and 30 first: they
+were the tightest in the LibreOffice render (9: the ten-row metrics table and two lines under it; 13: the footnote
+under the figure; 24: the cost table and three bullets; 30: the 13-row jobs table). Then the other table slides 7, 8,
+23 and 25 and the claims slide 26, for text that wraps one line longer. LibreOffice wraps text slightly differently
+from PowerPoint.
 
 **Check a copy** (after `git pull`; the pptx itself must also be opened once):
 ```
-cd /netscratch/najib/multi-hmr && unzip -l docs/supervisor_update_2026-10-16.pptx | grep -c 'ppt/slides/slide[0-9]*\.xml$'; grep -c "before and after the fix" docs/deck_src/build.js; grep -c runForBus docs/supervisor_talk_notes_2026-10-16.md; grep -o "check pending\|image folders will show it\|I will check, re-extract and rebuild\|check is still to do\|I have not checked that yet\|empty or short\|3581320 pending\|3581320, is pending" docs/deck_src/build.js | wc -l; grep -c "14.3 millimetres" docs/supervisor_talk_notes_2026-10-16.md; grep -c "28 GPU hours" docs/supervisor_talk_notes_2026-10-16.md; grep -c "one shared frame grid; the full re-fit" docs/supervisor_talk_notes_2026-10-16.md; grep -c "one real child" docs/supervisor_talk_notes_2026-10-16.md; grep -c "short adults" docs/supervisor_talk_notes_2026-10-16.md; grep -c "0 of 1,080" docs/supervisor_talk_notes_2026-10-16.md; grep -c "Final model: all fixes together" docs/supervisor_talk_notes_2026-10-16.md; grep -c "Final model on real photos" docs/supervisor_talk_notes_2026-10-16.md; grep -c "Thesis requirements: where we stand" docs/supervisor_talk_notes_2026-10-16.md
+cd /netscratch/najib/multi-hmr && unzip -l docs/supervisor_update_2026-10-19.pptx | grep -c 'ppt/slides/slide[0-9]*\.xml$'; grep -c '^## Slide' docs/supervisor_talk_notes_2026-10-19.md; grep -c '^### Slide' docs/deck_explained_2026-10-19.md; grep -c 'Plan for 1b: a smaller model by distillation' docs/supervisor_talk_notes_2026-10-19.md; grep -c 'Corrections to the draft and the repo' docs/deck_explained_2026-10-19.md; ls docs/supervisor_update_2026-10-16.pptx 2>/dev/null | wc -l
 ```
-The current deck (18 Oct, afternoon) prints `21`, `2`, `1`, `0`, `0`, `2`, `0`, `1`, `2`, `1`, `1`, `1`, `1`
-(checked on the built files in this version, with the `cd` left out, on the afternoon of 18 Oct; 21 slides; slide 8's title and its notes; the slide 8 "If asked"
-line on the four unseen demo images; no line that still calls the image check undone or the label rebuild pending,
-where the earlier 16-Oct copy prints `7`; `0` for "14.3 millimetres" and for "one shared frame grid; the full
-re-fit": notes 6, 18 and 19 now give the full re-fit instead of the 17-Oct test sentence; the measured re-fit time in
-notes 18 and 19, where copies before 17 Oct print `0`; "one real child" once, in the "If asked" part of note 10;
-"short adults" in notes 10 and 18 and "0 of 1,080" in note 6, where every copy before 18 Oct prints `0`; "Final
-model: all fixes together" once, the heading of note 16, where every copy before the evening of 18 Oct prints `0`;
-"Final model on real photos" once, the heading of note 17, where every copy before the midday of 18 Oct prints `0`;
-"Thesis requirements: where we stand" once, the heading of note 20, where every copy before this one prints `0`).
-The 20-slide copy of midday 18 Oct prints `20`, `2`, `1`, `0`, `0`, `2`, `0`, `1`, `2`, `1`, `1`, `1`, `0` (its
-slide 17 still says "Gender on Relative Human: pending"). The 19-slide copy of the evening of 18 Oct prints `19`,
-`2`, `1`, `0`, `0`, `2`, `0`, `1`, `2`, `1`, `1`, `0`, `0`. The 18-Oct copies before it print `18`, `2`, `1`, `0`,
-`0`, `2`, `0`, `1`, `2`, `1`, `0`, `0`, `0`. The 17-Oct evening copy prints `18`, `2`, `1`, `0`, `3`, `2`, `3`, `1`,
-`0`, `0`, `0`, `0`, `0`; copies from before that evening print `0` for "one real child" and still have the wrong
-"0.57–0.67, 5 small people" tile.
-The 18-Oct copy with exp7 running: `grep -c "started training on 18 October" docs/supervisor_talk_notes_2026-10-16.md`
-printed `2` there (notes 10 and 18/19 said the final model and its control were training, mask off; slide 18 item 7
-ended "In use: the final model started training on them 18 Oct."). The earlier 18-Oct copies and this one print `0`
-(this one says "trained"). In this version slide 18 item 7 ends "In use: the final model trained on them (slide
-16)."; slide 19's question box is "Questions for you" with four numbered questions (until midday 18 Oct it started
-"Chosen: fix gender and frame grid ...", said "(done 18 Oct: slide 16)" and asked "write up, or also add weak age
-labels for children").
-Anything else is an
-older copy: ask the student to `git pull` again. If no
-current copy can be had before the meeting, hand-edit the pptx in PowerPoint from the slide list below (slide text
-and speaker notes), then port the changes into `build.js` after the meeting and rebuild, so the `.md` notes match
-again.
+The current deck (evening of 18 Oct) prints `30`, `30`, `30`, `1`, `1`, `0` (checked on the files in this version,
+with the `cd` left out): 30 slides, 30 note headings, 30 explained slides, the 1b-plan slide, the explanation file
+reconciled with the final slide titles (the copy written against the outline prints `0` there), and the old 21-slide
+pptx gone. A copy without `docs/supervisor_update_2026-10-19.pptx` is the 21-slide deck or older: ask the student to
+`git pull` again; its checks are in section 9 of `a2d236d`.
 
-**Slides** (current titles; quotes from `build.js`, which is the reference if a wording here differs):
-1. Multi-HMR with Anny: what this week found (agenda). "Neck: two bones turned half a turn; a pilot fix passes (one
-   run)." and "Fingers: half the error was two flipped bones. Children: open." Since 18 Oct the 3DPW line reads
-   "3DPW labels: three defects found and fixed." Since the evening of 18 Oct a fifth line, "Final model: all fixes
-   hold together; recall costs 2 points." (the five lines at 16 pt), and the byline "19 October 2026". Since midday
-   on 18 Oct note 1 also names "how it looks on real photos", and since the afternoon "where we stand on your thesis
-   requirements".
-2. Where we started: three visible failures (neck, fingers, children). Neck card: "A pilot fix restores it (one run;
-   on real images by eye only)." Fingers card: "half the error was two flipped bones".
-3. What I did: test each stage on its own (holdout + manifest).
-4. What is not the cause: the structural checks pass (+ overfit warnings). The slide card and its notes call the
-   overfit rise in translation and 2D losses (1.67 -> 1.89; 58 -> 75) "probably the first sign of the depth bug".
-   Section 1 rates this a guess: those are single-batch prints, and the first-half vs second-half averages fall
-   instead. If asked, the student should say exactly that. The next time the deck is rebuilt, change "probably" to
-   "possibly" in `build.js` (in the slide 4 card and in the slide 4 `N()` notes).
-5. 3DPW to Anny: how the labels are made.
-6. 3DPW labels: three defects found and fixed (since 18 Oct; was "joints and surface pass, three defects"). Three
-   cards from the v23 check, job 3611284, with the 15-Oct numbers (3575369) as "was": "Measured: pass" (body joints
-   14.1 mm, p95 21.1, was 18.7; surface 18.9 / 16.1, was 18.9 / 18.3; 2D +0.4 px, was +1.1; left/right and mirror
-   100%; 87 fits, 22,912 frames, median 14.0 mm, max 79.8); "Defects: fixed" (gender: men 0, women 1, flipping now
-   worse, men 13.9 → 20.0 mm; two-person images 407 of 960 → 0 of 1,080; labels missing: re-extracted 16 Oct, new
-   labels 16,694 images, 22,749 people); "Limits and grades" (head at rest; head turn 19.3° SMPL vs 19.6° labels,
-   was 9.5°; overall WARN, was FAIL: limb ratios forearm 0.948, thigh 1.064, FAIL in validation only; 3.2% of people
-   with a joint > 100 mm, train 5.5%, FAIL). Main notes: the 15-Oct defects, the image re-extraction, the re-fit
-   (men 19.0 -> 14.7 mm, women about 15, missing-actor frames 54% -> 0), the new label count (16,694 images: fewer
-   images, the same people), the check old -> new, "So the final model can train on these labels." If asked: head
-   turn (cause not checked; guess: the gender fix), grades per split, the gender refit test, the missing-labels
-   history, the re-fit route, crosscountry_00 (3DPW's camera puts its people behind the camera), joints vs bone
-   heads, the fixed shape values.
-7. Neck: two half-turned bones, and a pilot fix. Table v5 before | fix, no training | fix + 2-epoch fine-tune |
-   control (no fix): neck02 175.6 / 4.5 / 4.7 / 175.7 deg, head 177.9 / 12.4 / 11.2 / 177.9, neck thickness 0.46 /
-   1.00 / 1.00 / 0.46, neck-skin error 27.3 / 10.8 / 10.7 / 27.9 mm, body PVE 70.5 / 71.3 / 68.8 / 76.9, head
-   direction 12.0 / 19.1 / 14.4 / 13.8. The fix with no training "fails its 15° limit" on head direction, "likely a
-   per-person head offset"; with the fine-tune it "passes the fine-tune checks, each within a tolerance of its
-   control". "Caveat: one run, no fixed seed (identical runs differ by up to 7.6 mm PVE), so no PVE gain is
-   claimed." "Open: why the bones flipped. Next slide: the fix alone on a holdout image; fix + fine-tune on a real
-   3DPW frame." Since the evening of 18 Oct the last line is "Final model, 10 epochs (slide 16): neck02 4.8°, head
-   8.9°, thickness 1.00, neck-skin error 11.0 mm, head direction 13.1°." (until then "Next: a longer fine-tune with
-   the fix", pointing at the Still-open slide).
-8. Neck: before and after the fix. Two before | after pairs in one row, yellow rings on two necks per pair.
-   - Left: synthetic holdout 579862, from `neck_before_after_v5.jpg`; header bars "Before (v5) / as trained" (red)
-     and "After (correction) / no training" (teal). Caption "Synthetic holdout 579862 (correction only, no
-     training)".
-   - Right: 3DPW test `downtown_bar_00` frame 701, from `neck_before_after_3dpw_bar.jpg` (job 3581312); header bars
-     "Before (v5) / real image" and "After (fixed model) / fix + 2-epoch fine-tune". Caption "3DPW test frame (real,
-     never trained on), downtown_bar_00".
-   - Below: "Left: same model, no training; on the neck, only neck02 and the head are corrected. Right: fixed model,
-     fine-tuned 2 epochs.", then the thickness 0.46 -> 1.00 on the 100-image holdout (job 3579014) and "Real-image
-     demo: job 3581312". "Limits:" the head points 19° off without the fine-tune (12° before), 14° after it; holdout
-     bodies are still too small (the separate depth bug); "Real images judged by eye only: no neck ground truth, no
-     metric."
-   - Notes, main part: thin stalks with v5, normal width with the fix; measured on the holdout (0.46 to 1.00), by eye
-     only on real images: "clearest here and on an office frame, and also visible on two more 3DPW sequences and
-     three photos"; head direction 14 degrees after the fine-tune, against 12.
-   - Notes, "If asked":
-     - the right column differs from v5 by the correction and by two epochs of training; "On the holdout, the same
-       2-epoch fine-tune without the fix keeps thickness 0.46, so the correction is the likely cause; not tested on
-       real images." The demo log shows the fix on for four bones;
-     - "I have looked at 8 of these 12 images so far; the other four, the runForBus, sitOnStairs and fencing frames
-       and one photo, not yet.";
-     - the female-looking bodies on men in both models: not the 3DPW gender defect (v5 never saw 3DPW); since the
-       evening of 17 Oct: "predicted gender near the training median, about 0.6, while Anny's male end is 0: the
-       same pull to the median as for age (slide 10)", cause not settled (3.4); since 18 Oct also "On Relative Human,
-       measured on 932 real people, men get 0.535 on average and women 0.551: no gender signal."; since midday on
-       18 Oct also "The final model, trained with the corrected 3DPW gender labels, gives most men male bodies,
-       judged by eye (slide 17)", since the afternoon with "; on Relative Human its gender accuracy is 64 percent,
-       against 46.5 for v5 (slide 10).";
-     - bodies still small or misplaced in depth in both models, and a figure in a painting detected as a person;
-     - the hands differ too (two hand bones turned back) and were not judged (slide 9);
-     - all twelve holdout panels show the thin neck and its fix wherever a neck is visible.
-9. Fingers: about half the error was two flipped bones. 17.3 deg before, 8.3 with the fix after the fine-tune (8.2
-   with no training), 15.1 at rest pose before the fix. Since the evening of 18 Oct the 8.3 tile reads "with the bone
-   fix: 2-epoch pilot and 10-epoch final model (controls 17.4°)". The notes give the v10 metacarpal result (PVE 74.1
-   -> 69.9,
-   fingers 32.0 -> 17.8).
-10. Children and gender: v5 vs the final model on real photos (title since the afternoon of 18 Oct; until then
-    "Children: child-like in training, adult on real photos"). Since 18 Oct with the Relative Human result of v5,
-    since the afternoon also of the final model (job 3612131; 3.4). Tiles: "2% → 10% / children per batch with the
-    balanced sampler: unproven after 2 epochs"; "0.10 / predicted age of training babies; true 0.015"; "0.61 → 0.72 /
-    child-vs-adult separation (AUC), v5 → final model, Relative Human val" in teal (midday 18 Oct: "0.61 vs 0.63 /
-    predicted age of 127 real children vs 821 adults (Relative Human val); separation AUC 0.61" in red; 17-Oct
-    evening: "0.60 / predicted age of the one real child in our photos"; before that the wrong "0.57–0.67 / 5 small
-    people"). Bullets: "v5 reads children as short adults: age 0.61 kid / 0.62 baby vs 0.63 adult; only height drops
-    (0.45 / 0.39 vs 0.51). Gender 46.5%: chance."; "Final model: gender accuracy 46 → 64% (women recognised, men still
-    mid-range); babies 0.44 vs adults 0.54; recall 47 → 65%."; "Why (v5): the shape head falls back to the training
-    median, synthetic and real. Sampler pilot: inconclusive."; "3DPW labels fix age at 0.55: likely part of the shift
-    (adults 0.63 → 0.54). Run with those values masked: in progress."; "Caveat: detected people only (948 v5, 1,305
-    final: different sets); synthetic child numbers in-sample; ages are Anny's 0–1 value." Main notes (8 sentences):
-    v5 short adults (AUC 0.61, height drop, gender 46.5%), the final model better on every line (babies 0.44 vs 0.54,
-    AUC 0.72, half the babies below 0.45, gender 64% with women 0.86 and men 0.55, recall 65%), the 0.55 anchor and
-    the masked run "can go either way", the decision (limitation or weak labels). "If asked": caveats (detected sets
-    1,305 vs 948, IoU matching), the 0.55 anchor (AUC ranks; two outcomes; the 3DPW GT keeps the average body),
-    height vs age, the four phenotypes at ~0.5, v5 details (0 of 89 kids, 1 of 38 babies; teens; exp6 the same), the
-    one real child, both synthetic tails and the sampler, cause not ranked, Anny's child cue, three age scales, RH
-    counts and its train split, Anny-Fit.
-11. The hidden bug: head anchored, pelvis targeted.
-12. Depth fix: bodies drawn much closer to true size (figure 579862).
-13. Depth fix: much better size, near vs far still weak (table). Note: "No control was run at ×5 or ×20." Since the
-    evening of 18 Oct a third bullet, "Final model (slide 16): ×5 plus the bone fix, 30% real 3DPW, 10 epochs: root
-    error 0.73 m vs 1.40 m for its own control (v5 1.21 m), size 0.78 vs 0.59, slope 0.42 vs 0.28."; the pilot's
-    0.54 m stays in the table.
-14. Four experiments: results (+ noise floor). Children row since the evening of 17 Oct: "Inconclusive after 2
-    epochs: 10 training children 48.5 vs 53.1 mm." (was "No effect ... real photos unchanged"); since 18 Oct it adds
-    "v5 on 127 real children (Relative Human): adult age, AUC 0.61 (slide 10)" (the pilot itself was not run on RH);
-    main notes "Neck and fingers: no measurable effect. Children: inconclusive after two epochs ...; on real photos,
-    v5 still gives children an adult age (slide 10)". Since the evening of 18 Oct the noise box ends "All fixes
-    together, against a control: slide 16."
-15. Corrections made, and still to make. The Wording card names the README and the findings as still carrying last
-    week's neck story. That is narrower than section 7, which also lists the plan's neck lines (`plan :150-152`,
-    `:252`); the slide is left as it is.
-16. Final model: all fixes together, with a control (new on the evening of 18 Oct; section 5, item 7). Table v5 |
-    control | final model: PVE 70.5 / 77.4 / 73.7 mm, PA-PVE 53.3 / 56.4 / 50.3, recall 90.2 / 89.0 / 87.0%, root
-    error 1208 / 1402 / 728 mm, size ratio 0.63 / 0.59 / 0.78, neck02 175.6 / 175.8 / 4.8°, neck girth 0.46 / 0.46 /
-    1.00, fingers 17.3 / 17.4 / 8.3°, 3DPW test PVE 121.8 / 91.5 / 89.0 mm (the v5 cell said "pending" until midday on
-    18 Oct). Under the table since midday: "3DPW test, corrected labels, 8,190 images: v5 121.8 · v9 (old best) 95.5 ·
-    neck pilot 120.2 · control 91.5 · final 89.0 mm; final model finds 99% of people, v9 94%." The recipe line (10
-    epochs, 40,000 images, 70% AnnyOne + 30% 3DPW-train, corrected labels, same recipe for both arms, one run each, no
-    seed, noise ~7.6 mm PVE / ~2 recall points) and a source line (jobs 3611336, 3611339; since midday also "v5, v9,
-    neck pilot: jobs 3612073–75"). Bullets: "Fixes hold together: neck02 4.8°, neck girth back to 1.00; root error
-    −48%; finger error halved; PA-PVE 50.3 mm, the best of every model so far." and "The cost: recall −2 points vs the
-    control, −3 vs v5. PVE −3.7 mm vs the control: inside the noise. Depth slope still 0.42 (1 = perfect)." Notes: the
-    reading of section 5, item 7 in 8 spoken sentences, since midday plus the v23 reading (best of our models on real
-    photos, 6.5 mm better than v9, most of the gain from 3DPW training, the fixes add 2.5 mm); "If asked": since
-    midday all five models on v23 (was "v5 / v9 pending"; the old 119.1 / 102.5 retired; MPJPE 88.3 vs 90.9) and
-    detection on 3DPW (recall 99 vs v9 94; precision and the unlabelled bystanders), head direction 13.1 vs 13.0 and
-    head bone 8.9, in-training 3DPW-val 79.9 -> 74.5, NaN steps 16 and 10, training time (4,292 s on an A100, 6,753 s
-    on an A40), children and gender (until midday "children unchanged"; at midday gender changed by eye, slide 17;
-    since the afternoon the RH numbers of job 3612131, AUC 0.72 vs 0.61 and gender 64 vs 46.5 percent, "I do not call
-    children solved"), the checkpoint path.
-17. Final model on real photos: v5 vs final (by eye) (new at midday on 18 Oct; demo job 3612078; 3.4, "Final
-    model, by eye"). Left: `docs/figures/final_model_real_photos.jpg` (tennis photo, `downtown_walking_00`,
-    `downtown_runForBus_00`; v5 left, final model right). Right: "Men look male: tennis (3 of 4 men), walking, office,
-    guitar: flat chest, broader shoulders. v5 gave them breasts."; "Women stay female: stage photo, weekly market.";
-    "Bodies a little larger: size ratio 0.63 → 0.78 on the synthetic holdout (slide 16)."; "Unchanged: the boy is
-    still an adult body; placement offsets; ghost bodies on half-visible people; hard poses."; since the afternoon of
-    18 Oct "Relative Human: gender 46 → 64%, children AUC 0.61 → 0.72, recall 47 → 65% (job 3612131)." (until then
-    "Gender on Relative Human: pending (v5: 46.5%, chance)."). The title keeps "(by eye)": the four other bullets are
-    by eye. Source line: demo job 3612078, "Pictures judged by eye; the Relative Human line is measured (val split)."
-    Notes, main: what changed and what did not, by eye; then the measured RH numbers (gender 46.5 -> 64 percent, women
-    recognised, men in the middle; AUC 0.72 vs 0.61; recall 65 vs 47). "If asked": the demo job and the bone fix on
-    load; why gender moved (shape mask off, so the corrected 3DPW gender labels train the shape head; a reading,
-    untested); the log's gender spread (v5 0.32-0.76, final 0.05-0.99) and why it does not settle the direction
-    (tennis lines mostly above 0.7; "Relative Human does, on average"); muscle 0.28 -> 0.48 and proportions 0.81 ->
-    0.57; the RH run, job 3612131 (accuracy 0.642, women 0.86, men 0.55, direction right on average); ghost bodies
-    and offsets.
-18. Still open, and what I test next (7 items). Since the evening of 18 Oct: item 1 "Bone flips: fix confirmed at 10
-    epochs": "Final model, real photos in training: neck02 4.8° (slide 16). Real images by eye only (slide 8). v10's
-    left arm: two-sided fix, not built yet." (was "Bone flips: confirm the pilot fix ... a longer run"); item 2 "Depth
-    slope: 0.42 in the final model": "Still far from 1; cause unknown. Next: measure training depths properly, and
-    the slope on training images."; item 3 "Depth fix cost: now measured": "Final model vs its control: PVE within
-    noise, recall −2 points (−3 vs v5). Paired PVE not done; no ×20 result at 10 epochs." Item 5: "Both v5 and the
-    depth fix miss them (4 of 12 holdout renders): not the fix. Likely detection; not counted." Item 6, "Children and
-    fingers" (since the afternoon of 18 Oct): "Children: Relative Human AUC 0.61 (v5) → 0.72 (final), not solved;
-    limitation or weak labels? Fingers: bone-fix hands, then larger crops." (midday 18 Oct: "Children: measured on
-    Relative Human (AUC 0.61, read as short adults); decision: limitation or weak labels. ..."; 17-Oct evening:
-    "Children: measure on Relative Human first. ..."; the notes keep the 10-epoch sampler run as a low-priority
-    option). Item 7, "3DPW
-    labels: three defects fixed (slide 6)", green: "Missing labels fixed 16 Oct (images re-extracted). Re-fit of all
-    87 tasks (gender m → 0, f → 1; one shared frame grid) and re-check done 18 Oct: WARN (was FAIL), no actor missing.
-    In use: the final model trained on them (slide 16)." Notes, main: the fix holds in the final model (neck02 4.8,
-    fingers 8.3), "the 8 real images I have seen so far from a first demo of the 2-epoch model", slope 0.42, the cost
-    measured (PVE inside noise, recall 2 points lower; paired comparison still to do), children measured (v5 short
-    adults, AUC 0.61; the final model 0.72, children still near-adult ages; since the afternoon of 18 Oct), the 3DPW
-    re-fit and check done (slide 6), the final model trained on the new labels. "If
-    asked": the re-fit in the past tense ("about 28 GPU hours at the measured 4.4 seconds per frame (the 17 October
-    test, on an H100), done on 18 October"), the 16,694 label images, the task script that refuses to mix old and
-    new fits, and the final model's 3DPW test against its control (v5 / v9 pending until midday on 18 Oct; since
-    then "and also v9, 95.5, and v5, 121.8, on the same labels; most of that gain comes from the 3DPW training
-    itself (slide 16)").
-19. What I claim today, and what I do not (+ the question to the supervisor). Since the evening of 18 Oct the claim
-    adds "The final model keeps every fix against its own control: root error −48%, neck02 4.8°, fingers 8.3°, PA-PVE
-    50.3 vs 56.4 mm, 3DPW test PVE 89.0 vs 91.5 mm (slide 16)."; since midday it ends "3DPW test PVE 89.0 mm, best of
-    all models (control 91.5, v9 95.5, v5 121.8; slide 16)." Not claimed: "results proven over seeds (one run each) or
-    why the bones flipped; better children; correct near/far depths (slope 0.42); fixes without cost (recall −2 points
-    vs the control, −3 vs v5); that the fixes made most of the 3DPW gain (3DPW training did); head turn, age or limb
-    lengths in the 3DPW labels." (until midday: "a 3DPW gain over v5 or v9 (not yet on the new labels)") (until then:
-    "a proven neck fix (one run, no seed; head direction 14.4° vs 12.0°) ..."). Since the afternoon of 18 Oct: the
-    claim, in shorter words, ends "3DPW test 89.0 mm, our best (v9 95.5, v5 121.8; slide 16). Relative Human, v5 →
-    final: gender 46 → 64%, children AUC 0.61 → 0.72 (slide 10)."; "Not claimed: results proven over seeds (one run
-    each) or why the bones flipped; children or gender solved (men still mid-range); correct near/far depths (slope
-    0.42); fixes without cost (recall −2 points vs the control); that the fixes made most of the 3DPW gain; a model
-    that is not Multi-HMR (slide 20)." Question box, since the afternoon of 18 Oct, "Questions for you": "1. (1b) Is
-    the 95% bar against our ViT-L, NAVER's, or both? Does a smaller Multi-HMR-style student count as “not exactly
-    Multi-HMR”?"; "2. (2b) Does a temporal refiner on frozen per-frame features count as “understands motion”?"; "3.
-    Children: a stated limitation, or weak age labels from Relative Human (1–2 weeks)?"; "4. When is the submission
-    date?" (until then: "Chosen: fix gender and frame grid, re-fit all 3DPW tasks, then fine-tune v5 (done 18 Oct:
-    slide 16). Next: write up, or also add weak age labels for children (1–2 weeks)?", then "v9 also has the neck flip
-    (measured at epoch 149) and needs its own bone fix; v10 has a similar left-arm flip."). Notes, main: the claims
-    with the final model (since midday with v9 95.5 and v5 121.8; since the afternoon with the RH numbers); what is
-    not claimed (since the afternoon "that children or gender are solved" and "a model that is not Multi-HMR (next
-    slide)"; at midday "a gender number for the final model"); "On last week's question, v9 now or the labels first:
-    I went ahead with the labels first, then fine-tuned v5; that is the final model."; the four questions. "If asked": depth fix (slope 0.42; the cost measured: PVE inside noise, recall −2 vs
-    the control, −3.2 vs v5; the pilot gaps), neck (the 2-epoch pilot, then 10 epochs: neck02 4.8, head direction 13.1
-    vs 13.0), fingers (8.3 vs 17.4), 3DPW labels, "3DPW test" (since midday the five v23 numbers and recall 99 vs 94;
-    the old-label numbers retired), "Option 1, v9 now, which I did not choose" (still with "about 1 to 2 hours of
-    training" and "75.0 at epoch 62, the planned start"; "From the v5 pilot I expected ... the v5 final model reached
-    0.78 and 0.73 metres"), "Option 2, labels first, which I chose and did" (re-fit, about 28 GPU hours, 16,694 label
-    images; "the result is on slide 16"), "Bone flips in v9 and v10", "Both options" (the finger mask; the shape mask
-    off in the final model; since the afternoon "a run with it on is in progress"). So the option-1 notes still
-    describe a fine-tune from v9 00062 (1-2 h, with a v9 bone fix estimated first), in case the supervisor asks.
-20. Thesis requirements: where we stand, and the plan (new on the afternoon of 18 Oct; section 11 and
-    `docs/thesis_requirements_plan.md`). Table, 10.5 pt, requirement | status | evidence (18 Oct) | next:
-    - "1c 3DPW in Anny space" | met (green) | "v23 labels: post-check PASS on 60 sequences; independent check WARN
-      (body-model limits)" | "state the limits in the thesis";
-    - "2a 3DPW-train used in training" | met | "final model: 30% of every batch is 3DPW-train" | "–";
-    - "1a pose correct, 3DPW test and wild" | partly (orange) | "neck 4.8°, fingers 8.3°; 3DPW test 89.0 mm, our best
-      so far" | "depth slope 0.42, placement, hard poses; real-photo hands unshown";
-    - "1a shape changes per person" | partly, at risk (orange) | "gender yes (Relative Human 64%); age partly (baby
-      0.44, adult 0.54); muscle, weight, cup, firmness ≈ 0.5" | "masked run (in progress); rest-pose lineup";
-    - "1b not the same model as Multi-HMR" | not met (red) | "upstream Multi-HMR, output resized for Anny + 0-parameter
-      bone fix; NAVER's Anny model not yet run" | "ViT-B student (below); needs your yes";
-    - "2b temporal (motion)" | not started (grey) | "per-frame model only" | "refiner on frozen per-frame tokens,
-      16-frame windows; month two";
-    - "3 report and code" | partly | "draft exists (74 mm → 70.5); 98 files hard-code /netscratch; no results or
-      models committed" | "clean-up list; release models with checksums".
-    Under it: "Route for (1b): ViT-B student distilled from the final model, 3.1× fewer params, 3.2× fewer FLOPs, bar
-    ≤ 1.05× error on both test sets; launch Tue 20 Oct, first result ~8 Nov." Notes, main (10 sentences): 1c and 2a
-    met; pose partly (and why hands are unshown); shape partly and at risk (gender 64%, age partly, four phenotypes
-    at ~0.5, the masked run); 1b not met, said plainly (upstream Multi-HMR with a resized output and a 0-parameter
-    bone fix, backbone weights from NAVER's Anny checkpoint); the ViT-B route with its numbers and the 1.05× bar
-    against both ViT-Ls; the BEDLAM risk, one long job, ~8 Nov; temporal not started, month two; report and code.
-    "If asked": NAVER's checkpoint (different 8-layer head; adapter written, not run); FLOPs (analytic, 2 × MAC; the
-    backbone ~1,917 of 1,927 GFLOPs; NAVER's ~414 M a hand estimate; ms to be measured); why ViT-B first (NAVER's B =
-    L on 3DPW, 94.0 vs 94.1; the old ViT-S students 1.17-1.54x their teacher); whether a student counts (his call);
-    the temporal design in one sentence; the timeline (part one ~15 Nov); the 1c limits (hands, neck, head at rest;
-    eight constant phenotypes; 163-joint MPJPE).
-21. Backup: before and after, holdout image 579860 (slide 20 until the afternoon of 18 Oct).
+**Slides** (title as in the notes file; old 21-slide number in brackets; what to check in PowerPoint):
+1. Multi-HMR with Anny: what we changed and what we measured (new; dark title slide). Five 16-pt result lines and the
+   byline fit inside the body box; numbers 0.63 -> 0.78, 89.0 mm (v5 121.8), gender 46 -> 64%.
+2. The goal and your requirements (new). The six requirement rows on the right (1a partly, 1b not met, 1c met, 2a
+   met, 2b not started, 3 partly) stay two lines each; dot colours match slide 23.
+3. The model in one picture (new). The text stays inside the five boxes (the per-person head box is the longest); the
+   teal "ours" box keeps four bullets; the "Honest for 1b" line ends above the footer.
+4. The datasets (new). The 3DPW row of the table (the tallest) does not push the "how to read" line into the three
+   tiles below.
+5. 3DPW to Anny: how the labels are made (old 5). The six step boxes and the matched / free / fixed boxes; the code
+   footnote (it names converter v2.2, the pre-re-fit state).
+6. 3DPW labels: three defects found and fixed (old 6). The three cards (v23 check, job 3611284, with "was" values) and
+   the source line.
+7. What the model learns: the losses in plain words (new). The ten-row table and the two lines under it (how to read;
+   what is masked for 3DPW people) end above the footer.
+8. What we changed in training: v5 → final model (new). The six-row table (change | why | what it does) and the "how
+   to read" line.
+9. How we measure (new). Tight: the ten-row metrics table, the "how to read" line and the noise-floor line.
+10. Where we started: three visible failures (old 2). The three cards' "this week" lines.
+11. Checked first: what is NOT the cause (new; merges the old 3 and 4). The six-check strip and the four result cards;
+    the overfit card says "possibly the first sign of the depth bug".
+12. The hidden depth bug: anchor vs target (old 11, retitled). The two stick figures, the depth-fit line and three
+    bullets.
+13. Depth fix: before and after (old 12). Tight: the "Not fully fixed" footnote under the figure.
+14. Depth fix: the numbers (old 13). The eight-column table with its group band; the box with "Not fixed", "Likely
+    cost" and the final-model line.
+15. Neck: two half-turned bones, and a pilot fix (old 7). The table, the four bullets and the three-line box at the
+    bottom (caveat, open, final model).
+16. Neck: before and after the fix (old 8). The header bars' 11-pt second lines; the yellow rings sit on the necks.
+17. Fingers: about half the error was two flipped bones (old 9). The three stat tiles, the hand-size table and the
+    bullets.
+18. Children and gender on real photos (new; the old 10's tiles, trimmed). The three-column table (v5 | final |
+    masked arm), the three tiles and the three bullets.
+19. Masked shape labels: a trade-off (new). The two boxes and the "Reading and next step" line (job 3614042, queued).
+20. Final model: all fixes together, with a control (old 16). The table and the lines under it end above the footer.
+21. Final model on real photos: v5 vs final (by eye) (old 17). The title stays on one line; the source block ends
+    level with the figure.
+22. Pilots: four results and the noise floor (old 14, retitled). The result column of the table and the noise box.
+23. Thesis requirements: where we stand (old 20, retitled). Tight table: every row at most two lines; the "how to read"
+    line above the footer.
+24. Plan for 1b: a smaller model by distillation (new). Tight: the four-row cost table and three bullets.
+25. Plan: the next four weeks (new). The six-row week table and the "how to read" line.
+26. What I claim, what I do not, and my questions (old 19; dark closing slide). The claims end above the question box.
+27. Still open, and what I test next (old 18; appendix). The seven numbered items.
+28. Corrections to the draft and the repo (old 15, retitled; appendix). The Wording card ended at the card's bottom
+    edge in the old render.
+29. Backup: before and after, holdout image 579860 (old 21; appendix). The figure and its caption.
+30. Jobs and checkpoints (new; appendix). Tight: the 13-row job table; no path wraps to a third line.
 
 **Results still to come: the lines they make stale.** When a result arrives, edit these lines in `build.js` and
 rebuild (or hand-edit the pptx as above).
 
 | result | slide text | speaker notes | what changes |
 |---|---|---|---|
-| 3DPW re-fit and the v23 check (4e; items 1-3) | **done 18 Oct**: 6 (all three cards), 18 item 7, 19 (claim, question box) | 6, 18, 19 | in the deck since 18 Oct (job 3611284; this section, "18 Oct"). The 17-Oct re-fit test sentence and the "3.5 to 4 hours with 8 free H100s" estimate are gone from notes 6, 18, 19. Still open: the measured total runtime of the re-fit (the notes say "about 28 GPU hours at the measured 4.4 seconds per frame") |
-| the other four demo images of the 2-epoch model (runForBus, sitOnStairs, fencing frames, one photo; job 3581312) | none | 8 (If asked: "I have looked at 8 of these 12 images so far ..."), 18 (main: "the 8 real images I have seen so far"; If asked: "I have looked at 8 of these 12 images so far"), 19 (If asked: "in the 8 of its 12 images I have seen") | how many of the 12 show normal necks with the fix |
-| longer fine-tune with the fix (section 5, item 3) | **done on the evening of 18 Oct as the final model**: 7 ("Final model" line), 18 item 1 | 7 (main and If asked), 18 (main) | in the deck (slide 16; this section, "Evening of 18 Oct"). A 10-epoch run with the bone fix alone would add a row, not change these lines |
-| `long_pc_dist20` (4d) | 13 (table note), 18 item 3 ("no ×20 result at 10 epochs") | 13 (main), 18 (If asked), 19 (If asked: "Five, not twenty, because ...") | root error, size, slope, PVE, recall of x20 for 10 epochs next to x5 for 10 epochs |
-| the supervisor's answers (slide 19, four questions) | 19 (question box "Questions for you"), 20 (rows 1b and 2b, the route line), 10 (bullet "3DPW labels fix age ...") | 19 (main: "I have four questions now ..."; If asked: "Option 1", "Option 2"), 20 (main and If asked) | record them in the paragraph below |
-| the supervisor's children decisions (Path A or B; `MASK_3DPW_SHAPE` on or off) | 18 item 6 | 10 (main: "The decision for today: ..."; "Separately, a flag ..."), 19 (If asked, "Both options") | record both in the paragraph below; if the mask is on, section 5, item 7 and note 19 |
-| Relative Human evaluation of v5 and exp6 (section 5, item 12, step 1) | **done 18 Oct**: 10 (right tile, two new bullets, caveat), 14 (children row), 18 item 6 | 8, 10 (main and If asked), 14, 18 | in the deck since 18 Oct (val split, jobs 3611285_0/_1; 3.4). Still to come, optional: the RH test split; the RH number for a sampler run, if one is ever trained (section 5, item 12, step 7) |
-| the final model (exp7; section 5, item 7) | **done on the evening of 18 Oct**: new slide 16; 1, 7, 9, 13, 14, 18 (items 1-3, 7), 19 (claim, not claimed, question box) | 1, 7, 9, 10, 12, 13, 14, 16, 18, 19 | in the deck (this section, "Evening of 18 Oct"). Still to come: the supervisor's answer; a longer run if the deadline allows more than 10 epochs |
-| the 3DPW-test re-evaluations on v23 (v5 00099, v9 e62, exp6; 0a step 6) | **done at midday on 18 Oct** (jobs 3612073-3612075): 16 (v5 cell 121.8; the line under the table; source line), 19 (claim; not claimed) | 16 (main; If asked), 18 (If asked), 19 (main; If asked, "3DPW test", "Option 1") | in the deck (this section, "Midday of 18 Oct") |
-| a demo of the final model (0a step 6) | **done at midday on 18 Oct** (job 3612078): new slide 17 | 1, 8 (If asked, men), 16 (If asked, children and gender), 17, 19 (main: "a gender number for the final model", replaced in the afternoon of 18 Oct by the measured Relative Human line) | in the deck (this section, "Midday of 18 Oct"). The necks of the final model on real images were not judged separately |
-| Relative Human evaluation of the final model (0a step 6) | **done on the afternoon of 18 Oct** (job 3612131): 10 (tile, bullets), 17 (last bullet, source line), 18 item 6, 19 (claim, not claimed), 20 (row 1a shape) | 8 (If asked), 10, 16 (If asked), 17, 18, 19, 20 | in the deck (this section, "Afternoon of 18 Oct"); the accuracy 0.642 is above 0.5, so the direction is right on average (3.4) |
-| the `MASK_3DPW_SHAPE=1` arm (running since 18 Oct; then its own Relative Human run) | 10 (bullet "3DPW labels fix age at 0.55: ... Run with those values masked: in progress."), 20 (row 1a shape: "masked run (in progress)") | 10 (main: "a run that masks those fixed 3DPW shape values is in progress, and it can go either way"; If asked: "The 0.55 anchor"), 19 (If asked, "Both options"), 20 (main: "the masked run tests that") | spreads of muscle, weight, cup size, firmness, age; adult age; AnnyOne and 3DPW PVE against the unmasked final model; the children AUC (two outcomes, 3.4) |
-| the NAVER baseline (`multiHMR_672_L_anny`) and exp8, the ViT-B student (`docs/thesis_requirements_plan.md`, section 4) | 20 (row 1b: "NAVER's Anny model not yet run"; the route line: "launch Tue 20 Oct, first result ~8 Nov"), 19 (question 1) | 20 (main and If asked: "it has not run yet", "first result comes around 8 November") | the NAVER row (PVE / MPJPE on AnnyOne and 3DPW); later the student's ratio against both ViT-Ls, params, FLOPs, ms |
+| NAVER baseline `multiHMR_672_L_anny`, job 3614192 (pending) | 23 (row 1b: "NAVER's Anny model: evaluation running (job 3614192)"), 24 (the NAVER row, all "pending"; the bars), 30 (row 3614192, "pending"); also named in 25 (week 1) | 23 (main: "reported against our ViT-L and against NAVER's ViT-L"; If asked: "It is being evaluated with our code on the same labels now (job 3614192)"), 24 ("which is being evaluated on the same labels now"), 25, 30 | the NAVER row (params, GFLOPs, ms; PVE / MPJPE on the AnnyOne holdout and the 3DPW test); which bar is the stricter one; the 1b evidence cell |
+| exp8, the ViT-B student, job 3614191 (pending; smoke test 3613926 passed) | 24 (student row "pending (this week)"; the timeline bullet), 30 (row 3614191); also 1 ("ViT-B student running"), 2 (row 1b), 23 (row 1b, next), 25 (weeks 1 and 3) | 24, 23 (main), 25, 30 | the student's holdout and 3DPW-test PVE / MPJPE and its ratio against both ViT-Ls (bar <= 77.6 mm and <= 93.7 mm against ours); if it misses with a still-falling curve, week 3's longer run |
+| partial mask, age kept, job 3614042 (queued) | 19 ("Reading and next step": "job 3614042, queued; result after this meeting"), 30 (row 3614042, "queued"); also named in 23 (row 1a shape, next) and 25 (week 1) | 19 ("It is queued; the result comes after this meeting"), 25, 30 | Relative Human gender, AUC and babies' age, and the demo spread of muscle / weight with age supervised; whether it becomes the final ViT-L (decision on Sun 25 Oct, slide 25) |
+| the other four demo images of the 2-epoch model (runForBus, sitOnStairs, fencing frames, one photo; job 3581312) | none | 16 (If asked: "I have looked at 8 of these 12 images so far ..."), 27 (main: "the 8 real images I have seen so far"; If asked: "I have looked at 8 of these 12 images so far"), 26 (If asked: "in the 8 of its 12 images I have seen") | how many of the 12 show normal necks with the fix |
+| `long_pc_dist20` (4d) | 14 (legend: "No control was run at ×5 or ×20"), 27 item 3 ("no ×20 result at 10 epochs") | 14 (main), 27 (If asked), 26 (If asked: "Five, not twenty, because ...") | root error, size, slope, PVE, recall of x20 for 10 epochs next to x5 for 10 epochs |
+| the supervisor's answers (slide 26, four questions) | 26 (question box "Questions for you"), 23 (rows 1b "needs your yes" and 2b), 24 (risk bullet "Your call"), 18 (last bullet's question), 27 item 6 | 26 (main: "I have four questions now ..."; If asked: "Option 1", "Option 2"), 23 (If asked: "that is my first question on slide 26"), 24 | record them in the paragraph below |
+| the supervisor's children decisions (Path A or B; the shape mask) | 18 (last bullet), 27 item 6 | 27 (main: "the decision is a limitation or weak age labels"), 26 (If asked, "Both options") | record both in the paragraph below. Note 26's "Both options" still says the mask-on run "is in progress (slide 18)": that run is done and on slide 19; fix it in `build.js` at the next rebuild |
 
-**The question on slide 19:** last week's question was: fine-tune v9 now (fixed targets, depth loss x5), or first
+Done and in the deck, nothing pending: the 3DPW re-fit and the v23 check (slide 6), the Relative Human evaluations of
+v5, exp6 and the final model (slide 18), the final model (exp7; slides 8, 14, 15, 17 and 20), the v23 3DPW-test
+re-evaluations of v5, v9 e62 and exp6 (slide 20), the demo of the final model (slide 21), the masked arm (slides 18
+and 19) and the exp8 smoke test (slide 24).
+
+**The question on slide 26:** last week's question was: fine-tune v9 now (fixed targets, depth loss x5), or first
 fix the 3DPW labels, re-fit, then fine-tune? The student chose the second and did it before the meeting: the re-fit
-and its check (18 Oct) and the final model (exp7, evening of 18 Oct; slide 16); note 19 says so. Since the afternoon
-of 18 Oct the box asks four questions (`docs/thesis_requirements_plan.md`, section 5): (1) for 1b, is the 95% bar
-against our ViT-L, NAVER-L or both (the student reports both), and does a smaller Multi-HMR-style student count as
-"not exactly Multi-HMR"? (2) Does a temporal refiner on frozen per-frame features count as "understands motion"?
-(3) Children: a limitation, or weak age labels from Relative Human (1-2 weeks)? (4) The submission date. If the
-supervisor still wants last week's option 1, it is a new run (section 5, item 6). Record the supervisor's answers
-here after the meeting.
+and its check (18 Oct) and the final model (exp7, evening of 18 Oct; slide 20); note 26 says so. The box asks four
+questions (`docs/thesis_requirements_plan.md`, section 5): (1) for 1b, is the 95% bar against our ViT-L, NAVER-L or
+both (the student reports both), and does a smaller Multi-HMR-style student count as "not exactly Multi-HMR"? (2) Does
+a temporal refiner on frozen per-frame features count as "understands motion"? (3) Children: a limitation, or weak
+age labels from Relative Human (1-2 weeks)? (4) The submission date. If the supervisor still wants last week's option
+1, it is a new run (section 5, item 6). Record the supervisor's answers here after the meeting.
 
-**The children decisions (slide 10; 3.4; section 5, item 12):** (1) Path A (a limitation, with the Relative Human
+**The children decisions (slide 18; 3.4; section 5, item 12):** (1) Path A (a limitation, with the Relative Human
 numbers of 18 Oct, 3.4) or Path B (A plus BEV-style weak labels from RH train, 1-2 weeks of code after exp7); the
-measurement the student proposed first is done. (2) `MASK_3DPW_SHAPE` on or off in a follow-up of exp7 (default
-off; the final model of 18 Oct used off). Record both answers here after the meeting.
+measurement the student proposed first is done. (2) The 3DPW shape mask: the full mask was tested (masked arm, job
+3612325; slide 19) and not adopted; the partial mask that keeps age is queued (job 3614042). Record both answers here
+after the meeting.
 
 ---
 
@@ -3648,7 +3276,7 @@ commands, the Monday bullets, the writing and clean-up list). Read it before pla
 - Status [Certain]: met 1c, 2a, training on AnnyOne shape labels. Partly 1a-pose (3DPW 89.0; photos by eye only;
   fingers never shown, `--relax_hands 1`). Partly / at risk 1a-shape: gender yes (Relative Human 64%, job 3612131),
   age partly (babies 0.44 vs adults 0.54), muscle, weight, cup size and firmness on the converter constants (~0.5).
-  Not met: 1b, 2b, the release. Deck slide 20 shows this table.
+  Not met: 1b, 2b, the release. Deck slide 23 shows this table.
 - Relative Human of the final model: **done**, job 3612131 (3.4, "Relative Human, final model"): gender 46.5 ->
   64.2%, children AUC 0.61 -> 0.72, recall 47 -> 65%. The plan file's first version (and its skeptic's review)
   called it pending and its numbers unverified; that is fixed there (its 3.1, item 7). [Likely] Part of the age
@@ -3661,4 +3289,4 @@ commands, the Monday bullets, the writing and clean-up list). Read it before pla
 - Order: Mon evening adapter fix, commit, NAVER smoke test; the `MASK_3DPW_SHAPE=1` arm is already running (then its
   own Relative Human run, with a `TAG`); the final model's Relative Human run is done (3612131); Tue 20 exp8 as one
   ~42-h job (never 5-h chunks). Student ~8 Nov, fallback 10 Nov, (1) closed 15 Nov, no buffer. Weeks 5-6 temporal
-  refiner; weeks 7-8 writing, release, buffer. Write his answers to the four slide-19 questions into section 9.
+  refiner; weeks 7-8 writing, release, buffer. Write his answers to the four slide-26 questions into section 9.
