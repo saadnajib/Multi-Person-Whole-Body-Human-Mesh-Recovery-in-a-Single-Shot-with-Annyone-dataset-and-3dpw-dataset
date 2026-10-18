@@ -324,6 +324,12 @@ slurm/diagnostics/eval_relative_human.sh` and a demo `DEMO_MODELS="exp7_v5_final
 the checkpoint to `models/multiHMR/exp7_shpmask_00009.pt`). Rule: masked becomes the final model and the student's
 teacher if Relative Human gender >= 60% and children AUC >= 0.7 hold AND the demo `[shape]` muscle/weight spread opens
 (std > 0.08); otherwise the unmasked final stays and the student uses its own `--mask_3dpw_shape 1`.
+**exp8 package first real use, 18 Oct 16:25** [Certain, the student's terminal]: both downloads OK (multiHMR_672_B.pt 377 MB,
+dinov2_vitb14_pretrain.pth 330 MB); `CHECK_ONLY=1` exp8 PASS (teacher args read: person_center, dist 5, bone fix 4 bones,
+v23 labels); `SMOKE=1` submitted as job 3613926 (RUN student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e1_it20_smoke);
+NAVER baseline check PASS (485 original-class keys) and submitted as job 3613928 (40-min limit, `logs/eval-test3dpw-3613928_0.out`);
+`model_cost.py --no-build --all` printed the ViT-S/B/L table (B: 86.58 M params, 589.5 GFLOPs backbone; L: 304.37 M, 1917.2).
+Read the smoke log for the end-of-job table and 'every check passed'; the full run is `bash slurm/experiments/exp8_distill_vitb.sh`.
 **DECIDED 18 Oct, 15:30: the UNMASKED model (3611336) stays the final model and the student's teacher.** Relative Human
 of the masked arm [Certain, `logs/eval_rh_3613616_0.out`, job 3613616]: recall 57.2% (unmasked 64.7%), gender accuracy
 49.3% (64.2%; men 0.717, women 0.860), children AUC 0.708 (0.719), ages adult 0.638 / kid 0.611 / baby 0.524 (unmasked
