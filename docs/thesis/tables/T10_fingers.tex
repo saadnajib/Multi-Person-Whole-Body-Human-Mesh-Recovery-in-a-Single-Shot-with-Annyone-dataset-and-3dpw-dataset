@@ -3,7 +3,7 @@
 % Sources: predicted 17.3 / rest 15.1 (3571960:290; findings "Fingers"); test-time crop x1.3 17.2, body PVE 124.8
 %   (3571960:294-299); region-normalised loss 17.5 vs control 17.4 (3571959:316; 3571960:314); bone correction no
 %   training 8.2 (3579014:114); + 2-ep fine-tune 8.3 (3579014:114); final 8.3 vs control 17.4 (3611336:201;
-%   3611339:192); fresh-head run (v10) three metacarpals 32.0 -> 17.8 (3579015:80).
+%   3611339:192); Fresh-heads-L (v10) three metacarpals 32.0 -> 17.8 (3579015:80).
 %   Hand size: 2.25 tokens median at 672 px, 41% under 2 tokens (3571960:287); person crop 4.2 / 0%, children's hands
 %   0.7 / 80% (deck slide 17, D slide 17).
 %   Hands' share of the rotation loss ~70% (with x4 boost) -> 33% (deck notes slide 17, handover 3.3).
@@ -21,7 +21,7 @@ region-normalised rotation loss, 2 ep. & 17.5 & 17.4 (control) \\
 Base + bone correction, no training                        &  8.2 & 17.3 (Base) \\
 Base + bone correction, 2-ep.\ fine-tune &  8.3 & 17.4 (control) \\
 Final (10 ep., 30\% 3DPW)                                  &  8.3 & 17.4 (Control) \\
-fresh-head run, three metacarpals corrected & 17.8 & 32.0 (uncorr.) \\
+Fresh-heads-L, three metacarpals corrected & 17.8 & 32.0 (uncorr.) \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{(b) hand size in tokens (14-px patches of the 672-px input)}} \\
  & median length & under 2 tokens \\

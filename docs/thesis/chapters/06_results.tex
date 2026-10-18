@@ -10,7 +10,7 @@
 % Figures placed here: F7 fig:depth-579862, F15 fig:depth-scatter, F9 fig:neck-3dpw-bar, F11 fig:fingers-demo
 % (pending), F12 fig:holdout-montage, F20 fig:val-curves, F10 fig:3dpw-overlays, F13 fig:real-photos, F16 fig:rh-age,
 % F17 fig:rest-lineup (pending), F18 fig:cost-pve, F19 fig:student-curves (pending), F22 fig:vits-curves.
-% Figures referenced, placed elsewhere: F6 fig:diag-neck-v5 (Chapter 5), F8 fig:depth-579860, F9 office pair
+% Figures referenced, placed elsewhere: F6 fig:diag-neck-base (Chapter 5), F8 fig:depth-579860, F9 office pair
 % fig:neck-3dpw-office, photo montages fig:photo-montages (Appendix D).
 % F12 note: the delivered montages figures/img/F12_holdout_<idx>_img_gt_v5_final.jpg are mis-cropped (the cluster
 % command assumed 4 trace panels, the trace writes 5, so their last column is half of Final's V1 panel plus three
@@ -119,7 +119,7 @@ second frame is in Figure~\ref{fig:neck-3dpw-office}.}
 
 Figure~\ref{fig:neck-3dpw-bar} shows the correction on a real photo that no model trained on: Base draws both necks
 as thin stalks pinched under the head, the corrected model draws them at normal width. The holdout pair of
-Figure~\ref{fig:diag-neck-v5} shows the same with the correction alone and no training, and Table~\ref{tab:neck-bones}
+Figure~\ref{fig:diag-neck-base} shows the same with the correction alone and no training, and Table~\ref{tab:neck-bones}
 gives the numbers for the correction without training and after a 2-epoch fine-tune. Final keeps the correction
 through ten epochs with real images (Table~\ref{tab:final-annyone}): neck02 is \FinalNeckTwo\,deg off against
 \ControlNeckTwo{} for Control, the head bone \FinalHeadBone{} against \ControlHeadBone, the neck girth is
@@ -252,15 +252,15 @@ those panels were available complete for both models.
   \includegraphics[width=\linewidth]{F10_3dpw_guitar_v5_vs_final}\caption{guitar}\end{subfigure}
 \caption[3DPW test frames, Base against Final]{Four 3DPW test frames, each shown as photo and Base (left half), then
 photo and Final (right half; the labels in the image name the two checkpoints). Bodies placed from the detector box, fingers at rest pose; judged by eye,
-no metric. The other four demo frames are in Appendix~\ref{app:figures}.}
+no metric. The other four demo frames are in Figure~\ref{fig:3dpw-overlays-more} (Appendix~\ref{app:figures}).}
 \label{fig:3dpw-overlays}
 \end{figure}
 
 Table~\ref{tab:final-3dpw} scores every model on all \num{\ThreeDPWTestImages} test images with the same script.
 Final has the lowest error on our 3DPW-Anny labels: PVE \FinalThreeDPW\,mm, PA-PVE \FinalPAThreeDPW\,mm. Control
-follows at \ControlThreeDPW, Base+3DPW (old labels), the previous best, at \BaseOldThreeDPW, the neck pilot at
+follows at \ControlThreeDPW, Mixed-L, the previous best, at \BaseOldThreeDPW, the neck pilot at
 \NeckPilotThreeDPW, Base at \BaseThreeDPW{} and Multi-HMR-Anny at \NAVERThreeDPW\,mm. Final finds
-\FinalRecallThreeDPW\,\% of the labelled people against \BaseOldRecallThreeDPW\,\% for Base+3DPW (old labels).
+\FinalRecallThreeDPW\,\% of the labelled people against \BaseOldRecallThreeDPW\,\% for Mixed-L.
 Precision is low for every model (\FinalPrecThreeDPW\,\% for Final). Judged by eye, in Figure~\ref{fig:3dpw-overlays} most men get
 male bodies in Final and female-looking ones in Base, the bodies of Final are a little larger, and the seated guitar
 player is poor in both.
@@ -268,9 +268,9 @@ player is poor in both.
 Most of the gain over Base comes from training on 3DPW at all: Control, without either fix, is
 \GainBaseToControlThreeDPW\,mm better than Base. The two fixes add \GainFixesThreeDPW\,mm PVE and
 \GainFixesPAThreeDPW\,mm PA-PVE on top, within run-to-run variation for PVE; the bone correction alone, in the
-neck pilot, leaves 3DPW PVE at Base's level. Final is \GainOverOldThreeDPW\,mm better than Base+3DPW (old labels),
+neck pilot, leaves 3DPW PVE at Base's level. Final is \GainOverOldThreeDPW\,mm better than Mixed-L,
 which saw the same kind of images but with reversed gender labels and missing actors; whether the corrected labels
-cause part of this gap was not tested, since Base+3DPW also differs in schedule and length. The low precision is
+cause part of this gap was not tested, since Mixed-L also differs in schedule and length. The low precision is
 expected: 3DPW labels only the one or two actors of each sequence, so every detected bystander counts as a false
 positive, and some detections are ghost bodies on half-visible people. The split between the two is unknown.
 
@@ -370,8 +370,8 @@ rose above \SpreadRuleThreshold. Gender failed the rule, so Final stays the fina
 
 Not shown: whether the varied values are right. No real data set I have gives muscle or weight, so the spread shows
 variety, not accuracy. Why gender accuracy falls, although gender itself stays supervised under the mask, is not
-known. The partial mask, Final-masked-7, which masks the seven constants and keeps age supervised, decides between the
-two readings: \TODO{Final-masked-7 result (holdout, 3DPW, Relative Human, demo spread), job pending}.
+known. The partial mask, Final-partial-mask, which masks the seven constants and keeps age supervised, decides between the
+two readings: \TODO{Final-partial-mask result (holdout, 3DPW, Relative Human, demo spread), job pending}.
 
 % -----------------------------------------------------------------------------
 \section{Baseline comparison and model cost}
@@ -449,9 +449,10 @@ correction and the corrected labels. The staged schedule went from \HistStageOne
 \BaseVzeroPVE\,mm for Base (Table~\ref{tab:history-stages}). The ViT-S students started at \MethodStudentSOnePVE\,mm with feature
 distillation alone and reached \MethodStudentSSixcPVE\,mm with projector-fed heads at twice the batch, still
 improving at the end, \StudentSixcRatio{} times their teacher's error (Table~\ref{tab:history-students}). Adding 30\,\%
-3DPW images on the old labels (S7, S8) gave \MethodStudentSEightPVE\,mm on the holdout, \StudentSEightRatio{} times S8's own teacher.
-Figure~\ref{fig:vits-curves} shows the head-transfer students: each starts worse than the student with random heads,
-overtakes it after about 20 epochs and keeps the order student by student to the end.
+3DPW images on the old labels (Student-S/mixed, Student-S/final) gave \MethodStudentSEightPVE\,mm on the holdout, \StudentSEightRatio{} times Student-S/final's own teacher.
+Figure~\ref{fig:vits-curves} shows the head-transfer students: each starts far above the final error of the student
+with random heads (the dashed line), Student-S/4 to Student-S/6 fall below it between epochs 60 and 100, Student-S/3
+never does, and from epoch 60 on Student-S/6 has the lowest error at every epoch.
 
 Three lessons from this line shaped the Student. A backbone already trained for mesh recovery gave the largest
 single gain, so the Student starts from NAVER's ViT-B. Heads fed through a projector at the teacher's width beat
@@ -461,7 +462,7 @@ schedule shows that helper-bone masking and partial unfreezing together halved t
 made in one step and are not separated.
 
 Not shown: 3DPW numbers for these students. They were measured on the old labels, which are retired; a re-evaluation
-of S6c and S8 on the corrected labels was submitted and had not returned: \TODO{S6c and S8 on the corrected 3DPW
+of Student-S/6c and Student-S/final on the corrected labels was submitted and had not returned: \TODO{Student-S/6c and Student-S/final on the corrected 3DPW
 labels, job pending}. The students also predate both fixes and so carry the depth bug and, likely, the neck flip of
 their teachers, which was not measured for them. Their holdout numbers are V0 and read about \MethodVzeroGap\,mm higher
 than V1 would.

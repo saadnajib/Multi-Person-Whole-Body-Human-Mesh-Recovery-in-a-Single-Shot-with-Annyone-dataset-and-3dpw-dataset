@@ -1,7 +1,8 @@
 # Master thesis: Multi-Person Human Mesh Recovery with the Anny Body Model
 
-LaTeX source of the rewritten thesis. The plan behind it (what each chapter, table and figure holds, the writing
-rules, the work split) is `REWRITE_PLAN.md`; the old draft is kept read-only in `draft_2026-10_original/`.
+LaTeX source of the rewritten thesis (full draft since 18 Oct 2026, 126 pages with appendices). The plan behind it
+(what each chapter, table and figure holds, the writing rules) is `REWRITE_PLAN.md`; the review pass that made the
+chapters one document is logged in `REVIEW_LOG.md`; the old draft is kept read-only in `draft_2026-10_original/`.
 
 ## Build
 
@@ -11,70 +12,73 @@ latexmk -c          # remove the aux files, keep thesis.pdf
 ```
 
 Needs pdflatex, biber, and the packages TikZ, pgfplots (`compat=1.18`), booktabs, siunitx, subcaption, longtable,
-multirow, biblatex. No `-shell-escape` (TikZ externalisation is off). The build never breaks on a missing chapter:
-`thesis.tex` reads chapters 2-5 through `\InputIfExists{file}{title}`, which prints a placeholder chapter while the
-file does not exist, and `numbers.tex` reads each `numbers_*.tex` only if it exists. Undefined-reference warnings
-are expected while chapters are being written.
+multirow, biblatex, listings. No `-shell-escape`. The build must end with zero errors, zero undefined references and
+zero undefined citations (state on 18 Oct: it does); the only expected warnings are a few overfull boxes below 10 pt.
+Figures that have not been delivered yet (F11 hands, F14 label check, F17 rest pose, F24 gt-decode, F19 student
+curves) are wrapped in `\IfFileExists` or drawn as "pending" boxes, so the build never breaks on a missing image.
 
 ## Layout
 
 ```
-thesis.tex               main file: preamble (from the draft + pgfplots, subcaption, siunitx, longtable, \graphicspath),
-                         title page, Eigenstaendigkeitserklaerung, chapters, lists, appendices, bibliography
-numbers.tex              convention + \input of the five numbers_*.tex files
-numbers_<chapter>.tex    headline numbers per chapter (data, method, diagnostics, results, background)
-references.bib           the draft's 16 entries + plan 1.8 additions + the Background writer's entries (merged)
-chapters/                00_abstract ... 08_conclusion, appendix_a ... appendix_e
-tables/                  T01-T18 (one file per table of plan section 4); draft_*.tex = the draft's tables, verbatim,
-                         each with the plan's verdict in its header (several are marked DELETE: reference only)
+thesis.tex               preamble, title page, Eigenstaendigkeitserklaerung + "Use of AI tools", abstract, TOC,
+                         chapters 1-8, lists of figures/tables, appendices A-E, bibliography
+numbers.tex              \input of the numbers_*.tex files (one macro per headline number, source in a comment)
+numbers_<chapter>.tex    data, method, diagnostics, results, background, discussion
+references.bib           every entry is cited; "% TODO verify" marks fields the student must check against the paper
+chapters/                00_abstract, 01_introduction ... 08_conclusion, appendix_a_reproduction ... appendix_e_pilots
+tables/                  T01-T20 (one file per table); draft_*.tex = the old draft's tables, reference only, not input
 figures/img/             raster figures (docs/figures/*.jpg, demo montages, files sent from the cluster)
-figures/plots/           pgfplots figures F15, F16, F18, F19, F20, F22 (placeholders say "data pending")
+figures/plots/           pgfplots figures F15, F16, F18, F19 (placeholder), F20, F22
 figures/tikz/            TikZ drawings F1-F5
 figures/RPTU-*.pdf       title-page logos
-data/                    CSVs read by the plots; data/README.md lists what is expected, CLUSTER_ANSWERS.md the column names
+data/                    CSVs behind the plots; plot_stats.md = the statistics computed from them; data/README.md
 ```
 
-## Who owns which file (plan section 6)
+Pages per part (18 Oct): front matter 8, ch. 1: 6, ch. 2: 10, ch. 3: 12, ch. 4: 16, ch. 5: 10, ch. 6: 18, ch. 7: 8,
+ch. 8: 2, lists 4, App. A: 14, B: 2, C: 4, D: 4, E: 4, bibliography 4. The main text (chapters 1-8) is 82 pages,
+against the plan's 60-80; `REVIEW_LOG.md` lists the trimming candidates.
 
-| owner | files |
-|---|---|
-| Background writer | `chapters/02_background.tex`, `numbers_background.tex` (bib entries go to `references.bib`; `references_background.bib` was merged into it on 18 Oct and is not read by the build) |
-| Data writer | `chapters/03_data.tex`, `numbers_data.tex`, `tables/T03`-`T06`, `figures/tikz/F02_pipeline.tex` |
-| Method writer | `chapters/04_method.tex`, `numbers_method.tex`, `tables/T02`, `T07`, `T11`, `figures/tikz/F01`, `F03`, `F04`, `F05` |
-| Diagnostics writer | `chapters/05_diagnostics.tex`, `numbers_diagnostics.tex`, `tables/T08`-`T10`, `T14`, `T18` |
-| Results writer (step 2) | `chapters/06_results.tex`, `numbers_results.tex`, `tables/T12`, `T15`, `T16`, `T17`, `figures/plots/*`, `data/`; owns `numbers.tex` and merges additions |
-| Discussion writer (step 3) | `chapters/07_discussion.tex`, `tables/T01_requirements.tex` |
-| Appendices (step 3) | `chapters/appendix_a`-`appendix_e`, `tables/T13_runs.tex` |
-| Last (step 4) | `chapters/00_abstract.tex`, `01_introduction.tex`, `08_conclusion.tex` |
-| Skeleton | `thesis.tex`, `references.bib`, `README.md`, `.gitignore`, `tables/draft_*.tex` |
+## The naming rule
 
-The placeholder chapters carry, under each section heading, `% absorbs draft main.tex lines a-b` (the draft text
-that moves there), `% needs: ...` (the new material, from plan section 2) and one `\TODO{...}` line.
+The thesis uses only the model names of `docs/model_names.md`: Multi-HMR-Anny, L-stage 1 to 4, Base, Mixed-L,
+Fresh-heads-L, Control, Final, Final-masked, Final-partial-mask, Student-S/1 to /6c, Student-S/mixed,
+Student-S/final, Student. The short definition is Table 4.3 (`chapters/04_method.tex`, `tab:model-names`); the full
+definition with old run names, starting weights, data, schedules, flags and checkpoint paths is Table A.1
+(`tables/T19_model_names.tex`, `tab:names`). Old run names (`v5`, `v9`, `exp7`, `anny_s2_shape_v5`, `shpmask`, ...)
+and job ids appear only in Appendix A (T13, T19), in the file paths of Appendix C and in LaTeX comments. Pilot runs
+are named by what they are ("depth pilot", "neck pilot"), never by their job.
 
-## The numbers.tex convention
+## The numbers rule
 
-- One macro per headline number, with its source in a comment on the same line: `job:line` of the Slurm log, a
-  handover section (`H 0b`, `H 3.1`, ...) or `file:line` of the repository. Example:
-  `\newcommand{\FinalPVE}{73.7} % 3611336:191 (V1); H 0b`.
-- Job ids never appear in the running text or captions. Appendix A (`tables/T13_runs.tex`) maps run names to job ids,
-  logs and checkpoints, so any number can be traced in two steps.
-- Macro names are letters only (`\FinalThreeDPW`, not `\Final3DPW`); values are plain numbers (`1927.4`), so
-  `\num{\FinalGFLOPs}` can format them.
-- Define each macro once, in the numbers file of the chapter that owns it. A second `\newcommand` of the same name
-  in another numbers file stops the build: grep the other `numbers_*.tex` first.
-- Run names in the text: Base, Control, Final, Final-masked, Final-masked-7, Student-S (history), Student,
-  Multi-HMR-Anny (NAVER). Settings in every caption: V1 / V0 / 3DPW test (v23 labels).
+- Every headline number in the text and the tables is a macro of a `numbers_*.tex` file, with its source in a comment
+  on the same line: `job:line` of the Slurm log, a handover section (`H 0b`, `H 3.1`, ...) or `file:line` of the
+  repository. Example: `\newcommand{\FinalPVE}{73.7} % 3611336:191 (V1); H 0b`.
+- Job ids never appear in the running text or captions. Appendix A (T13) maps run names to job ids, logs and
+  checkpoints, so any number can be traced in two steps.
+- Macro names are letters only (`\FinalThreeDPW`, not `\Final3DPW`); values are plain numbers so `\num{}` can format
+  them. Define each macro once; grep the other `numbers_*.tex` first (a second `\newcommand` stops the build).
+- Every caption names the set, the setting (V1 / V0 / 3DPW test, v23 labels), the models and the caveat (one run, no
+  seed; synthetic; by eye; a good case).
+- Nothing in `docs/handover.md` section 6 (corrections log) may reappear as a claim. Old-label 3DPW numbers (119.1,
+  102.5, 111.5, 139.5, 123.6) never stand next to v23 numbers.
+- The fixed NAVER sentence (plan section 5) accompanies every comparison of 60.3 with 73.7 mm.
 
-## Labels defined by the skeleton chapters
+## Open TODO list (grep -n TODO chapters tables figures thesis.tex references.bib)
 
-Chapters `ch:intro`, `ch:results`, `ch:discussion`, `ch:conclusion`; appendices `app:reproduction`, `app:joints`,
-`app:flags`, `app:figures`, `app:pilots`; results sections `sec:res-setup`, `sec:res-depth`, `sec:res-bone`,
-`sec:res-fingers`, `sec:res-final`, `sec:res-3dpw`, `sec:res-rh`, `sec:res-mask`, `sec:res-baseline`,
-`sec:res-student`, `sec:res-history`; tables `tab:requirements`, `tab:relhuman`, `tab:runs`, `tab:final`
-(`tab:final-annyone`, `tab:final-3dpw`), `tab:baseline`, `tab:student`, `tab:mapping`; plots `fig:depth-scatter`,
-`fig:rh-age`, `fig:cost-pve`, `fig:student-curves`, `fig:val-curves`, `fig:vits-curves`.
+Pending results (fill the macro or the cell, then delete the `\TODO`):
+- Student (job 3614191): `numbers_results.tex` (`\StudentPending`, `\StudentCell`), `tables/T17_student.tex`,
+  `tables/T16_baseline_cost.tex`, `figures/plots/F19_student.tex` (+ `data/F19_student.csv`), `figures/plots/F18_cost_pve.tex`
+  (replace the dashed line by a point), chapter 6.10, chapter 7 (1b paragraph, T01 status word), chapter 8.
+- Final-partial-mask (job 3614042): chapter 6.8, chapter 7 (1a-shape, T01), chapter 8.
+- Student-S/6c and Student-S/final on the v23 3DPW labels (job 3615020): chapter 6.11.
+- Figures: F11 `figures/img/F11_hands_photos.jpg` (job 3615018), F17 `figures/img/F17_restpose_photos.jpg`
+  (job 3615019), F14 `figures/img/F14_label_check.jpg`, F24 `figures/img/F24_gt_decode_1.jpg`.
 
-## Before submission
-
-Remove `\nocite{*}` in `thesis.tex` (it lists every bib entry for checking); resolve every `% TODO verify` in
-`references.bib` and `chapters/appendix_b_joints.tex`; search for `\TODO`.
+Pending checks by the student:
+- `thesis.tex`: the "Use of AI tools" wording against RPTU's rules; the title-page date (`\today`).
+- `references.bib`: every `% TODO verify` field (pages, author lists, the Anny-fit venue, the MakeHuman title).
+- `chapters/appendix_b_joints.tex`: the spine rows, the neck offset and the scale factor against a converter log
+  (TODO in the file header), and the missing paragraph on how the correspondence was chosen.
+- `tables/T11_student_recipe.tex`: Final's V1 MPJPE as re-measured by the student job (77.9 in T17 is from the CSV).
+- Supervisor's answers (which model sets the 95 % bar; whether a smaller student counts for 1b; whether a refiner on
+  frozen features counts as temporal; children path A or B): chapter 6.10, 7.1, 8.2.

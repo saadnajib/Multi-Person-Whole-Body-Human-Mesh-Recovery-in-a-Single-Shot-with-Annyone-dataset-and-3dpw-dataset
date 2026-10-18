@@ -14,7 +14,7 @@
 %   10-ep fix x5              3572482:126,135,144-145 (long_pc_dist5)
 %   Control (exp7)            3611339:166,175,182-184; head px 67.1 (3611339:166)
 %   Final (exp7 fix arm)      3611336:175,184,191-193; head px 7.6 (3611336:175)
-%   Base+3DPW(old labels) e62 3571963:40,55,64; fresh-head run (v10 e290) 3571794:40,55,64 (no head px quoted)
+%   Mixed-L e62 3571963:40,55,64; Fresh-heads-L (v10 e290) 3571794:40,55,64 (no head px quoted)
 % PVE / recall rounded to one decimal from the handover's two-decimal values (72.19 -> 72.2, 77.25 -> 77.3 as on the deck).
 \begin{table}[htbp]
 \centering\footnotesize
@@ -41,8 +41,8 @@ Control $\times$1 & 1.40 & 0.59 & 0.28 & 2.66 & 67.1 & 26.7 & 77.4 & 89.0 \\
 Final $\times$5 & 0.73 & 0.78 & 0.42 & 1.75 &  7.6 & 41.1 & 73.7 & 87.0 \\
 \addlinespace
 \multicolumn{9}{@{}l}{\emph{other checkpoints trained with pelvis targets}} \\
-Base+3DPW (old labels) & 1.39 & 0.59 & 0.31 & 2.60 &  --  & 25.1 & 75.0 & 88.6 \\
-fresh-head run & 1.49 & 0.57 & 0.28 & 2.71 &  --  & 24.0 & 74.1 & 89.0 \\
+Mixed-L & 1.39 & 0.59 & 0.31 & 2.60 &  --  & 25.1 & 75.0 & 88.6 \\
+Fresh-heads-L & 1.49 & 0.57 & 0.28 & 2.71 &  --  & 24.0 & 74.1 & 89.0 \\
 \bottomrule
 \end{tabular}
 \caption[Depth fix: pilots, final model and control]{Placement before and after building the training targets at

@@ -48,7 +48,7 @@ exactly Multi-HMR) the architecture is no answer; the route to 1b is the smaller
 \begin{figure}[!tbp]
   \centering
   \input{figures/tikz/F01_architecture}
-  \caption{The network. A $\MethodImgSize$-pixel image passes through a DINOv2 ViT-L backbone ($\MethodTokenGrid\times
+  \caption[The network]{The network. A $\MethodImgSize$-pixel image passes through a DINOv2 ViT-L backbone ($\MethodTokenGrid\times
   \MethodTokenGrid$ tokens). Every token gets a detection score and a 2D offset for the anchor joint, the head. For
   each detected person a cross-attention head (HPH) predicts $\MethodNumBones\times\MethodRotDims$ rotation values,
   \MethodNumPheno{} phenotypes and a depth; a constant correction turns four flipped bones back; the Anny layer builds
@@ -107,7 +107,7 @@ Per person & anchor joint (head): token, offset, depth $z$ & $2$, $2$, $1$ \\
        & joints $\mathbf{J}$ & $\MethodNumBones\times3$ \\
 \bottomrule
 \end{tabular}
-\caption{Inputs and outputs of the network. The rotations are parent-relative; \MethodHelperBones{} of them are
+\caption[Inputs and outputs of the network]{Inputs and outputs of the network. The rotations are parent-relative; \MethodHelperBones{} of them are
 fixed to the identity by the helper-bone mask.}
 \label{tab:io}
 \end{table}
@@ -161,13 +161,15 @@ are skipped, \MethodFinalNaNSteps{} of $\num{\MethodFinalSteps}$ in Final. No we
 \section{Training schedule and model names}
 \label{sec:method-schedule}
 
-\paragraph{The Base lineage.} Training began from NAVER's public ViT-L checkpoint \texttt{multiHMR\_672\_L\_anny}.
-Its head has a different structure, so only the backbone was transferred. Four stages followed: heads only (learning
-rate \MethodStageOneLR{} per the training scripts, edited after the runs); the last \MethodUnfrozenBlocks{} of
-\MethodBlocksL{} blocks unfrozen at \MethodFinalLR{} with the helper mask; the neck and hand boost; the shape weight
-raised to \MethodWShape. Continuations used a learning rate ten times below the cold start, which on a partly trained
-model had caused hundreds of NaN gradient events per epoch. Epoch \MethodBaseEpoch{} of the fourth stage is
-\emph{Base}: synthetic images only, and the start of every fine-tune here.
+\paragraph{The Base lineage.} Training began from NAVER's public ViT-L checkpoint, Multi-HMR-Anny
+(\texttt{multiHMR\_672\_L\_anny}). Its head has a different structure, so only the backbone was transferred. Four
+stages followed, L-stage 1 to L-stage 4 (Table~\ref{tab:model-names}): fresh heads with the whole backbone trained, a
+side branch that leads nowhere; fresh heads with the backbone frozen (learning rate $10^{-4}$, then \MethodStageOneLR{} after a resume,
+per the training scripts, which were edited after the runs); the last \MethodUnfrozenBlocks{} of \MethodBlocksL{} blocks unfrozen at
+\MethodFinalLR{} with the helper mask; and the neck and hand boost. A fifth run raised the shape weight to
+\MethodWShape; its epoch \MethodBaseEpoch{} is \emph{Base}: synthetic images only, and the start of every fine-tune
+here. Continuations used a learning rate ten times below the cold start, which on a partly trained model had caused
+hundreds of NaN gradient events per epoch.
 
 \paragraph{Final and Control.} Final starts from Base and trains \MethodFinalEpochs{} epochs of
 $\num{\MethodFinalIters}$ iterations at batch \MethodFinalBatch{} ($\num{\MethodFinalImages}$ images) at a constant
@@ -181,26 +183,32 @@ Control against Final isolates the two fixes, and Base against Control shows the
 Each fix was tested alone only in short pilots (Chapter~\ref{ch:diagnostics}).
 
 \paragraph{Model names.} Table~\ref{tab:model-names} defines the names used from here on. Each name is one run;
-Appendix~\ref{app:reproduction} maps names to jobs, logs and checkpoints.
+``L'' marks the ViT-L line, ``L-stage'' its transfer schedule, and Student-S the ViT-S students by their old version
+number. Table~\ref{tab:names} in Appendix~\ref{app:reproduction} is the full definition: it maps each name to the run
+and checkpoint it had during the project, its starting weights, data, schedule and flags.
 
 \begin{table}[!tbp]
 \centering\footnotesize
-\begin{tabular}{@{}>{\raggedright}p{2.7cm}>{\raggedright}p{6.3cm}>{\raggedright\arraybackslash}p{3.1cm}@{}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright}p{2.75cm}>{\raggedright\arraybackslash}p{9.6cm}@{}}
 \toprule
-Name & What it is & Role \\
+Name & Meaning \\
 \midrule
-Base & ViT-L, AnnyOne only, epoch \MethodBaseEpoch{} of the fourth stage & start of every fine-tune \\
-Base+3DPW (old labels) & Base with \MethodMixRatio\% 3DPW on the labels before their correction (Chapter~\ref{ch:data}), epoch \MethodBaseOldEpoch & previous best on 3DPW \\
-Control & Base, \MethodFinalEpochs{} epochs, \MethodMixRatio\% 3DPW on the corrected labels, hand mask, no fix & reference for Final \\
-Final & Control's recipe plus the depth fix and the bone correction & thesis model; teacher \\
-Final-masked & Final plus the shape mask on \MethodShapeMaskCount{} converter constants & tested option \\
-Final-masked-7 & Final plus the shape mask on the \MethodShapeMaskPartial{} constants other than age & pending \\
-Student-S (S1--S8) & ViT-S students of Base or Base+3DPW, before both fixes & history \\
-Student & ViT-B student distilled from Final & answer to requirement 1b \\
-Multi-HMR-Anny & NAVER's released \texttt{multiHMR\_672\_L\_anny}, evaluated with our code & baseline \\
+Multi-HMR-Anny & NAVER's released ViT-L checkpoint for Anny; the source of every backbone here and the baseline of requirement 1b \\
+L-stage 1 to 4 & the four steps from Multi-HMR-Anny's backbone to Base: fresh heads with the whole backbone trained (a side branch), fresh heads with the backbone frozen, the last \MethodUnfrozenBlocks{} blocks trained, the neck and hand loss weights raised \\
+Base & the end of the schedule (shape weight \MethodWShape), AnnyOne only, epoch \MethodBaseEpoch; the start of every fine-tune \\
+Mixed-L & Base fine-tuned with \MethodMixRatio\% 3DPW on the labels before their correction (Chapter~\ref{ch:data}); the previous best on 3DPW \\
+Fresh-heads-L & fresh heads on Multi-HMR-Anny's backbone, trained with \MethodMixRatio\% 3DPW (old labels) from the first step \\
+Control & Base, \MethodFinalEpochs{} epochs, \MethodMixRatio\% 3DPW on the corrected labels, hand mask, neither fix; the reference for Final \\
+Final & Control's recipe plus the depth fix and the bone correction; the thesis model and the Student's teacher \\
+Final-masked & Final plus the shape mask on the \MethodShapeMaskCount{} converter constants; a tested option \\
+Final-partial-mask & Final plus the shape mask on the \MethodShapeMaskPartial{} constants other than age; pending \\
+Student-S/1 to /6c, /mixed, /final & the ViT-S students of Base (/mixed and /final also saw 3DPW on the old labels; /final's teacher is Mixed-L), before both fixes; history \\
+Student & the ViT-B student distilled from Final; the answer to requirement 1b \\
 \bottomrule
 \end{tabular}
-\caption{Model names used in this thesis. Every name is one run; no run was repeated with another seed.}
+\caption[Model names used in this thesis]{Model names used in this thesis. Every name is one run; no run was repeated
+with another seed. Runs, checkpoints, data, schedules and flags: Table~\ref{tab:names} (Appendix~\ref{app:reproduction}).}
 \label{tab:model-names}
 \end{table}
 
@@ -229,7 +237,7 @@ the pelvises and the real-photo demos place bodies from their boxes, so neither 
 \begin{figure}[!tbp]
   \centering
   \input{figures/tikz/F03_anchor}
-  \caption{The depth-anchor bug. (a) The model places each body by its head; (b) the training targets were built at
+  \caption[The depth-anchor bug]{The depth-anchor bug. (a) The model places each body by its head; (b) the training targets were built at
   the pelvis; (c) the 2D terms reconcile the two by moving the body away, where the same 3D body is drawn
   smaller. Bottom: the fitted line of predicted against true pelvis depth for the \MethodHoldoutPeople{}
   matched people of the AnnyOne holdout (setting V1), Base and Final. Schematic; the measured scatter is in
@@ -261,7 +269,7 @@ flip, but the neck skin between them is twisted to \MethodBaseGirth{} of its tru
 \begin{figure}[!tbp]
   \centering
   \input{figures/tikz/F04_neck_chain}
-  \caption{The neck chain neck01--neck02--neck03--head. Top: in Base, neck02 and the head bone are each turned about
+  \caption[The neck chain and its correction]{The neck chain neck01--neck02--neck03--head. Top: in Base, neck02 and the head bone are each turned about
   half a turn; the turns cancel, so the head points right, but the skin between them is twisted to \MethodBaseGirth{}
   of its true girth. Bottom: one constant rotation per bone turns both back. Girth on the AnnyOne holdout, setting V1.}
   \label{fig:neck-chain}
@@ -314,7 +322,7 @@ and leaves \MethodShapeMaskCount{} phenotypes at constants: age \MethodConstAge,
 and the three ethnicity values at \MethodConstOther. With \texttt{-{}-mask\_3dpw\_shape 1} the shape term ignores these
 constants for 3DPW people; gender, height and proportions stay supervised. The mesh terms still carry the neutral body,
 which is also what the 3DPW test PVE compares against. The partial variant (\texttt{-{}-mask\_3dpw\_shape\_names}) masks only the \MethodShapeMaskPartial{} values at
-\MethodConstOther{} and keeps age supervised. Final-masked uses the full mask; Final-masked-7, with the partial one, had
+\MethodConstOther{} and keeps age supervised. Final-masked uses the full mask; Final-partial-mask, with the partial one, had
 not finished when this chapter was written. I kept the unmasked model as Final and teacher: the masked one regained
 body variety but lost the gender gain and part of the child gain on real photos (Chapter~\ref{ch:results}).
 
@@ -328,7 +336,7 @@ A frozen teacher supervises a smaller student on the same image, on top of the t
 \begin{figure}[!tbp]
   \centering
   \input{figures/tikz/F05_distillation}
-  \caption{Distillation of the Student. The frozen ViT-L teacher (Final, backbone in bf16) and the ViT-B student see
+  \caption[Distillation of the Student]{Distillation of the Student. The frozen ViT-L teacher (Final, backbone in bf16) and the ViT-B student see
   the same image. A projector maps the student's tokens from width \MethodWidthB{} to \MethodWidthL, and heads copied
   from the teacher read them. The feature loss compares the projected tokens with the teacher's ($T=\MethodKDTemp$);
   the output loss compares rotations, phenotypes and depth of the same people. Shaded boxes train.}
@@ -371,21 +379,21 @@ evaluation numbers.
 \subsection{History: the ViT-S students}
 \label{sec:method-kd-history}
 
-The first answer to the size requirement was a line of ViT-S students, Student-S runs S1 to S8 (v1 to v8 in the
-code), trained before both fixes and the label correction; their teacher Base reached \MethodTeacherVzeroPVE\,mm
-holdout PVE in setting V0. Feature distillation alone (S1, S2) left the student at \MethodStudentSOnePVE\,mm, because
-nothing supervised its random heads. Copied heads (S3) kept their \MethodHeadTensorsWidth{} width-dependent input
-tensors random and needed about \MethodStudentSWarmup{} epochs to recover. A backbone trained for mesh recovery (S4)
-gave the largest gain (\MethodStudentSInitBefore{} to \MethodStudentSInitAfter\,mm), and projector-fed heads (S6) and
-longer training at twice the batch (S6c) reached \MethodStudentSSixcPVE\,mm, still improving: the student was limited
-by the images it had seen, not by its \MethodStudentSParams\,M parameters. Real images (S7, S8) did not lower the
+The first answer to the size requirement was a line of ViT-S students, Student-S/1 to Student-S/final (the number
+after the slash is the old version number, Table~\ref{tab:names}), trained before both fixes and the label correction; their teacher Base reached \MethodTeacherVzeroPVE\,mm
+holdout PVE in setting V0. Feature distillation alone (Student-S/1, Student-S/2) left the student at \MethodStudentSOnePVE\,mm, because
+nothing supervised its random heads. Copied heads (Student-S/3) kept their \MethodHeadTensorsWidth{} width-dependent input
+tensors random and needed about \MethodStudentSWarmup{} epochs to recover. A backbone trained for mesh recovery (Student-S/4)
+gave the largest gain (\MethodStudentSInitBefore{} to \MethodStudentSInitAfter\,mm), and projector-fed heads (Student-S/6) and
+longer training at twice the batch (Student-S/6c) reached \MethodStudentSSixcPVE\,mm, still improving: the student was limited
+by the images it had seen, not by its \MethodStudentSParams\,M parameters. Real images (Student-S/mixed, Student-S/final) did not lower the
 holdout error. These numbers are V0 and their 3DPW numbers used the retired labels; Chapter~\ref{ch:results} keeps the
 tables as history.
 
 \subsection{The ViT-B student of Final}
 \label{sec:method-student}
 
-\paragraph{Recipe.} The Student follows the S6 design with a ViT-B backbone and the corrected training of this chapter
+\paragraph{Recipe.} The Student follows the Student-S/6 design with a ViT-B backbone and the corrected training of this chapter
 (Table~\ref{tab:student-recipe}). Its backbone starts from NAVER's Multi-HMR ViT-B, trained for mesh recovery, and
 trains fully; the copied heads stay frozen for \MethodStudentFreeze{} epochs; the targets are exactly the teacher's.
 The job script's header mentions colour jitter, but no code in the repository reads such a setting, so I claim no

@@ -75,7 +75,7 @@ Figure~\ref{fig:pipeline} shows the six steps from a 3DPW frame to an Anny label
 \begin{figure}[htbp]
   \centering
   \input{figures/tikz/F02_pipeline}
-  \caption{The six steps from a 3DPW frame to an Anny label: SMPL joints, frame grid, per-frame fit, one body per
+  \caption[From a 3DPW frame to an Anny label]{The six steps from a 3DPW frame to an Anny label: SMPL joints, frame grid, per-frame fit, one body per
   person, camera frame, label file with the drop rules. Since converter version 2.3 both actors of a sequence share
   the frame grid.}
   \label{fig:pipeline}
@@ -187,7 +187,7 @@ frame & root only & + pose & + shape & final (mm) \\
 mean & & & & \DataVOneBarMean \\
 \bottomrule
 \end{tabular}
-\caption{First converter (v1, correspondence by name): mean joint error after each stage on four frames of
+\caption[First converter: error after each stage]{First converter (v1, correspondence by name): mean joint error after each stage on four frames of
 \texttt{downtown\_bar\_00}.}
 \label{tab:fit-stages}
 \end{table}
@@ -217,7 +217,7 @@ v2: correspondence by geometry, 3DPW joints, gender from metadata (reversed unti
 v2.1: + virtual torso joints, bone mask, warm start & \DataVTwoOneFencing & 18.8 & shoulder 36, wrists 25--27 \\
 \bottomrule
 \end{tabular}
-\caption{Mean joint error over all 24 joints on \texttt{outdoors\_fencing\_01} (\DataFencingFrames{} frames) for
+\caption[Converter versions on the fencing scene]{Mean joint error over all 24 joints on \texttt{outdoors\_fencing\_01} (\DataFencingFrames{} frames) for
 three converter versions.}
 \label{tab:fit-versions}
 \end{table}
@@ -244,7 +244,7 @@ scene & frames & mean (mm) & max & height & proportions & age \\
 \texttt{flat\_guitar\_01} & 30 & 16.2 & 18.0 & 0.52 & 0.23 & 0.67 \\
 \bottomrule
 \end{tabular}
-\caption{Converter v2.1 on four 3DPW test scenes (stride 25, one body per scene, all 24 joints). Age was still free.}
+\caption[Converter v2.1 on four test scenes]{Converter v2.1 on four 3DPW test scenes (stride 25, one body per scene, all 24 joints). Age was still free.}
 \label{tab:fit-scenes}
 \end{table}
 
@@ -322,7 +322,7 @@ of the check.
     \fbox{\parbox{0.9\linewidth}{\centering\vspace{2em}Figure pending: \texttt{F14\_label\_check.jpg}, three
     panels from the conversion check of the v23 labels, one of them a two-person frame.\vspace{2em}}}%
   }
-  \caption{Conversion check on the v23 labels: the 3DPW photo, 3DPW's SMPL ground truth with its 2D keypoints, and
+  \caption[Conversion check on the v23 labels]{Conversion check on the v23 labels: the 3DPW photo, 3DPW's SMPL ground truth with its 2D keypoints, and
   our Anny label drawn with 3DPW's camera. Real 3DPW frames. By design the labels have rest-pose hands and a head
   that turns only through \texttt{neck01} (Section~\ref{sec:data-limits}).}
   \label{fig:label-check}
@@ -345,26 +345,13 @@ likely rewards a neutral prediction; I did not test this. Chapter~\ref{ch:result
 the shape loss on the eight constants for 3DPW people (Final-masked).
 
 The fixed age suits the 3DPW actors, who are all adults, but carries no age information.
-Figure~\ref{fig:data-age-sweep} shows what age does in Anny: the skeletal height rises from
+Figure~\ref{fig:bg-age-sweep} (Chapter~\ref{ch:background}) shows what age does in Anny: the skeletal height rises from
 \DataSweepHeightAgeZero\,m at age 0 to \DataSweepHeightAgeHalf\,m at 0.5 and \DataSweepHeightAgeHigh\,m at 0.8, and
 the child cue is the shoulder width relative to the head (\DataShoulderHeadChild{} at age 0.1, \DataShoulderHeadAdult{}
 at 0.6) more than stature. At \DataFixedAge{} every 3DPW label is a full adult. 3DPW has no children, so it can
 neither teach nor test them.
 
-\begin{figure}[htbp]
-  \centering
-  \IfFileExists{figures/img/F21_age_sweep.jpg}{%
-    \includegraphics[width=\linewidth]{figures/img/F21_age_sweep.jpg}%
-  }{%
-    \fbox{\parbox{0.9\linewidth}{\centering\vspace{2em}Figure pending: \texttt{F21\_age\_sweep.jpg}, Anny at the
-    dataset-mean shape with age swept from 0 to 1 (body-model probe).\vspace{2em}}}%
-  }
-  \caption{Anny in rest pose at the dataset-mean shape, with only the age phenotype changed from 0 to 1. Skeletal
-  height (head joint to mean ankle) rises from \DataSweepHeightAgeZero\,m at age 0 to \DataSweepHeightAgeHigh\,m at
-  0.8; the child shape appears below about \DataChildAgeLow{} to \DataChildAgeHigh. The 3DPW labels fix age at
-  \DataFixedAge. Body model only, no network.}
-  \label{fig:data-age-sweep}
-\end{figure}
+% F21 (Anny age sweep) is Figure fig:bg-age-sweep in Chapter 2; the copy that stood here was removed on 18 Oct (review).
 
 \paragraph{Head and hands at rest.} \texttt{neck02}, \texttt{neck03} and \texttt{head} stay at identity in every
 label, so the head turns only through \texttt{neck01}, and the labels cannot test the half-turned neck bones of
@@ -447,7 +434,7 @@ Relative Human val. & \DataRHValImages{} / \DataRHValPeople & children and gende
 demo images & \DataDemoTotal{} images & by-eye comparison; no metric & \ref{ch:diagnostics}, \ref{ch:results} \\
 \bottomrule
 \end{tabular}
-\caption{Every split of the thesis, its size and its use. 3DPW-Anny sizes are images / labelled people after the drop
+\caption[Every split and its use]{Every split of the thesis, its size and its use. 3DPW-Anny sizes are images / labelled people after the drop
 rules. The final model is the last epoch of its run, so the 3DPW validation split does not select it.}
 \label{tab:data-splits}
 \end{table}

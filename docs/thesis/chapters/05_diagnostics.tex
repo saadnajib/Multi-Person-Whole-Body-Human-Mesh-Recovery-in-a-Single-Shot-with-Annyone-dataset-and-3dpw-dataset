@@ -4,9 +4,9 @@
 % Numbers: numbers_diagnostics.tex (macros \Diag...), loaded by numbers.tex; loaded here only when compiled alone.
 % Tables owned here: tables/T08_depth_runs, T09_neck, T10_fingers, T14_pilot_noise, T18_shape_head; two inline
 % tables (six checks, placement) and one inline pilots table.
-% Figures here: F6 (exists, figures/img/neck_before_after_v5.jpg) and F24 (pending: figures/img/gt_decode_overlay.jpg),
+% Figures here: F6 (exists, figures/img/neck_before_after_v5.jpg) and F24 (pending: figures/img/F24_gt_decode_1.jpg),
 % both wrapped in \IfFileExists. Referenced only: F15 fig:depth-scatter, F13 fig:real-photos, F9 fig:neck-3dpw-bar,
-% F23 fig:exp6-compare (appendix D), T12 tab:relhuman, chapters ch:method and ch:results.
+% F23 fig:exp6-compare (Appendix D), T12 tab:relhuman, chapters ch:method and ch:results.
 % =============================================================================
 
 \ifdefined\DiagNumbersLoaded\else\input{numbers_diagnostics}\fi
@@ -37,10 +37,10 @@ seed and is read against the run-to-run variation of Section~\ref{sec:diag-noise
 trained. Right: the same checkpoint with the output correction of Section~\ref{sec:diag-neck}, no training.
 Synthetic, bodies at the model's own depth, so the depth bug of Section~\ref{sec:diag-depth} still draws them too
 small. Necks judged by eye.}
-\label{fig:diag-neck-v5}
+\label{fig:diag-neck-base}
 \end{figure}
 
-Figure~\ref{fig:diag-neck-v5} shows the first failure as it was seen: in the left column Base draws each neck as a
+Figure~\ref{fig:diag-neck-base} shows the first failure as it was seen: in the left column Base draws each neck as a
 thin stalk pinched under the head, on holdout images it never trained on. The second failure was the fingers, which
 curled into claws; from then on every real-photo demo set them to rest pose. The third was children: a standing boy in
 one of our own photos received an adult body (Figure~\ref{fig:real-photos}).
@@ -95,8 +95,8 @@ excluded from every later fine-tune. Check 6 trains a throw-away copy for 400 st
 
 \begin{figure}[htbp]
 \centering
-\IfFileExists{figures/img/gt_decode_overlay.jpg}%
-  {\includegraphics[width=0.7\linewidth]{figures/img/gt_decode_overlay.jpg}}%
+\IfFileExists{figures/img/F24_gt_decode_1.jpg}%
+  {\includegraphics[width=0.7\linewidth]{figures/img/F24_gt_decode_1.jpg}}%
   {\DiagPending[0.7\linewidth]{F24: AnnyOne labels rendered with the dataset camera
    (cluster: results/diagnostics/gt\_decode/vis/, two files)}}
 \caption[Check 1: AnnyOne labels decoded with the dataset camera]{Check 1: AnnyOne ground truth decoded through the
@@ -195,10 +195,10 @@ A per-bone dump of the neck chain found the fault (Table~\ref{tab:neck-bones}, f
 head points the right way (\DiagDumpHeadGlobal\,deg) and PVE never showed it; the skin between is twisted thin, girth
 \DiagNeckGirthBase{} of the truth and neck-skin error \DiagNeckSkinBase\,mm. The earlier group means (62.7 and 89.5\,deg) hid the
 flip. The flip is in all eight checkpoints of the Base line
-(the three stages before Base, Base, Base+3DPW, the 10-epoch depth pilot and two geodesic-loss pilots; neck02
+(L-stage 2 to L-stage 4, Base, Mixed-L, the 10-epoch depth pilot and two geodesic-loss pilots; neck02
 \DiagNeckTwoRangeLow--\DiagNeckTwoRangeHigh\,deg, girth \DiagGirthRangeLow--\DiagGirthRangeHigh), from the first stage
 on, before the helper mask, the neck boost and the shape weight of 20. The depth pilot keeps it, so depth is not the
-neck's cause. A fresh-head run from the same pretrained backbone has a normal neck (girth \DiagFreshGirth) but flips
+neck's cause. Fresh-heads-L, trained from the same pretrained backbone with fresh heads, has a normal neck (girth \DiagFreshGirth) but flips
 other bones: a compensated pair in the left arm and three metacarpals.
 
 This refutes the draft. The rig passes all 16 single-joint moves, and the normal rest-pose render fits the flip just as

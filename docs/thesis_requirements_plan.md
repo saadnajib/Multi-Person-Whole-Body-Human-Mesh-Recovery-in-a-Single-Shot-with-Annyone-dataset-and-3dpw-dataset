@@ -92,7 +92,7 @@ met. [1a-pose] is close on 3DPW. Not met: [1b] (the model is Multi-HMR with an A
 | 1c, 3DPW in Anny space | met, with caveats | v23 labels, test 8,190 images / 11,854 people; conversion check OVERALL WARN (old labels FAIL), body joints median 14.1 mm (3611284; handover 3.5) [Certain] | state the caveats in the thesis (3.1, item 4) |
 | 2a, 3DPW train + test in Anny, trained on | met | train 5,882 images / 7,584 people, validation 2,622 / 3,311; the final model trains on 30% 3DPW-train (`exp7_final_model.sh:215,757`) [Certain] | nothing (a 50% mix ablation is optional) |
 | 2b, temporal | **not started** | no temporal code in the repo (grep) [Certain]; AnnyOne is single images, multi-view, no motion [Likely] | design in section 4, weeks 5-6 |
-| 3-report | at risk | draft outside the repo; its 74 mm headline is stale (the thesis model is now 73.7 V1 / 89.0 3DPW) [Certain] | chapter plan (6.1); the current numbers |
+| 3-report | partly (full draft exists) | rewritten thesis in `docs/thesis/` (18 Oct, late evening): full LaTeX draft, 126 pages with appendices, chapters 1-8 = 82 pages; builds with zero undefined references; headline numbers 73.7 V1 / 89.0 3DPW, every number a macro with its log line (`docs/thesis/README.md`, `REVIEW_LOG.md`) [Certain] | the pending results (Student, partial mask, Student-S on v23), four figures (F11, F14, F17, F24), the bib `% TODO verify` fields, the student's own read-through, trimming toward 60-80 pages |
 | 3-code | **not met** | README describes old labels and models; 0 checkpoints or results committed; 98 tracked files contain `/netscratch`; 79 of 89 commits authored "Claude"; exp8 package committed 18 Oct (`a9db35c`) [Certain] | list 6.2 |
 
 ---

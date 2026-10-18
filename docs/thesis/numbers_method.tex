@@ -7,7 +7,7 @@
 % (quoted via the handover). Job ids stay in comments and Appendix A, never in the text.
 % Run names: Base = anny_s2_shape_v5 epoch 99; Control = exp7 control; Final = exp7 fix arm
 % (v5_pc_dist5_bonefix_v23_e10 epoch 9); Final-masked = exp7 + --mask_3dpw_shape 1;
-% Final-masked-7 = the partial mask (age kept); Student-S = ViT-S students v1-v8 (history);
+% Final-partial-mask = the partial mask (age kept); Student-S = ViT-S students v1-v8 (history);
 % Student = exp8 ViT-B; Multi-HMR-Anny = NAVER's multiHMR_672_L_anny.pt.
 % =============================================================================
 
@@ -158,7 +158,7 @@
 \newcommand{\MethodStudentSSixcPVE}{114.5}% mm, S6c (batch 16); draft main.tex:785
 \newcommand{\MethodStudentSSixcPA}{84.6}  % mm, S6c PA-PVE; draft main.tex:785
 \newcommand{\MethodStudentSSevenPVE}{120.6}% mm, S7 (S6b + 30% 3DPW old labels); draft tab:kd_eval
-\newcommand{\MethodStudentSEightPVE}{120.6}% mm, S8 (S6c + 30% 3DPW old labels, teacher Base+3DPW); draft tab:kd_eval
+\newcommand{\MethodStudentSEightPVE}{120.6}% mm, S8 (S6c + 30% 3DPW old labels, teacher Mixed-L); draft tab:kd_eval
 \newcommand{\MethodStudentSGapBefore}{2.6} % x the teacher's error, feature KD only; draft main.tex:714
 \newcommand{\MethodStudentSGapAfter}{1.5}  % x the teacher's error, S6c; draft main.tex:791
 \newcommand{\MethodItTimeBefore}{1.24}    % s per iteration before TF32 + bf16 teacher, A100; draft main.tex:449
@@ -241,7 +241,7 @@
 \newcommand{\MethodShortSteps}{2000}      % steps of a 2-epoch fine-tune (2 x 1000); H 1 (NaN rate "per 2,000")
 \newcommand{\MethodShortEpochs}{2}        % epochs of the short pilots; H 3.1
 \newcommand{\MethodWDistPilotMax}{20}     % largest depth weight tried (2 epochs only); H 3.1
-\newcommand{\MethodBaseOldEpoch}{62}      % epoch of Base+3DPW (old labels); H 1 models table
+\newcommand{\MethodBaseOldEpoch}{62}      % epoch of Mixed-L; H 1 models table
 \newcommand{\MethodStudentSTwoDEpoch}{5}  % S5: 2D terms from epoch 5; draft tab:student_runs
 \newcommand{\MethodStudentSLimit}{48}     % hours, job limit S6 hit at epoch 138; draft main.tex:770
 \newcommand{\MethodStudentSSixbEpoch}{130}% epoch of the S6b value; draft main.tex:776

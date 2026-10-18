@@ -32,7 +32,7 @@ Figure~\ref{fig:architecture} shows the network.
 
 When I began the work reported here, the model I had trained (called Base from Chapter~\ref{ch:method} on) showed
 three failures that anyone could see in its renders. Necks were thin, twisted stalks under the head
-(Figure~\ref{fig:diag-neck-v5}). Fingers curled into claws, so every real-photo demo set them to the rest pose. A boy
+(Figure~\ref{fig:diag-neck-base}). Fingers curled into claws, so every real-photo demo set them to the rest pose. A boy
 in one of our own photos received an adult body. The usual error measure, the mean vertex error after the pelvis is
 aligned (PVE), was \BasePVE\,mm on held-out synthetic images and showed none of this. Behind the visible
 failures lay one that no render showed: the network placed people far behind their true position and drew them about
@@ -175,8 +175,10 @@ distilled model.
   unmasked (Section~\ref{sec:res-mask}).
 
 \item \textbf{The baseline, measured with the same code.} I evaluated NAVER's Multi-HMR-Anny with our labels and
-  settings. On 3DPW it reaches \NAVERThreeDPW\,mm PVE, against \FinalThreeDPW\,mm for Final. On AnnyOne it reaches
-  \NAVERAnnyOne\,mm against \FinalPVE\,mm, but it was most likely trained on our 100 holdout images. I also measured
+  settings. On 3DPW it reaches \NAVERThreeDPW\,mm PVE, against \FinalThreeDPW\,mm for Final. NAVER's model was trained on
+  the AnnyOne release, which includes the 100 images we hold out, so its \NAVERAnnyOne\,mm there is most likely an
+  in-sample number; ours (\FinalPVE\,mm) are held out. On 3DPW, which neither model saw before our fine-tune, the
+  final model is \FinalGainOverNAVERThreeDPW\,mm better. I also measured
   parameters, FLOPs and run time of the models (Section~\ref{sec:res-baseline}, Table~\ref{tab:baseline}).
 
 \item \textbf{A smaller student for requirement 1b.} A ViT-B student is distilled from Final through a projector

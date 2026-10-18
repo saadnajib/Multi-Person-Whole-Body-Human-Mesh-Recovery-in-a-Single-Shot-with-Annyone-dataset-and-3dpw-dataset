@@ -2,7 +2,7 @@
 % Source: REWRITE_PLAN.md section 4 (T15); H 5/7 table; H 0b 3DPW table.
 % Part A: 3570222:40 (Base), long_pc_dist5 = 3572482 (depth pilot, x5, 10 epochs), exp6 fine-tune = 3579014
 % (neck pilot), 3611339:182-198 (Control), 3611336:191-207 (Final).
-% Part B: 3612073 (Base), 3612074 (Base+3DPW old labels = v9 e62), 3612075 (neck pilot), 3611339:215-220,
+% Part B: 3612073 (Base), 3612074 (Mixed-L old labels = v9 e62), 3612075 (neck pilot), 3611339:215-220,
 % 3611336:224-229, 3614192 (NAVER); lines :117-124 for the 3612073-5 jobs.
 % Old-label 3DPW numbers (119.1 / 102.5 / 111.5) are retired and never appear next to these.
 \begin{table}[tbp]
@@ -38,7 +38,7 @@ head bone (deg) & 177.9 & 178.0 & 11.2 & \ControlHeadBone & \FinalHeadBone \\
 \centering
 \begin{tabular}{@{}lrrrrrr@{}}
 \toprule
- & Base & \shortstack[r]{Base+3DPW\\(old labels)} & \shortstack[r]{Neck\\pilot} & Control & Final & \shortstack[r]{Multi-HMR-\\Anny} \\
+ & Base & Mixed-L & \shortstack[r]{Neck\\pilot} & Control & Final & \shortstack[r]{Multi-HMR-\\Anny} \\
 \midrule
 PVE (mm) & \BaseThreeDPW & \BaseOldThreeDPW & \NeckPilotThreeDPW & \ControlThreeDPW & \textbf{\FinalThreeDPW} & \NAVERThreeDPW \\
 PA-PVE (mm) & \BasePAThreeDPW & \BaseOldPAThreeDPW & 68.7 & \ControlPAThreeDPW & \textbf{\FinalPAThreeDPW} & \NAVERPAThreeDPW \\
@@ -49,7 +49,7 @@ Recall (\%) & 100 & \BaseOldRecallThreeDPW & 100 & 99 & \FinalRecallThreeDPW & \
 AnnyOne test-100 PVE$^{c}$ & \BaseVzeroPVE & \BaseOldVzeroPVE & 72.7 & 81.2 & \FinalTestHundredPVE & (\NAVERAnnyOne)$^{a}$ \\
 \bottomrule
 \end{tabular}
-\caption{3DPW test, corrected (v23) labels, all 8,190 images, setting V0, same evaluation script for every model. Base+3DPW (old labels) was trained on the labels before their correction and is tested on the corrected ones, like every model here.}
+\caption{3DPW test, corrected (v23) labels, all 8,190 images, setting V0, same evaluation script for every model. Mixed-L was trained on the labels before their correction and is tested on the corrected ones, like every model here.}
 \label{tab:final-3dpw}
 \end{subtable}
 \caption[Final against Control and Base on the AnnyOne holdout and the 3DPW test]{Final against its Control and against Base. One run per model, no seed; two identical runs differed

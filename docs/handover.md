@@ -393,6 +393,20 @@ numbers are helper-masked everywhere):
     trivially met (against ours 93.7). So slide 26's question 1 ("which baseline") now has numbers: the AnnyOne gap to
     NAVER is 13.4 mm, likely in-sample for NAVER. And our final model already "beats the baseline" on 3DPW test but not
     on AnnyOne, so the new-architecture route of 1b would hinge on AnnyOne. Deck: slides 20, 23, 24, 25, 26, 30 (section 9).
+**docs/thesis, 18 Oct (late evening):** the rewritten thesis is a full LaTeX draft in `docs/thesis/` (scrbook; build
+`cd docs/thesis && latexmk -pdf -interaction=nonstopmode thesis.tex`, then `latexmk -c` to drop the aux files and keep
+`thesis.pdf`). 126 pages with front matter, appendices and bibliography; chapters 1-8 are 82 pages (plan: 60-80).
+Eight chapters and five appendices were written in parallel from `docs/thesis/REWRITE_PLAN.md` and then made one
+document by a review pass (`docs/thesis/REVIEW_LOG.md`: names aligned to `docs/model_names.md` / Table A.1, duplicate
+figures removed, the undefined `fig:exp6-compare` placed in Appendix D, every headline number of chapters 1, 6, 7, 8
+and the abstract checked against 0b / 0a / 3.x and `data/plot_stats.md`, banned words and tags swept, an English
+"Use of AI tools" paragraph added after the Eigenstaendigkeitserklaerung with a TODO for the student's wording). The
+build ends with zero errors, zero undefined references and zero undefined citations. Pending in the text (each a
+`\TODO`): the Student's result (job 3614191: T17, T16, F18, F19, 6.10, 7.1, 8), the partial-mask result (job 3614042:
+6.8, 7.1, 8), Student-S/6c and /final on the v23 labels (job 3615020: 6.11), the figures F11 (hands, job 3615018),
+F17 (rest pose, job 3615019), F14 (label-check panel) and F24 (gt-decode overlays), the `% TODO verify` fields of
+`references.bib`, Appendix B's spine rows, and the supervisor's answers (95 % bar, smaller student, temporal
+refiner, children path). `docs/thesis/README.md` has the layout, the naming rule, the numbers rule and this TODO list.
 **Deck rebuilt, 18 Oct (evening):** 30 slides in story order (overview, data, training, findings and fixes, final
 model, requirements and plan, appendix), replacing the 21-slide deck. Three files: `docs/supervisor_update_2026-10-19.pptx`,
 `docs/supervisor_talk_notes_2026-10-19.md` (speaker script, generated from `docs/deck_src/build.js`) and

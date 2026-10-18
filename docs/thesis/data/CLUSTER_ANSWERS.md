@@ -45,3 +45,16 @@ stairs (downtown_sitOnStairs), downtown_walkBridge/walking pair, weekly market (
   pred_age, pred_gender, ...; base = v5 job 3611285_0, final = job 3612131, masked = job 3613616).
 - Not yet received: the v5 (Base) holdout trace per_person.csv (results/diagnostics/holdout_anny_s2_shape_v5_00099/per_person.csv)
   for the Base line of F15; the gt_decode overlays (F24; folder name unknown); the v7/v8 ViT-L run folders' contents.
+
+## 18 Oct, 22:40: more logs from the student
+- Student-S on the v23 3DPW test labels (job 3615020, `logs/eval-test3dpw-3615020_{2,4}.out`, all 8,190 images, V1 setting):
+  - Student-S/6c (`anny_distill_vits_v6c_00149.pt`): AnnyOne test-100 PVE 114.5 / PA-PVE 84.6 / MPJPE 118.4, precision 81, recall 89;
+    3DPW test PVE 142.6 / PA-PVE 91.0 / MPJPE 147.5, precision 45, recall 98.
+  - Student-S/final (`anny_distill_vits_v8_final_00052.pt`): AnnyOne 120.6 / 86.9 / 125.0, precision 76, recall 87;
+    3DPW test PVE 121.6 / PA-PVE 83.7 / MPJPE 123.3, precision 56, recall 98.
+  -> fills the "Student-S on v23" TODO in chapter 6.11 / T20; the old-label numbers (139.5 -> 123.6) stay retired.
+- Student (ViT-B, job 3614191) started training 21:23 on an L40S (serv-3313); checks PASS, teacher bone fix written; result ~20 h later.
+- Demo figure jobs 3615018 (predicted fingers) and 3615019 (rest pose, Base/Final/Final-masked) finished; montages made on the
+  login node (demo_montage_hands_{photos,3dpwtest}, demo_montage_rest_{photos,3dpwtest}); zip batch 2 (45 MB) ready on the cluster,
+  not yet uploaded here.
+- v7/v8 ViT-L history runs have checkpoints and tfevents only, no train.log: dropped from the thesis history.

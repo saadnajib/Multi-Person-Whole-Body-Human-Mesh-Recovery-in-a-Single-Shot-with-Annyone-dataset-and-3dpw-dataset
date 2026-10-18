@@ -32,7 +32,7 @@ Joint the targets describe & \texttt{-{}-gt\_center\_joint}: transl, dist, detec
 Bone correction & constant output rotation on neck02, head, metacarpal1.L, finger4-1.R & none & on & none & on \tabularnewline
 \bottomrule
 \end{tabular}
-\caption{Loss terms and their weights. ``Default'' is the value in \texttt{loss.py}; Final, Control and Student are the
+\caption[Loss terms and their weights]{Loss terms and their weights. ``Default'' is the value in \texttt{loss.py}; Final, Control and Student are the
 values of those runs (model names in Table~\ref{tab:model-names}). The total loss is the weighted sum of all rows above
 the rule. For people from 3DPW the rotation and global-rotation terms skip the \MethodHandMaskBones{} finger, thumb
 and metacarpal bones in all three runs; the mesh terms are not masked. The shape mask for 3DPW people is off in all
