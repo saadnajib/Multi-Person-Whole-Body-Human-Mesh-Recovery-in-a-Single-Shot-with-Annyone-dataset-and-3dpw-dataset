@@ -899,12 +899,27 @@ class HandLabelFlag(torch.utils.data.Dataset):
 
 class OriginalMultiHMREval(torch.nn.Module):
     """--model_class multi_hmr_original: NAVER's original Multi_HMR (multi_hmr_anny/multi_hmr.py) behind the call that
-    evaluate() makes. Its forward returns ({}, []) when nothing is detected; evaluate() expects an empty list there."""
+    evaluate() makes. Its forward returns ({}, []) when nothing is detected; evaluate() expects an empty list there.
+    Trainer.prepare_gt() (run by evaluate() for every image) reads model.nearness, model.img_size, model.patch_size,
+    model.person_center_idx (--gt_center_joint person_center) and, under --mask_helper_joints_train, model.useful_rotmat;
+    model.body_model is read by main(). Multi_HMR has all of them but nearness, so they are exposed here (nearness
+    True: the target's dist_postprocessed is computed as for Model; evaluate() never reads it)."""
 
     def __init__(self, net):
         super().__init__()
         self.net = net
-        self.body_model = net.body_model
+        self.nearness = True
+        self.img_size = net.img_size
+        self.patch_size = net.patch_size
+        self.person_center_idx = net.person_center_idx
+
+    @property
+    def body_model(self):
+        return self.net.body_model
+
+    @property
+    def useful_rotmat(self):
+        return self.net.useful_rotmat
 
     def forward(self, x, K=None, det_thresh=0.3, nms_kernel_size=3, is_training=False, **kwargs):
         out = self.net(x, K=K, det_thresh=det_thresh, nms_kernel_size=nms_kernel_size, is_training=is_training, **kwargs)
