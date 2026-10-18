@@ -515,8 +515,9 @@ Paste this section with section 0. Each step names the section with the details.
      The 3DPW shape mask exists, default off; on or off in exp7 is a decision (with it on, exp7's 3DPW-test PVE can
      move for a reason unrelated to the depth and bone fixes).
 9. After the meeting: write the supervisor's answers into section 9: the four slide-19 questions (1b bar and route,
-   temporal, children path A or B, submission date) and `MASK_3DPW_SHAPE` on or off (if on, update section 5, item 7
-   and note 19 too, and rerun exp7 with `MASK_3DPW_SHAPE=1`: new run names with `_shpmask`). "Labels first" (the
+   temporal, children path A or B, submission date) and `MASK_3DPW_SHAPE` on or off (the `MASK_3DPW_SHAPE=1` arm,
+   run names with `_shpmask`, is already running since 18 Oct; if on, update section 5, item 7 and note 19 when it
+   is read). "Labels first" (the
    student's choice): done, the final model (step 6). "Fine-tune v9 now": section 5, item 6 is then a new run (it
    trains, so the old GPUs); the final model stays the v5 result. Steps 3-6 are done either way (18 Oct).
 
@@ -3488,7 +3489,7 @@ rebuild (or hand-edit the pptx as above).
 | Relative Human evaluation of v5 and exp6 (section 5, item 12, step 1) | **done 18 Oct**: 10 (right tile, two new bullets, caveat), 14 (children row), 18 item 6 | 8, 10 (main and If asked), 14, 18 | in the deck since 18 Oct (val split, jobs 3611285_0/_1; 3.4). Still to come, optional: the RH test split; the RH number for a sampler run, if one is ever trained (section 5, item 12, step 7) |
 | the final model (exp7; section 5, item 7) | **done on the evening of 18 Oct**: new slide 16; 1, 7, 9, 13, 14, 18 (items 1-3, 7), 19 (claim, not claimed, question box) | 1, 7, 9, 10, 12, 13, 14, 16, 18, 19 | in the deck (this section, "Evening of 18 Oct"). Still to come: the supervisor's answer; a longer run if the deadline allows more than 10 epochs |
 | the 3DPW-test re-evaluations on v23 (v5 00099, v9 e62, exp6; 0a step 6) | **done at midday on 18 Oct** (jobs 3612073-3612075): 16 (v5 cell 121.8; the line under the table; source line), 19 (claim; not claimed) | 16 (main; If asked), 18 (If asked), 19 (main; If asked, "3DPW test", "Option 1") | in the deck (this section, "Midday of 18 Oct") |
-| a demo of the final model (0a step 6) | **done at midday on 18 Oct** (job 3612078): new slide 17 | 1, 8 (If asked, men), 16 (If asked, children and gender), 17, 19 (main: "a gender number for the final model") | in the deck (this section, "Midday of 18 Oct"). The necks of the final model on real images were not judged separately |
+| a demo of the final model (0a step 6) | **done at midday on 18 Oct** (job 3612078): new slide 17 | 1, 8 (If asked, men), 16 (If asked, children and gender), 17, 19 (main: "a gender number for the final model", replaced in the afternoon of 18 Oct by the measured Relative Human line) | in the deck (this section, "Midday of 18 Oct"). The necks of the final model on real images were not judged separately |
 | Relative Human evaluation of the final model (0a step 6) | **done on the afternoon of 18 Oct** (job 3612131): 10 (tile, bullets), 17 (last bullet, source line), 18 item 6, 19 (claim, not claimed), 20 (row 1a shape) | 8 (If asked), 10, 16 (If asked), 17, 18, 19, 20 | in the deck (this section, "Afternoon of 18 Oct"); the accuracy 0.642 is above 0.5, so the direction is right on average (3.4) |
 | the `MASK_3DPW_SHAPE=1` arm (running since 18 Oct; then its own Relative Human run) | 10 (bullet "3DPW labels fix age at 0.55: ... Run with those values masked: in progress."), 20 (row 1a shape: "masked run (in progress)") | 10 (main: "a run that masks those fixed 3DPW shape values is in progress, and it can go either way"; If asked: "The 0.55 anchor"), 19 (If asked, "Both options"), 20 (main: "the masked run tests that") | spreads of muscle, weight, cup size, firmness, age; adult age; AnnyOne and 3DPW PVE against the unmasked final model; the children AUC (two outcomes, 3.4) |
 | the NAVER baseline (`multiHMR_672_L_anny`) and exp8, the ViT-B student (`docs/thesis_requirements_plan.md`, section 4) | 20 (row 1b: "NAVER's Anny model not yet run"; the route line: "launch Tue 20 Oct, first result ~8 Nov"), 19 (question 1) | 20 (main and If asked: "it has not run yet", "first result comes around 8 November") | the NAVER row (PVE / MPJPE on AnnyOne and 3DPW); later the student's ratio against both ViT-Ls, params, FLOPs, ms |
@@ -3602,8 +3603,7 @@ commands, the Monday bullets, the writing and clean-up list). Read it before pla
   ViT-L and vs NAVER-L, bar x1.05; AnnyOne 95% about 50/50 [Guessing]. Get his yes first.
 - Blocking, all small: the NAVER adapter crashes at `train.py:242` (4 attributes missing); no masked-eval flag;
   `kd_shp` unmasked. Six files uncommitted, none run.
-- Order: Mon evening adapter fix, commit, NAVER smoke test; the `MASK_3DPW_SHAPE=1` arm is already running (then
-  its own Relative Human run, with a `TAG`); the final model's Relative Human run is done (3612131); Tue 20 exp8 as
-  one ~42-h job (never 5-h chunks). Student ~8 Nov, fallback 10 Nov, (1) closed 15 Nov, no
-  buffer. Weeks 5-6 temporal refiner; weeks 7-8 writing, release, buffer. Write his answers to the four slide-19
-  questions into section 9.
+- Order: Mon evening adapter fix, commit, NAVER smoke test; the `MASK_3DPW_SHAPE=1` arm is already running (then its
+  own Relative Human run, with a `TAG`); the final model's Relative Human run is done (3612131); Tue 20 exp8 as one
+  ~42-h job (never 5-h chunks). Student ~8 Nov, fallback 10 Nov, (1) closed 15 Nov, no buffer. Weeks 5-6 temporal
+  refiner; weeks 7-8 writing, release, buffer. Write his answers to the four slide-19 questions into section 9.
