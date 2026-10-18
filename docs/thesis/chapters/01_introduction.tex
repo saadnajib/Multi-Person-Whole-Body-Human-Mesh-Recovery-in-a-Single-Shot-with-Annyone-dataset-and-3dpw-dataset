@@ -1,37 +1,209 @@
 % 01_introduction.tex -- Chapter 1 Introduction (5 pages). Written last (plan section 6, step 4).
-% Skeleton from REWRITE_PLAN.md section 2. Writing rules: section 5 of the plan.
-% "absorbs" = lines of draft_2026-10_original/main.tex (or the named draft file) whose content moves here.
+% Plan: REWRITE_PLAN.md 1.3 (verdicts), section 2 ("1 Introduction"), section 5 (writing rules).
+% Draft lines absorbed: main.tex 16-47 (minus :40, "no published multi-person HMR system predicts Anny", false),
+% 49-64, 66-97 (converter item only), 99-107 (outline, rewritten).
+% Numbers: macros of numbers_results.tex, numbers_data.tex, numbers_method.tex, numbers_diagnostics.tex (sources
+% there). Model names: Table tab:model-names (Chapter 4). Requirements: P 1 (docs/thesis_requirements_plan.md);
+% full map in Table tab:requirements (Chapter 7).
 
 \chapter{Introduction}
 \label{ch:intro}
 
+% -----------------------------------------------------------------------------
 \section{The task}
 \label{sec:intro-task}
-% absorbs draft main.tex lines 16-47 (minus line 40: "no published multi-person HMR system predicts Anny" is false)
-% needs: the four-step strip in words (photo -> every person -> Anny pose, 11 shape values, distance); F1 small version or none
-\TODO{One photo in, every person out as an Anny body with pose, 11 shape values and distance.}
 
+Human mesh recovery (HMR) estimates the 3D body surface of the people in an image. Methods rarely predict the
+thousands of mesh vertices directly. They predict the parameters of a parametric body model, a function that turns a
+pose and a few shape values into a closed mesh. The body model supplies the anatomy, so the network only has to learn
+a compact target, and the result can be animated.
+
+Multi-HMR~\cite{baradel2024multihmr} does this for every person in an image in one forward pass. A Vision
+Transformer cuts the image into patches and turns each patch into a feature vector, a \emph{token}. For each token
+the network scores whether a person's anchor point lies in that patch. For each detected person, a small
+cross-attention head reads the image tokens and outputs the body's pose, its shape and its distance from the camera.
+Detection and body regression share one backbone, and the body model appears only in the last layer and in the loss.
+
+In this thesis the output is a body of Anny~\cite{bregier2025anny}, a body model released in 2025. For one photo the
+network returns, for every person in it, the rotations of Anny's \MethodNumBones{} bones, the \MethodNumPheno{}
+shape values of Anny, and where the body stands in 3D. I start from the public ViT-L checkpoint that NAVER released
+for Anny, keep its backbone, train new heads on synthetic images and then fine-tune on real ones.
+Figure~\ref{fig:architecture} shows the network.
+
+When I began the work reported here, the model I had trained (called Base from Chapter~\ref{ch:method} on) showed
+three failures that anyone could see in its renders. Necks were thin, twisted stalks under the head
+(Figure~\ref{fig:diag-neck-v5}). Fingers curled into claws, so every real-photo demo set them to the rest pose. A boy
+in one of our own photos received an adult body. The usual error measure, the mean vertex error after the pelvis is
+aligned (PVE), was \BasePVE\,mm on held-out synthetic images and showed none of this. Behind the visible
+failures lay one that no render showed: the network placed people far behind their true position and drew them about
+a third too small. PVE could not see it, because it removes the body's position before it compares.
+
+A large part of this thesis is therefore about finding out why the model failed before changing it. I tested each
+cause that had been assumed (a property of the rig for the neck, the image resolution for the fingers, an age that
+was never learned for the children) on its own. The rig and the age explanations were wrong, and resolution explains
+little of the finger error. The fixes that followed are small: training targets built at the right joint, and a
+constant rotation of four bones at the output. What made them possible were measurements that can see each failure.
+The thesis reports these measurements, the fixes, and what they do and do not achieve on synthetic and real images.
+
+% -----------------------------------------------------------------------------
 \section{Why Anny}
 \label{sec:intro-anny}
-% absorbs draft main.tex lines 28-40
-% needs: Anny age anchors (0 baby, 0.333 child, 0.667 young, 1 old) and gender convention (0 = male); 163 bones, 11 phenotypes (H 1)
-\TODO{Licence, interpretable phenotypes, children and old people in one model.}
 
+Almost every HMR system of the last decade predicts a member of the SMPL
+family~\cite{loper2015smpl,romero2017mano,pavlakos2019smplx}. Two properties of that family motivate a change.
+SMPL is released under a research-only licence that forbids commercial use. Its shape space is learned by principal
+component analysis from scans of adults, so its ten shape coefficients have no names, and children need a separate
+infant model or a blend with one~\cite{hesse2018smil,patel2021agora,sun2022bev}.
+
+Anny addresses both points. Its code is under the Apache~2.0 licence and its MakeHuman-derived assets under
+CC0~\cite{naver2025annycode}. Its shape is set by \MethodNumPheno{} named \emph{phenotype} values between 0 and 1:
+gender, age, muscle, weight, height, proportions, cup size, firmness and three ethnicity weights. Age is one of these
+values, so a baby, a child, an adult and an old person come from the same model: age 0 is the baby anchor,
+\DataAgeAnchorChild{} the child, \DataAgeAnchorYoung{} the young adult and 1 the old adult. Gender 0 is the male end
+and 1 the female end. The full rig has \MethodNumBones{} bones, of which \MethodHelperBones{} are helper bones that
+the rest of the skeleton drives. Because the values have names, a predicted body can be read as ``older'' or
+``heavier'', and a supervisor can ask whether the body visibly changes with the person.
+
+Anny comes with AnnyOne~\cite{bregier2025anny}, a large set of synthetic images with exact labels. I use
+\DataAnnyOneImages{} of its images, rendered at \DataAnnyOneRenderPx\,px and resized to \DataInputPx\,px for the
+network. NAVER has also released Multi-HMR-Anny, a Multi-HMR checkpoint trained on AnnyOne, so a multi-person HMR
+system for Anny already exists. NAVER's model is where my backbone comes from and the baseline I compare against. What did not exist were real images with Anny labels. I therefore converted the
+SMPL ground truth of 3DPW~\cite{vonmarcard2018_3dpw}, a real video data set with 3D labels, to Anny. The AnnyOne
+images and NAVER's checkpoints come with licence terms of their own, which matter for a model release
+(Chapter~\ref{ch:conclusion}).
+
+% -----------------------------------------------------------------------------
 \section{What the thesis had to deliver}
 \label{sec:intro-requirements}
-% absorbs - (new)
-% needs: the supervisor's six requirements 1a/1b/1c/2a/2b/3 in his words (P 1); T1 short form (full form in Section~7.1)
-\TODO{The supervisor's requirements as the frame of the thesis; short form of Table~\ref{tab:requirements}.}
 
+My supervisor set the goals of the thesis as a list of requirements in three tiers. Table~\ref{tab:intro-requirements}
+gives them in short form. The first tier is a condition for submission: a model whose pose looks correct on the 3DPW
+test set and on any real photo, whose shape visibly changes with the person (1a); a model that is not exactly
+Multi-HMR, either a new architecture that beats it or a much smaller model that keeps at least 95\,\% of its accuracy
+on both test sets (1b); and an evaluation in Anny space on real images (1c). The second tier is recommended for an
+acceptable grade: 3DPW converted to Anny and used in training (2a), and a model that uses the motion in video instead
+of treating each frame on its own (2b). The third tier, for the best grade, is a well-argued report and a clean
+codebase with models that can be checked independently (3).
+
+\begin{table}[tbp]
+\centering\footnotesize
+\begin{tabular}{@{}>{\raggedright}p{1.4cm}>{\raggedright}p{0.8cm}>{\raggedright}p{6.2cm}>{\raggedright\arraybackslash}p{3.1cm}@{}}
+\toprule
+Req. & Tier & What it asks for & Main evidence \\
+\midrule
+1a-pose & 1 & pose of all body parts looks correct on the 3DPW test set and on any real photo &
+  Sections~\ref{sec:res-bone}--\ref{sec:res-3dpw} \\
+1a-shape & 1 & size, proportions, age, muscle and the other shape values visibly change with the person &
+  Sections~\ref{sec:res-rh}, \ref{sec:res-mask} \\
+1b & 1 & not exactly Multi-HMR: new and better on both test sets, or much smaller with $\geq$\,95\,\% of the
+  accuracy & Sections~\ref{sec:res-baseline}, \ref{sec:res-student} \\
+1c & 1 & evaluation with Anny parameters on a real data set & Chapter~\ref{ch:data}, Section~\ref{sec:res-3dpw} \\
+2a & 2 & 3DPW train and test converted to Anny; the train set used in training & Chapter~\ref{ch:data},
+  Section~\ref{sec:res-3dpw} \\
+2b & 2 & the model uses motion in video instead of single frames & Chapter~\ref{ch:conclusion} (plan only) \\
+3 & 3 & a well-written report; a clean codebase and verifiable models & this thesis,
+  Appendix~\ref{app:reproduction} \\
+\bottomrule
+\end{tabular}
+\caption[The supervisor's requirements, short form]{The supervisor's requirements in short form. Tier 1 is required
+for submission, tier 2 recommended, tier 3 for the best grade. Status words and the full evidence are in
+Table~\ref{tab:requirements} (Section~\ref{sec:disc-requirements}).}
+\label{tab:intro-requirements}
+\end{table}
+
+These requirements are the frame of the thesis. Chapters~\ref{ch:data} to~\ref{ch:results} report the work in the
+order it was done, and Section~\ref{sec:disc-requirements} returns to the list and gives each requirement a status
+word, its evidence and what is missing. I state here only the outcome on 18 October 2026: 2a is met, 1c is met with
+caveats, 1a is partly met, 1b depends on a student model whose training was running, and 2b had not been started.
+
+% -----------------------------------------------------------------------------
 \section{Contributions}
 \label{sec:intro-contrib}
-% absorbs draft main.tex lines 66-97 (converter item only; the rest carries wrong numbers and the wrong neck cause)
-% needs: depth-anchor bug and fix; bone correction; labels v23; final model with control; Relative Human; baseline; ViT-B student. Key numbers: root error 1402 -> 728 mm; neck02 175.8 -> 4.8 deg; 3DPW 121.8 -> 89.0 (H 0b)
-\TODO{Numbered contributions, each with the chapter that holds the evidence.}
 
+Every comparison below is between runs trained once, without a fixed seed. Two identical runs differed by
+\NoisePVE\,mm PVE (Section~\ref{sec:diag-noise}), so I compare each change with a matched control and call smaller
+gaps ``within run-to-run variation''. The model names are those of Table~\ref{tab:model-names}: Base is the model I
+started from, Final the thesis model, Control the same training as Final without the two fixes, and Student the
+distilled model.
+
+\begin{enumerate}
+\item \textbf{A diagnosis of three visible failures.} Before changing the training, I ran six structural checks on
+  Base: label decoding, the body model's response, the gradients that reach every bone and shape output, prediction
+  against truth, a shape swap and a capped overfit. They rule out a rig or decoding problem
+  (Section~\ref{sec:diag-checks}). Each failure was then traced to a specific mechanism
+  (Sections~\ref{sec:diag-depth}--\ref{sec:diag-children}).
+
+\item \textbf{The depth anchor and its fix.} The network places each person by the head, but I had built the training
+  targets at the pelvis. The 2D losses reconciled the two by pushing bodies away and drawing them smaller. Base put
+  every holdout person too far away, and the pelvis-aligned PVE could not see it (Section~\ref{sec:diag-depth}).
+  Building the targets at the anchor joint and raising the depth weight (Section~\ref{sec:method-depth}) cut the root
+  error from \num{\ControlRootErr} to \FinalRootErr\,mm against Control and raised the drawn size from
+  \ControlSize{} to \FinalSize{} of the true size. The depth slope stayed at \FinalSlope{}
+  (Section~\ref{sec:res-depth}, Table~\ref{tab:depth-runs}).
+
+\item \textbf{The bone correction.} A per-bone dump showed that two neck bones (neck02 and head) and two hand bones
+  are turned by half a turn in every checkpoint of the Base line. The two neck half-turns cancel, so the head points
+  the right way while the skin between is twisted thin (Section~\ref{sec:diag-neck}). A constant rotation per bone,
+  estimated once from \MethodBoneFixImages{} training images and applied at the output, turns them back and adds no
+  parameters (Section~\ref{sec:method-bonefix}). In Final the neck02 error is \FinalNeckTwo\,degrees against
+  \ControlNeckTwo{} in Control, the neck girth \FinalGirth{} of the true girth against \ControlGirth{}, and the finger
+  error \FinalFingers\,degrees against \ControlFingers{} (Sections~\ref{sec:res-bone} and~\ref{sec:res-fingers}). Why
+  the bones were flipped is not known.
+
+\item \textbf{3DPW labels in Anny space.} I wrote a converter that fits Anny to 3DPW's SMPL ground truth, with a joint
+  correspondence checked by rest-pose geometry and virtual joints where the two skeletons differ
+  (Section~\ref{sec:data-converter}). In the first label set I found three defects: the gender convention was
+  reversed, the second actor was missing in \DataMissingActor{} of \DataTwoPersonChecked{} checked two-person images,
+  and labels were missing where image files were absent. I fixed all three, fitted all \DataThreeDPWPersonSeq{} people
+  again and checked the result independently: the median body-joint error against 3DPW fell from
+  \DataCheckJointsOld{} to \DataCheckJointsNew\,mm (Section~\ref{sec:data-defects}, Table~\ref{tab:label-check}). The
+  corrected set has \DataThreeDPWTotalImages{} images with \DataThreeDPWTotalPeople{} people
+  (Table~\ref{tab:label-sets}).
+
+\item \textbf{Final against a matched control.} Final fine-tunes Base for \MethodFinalEpochs{} epochs with both fixes
+  and \MethodMixRatio\,\% real images per batch; Control differs only by the two fixes. On the AnnyOne holdout the PVE
+  gap (\FinalPVE{} against \ControlPVE\,mm) is within run-to-run variation, while PA-PVE (\FinalPAPVE{} against
+  \ControlPAPVE\,mm), root error, neck and fingers moved far beyond it. On the 3DPW test set Final has the lowest error
+  on our labels, \FinalThreeDPW\,mm PVE against \ControlThreeDPW{} for Control and \BaseThreeDPW{} for Base; most of
+  the gain comes from the real images, and the fixes add \GainFixesThreeDPW\,mm (Sections~\ref{sec:res-final}
+  and~\ref{sec:res-3dpw}, Table~\ref{tab:final}).
+
+\item \textbf{Body shape on real photos.} On the Relative Human photos, which label age group and gender, Final raises
+  gender accuracy from \RHGenderBase{} to \RHGenderFinal\,\% and the child-against-adult AUC from \RHAUCBase{} to
+  \RHAUCFinal{} (Section~\ref{sec:res-rh}, Table~\ref{tab:relhuman}). A shape mask on the converter's constant
+  phenotypes brings back the person-to-person variety of muscle and weight but loses the gender gain; I kept Final
+  unmasked (Section~\ref{sec:res-mask}).
+
+\item \textbf{The baseline, measured with the same code.} I evaluated NAVER's Multi-HMR-Anny with our labels and
+  settings. On 3DPW it reaches \NAVERThreeDPW\,mm PVE, against \FinalThreeDPW\,mm for Final. On AnnyOne it reaches
+  \NAVERAnnyOne\,mm against \FinalPVE\,mm, but it was most likely trained on our 100 holdout images. I also measured
+  parameters, FLOPs and run time of the models (Section~\ref{sec:res-baseline}, Table~\ref{tab:baseline}).
+
+\item \textbf{A smaller student for requirement 1b.} A ViT-B student is distilled from Final through a projector
+  into the teacher's heads (Section~\ref{sec:method-student}). It has \ParamRatioStudent$\times$ fewer parameters,
+  \FlopRatioStudent$\times$ fewer FLOPs and runs \SpeedRatioStudent$\times$ faster than Final; its accuracy against the
+  95\,\% rule was pending when this was written (Section~\ref{sec:res-student}).
+\end{enumerate}
+
+Two smaller contributions support these. Appendix~\ref{app:reproduction} maps every reported number to its run, log
+and checkpoint, and Section~\ref{sec:disc-engineering} lists the pipeline bugs whose symptoms looked like model
+failures.
+
+% -----------------------------------------------------------------------------
 \section{Outline}
 \label{sec:intro-outline}
-% absorbs draft main.tex lines 99-107
-% needs: one line per chapter of the new outline (plan section 2)
-\TODO{One line per chapter.}
 
+Chapter~\ref{ch:background} introduces parametric body models with Anny, single- and multi-person HMR, synthetic
+training data, label conversion between body models, knowledge distillation and temporal models.
+Chapter~\ref{ch:data} describes AnnyOne, 3DPW, the converter and its three defects, the limits of the converted
+labels, Relative Human and the diagnostic images. Chapter~\ref{ch:method} gives the network, the losses in plain
+words, the training schedule and the model names, the depth fix, the bone correction, training with real images,
+distillation and the evaluation protocol. Chapter~\ref{ch:diagnostics} shows how each failure was isolated, including
+the explanations that turned out wrong and the run-to-run noise. Chapter~\ref{ch:results} reports the fixes, Final
+against Control and Base on AnnyOne and 3DPW, body shape on real photos, the shape-mask trade-off, the baseline and the
+model cost, the student and the history of the earlier ViT-S students. Chapter~\ref{ch:discussion} goes through the
+requirements one by one, explains why PVE barely moved, and states the limitations and engineering lessons.
+Chapter~\ref{ch:conclusion} concludes and gives the next steps. The appendices hold the runs and their jobs
+(Appendix~\ref{app:reproduction}), the joint correspondence of the converter (Appendix~\ref{app:joints}), the training
+flags (Appendix~\ref{app:flags}), additional figures (Appendix~\ref{app:figures}) and the pilot results in full
+(Appendix~\ref{app:pilots}).

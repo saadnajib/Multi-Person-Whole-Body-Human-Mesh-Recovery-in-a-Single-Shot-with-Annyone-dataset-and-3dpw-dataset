@@ -1,19 +1,79 @@
 % 08_conclusion.tex -- Chapter 8 Conclusion and future work (2 pages). Written last (plan section 6, step 4).
-% Skeleton from REWRITE_PLAN.md section 2. Writing rules: section 5 of the plan.
-% "absorbs" = lines of draft_2026-10_original/main.tex (or the named draft file) whose content moves here.
+% Plan: REWRITE_PLAN.md 1.8 (verdict: rewrite), section 2 ("8 Conclusion and future work"), section 5 (rules).
+% Future work and its state on 18 Oct 2026: docs/thesis_requirements_plan.md section 4 (weeks 1-8, "What to drop")
+% and 6.2 (code and release); docs/deck_explained_2026-10-19.md part 7. Only steps that plan contains are promised;
+% items the plan drops (depth-slope study, two-sided bone fix, children sampler) are named as open, not planned.
+% Every number repeats a cell of a Chapter 6 table (T15 tab:final, T12 tab:relhuman, T16 tab:baseline) through the
+% macros of numbers_results.tex.
 
 \chapter{Conclusion and Future Work}
 \label{ch:conclusion}
 
+% -----------------------------------------------------------------------------
 \section{Conclusion}
 \label{sec:concl}
-% absorbs draft main.tex lines 1350-1374 (rewritten)
-% needs: conclusion in the student's own words; answer to each requirement in one sentence
-\TODO{What was built, what was found, what holds.}
 
+I moved Multi-HMR to the Anny body model and trained it on synthetic AnnyOne images and on real 3DPW images that I
+converted to Anny. The model I started from had three visible failures. I first tested what was not their cause and
+then traced each one to a mechanism: training targets built at the pelvis while the network anchors each person at
+the head, and four bones turned by half a turn at the output. The fixes are small, and their effect is large where it
+can be measured. Against a control with the same training, Final cut the root error from \num{\ControlRootErr} to
+\FinalRootErr\,mm, the neck02 error from \ControlNeckTwo{} to \FinalNeckTwo\,degrees and the finger error from
+\ControlFingers{} to \FinalFingers\,degrees, while the holdout PVE (\FinalPVE{} against \ControlPVE\,mm) stayed within
+run-to-run variation. The main lesson is about measurement: the standard error measure could not see the worst
+defect, and each failure became tractable only once a number for it existed.
+
+In the order of the supervisor's requirements: for the pose (1a), Final has \FinalThreeDPW\,mm PVE on the 3DPW test
+set against our labels, with necks and fingers corrected on the holdout; on real photos the pose is judged by eye, and
+predicted fingers have not yet been shown on a real photo. For the shape (1a), Final recognises gender in
+\RHGenderFinal\,\% of the Relative Human people (Base \RHGenderBase\,\%) and separates children from adults with an
+AUC of \RHAUCFinal{} (Base \RHAUCBase); children are a measured improvement, not solved, and muscle and weight barely
+vary between people on real photos. For 1b, the Student has \ParamRatioStudent$\times$ fewer parameters and
+\FlopRatioStudent$\times$ fewer FLOPs than Final, but its accuracy was not yet measured, so 1b is not met at the time
+of writing; NAVER's Multi-HMR-Anny, measured with our code, reaches \NAVERThreeDPW\,mm on 3DPW. For 1c and 2a, the
+converted 3DPW labels exist with three defects fixed and an independent check, and training on them brought the 3DPW
+error from \BaseThreeDPW{} (Base) to \ControlThreeDPW\,mm (Control) before any fix. Motion in video (2b) was not
+started. For 3, every number traces to a run, a log and a checkpoint (Appendix~\ref{app:reproduction}); the code is not
+yet cleaned up or released. Every model was trained once without a fixed seed, and the 3DPW numbers are not comparable
+with published 3DPW results; Section~\ref{sec:disc-limitations} lists the limitations.
+
+% -----------------------------------------------------------------------------
 \section{Future work}
 \label{sec:future}
-% absorbs - (new)
-% needs: temporal refiner on frozen per-frame tokens (16-frame windows, acceleration error against smoothing baselines; P 4 weeks 5-6) for 2b; the partial shape mask; a longer student run; a seed and bootstrap intervals; the two-sided bone correction (v10's left arm); the depth-slope investigation (training depth distribution); weak age labels from Relative Human (Path B); AGORA kids; licences before any model release (plan section 7 Q15)
-\TODO{One paragraph per item, each tied to a limitation or a requirement.}
 
+The steps below are planned, each with its state on 18 October 2026.
+
+\paragraph{The Student's result (1b).} The Student was training on that date, in a single job of
+\MethodStudentEpochs{} epochs. Its result is expected within days of the job's start and fills the table of
+Section~\ref{sec:res-student}. If it misses the 95\,\% bar while its error is still falling, I will continue its
+training from the last checkpoint and report the ratio as measured. Which model sets the bar, Final or
+Multi-HMR-Anny, is the supervisor's decision.
+
+\paragraph{The partial shape mask (1a).} Final-masked-7 masks the seven constant phenotypes of the converted labels
+and keeps age supervised. It was submitted on 18 October and had not finished. It tests the reading of
+Section~\ref{sec:res-mask} that the age label carries the gains on children and gender while the seven constants cause
+the collapse of muscle and weight. Its Relative Human evaluation and a demo follow.
+
+\paragraph{Evidence that shape follows the person (1a).} Three pieces are planned: per-phenotype correlation, slope
+and $R^2$ between prediction and label on the AnnyOne holdout, from per-person files that already exist; the rest-pose
+line-up of all demo people (Figure~\ref{fig:rest-lineup}); and a demo with predicted fingers
+(Figure~\ref{fig:fingers-demo}).
+
+\paragraph{A measured spread for Final.} A second run of Final with the same recipe would replace ``within run-to-run
+variation'' by a measured spread. The training code sets no seed, so this is a repeat, not a seeded run. It takes
+about two GPU hours and is planned for the fourth week if a slot is free.
+
+\paragraph{Motion in video (2b).} In the second month I plan a small temporal refiner on the frozen per-frame model.
+It reads the per-person tokens of Final over windows of 16 frames (1.6\,s at the 10 frames per second of the labels)
+with a two-layer transformer and pools the body shape over each track. It is trained on the 3DPW training tracks and
+judged by acceleration error and PVE against the per-frame model, shape averaging and temporal smoothing. If it does
+not beat smoothing, the thesis will say so.
+
+\paragraph{Code and model release (3).} The code will get one script that reproduces the evaluations, paths set by
+environment variables, an environment file and a rewritten README. Final, Final-masked, Control, Base and the Student
+will be released with checksums, subject to the licence terms of AnnyOne, NAVER's checkpoints and 3DPW.
+
+\paragraph{Open beyond this plan.} Two problems have no plan inside this thesis. Children still receive adult-shaped
+bodies too often; weak age labels from the Relative Human training split or child-rich synthetic data are candidates.
+The depth slope of \FinalSlope{} means that near and far people still get similar depths; the likely reason, a pull
+toward the typical training distance, was not tested.

@@ -1,32 +1,312 @@
-% 07_discussion.tex -- Chapter 7 Discussion (6 pages). Owner: Discussion writer (plan section 6, step 3).
-% Skeleton from REWRITE_PLAN.md section 2. Writing rules: section 5 of the plan.
-% "absorbs" = lines of draft_2026-10_original/main.tex (or the named draft file) whose content moves here.
+% =============================================================================
+% 07_discussion.tex  --  Chapter 7, Discussion (target 6-7 pages). Owner: Discussion writer.
+% Plan: docs/thesis/REWRITE_PLAN.md sections 1.8, 2 ("7 Discussion"), 4 (T1), 5 (writing rules).
+% Sources: docs/thesis_requirements_plan.md sections 1-3 (status of 18 Oct evening); docs/handover.md 0a, 0b, 5
+% (item 7), 6 (corrections log); docs/deck_explained_2026-10-19.md parts 7-8; chapters 3-6 and their tables;
+% data/plot_stats.md.
+% Numbers: macros of numbers_results / _diagnostics / _method / _data / _background; the few numbers first
+% quoted here are in numbers_discussion.tex. Table owned here: tables/T01_requirements.tex (tab:requirements).
+% absorbs draft main.tex lines 1244-1343 (What improved; What did not improve; Pipeline bugs; Limitations),
+% rewritten with the new numbers. Deleted from the draft: the neck as a rig property, the firmness bullet, the
+% "PVE plateau from frozen blocks" guess, the student-gap bullet (history, Section 6.11).
+% =============================================================================
 
 \chapter{Discussion}
 \label{ch:discussion}
 
+This chapter reads the results against what the thesis had to deliver (Section~\ref{sec:disc-requirements}),
+explains why the headline error barely moved while the faults it was meant to track were corrected
+(Section~\ref{sec:disc-pve}), states the limits of each claim (Section~\ref{sec:disc-limitations}) and records what
+the work taught about building such a pipeline (Section~\ref{sec:disc-engineering}).
+
+% -----------------------------------------------------------------------------
 \section{The requirements, one by one}
 \label{sec:disc-requirements}
-% absorbs draft main.tex lines 1244-1253 ("What improved", rewritten with the new numbers)
-% needs: T1 (full form); one short paragraph per requirement in the order 1a-pose, 1a-shape, 1b, 1c, 2a, 2b, 3: his wording, status word (met / met with caveats / partly / not met / not started), evidence by section and table, what is missing and where Chapter 8 plans it (plan section 5, "The requirements map")
-\TODO{Table~\ref{tab:requirements}, then one paragraph per requirement.}
+
+The supervisor set three tiers (Section~\ref{sec:intro-requirements}): requirements without which he would not
+consider the thesis ready for submission (1a, 1b, 1c), requirements for an acceptable grade (2a, 2b), and a
+well-written report with verifiable code for the best grade (3). Table~\ref{tab:requirements} gives the status of
+each on \DiscStatusDate{} in one of five words: met, met with caveats, partly, not met, not started. I split 1a into
+pose and shape, because the evidence for the two differs. The paragraphs below follow his order; each names what is
+missing and where Chapter~\ref{ch:conclusion} plans it.
+
 \input{tables/T01_requirements}
 
+\paragraph{1a-pose: correct pose on real images.} He asked for a model whose ``pose of all body parts must look
+correct'' on the 3DPW test set and on any random image from the wild. The status is \emph{partly}. On the 3DPW test
+set Final has the lowest error on our 3DPW-Anny labels, \FinalThreeDPW\,mm PVE and \FinalPAThreeDPW\,mm PA-PVE, and
+finds \FinalRecallThreeDPW\,\% of the labelled actors (Table~\ref{tab:final-3dpw}). Two pose faults that the 3DPW
+labels cannot see were found and corrected on the AnnyOne holdout: the half-turned neck bones (neck02
+\ControlNeckTwo{} against \FinalNeckTwo\,deg for Control and Final) and two flipped hand bones (fingers
+\ControlFingers{} against \FinalFingers\,deg; Sections~\ref{sec:res-bone} and~\ref{sec:res-fingers}). On real
+photos the evidence is by eye. In the 12 demo images the necks have normal width; placement offsets, ghost bodies
+on half-visible people and hard poses such as the seated guitar player remain (Figures~\ref{fig:3dpw-overlays}
+and~\ref{fig:real-photos}). Three things are missing. Predicted fingers have not been shown on a real photo,
+because every demo so far sets them to rest pose (Figure~\ref{fig:fingers-demo} waits for that render). The depth
+fix moved the offset and the body size, not the slope (\FinalSlope; Figure~\ref{fig:depth-scatter}). And every
+number comes from one run. Section~\ref{sec:future} plans the finger demo, a body-joint MPJPE and a repeat of
+Final; the slope stays a limitation (Section~\ref{sec:disc-limitations}).
+
+\paragraph{1a-shape: shape that changes with the person.} He asked that ``mesh size, proportions, age, muscles, and
+other aspects of the 3D shape must visibly change according to the person'', as in NAVER's Anny demo, since AnnyOne
+carries these labels. The status is \emph{partly}. The training side is met: every model learns all
+\DataPhenotypes{} phenotypes from the AnnyOne labels, with the shape term at weight \MethodWShape{}
+(Table~\ref{tab:loss-weights}). On real photos the answer depends on the phenotype. Gender now changes with the
+person: on Relative Human, Final gets it right for \RHGenderFinal\,\% of the people against \RHGenderBase\,\% for
+Base (Table~\ref{tab:relhuman}), although men still sit mid-range (\RHMenGenderFinal, where 0 is male). Age changes
+partly: children separate from adults (AUC \RHAUCBase{} to \RHAUCFinal), but half of the babies still get an
+adult-shaped body. Muscle, weight, cup size and firmness do not visibly change: their standard deviation on the
+demo images is \SpreadMuscleFinal{} to \SpreadCupFinal, because Final learned the constants that the converter
+writes for every 3DPW person (Section~\ref{sec:res-mask}). The shape mask brought the spread back (up to
+\SpreadWeightMasked) but lost the gender gain, so I kept the unmasked model. Missing are a measure of how well each
+phenotype follows its label on AnnyOne (no correlation or slope has been computed), the rest-pose line-up that
+would show shape without pose (Figure~\ref{fig:rest-lineup}), and the partial mask, Final-masked-7, which frees the
+seven constants at \MethodConstOther{} and keeps age supervised \TODO{Final-masked-7 result: update 1a-shape and
+T1 when it is in}. Whether a predicted muscle or weight value is right for a real person cannot be measured with
+the data I have; Section~\ref{sec:future} plans the partial mask and the line-up.
+
+\paragraph{1b: a model that is not exactly Multi-HMR.} His wording: ``The model must not be exactly the same as the
+Multi-HMR (or any other existing) model.'' Two routes count: a new architecture that beats the baseline in PVE and
+MPJPE on both the AnnyOne test and the 3DPW test, or a significantly smaller model, in parameters, FLOPs and
+inference time, whose errors stay within 95\,\% of the larger model's on both sets. The status is \emph{not met}.
+Final is Multi-HMR with its output resized to Anny's \MethodNumBones{} bone rotations and \MethodNumPheno{}
+phenotypes and a correction that adds no parameters (Chapter~\ref{ch:method}). Section~\ref{sec:res-baseline}
+measures it against NAVER's own Anny model (Table~\ref{tab:baseline}). NAVER's model was trained on the AnnyOne
+release, which includes the 100 images we hold out, so its \NAVERAnnyOne\,mm is most likely an in-sample number;
+ours are held out. On 3DPW, which neither model saw before our fine-tune, the final model is
+\FinalGainOverNAVERThreeDPW\,mm better (\FinalThreeDPW{} vs \NAVERThreeDPW). Final thus beats the baseline on one
+set and trails it by \DiscNAVERAnnyOneGap\,mm on the other, so the first route would hinge on a comparison that is
+probably not fair. In size, Final has \FinalParams\,M parameters against \NAVERParams\,M, \DiscFinalSmallerPct\,\%
+fewer, all of the difference in the head; that is not the ``significantly smaller'' model he asked for. The second
+route is the Student (Section~\ref{sec:res-student}). Its cost side is measured: \ParamRatioStudent$\times$ fewer
+parameters, \FlopRatioStudent$\times$ fewer FLOPs and \SpeedRatioStudent$\times$ faster than Final, and
+\ParamRatioStudentNAVER$\times$ fewer parameters than NAVER's model (Figure~\ref{fig:cost-pve}). Its accuracy is
+pending (Table~\ref{tab:student}) \TODO{Student result: update 1b, T1 and the status word when it is in}. With Final
+as the larger model the bars are \BarPVE\,mm PVE on the holdout and \BarThreeDPW\,mm on 3DPW; with NAVER's model
+they would be \BarNAVERAnnyOne\,mm, which no student of a \FinalPVE\,mm teacher can be expected to reach, and
+\BarNAVERThreeDPW\,mm. Missing are the Student's accuracy, his decision on which model sets the bar, and his view on
+whether a Multi-HMR-style network with a smaller backbone counts as ``not exactly'' Multi-HMR.
+Section~\ref{sec:future} holds the longer student run for the case that the first one misses the bar.
+
+\paragraph{1c: evaluation in Anny space on real images.} He asked for evaluation on a real-world set with Anny
+parameters, not only SMPL-X, at least for the 3DPW test set. The status is \emph{met with caveats}. All
+\num{\ThreeDPWTestImages} test images (\DataThreeDPWTestPeople{} people) have Anny labels from the converter of
+Chapter~\ref{ch:data}, and every model in Table~\ref{tab:final-3dpw} is scored against them with the same script.
+The independent label check grades the corrected labels WARN where the old ones failed, with body joints
+\DataCheckJointsNew\,mm from 3DPW's own at the median (Table~\ref{tab:label-check}). The caveats are those of
+Section~\ref{sec:data-limits}: \DataConstantCount{} of the \DataPhenotypes{} phenotypes are constants, so 3DPW tests
+pose, gender, height and proportions but not body build; the head beyond neck01 and the hands are at rest; every
+error contains a floor of about \DataFloor\,mm; and MPJPE averages all \MethodNumBones{} Anny joints, so no number
+compares with published 3DPW results. Nothing further is required. A body-joint MPJPE next to the
+\MethodNumBones-joint one would make the 3DPW numbers easier to read (Section~\ref{sec:future}).
+
+\paragraph{2a: 3DPW in Anny, and trained on.} He asked to convert the 3DPW train and test sets to Anny and to include
+the train set in training, and he expected tier~1 to be out of reach without it. The status is \emph{met}. The
+corrected training labels hold \DataThreeDPWTrainImages{} images and \DataThreeDPWTrainPeople{} people; Final and
+Control draw \DataMixThreeDPW\,\% of each batch from them (Section~\ref{sec:method-real}). His expectation held on
+the 3DPW test set: Control, which differs from Base by the real images and the fine-tune itself, is
+\GainBaseToControlThreeDPW\,mm better than Base (\ControlThreeDPW{} against \BaseThreeDPW\,mm), while the two fixes
+add \GainFixesThreeDPW\,mm on top (Table~\ref{tab:final-3dpw}). Getting there meant finding and removing three
+defects in the first labels (Section~\ref{sec:data-defects}). Nothing is missing; a larger real-image share would be
+an optional ablation.
+
+\paragraph{2b: motion in video.} He asked that the model understand motion sequences instead of predicting each
+frame on its own, as Multi-HMR does. The status is \emph{not started}. No temporal code exists; every model here,
+Final included, runs on single images, and AnnyOne contains single images only. Section~\ref{sec:bg-temporal} reviews
+the temporal methods. Section~\ref{sec:future} plans a small refiner over windows of per-frame person tokens from
+the frozen Final model, trained on 3DPW-train tracks and judged against simple smoothing by acceleration error and
+PVE. Whether a refiner on frozen features counts as the temporal model he means is a question for him.
+
+\paragraph{3: report and code.} For the best grade he asked for a well-written report in which a reader sees that I
+understand the topic and that each choice is argued, and for a clean codebase with trained models he can verify
+independently. The status is \emph{partly}. The report is this thesis: each choice comes with its reason and its
+control, Appendix~\ref{app:reproduction} maps every number to its run, log and checkpoint, and
+Appendix~\ref{app:flags} lists every setting of Final and the Student. The code side is not done. No checkpoint is
+released, the scripts still carry the cluster's paths, and the licences of the data and of NAVER's checkpoint have
+not been checked for a release (Section~\ref{sec:disc-limitations}). Section~\ref{sec:future} lists the release
+steps.
+
+% -----------------------------------------------------------------------------
 \section{Why PVE barely moved while everything else did}
 \label{sec:disc-pve}
-% absorbs draft main.tex lines 1255-1283 (the PVE plateau bullet; the neck bullet is deleted; the firmness bullet becomes the collapse onto converter constants)
-% needs: PVE is pelvis-aligned; neck and fingers are few vertices; restart cost (~2.4 mm); PA-PVE did move; 3DPW did move
-\TODO{Why the headline PVE is blind to the depth, neck and finger fixes.}
 
+Table~\ref{tab:final-annyone} has an awkward pattern. From Control to Final the root error fell by
+\RootErrDropPct\,\%, neck02 from \ControlNeckTwo{} to \FinalNeckTwo\,deg, the neck girth from \ControlGirth{} to
+\FinalGirth{} of the truth and the finger error from \ControlFingers{} to \FinalFingers\,deg. PVE fell only from
+\ControlPVE{} to \FinalPVE\,mm, within run-to-run variation, and Base still has the lowest PVE of all
+(\BasePVE\,mm). Four facts explain most of this, and one error measure did move.
+
+\paragraph{PVE cannot see placement.} PVE moves both meshes so that their pelvises coincide before it measures the
+vertex distances. Root error, depth line and drawn size are removed by construction, so the largest of the fixes is
+invisible to it. On Base, which placed every person too far, the correlation between a person's PVE and their depth
+error was \DiagCorrPVEDepth{} (Table~\ref{tab:diag-placement}). The 3DPW test aligns the pelvis in the same way and
+is equally blind to depth.
+
+\paragraph{The bone flips cancelled.} The two half-turns of neck02 and the head bone cancel, so Base's head pointed
+the right way (\BaseHeadDir\,deg) and the head vertices sat almost where they should; only the neck skin between
+them was twisted. That skin is \DiscNeckVerts{} of the \num{\MethodNumVerts} vertices (\DiscNeckVertShare\,\%). Its
+own error fell from \ControlNeckSkin{} to \FinalNeckSkin\,mm, which spread over the whole mesh is about
+\DiscNeckPVEShare\,mm; this is an estimate from the two numbers, not a measurement. The correction applied to Base
+without training shows the same at a fixed checkpoint, where no run-to-run variation enters: it halved the finger
+error (\BaseFingers{} to \NoTrainFingers\,deg) and restored the neck girth, while PVE rose by
+\DiscNoTrainPVEChange\,mm, a change that also contains the worse head direction of that setting
+(Table~\ref{tab:neck-bones}). The fingers are a small part of the mesh too; their share of the vertices was not
+counted.
+
+\paragraph{The noise floor.} One run resolves about \MethodResolvePVE\,mm PVE, since two identical runs differed by
+\NoisePVE\,mm (Section~\ref{sec:diag-noise}). A gap of \GapPVE\,mm is within that variation in either direction, and
+I claim neither a gain nor a cost from it.
+
+\paragraph{The restart cost.} Base's lower PVE is no evidence against the fixes. Restarting a fine-tune of Base with
+nothing changed already cost about \RestartCost\,mm, and Control, which also mixes \DataMixThreeDPW\,\% real images
+into a model trained on AnnyOne only, sits \DiscBaseControlGapPVE\,mm above Base on these synthetic images. The
+likely reason is that every fine-tune moves the model away from the synthetic domain of the holdout; this was not
+tested. Every fix is therefore judged against its own control, never against Base.
+
+\paragraph{What did move.} PA-PVE, which also removes global rotation and scale, fell from \ControlPAPVE{} to
+\FinalPAPVE\,mm, \GapPAPVE\,mm below Control and \DiscPAPVEBelowBase\,mm below Base, the lowest of every model
+(Table~\ref{tab:final-annyone}). The pilots point to the bone correction as part of this: applied without training
+it lowered PA-PVE from \BasePAPVE{} to \DiscNoTrainPAPVE\,mm, and the neck pilot reached \DiscNeckPilotPAPVE{}
+against \DiscNeckPilotCtrlPAPVE\,mm for its control (Table~\ref{tab:neck-bones}). The likely reason PA-PVE sees what
+PVE does not is that the error in global rotation, large and different from run to run, dominates PVE and hides the
+articulated part, where the neck and hand flips sit; a per-region breakdown that would test this was not made. On
+3DPW, PVE did move, from \BaseThreeDPW\,mm for Base to \FinalThreeDPW{} for Final, but most of that is the real
+images (Control \ControlThreeDPW); the fixes add \GainFixesThreeDPW\,mm PVE and \GainFixesPAThreeDPW\,mm PA-PVE, and
+Final's 3DPW validation curve lies below Control's at all ten epochs (Figure~\ref{fig:val-curves}).
+
+I draw one consequence from this. Each fix is reported with the measure that can see it: root error and drawn size
+for depth, bone angles and neck girth for the correction, finger angles for the hands. PVE stays in every table as
+the check that a fix costs nothing a single run can resolve. A headline PVE alone would have hidden all three fixes.
+
+% -----------------------------------------------------------------------------
 \section{Limitations}
 \label{sec:disc-limitations}
-% absorbs draft main.tex lines 1333-1343 (rewritten)
-% needs: children (AUC 0.72, men mid-range 0.55); depth slope 0.42 (pulled toward ~2.5-2.9 m, the training mean); one run, no seed; fingers never shown on real photos; recall cost; 3DPW precision 64% (bystanders + ghosts, split unknown); labels: 8 constants, hands and head at rest, ~14 mm floor; 163-joint MPJPE; 100-image holdout; NAVER's AnnyOne number likely in-sample
-\TODO{Every limitation with its number.}
 
+Each limitation below bounds a claim made earlier; its evidence is given with it.
+
+\paragraph{Children: a measured improvement, not solved.} Final separates children from adults on Relative Human
+better than Base (AUC \RHAUCBase{} to \RHAUCFinal; mean age of babies \RHAgeBabyFinal{} against adults
+\RHAgeAdultFinal), but \RHBabiesBelowFinal\,\% of the babies and \RHKidsBelowFinal\,\% of the kids fall below the
+child line, so most children still get an adult-shaped body, and the one boy of the demo photos still gets an adult
+body (Section~\ref{sec:res-rh}). The cause lies in the shape head. On real photos Base's head returned the training
+median: the medians of gender, age and height over the demo photos equalled the training medians
+(Section~\ref{sec:diag-children}), and on synthetic images it regressed toward the median in both tails. Children
+are rare in AnnyOne: \DataAnnyOneAgeBelowThree\,\% of the people have an age below 0.3, and the holdout has none, so
+no held-out synthetic number for children exists. The 3DPW labels pin age at \DataFixedAge{} for every real person,
+and part of Final's lower ages is likely that common shift, although a shift of all ages alone cannot raise the AUC.
+Which mechanism dominates, the gap between synthetic and real images or an L1 loss through a sigmoid on a rare
+value, the evidence cannot rank. I quote no ages in years, because the code uses three age scales that disagree
+(Section~\ref{sec:bg-bodymodels}); child-shaped means a predicted age below \MethodChildThr.
+
+\paragraph{Depth: the slope did not move.} The fix moved the offset and the body size, not the slope
+(\FinalSlope). Final's fitted line crosses the identity at \FinalIdentityCross\,m, so people about three metres
+away are placed about right, while \FinalTooFarPct\,\% of all people, the near ones most, are still placed too far
+(Figure~\ref{fig:depth-scatter}). Predictions stay compressed toward 2.5--2.9\,m, while the holdout people stand at
+\DiagDepthTrueMean\,m on average. The cause is unknown. Measuring the depth distribution of the training batches
+and the slope on training images would be the next test (Section~\ref{sec:future}). All depth numbers are
+synthetic: the 3DPW evaluation aligns the pelvis and the real-photo demos place each body from its box, so the fix
+has not been measured on a real image.
+
+\paragraph{One run per arm, no seed.} The training code sets no random seed, and every model was trained once. Two
+identical runs differed by \NoisePVE\,mm PVE, \NoiseHeadDeg\,deg head direction and about \NoiseRecall{} recall
+points (Table~\ref{tab:pilot-noise}). The claims of this thesis rest on gaps far above that: the root error
+($-$\RootErrDropPct\,\%), the neck bones (\ControlNeckTwo{} to \FinalNeckTwo\,deg), the girth, the fingers and
+PA-PVE ($-$\GapPAPVE\,mm). The PVE gap (\GapPVE\,mm), the 3DPW gain of the fixes (\GainFixesThreeDPW\,mm) and the
+recall cost lie within or at the edge of that variation. There are no bootstrap intervals, and the root error has
+no measured noise floor. The holdout holds \DataHoldoutImages{} images with \DiagHoldoutPeople{} people and no
+children, one slice of the dataset. A repeat of Final (Section~\ref{sec:future}) would turn ``within run-to-run
+variation'' into a measured spread.
+
+\paragraph{Fingers on real photos.} Predicted fingers have not been shown on a real photo. The finger number
+(\FinalFingers\,deg) is an angle on the synthetic holdout. Every real-photo demo so far sets the fingers to rest pose,
+a choice made when Base's fingers curled into claws, and the 3DPW labels carry rest-pose hands, so no real-image
+number exists either. A demo with predicted fingers has been run; its render (Figure~\ref{fig:fingers-demo}) is
+pending.
+
+\paragraph{The recall cost.} Final finds \FinalRecall\,\% of the holdout people, \GapRecallControl{} points fewer
+than Control, at the edge of run-to-run variation, and \GapRecallBase{} points fewer than Base, beyond it. Every
+depth-fix pilot lost \DiagFixCostRecallLow{} to \DiagFixCostRecallHigh{} points against its control, always in the
+same direction (Section~\ref{sec:diag-depth}). I therefore state it as a real cost. The likely reason is that the
+fix moved the detection cell from the pelvis to the head, so people whose head is cut off or hidden are found less
+often; this was not tested, because recall on people with a visible head needs code that does not exist yet.
+
+\paragraph{What the 3DPW labels can teach and test.} The 3DPW labels carry a neutral body: \DataConstantCount{} of
+the \DataPhenotypes{} phenotypes are constants (age \DataFixedAge{} and \DataNeutralCount{} values at
+\DataFixedNeutral), and neck02, neck03, the head and all hand bones stay at rest (Section~\ref{sec:data-limits}).
+They therefore cannot supervise body build or fingers, and they cannot test the neck correction. Training on them
+pulls body build toward the constants, which is the collapse of Section~\ref{sec:res-mask}. The hand mask removes
+the rotation terms only; the mesh terms still carry the rest-pose hands. As a test set the labels put a floor of
+about \DataFloor\,mm under every number and likely reward a neutral prediction, which was not tested. Precision on
+3DPW (\FinalPrecThreeDPW\,\% for Final) is a lower bound: detected bystanders count as false positives because only
+the actors are labelled, and ghost bodies on half-visible people count too; the split between the two is unknown.
+
+\paragraph{The comparison with NAVER's model.} Its AnnyOne number is most likely in-sample
+(Section~\ref{sec:disc-requirements}); whether our 100 holdout images were in its training set is not known for
+certain, and if they were, the comparison favours it by an unknown amount. On 3DPW the comparison is fairer but not
+like for like: Final was fine-tuned on 3DPW-train and NAVER's model was not, and Control, without our fixes, is
+already at \ControlThreeDPW\,mm. The 3DPW gap therefore shows what the real-image fine-tune buys, not a better
+network. NAVER's model fine-tuned on our labels would separate the two and was not run; its latency and head FLOPs
+could not be measured with our tool.
+
+\paragraph{The validation split shares actors with training.} 3DPW's validation sequences share actors and
+locations with the training sequences, while the test split shows other people in other scenes. The draft found, on
+the old labels, that the gain from real images on validation was about twice the gain on test. I therefore report
+only test numbers. The validation split serves for monitoring and selects nothing, since Final is the last epoch of
+its run (Table~\ref{tab:data-splits}); its curves (Figure~\ref{fig:val-curves}) are read only as Final against Control
+on the same images.
+
+\paragraph{Licences.} SMPL, and with it 3DPW's ground truth and the converter's input, is licensed for
+non-commercial research (Section~\ref{sec:bg-bodymodels}), and 3DPW has its own licence. Relative Human ships without
+a licence file, so I used only its validation split and only for evaluation. AnnyOne and NAVER's checkpoints, whose
+backbones every model here starts from, come with their own terms, separate from Anny's Apache~2.0 code. I have not
+yet checked whether those terms allow releasing weights derived from them; Section~\ref{sec:future} puts that check
+before any release.
+
+% -----------------------------------------------------------------------------
 \section{Engineering lessons}
 \label{sec:disc-engineering}
-% absorbs draft main.tex lines 1285-1331 (pipeline-bug list, kept and extended)
-% needs: add: anchor/target mismatch; reversed gender convention; per-person stride phase; missing image files (8 sequences); NAVER adapter FFN width (2048 vs 4096); evaluate() unmasked vs demo masked; "silent failure is the dominant failure mode"
-\TODO{The pipeline-bug list, extended.}
 
+The faults that cost the most time were silent: each produced plausible output, and each showed only when one stage
+was measured on its own, against a control, or by its geometry. Four habits came out of this.
+
+\paragraph{Measure each stage alone.} The six checks of Section~\ref{sec:diag-checks} decoded the labels without a
+network, moved single joints of the body model and traced the gradients, and so excluded the rig, the labels and the
+gradient path before any training change. The converter graded its own fit; only an independent check that read the
+finished label files found the three label defects (Section~\ref{sec:data-defects}). The holdout trace measured
+placement with each body at its own predicted depth, which neither PVE nor the box-placed demos ever did. The draft's
+list of pipeline bugs shows the same pattern: a demo that silently loaded no weights and drew every person in the
+mean pose, translations in centimetres on one code path and in metres on another, one field of view for images whose
+true field of view spans \DataAnnyOneFovMin{} to \DataAnnyOneFovMax\,deg, and a learning-rate schedule that froze a
+long run while its loss curve looked converged. Three more joined it in this work. The label builder skipped frames
+without an image file and lost \DataOldTrainMissingPct\,\% of the 3DPW training labels without a warning. The
+training-time evaluation left the helper bones unmasked while the demo masked them, \MethodVzeroGap\,mm apart on the
+same people. And the adapter for NAVER's checkpoint hard-coded a decoder width of \DiscFFNOurs{} where the
+checkpoint has \DiscFFNNaver; it failed loudly on the first load, which made it the cheapest fault of all.
+
+\paragraph{Read every change against a control.} Every fix was read against a run that differed only by that fix:
+Final against Control, each pilot against a same-schedule control, and two identical runs to know how much a run
+varies. Without the controls, three wrong readings would have stood: the neck pilot's \DiscNeckPilotPVE\,mm as a gain
+over Base, Final's higher PVE as a cost of the fixes, and the 3DPW gain as a gain of the fixes. The restart cost was
+itself found only because the controls of all pilots sat above Base.
+
+\paragraph{Check by geometry, not by names.} Three of the worst faults were faults of naming or convention, and only
+a geometric check exposed them. The converter first chose Anny bones by name; the two rigs number the spine in
+opposite directions, so SMPL's lumbar spine joint was mapped to a bone \DataSpineMapError\,cm above it, and the fit
+still looked plausible until the two rest skeletons were compared side by side (Section~\ref{sec:data-converter}).
+The gender value followed MakeHuman's convention, where 1 is male, while Anny's 1 is female, so every 3DPW man was
+fitted and labelled with a female body; the fit error gave it away, falling for \DataGenderFlipMen{} of
+\DataGenderFlipMenOf{} men when the value was flipped (Section~\ref{sec:data-defects}). And the training targets were
+built at joint~0, the pelvis, while the model places each body by its head; nothing in the code's names showed the
+difference, and only the drawn size and the depth line of the trace revealed two joints half a body apart
+(Section~\ref{sec:method-depth}). The half-turned neck bones belong to the same family: per-group means of
+\DiscGroupMeanNeckA{} and \DiscGroupMeanNeckB\,deg hid them, and a per-bone dump of rotation angles found them.
+
+\paragraph{Keep every change as a switch.} Each change entered the code as a switch whose default reproduces the old
+behaviour: the anchor joint of the targets, the bone correction (saved with the checkpoint and reapplied on loading),
+the hand and shape masks for 3DPW people, and the two switches of converter version 2.3. This kept the history models
+reproducible, made every control a change of one setting, and let the masked arm run next to Final from the same
+code (Appendix~\ref{app:flags}).
+
+In this pipeline silent failure was far more common than loud failure. A check that fails loudly, such as a load
+percentage or a geometric comparison of two skeletons, costs minutes to write; each silent fault here cost days to
+weeks before a measurement exposed it.

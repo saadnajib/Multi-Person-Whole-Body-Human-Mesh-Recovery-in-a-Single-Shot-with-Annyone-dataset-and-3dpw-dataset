@@ -1,63 +1,70 @@
-% T1 Requirements map (Discussion 7.1, full form; short form in Introduction 1.3).
-% Owner: skeleton / Discussion writer. Source: REWRITE_PLAN.md section 4 (T1);
-% docs/thesis_requirements_plan.md sections 1-2 (P 1, P 2); deck slide 23 (D slide 23).
+% T1 Requirements map (Discussion 7.1, full form; the Introduction 1.3 refers to it). Owner: Discussion writer.
+% Source: REWRITE_PLAN.md section 4 (T1); docs/thesis_requirements_plan.md sections 1-2 (P 1, P 2, status of
+% 18 Oct evening); deck explained part 7 (D part 7); handover 0a, 0b.
 % Status words only: met / met with caveats / partly / not met / not started (plan section 5).
-% Job ids for the evidence: 3611336:224-229 (3DPW test), 3612131 (RH final), 3612078 (demo),
-% 3613616 (RH masked), 3614191 (student, pending), 3614192 (NAVER), 3611284 (label check v23).
-% Section numbers in the evidence column are of the NEW thesis; replace by \ref once the
-% writers' labels exist.
+% Job ids behind the evidence (never in the text): 3611336:224-229 (3DPW test, Final), 3611336:191-209 (holdout),
+% 3612131 (RH Final), 3612078 (demo Final), 3613616 / 3613617 (RH / demo Final-masked), 3614191 (Student,
+% pending), 3613926 (Student cost), 3614192 (NAVER accuracy), 3614947 (NAVER cost), 3611284 (label check v23).
+% Every number is a macro (numbers_results / _data / _discussion).
 \begin{table}[tbp]
 \centering\footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}>{\raggedright}p{1.2cm}>{\raggedright}p{2.8cm}>{\raggedright}p{1.4cm}>{\raggedright}p{3.5cm}>{\raggedright\arraybackslash}p{3.0cm}@{}}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}>{\raggedright}p{1.15cm}>{\raggedright}p{2.75cm}>{\raggedright}p{1.25cm}>{\raggedright}p{4.1cm}>{\raggedright\arraybackslash}p{2.95cm}@{}}
 \toprule
 Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
 \midrule
-1a-pose & ``Pose of all body parts must look correct'' on the 3DPW test set and on any in-the-wild image &
-  partly &
-  3DPW test (v23 labels): PVE \FinalThreeDPW\,mm, recall \FinalRecallThreeDPW\,\%, precision \FinalPrecThreeDPW\,\%
-  (Table~\ref{tab:final}); necks and fingers corrected on the holdout (Sec.~\ref{sec:res-bone}, \ref{sec:res-fingers});
-  real photos judged by eye only &
-  predicted fingers on a real photo; depth slope 0.42; one run, no seed \\
-\addlinespace[1pt]
-1a-shape & ``Mesh size, proportions, age, muscles \ldots{} must visibly change according to the person'' &
-  partly, at risk &
+1a-pose & ``Pose of all body parts must look correct'' on (a) the 3DPW test set and (b) any in-the-wild image &
+  \textbf{partly} &
+  3DPW test: PVE \FinalThreeDPW\,mm, recall \FinalRecallThreeDPW\,\%, precision \FinalPrecThreeDPW\,\%
+  (Table~\ref{tab:final-3dpw}); neck and finger flips corrected on the holdout (Sections~\ref{sec:res-bone},
+  \ref{sec:res-fingers}); real photos by eye only (Figures~\ref{fig:3dpw-overlays}, \ref{fig:real-photos}) &
+  predicted fingers on a real photo; depth slope \FinalSlope{} (Figure~\ref{fig:depth-scatter}); a second run \\
+\addlinespace
+1a-shape & ``Mesh size, proportions, age, muscles, and other aspects of the 3D shape must visibly change according to
+  the person'' &
+  \textbf{partly} &
   Relative Human: gender \RHGenderFinal\,\% (Base \RHGenderBase), child AUC \RHAUCFinal{} (Base \RHAUCBase)
-  (Table~\ref{tab:relhuman}); muscle, weight, cup size, firmness near 0.5 on photos; masked arm trades
-  variety for gender (Sec.~\ref{sec:res-mask}) &
-  per-phenotype correlation on AnnyOne; rest-pose line-up (F17); the partial mask \\
-\addlinespace[1pt]
-1b & ``Must not be exactly the same as the Multi-HMR model'': new and better, or significantly smaller and
-  $\geq$\,95\,\% as good &
-  not met &
-  the architecture is Multi-HMR's with an Anny head; Student \StudentParams\,M vs \FinalParams\,M params
-  (Table~\ref{tab:baseline}); accuracy pending (Table~\ref{tab:student}); Multi-HMR-Anny (NAVER)
-  \NAVERAnnyOne{} / \NAVERThreeDPW\,mm &
-  the Student's accuracy; the supervisor's choice of baseline for the bar \\
-\addlinespace[1pt]
+  (Table~\ref{tab:relhuman}); muscle, weight, cup size, firmness nearly constant on photos (standard deviation
+  \SpreadMuscleFinal--\SpreadCupFinal); the shape mask trades this for gender (Section~\ref{sec:res-mask}) &
+  per-phenotype agreement on AnnyOne; rest-pose line-up (Figure~\ref{fig:rest-lineup}); the partial mask \\
+\addlinespace
+1b & ``Must not be exactly the same as the Multi-HMR model'': new and better on both test sets, or significantly
+  smaller and $\geq$\,95\,\% as good &
+  \textbf{not met} &
+  Final is Multi-HMR with an Anny head; \FinalParams\,M against \NAVERParams\,M parameters
+  ($-$\DiscFinalSmallerPct\,\%); Multi-HMR-Anny \NAVERAnnyOne{} (likely in-sample) / \NAVERThreeDPW\,mm against
+  \FinalPVE{} / \FinalThreeDPW\,mm (Table~\ref{tab:baseline}); Student \StudentParams\,M, accuracy pending
+  (Table~\ref{tab:student}) &
+  the Student's accuracy; the supervisor's choice of the reference model and whether a smaller student counts \\
+\addlinespace
 1c & Evaluation on the real-world set with Anny parameters, not only SMPL-X &
-  met with caveats &
-  3DPW test in Anny space, 8,190 images / 11,854 people; label check WARN, body joints 14.1\,mm (Ch.~3) &
-  state the label caveats: 8 constant phenotypes, hands and head at rest, $\sim$14\,mm floor \\
-\addlinespace[1pt]
+  \textbf{met with caveats} &
+  3DPW test in Anny space, \DataThreeDPWTestImages{} images / \DataThreeDPWTestPeople{} people; label check WARN
+  (old labels FAIL), body joints \DataCheckJointsNew\,mm (Table~\ref{tab:label-check}) &
+  nothing required; caveats of Section~\ref{sec:data-limits}; a body-joint MPJPE \\
+\addlinespace
 2a & Convert 3DPW train and test to Anny and include the train set in training &
-  met &
-  train 5,882 images / 7,584 people; 30\,\% of each batch; Control \ControlThreeDPW{} vs Base
-  \BaseThreeDPW\,mm on 3DPW test (Table~\ref{tab:final}) &
-  nothing (a 50\,\% mix is optional) \\
-\addlinespace[1pt]
+  \textbf{met} &
+  train \DataThreeDPWTrainImages{} images / \DataThreeDPWTrainPeople{} people, \DataMixThreeDPW\,\% of each batch
+  (Section~\ref{sec:method-real}); 3DPW test: Control \ControlThreeDPW{} against Base \BaseThreeDPW\,mm
+  (Table~\ref{tab:final-3dpw}) &
+  nothing (a larger real-image share is optional) \\
+\addlinespace
 2b & The model understands motion in video instead of predicting every frame on its own &
-  not started &
-  no temporal code &
-  design and evaluation (Ch.~\ref{ch:conclusion}) \\
-\addlinespace[1pt]
-3 & A well-written report; a clean codebase and models he can verify &
-  partly &
-  this thesis; Appendix~\ref{app:reproduction} maps every number to its run &
-  code release and licences (Ch.~\ref{ch:conclusion}) \\
+  \textbf{not started} &
+  no temporal code; every model runs frame by frame &
+  a temporal model and its evaluation (Section~\ref{sec:future}) \\
+\addlinespace
+3 & A well-written report that shows understanding; a clean codebase and trained models he can verify &
+  \textbf{partly} &
+  this thesis; Appendix~\ref{app:reproduction} maps every number to its run, Appendix~\ref{app:flags} lists every
+  setting &
+  released checkpoints, clean paths, licences checked (Section~\ref{sec:future}) \\
 \bottomrule
 \end{tabular}
-\caption{The supervisor's requirements and their status. Numbers: AnnyOne holdout in setting V1, 3DPW test on the
-corrected (v23) labels, Relative Human validation split; run names as defined in Chapter~4.}
+\caption[The supervisor's requirements and their status]{The supervisor's requirements, in his order, and their
+status on \DiscStatusDate. AnnyOne holdout in setting V1; 3DPW test on the corrected (v23) labels, setting V0;
+Relative Human validation split. One run per model, no seed. Section~\ref{sec:disc-requirements} discusses each row.}
 \label{tab:requirements}
 \end{table}

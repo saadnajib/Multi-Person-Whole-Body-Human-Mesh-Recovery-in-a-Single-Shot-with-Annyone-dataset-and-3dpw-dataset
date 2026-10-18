@@ -1,12 +1,43 @@
-% 00_abstract.tex -- Abstract (front matter). Written last (plan section 6, step 4).
-% Skeleton from REWRITE_PLAN.md section 2. Writing rules: section 5 of the plan.
-% "absorbs" = lines of draft_2026-10_original/main.tex (or the named draft file) whose content moves here.
+% 00_abstract.tex -- Abstract (front matter, one page). Written last (plan section 6, step 4).
+% Plan: REWRITE_PLAN.md 1.2 (verdict: rewrite), section 5 (writing rules). Follows the ten-sentence story of
+% docs/deck_explained_2026-10-19.md part 1. No citations and no \ref here (front matter).
+% Replaced claims of the draft abstract: neck elongation as a rig property (wrong: two half-turned bones); the
+% 74.3 mm headline (setting V0 of Base; the thesis model is Final, V1 73.7); the ViT-S student at 114.5 mm as the
+% main result (history, before both fixes, old labels); old-label 3DPW numbers (retired).
+% Every number is a macro of numbers_results.tex / numbers_data.tex; the AUCs are rounded from the three-digit
+% macros with siunitx (0.606 -> 0.61, 0.719 -> 0.72).
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-% absorbs draft_2026-10_original/abstract.tex lines 1-60 (all; verdict: rewrite, plan 1.2)
-% needs: the ten-sentence story of docs/deck_explained_2026-10-19.md part 1; headline numbers from numbers.tex
-%   (Final vs Control vs Base on AnnyOne V1; 3DPW test v23; Relative Human; Multi-HMR-Anny baseline; Student cost);
-%   correct neck cause (two half-turned bones, not LBS stretch); no old-label 3DPW numbers; no 74.3 headline.
-\TODO{Abstract: task, Anny, the three failures and their causes (depth anchor, half-turned bones, labels), the final model against its control, 3DPW test on the corrected labels, Relative Human, the baseline and the student; about 250 words.}
+Multi-person human mesh recovery finds every person in one image and builds a 3D body mesh for each. This thesis
+moves Multi-HMR, a network that does this in one forward pass, from the SMPL-X body model to Anny, an open body
+model whose shape is set by named values such as age, gender and height. I train it on the synthetic AnnyOne images
+and on the real 3DPW images, whose SMPL ground truth I converted to Anny with my own fitting script.
+
+The model I started from showed three visible failures: thin, twisted necks, claw-like fingers, and adult bodies on
+children. Checks of the labels, the body model and the gradients ruled out a rig or decoding problem. Instead, I
+found a depth bug: the network places each body by its head, but my training targets were built at the pelvis, so it
+learned to put people too far away and to draw them too small. I also found that two neck bones and two hand bones
+were turned by half a turn; a constant rotation at the output, with no new parameters, turns them back. In the
+converted 3DPW labels I found and fixed three defects (reversed gender, a missing actor in two-person frames, missing
+labels), fitted all \DataThreeDPWPersonSeq{} people again and checked the new labels independently.
+
+The final model combines both fixes with \DataMixThreeDPW\,\% real images in every batch. A control run has the same
+training without the two fixes. On 100 held-out AnnyOne images the final model has a mean vertex error (PVE) of
+\FinalPVE\,mm, against \ControlPVE\,mm for the control and \BasePVE\,mm for the starting model. These gaps lie within
+the \NoisePVE\,mm that separated two identical training runs. The errors the fixes target moved far more: against the
+control, the error of the body's 3D position fell from \num{\ControlRootErr} to \FinalRootErr\,mm, the neck02 bone
+error from \ControlNeckTwo{} to \FinalNeckTwo\,degrees and the finger error from \ControlFingers{} to
+\FinalFingers\,degrees. On the 3DPW test set, measured against my converted labels, the final model reaches
+\FinalThreeDPW\,mm PVE, against \NAVERThreeDPW\,mm for NAVER's released Anny model and \BaseThreeDPW\,mm for the
+starting model; most of this gain comes from training on real images at all. On real photos with age and gender
+labels (Relative Human), gender accuracy rose from \RHGenderBase{} to \RHGenderFinal\,\% and the separation of
+children from adults (AUC) from \num[round-mode=places,round-precision=2]{\RHAUCBase} to
+\num[round-mode=places,round-precision=2]{\RHAUCFinal}. For a smaller model, a ViT-B student distilled from the final
+model has \ParamRatioStudent{} times fewer parameters and \FlopRatioStudent{} times fewer FLOPs; its training was
+running when this text was written.
+
+Three things remain open. Children are a measured improvement, not solved. Near and far people still receive
+similar depths: the fix moved the depth offset and the body size, not the depth slope (\FinalSlope, where 1 is
+correct). Every result comes from one training run per model, without a fixed seed.
