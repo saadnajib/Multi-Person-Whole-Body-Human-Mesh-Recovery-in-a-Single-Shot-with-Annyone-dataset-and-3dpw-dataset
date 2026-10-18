@@ -5,29 +5,28 @@ scratchpad script `thesis_plots/gen.py` (pandas, numpy). Cite as "data/plot_stat
 
 ## F15 depth scatter (figures/plots/F15_depth_scatter.tex)
 
-Source: `holdout_per_person_control.csv`, `holdout_per_person_final.csv`, rows with `variant == V1_eval_masked`
+Source: `holdout_per_person_base.csv`, `holdout_per_person_control.csv`, `holdout_per_person_final.csv`, rows with `variant == V1_eval_masked`
 (AnnyOne holdout, 100 images, eval setting, masked; one row per matched person; each body at its own predicted depth).
 Fit: least squares, pred = a * true + b, in metres. All points plotted (no subsampling).
 
-| quantity | Control | Final |
-|---|---|---|
-| people (matched) | 219 | 214 |
-| images with at least one matched person | 92 | 89 |
-| slope a | 0.276 | 0.419 |
-| intercept b (m) | 2.661 | 1.746 |
-| Pearson r (true vs predicted depth) | 0.457 | 0.558 |
-| fit crosses identity at (m) | 3.67 | 3.01 |
-| median abs(pred - true) (m) | 1.237 | 0.626 |
-| mean abs(pred - true) (m) | 1.268 | 0.654 |
-| share predicted too far (pred > true) | 99.1% | 94.4% |
-| mean root error `root_err_mm` (mm) | 1402 | 728 |
-| median root error `root_err_mm` (mm) | 1312 | 654 |
-| true depth range (m) | 0.59 to 3.75 | 0.59 to 3.75 |
+| quantity | Base | Control | Final |
+|---|---|---|---|
+| people (matched) | 222 | 219 | 214 |
+| images with at least one matched person | 92 | 92 | 89 |
+| slope a | 0.333 | 0.276 | 0.419 |
+| intercept b (m) | 2.360 | 2.661 | 1.746 |
+| Pearson r (true vs predicted depth) | 0.511 | 0.457 | 0.558 |
+| fit crosses identity at (m) | 3.54 | 3.67 | 3.01 |
+| median abs(pred - true) (m) | 1.033 | 1.237 | 0.626 |
+| mean abs(pred - true) (m) | 1.081 | 1.268 | 0.654 |
+| share predicted too far (pred > true) | 100.0% | 99.1% | 94.4% |
+| mean root error `root_err_mm` (mm) | 1208 | 1402 | 728 |
+| median root error `root_err_mm` (mm) | 1102 | 1312 | 654 |
+| true depth range (m) | 0.59 to 3.42 | 0.59 to 3.75 | 0.59 to 3.75 |
 
-Handover reference slopes: Final 0.42, Control 0.28, Base 0.33 (Base intercept 2.36 m). The recomputed Final and
-Control slopes agree to two decimals; the mean root errors reproduce the 728 and 1402 mm of the trace. Base is not
-in the plot (its per-person CSV has not arrived). The people count is the matched people, not the 222 ground-truth
-people of the 100 images.
+Handover reference slopes: Base 0.33 (intercept 2.36 m), Control 0.28, Final 0.42. Recomputed: Base 0.33
+(intercept 2.36 m), Control 0.28, Final 0.42. The Control and Final mean root errors reproduce
+the 1402 and 728 mm of the traces. The people count is the matched people; the 100 images hold 222 ground-truth people.
 
 ## F16 Relative Human predicted age (figures/plots/F16_rh_age.tex)
 
