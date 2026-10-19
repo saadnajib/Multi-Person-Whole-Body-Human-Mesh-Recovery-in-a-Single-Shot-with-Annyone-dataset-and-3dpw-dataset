@@ -337,15 +337,15 @@ Figure~\ref{fig:rest-more}.}
 Two runs test the shape mask of Section~\ref{sec:method-real}, one run each. Final-masked stops the shape loss on the
 \MethodShapeMaskCount{} values the converter fixes for every 3DPW person: age 0.55 and seven values at
 \MethodConstOther. Final-partial-mask stops it only on the seven and keeps age supervised. Gender stays supervised in
-both. Table~\ref{tab:mask-arms} sets the two next to Final. Their holdout and 3DPW errors stay within run-to-run
-variation of Final, and the bone angles of Final-partial-mask stay at Final's level. On Relative Human, Final-masked
+both. Table~\ref{tab:mask-arms} sets the two next to Final. On Relative Human, Final-masked
 loses most of Final's gain (gender \RHGenderMasked\,\%, babies child-shaped \RHBabiesBelowMasked\,\%), but on the
 demo images it brings back variety: the spread of weight, cup size and firmness rises from
 \SpreadWeightFinal--\SpreadCupFinal{} to \SpreadWeightMasked. Final-partial-mask keeps the children (AUC \RHAUCPartial, \RHBabiesBelowPartial\,\% of babies
 child-shaped) and loses gender as the full mask does, with both sexes on the female side (men \RHMenGenderPartial,
 women \RHWomenGenderPartial).
 
-The body errors stay put because the 3DPW meshes keep the neutral body; the trade-off is in the shape head. Without
+The body errors of both arms stay within run-to-run variation of Final, since the 3DPW meshes keep the neutral body;
+the trade-off is in the shape head. Without
 the mask, Final learned the seven constants and predicts nearly the same muscle, weight, cup size and firmness for
 everyone on real photos. The partial mask separates the two parts of the loss: with age supervised the children's gain
 stays, so the age label carries it. Gender falls to chance although its label stays supervised. A reading that was
@@ -355,8 +355,8 @@ Before the first masked run I fixed a rule: a masked model would replace Final i
 more, the AUC at 0.7 or more, and the spread of muscle and weight rose above \SpreadRuleThreshold. Both masked runs
 fail on gender while passing on the AUC, so Final stays the final model and the Student's teacher.
 
-Not shown: whether the varied values are right, since no real data set I have gives muscle or weight. Final-partial-mask
-had no demo run, so whether it brings the variety back is not known; nor is why gender falls.
+Not shown: whether the varied values are right (no real data set I have gives muscle or weight), whether
+Final-partial-mask brings the variety back (it had no demo run), and why gender falls.
 
 % -----------------------------------------------------------------------------
 \section{Baseline comparison and model cost}
@@ -371,18 +371,16 @@ AnnyOne release, which includes the 100 images we hold out, so its \NAVERAnnyOne
 number; ours are held out. On 3DPW, which neither model saw before our fine-tune, the final model is
 \FinalGainOverNAVERThreeDPW\,mm better (\FinalThreeDPW{} vs \NAVERThreeDPW). Both networks use the same ViT-L backbone;
 the difference is the head, NAVER's 8-layer cross-attention decoder with \NAVERHeadParams\,M parameters against
-\FinalHeadParams\,M in ours. NAVER's time and head FLOPs could not be measured with our tool, which supports only our
-model class. The Student is \ParamRatioStudent$\times$ smaller, needs \FlopRatioStudent$\times$ fewer FLOPs and is
-\SpeedRatioStudent$\times$ faster than Final, and has \ParamRatioStudentNAVER$\times$ fewer parameters than NAVER's
-model (Figure~\ref{fig:cost-pve}).
+\FinalHeadParams\,M in ours. Figure~\ref{fig:cost-pve} sets size and compute against the 3DPW error,
+the Student included.
 
 The fair comparison is 3DPW, but most of Final's lead there comes from fine-tuning on 3DPW, which NAVER's model never
 had: Control, without our fixes, is already at \ControlThreeDPW\,mm. The comparison shows what the real-image
 fine-tune buys, not a better network. Final is about one sixth smaller than NAVER's model; that is not the
 ``significantly smaller'' model of requirement 1b, which is why the Student exists.
 
-Not shown: NAVER's model fine-tuned on our labels, which would separate the network from the data; its latency and
-total FLOPs; and its published SMPL-X numbers, which are not comparable. Times of the two GPUs do not mix.
+Not shown: NAVER's model fine-tuned on our labels, which would separate the network from the data, and its latency
+and total FLOPs; its published SMPL-X numbers are not comparable.
 
 % -----------------------------------------------------------------------------
 \section{The ViT-B student}
@@ -391,32 +389,25 @@ total FLOPs; and its published SMPL-X numbers, which are not comparable. Times o
 \input{tables/T17_student}
 \input{figures/plots/F19_student}
 
-The Student follows the recipe of Table~\ref{tab:student-recipe} (Section~\ref{sec:method-student}): a DINOv2 ViT-B
-backbone (\StudentBackboneParams\,M parameters) started from NAVER's Multi-HMR ViT-B, a projector into the teacher's
-width and heads copied from Final, trained on Final's targets plus its features and outputs for \StudentEpochs{}
-epochs (\num{\StudentImages} images). Table~\ref{tab:student} gives the result against the 95\,\% rule. The cost side
-is met. The accuracy side is not: on the AnnyOne holdout the Student reaches \StudentPVE\,mm PVE against the
+The Student follows the recipe of Table~\ref{tab:student-recipe}: a ViT-B backbone started from NAVER's
+Multi-HMR ViT-B and heads copied from Final, distilled from Final for \StudentEpochs{} epochs. The cost side of Table~\ref{tab:student} is met. The accuracy side is not: on the AnnyOne holdout the Student reaches \StudentPVE\,mm PVE against the
 teacher's \FinalPVE{} (bar \BarPVE), \StudentRatioPVE{} times the teacher's error, and on the 3DPW test
 \StudentThreeDPW\,mm against \FinalThreeDPW{} (bar \BarThreeDPW), \StudentRatioThreeDPW{} times. MPJPE and PA-PVE
-miss in the same way; only recall stays within the rule. Figure~\ref{fig:student-curves} shows that the holdout error
+miss too; recall stays within the rule. Figure~\ref{fig:student-curves} shows that the holdout error
 was still falling at the last epoch, from \StudentCurveHoldFifteen\,mm at epoch 15 to \StudentCurveHoldLast\,mm at
 epoch 30, while the 3DPW validation error had flattened (\StudentCurveValTwentyFive{} to \StudentCurveValLast\,mm in
 the last five epochs). Against Multi-HMR-Anny, the Student is \StudentGainOverNAVERThreeDPW\,mm better on 3DPW
-(\StudentThreeDPW{} vs \NAVERThreeDPW) with \ParamRatioStudentNAVER$\times$ fewer parameters, which meets NAVER's 3DPW
+(\StudentThreeDPW{} vs \NAVERThreeDPW), which meets NAVER's 3DPW
 bar of \BarNAVERThreeDPW\,mm; it misses NAVER's AnnyOne bar of \BarNAVERAnnyOne\,mm, which rests on a most likely
 in-sample number.
 
-By the 95\,\% rule against Final, the Student fails on both sets, and by a wide margin: its error is 62\,\% above the
-teacher's on AnnyOne and 24\,\% on 3DPW, where the rule allows about 5\,\%. The curves say where more training could help: on AnnyOne the
-error still fell by about 8\,mm per five epochs, on 3DPW it did not. A longer run would therefore narrow the synthetic
-gap, but there is no sign that it would close the 3DPW one. What holds is the comparison with Multi-HMR-Anny: a
-network with about a quarter of its parameters is better on real images, although most of that lead likely comes,
-as for Final, from fine-tuning on 3DPW. Which reference sets the bar, Final or Multi-HMR-Anny, is the supervisor's decision; both are
-reported.
+By the 95\,\% rule against Final, the Student fails on both sets: its error is 62\,\% above the
+teacher's on AnnyOne and 24\,\% on 3DPW, where the rule allows about 5\,\%. The curves suggest that a longer run would narrow the AnnyOne gap,
+where the error still fell by about 8\,mm per five epochs, but not the 3DPW gap, where it had flattened. What holds is the comparison with Multi-HMR-Anny: a
+network with \ParamRatioStudentNAVER$\times$ fewer parameters is better on real images, although most of that lead likely comes,
+as for Final, from fine-tuning on 3DPW. Which reference sets the bar is the supervisor's decision.
 
-Not shown: a second run, a longer schedule, and the Student's Relative Human numbers, fingers and necks on real
-photos. The Student estimated its own bone correction on 200 training images; it gives the same holdout error as the
-teacher's correction. No data augmentation was used.
+Not shown: a second run, a longer schedule, and the Student's shape, fingers and necks on real photos.
 
 % -----------------------------------------------------------------------------
 \section{History: the ViT-S students and the schedule to Base}
@@ -424,11 +415,9 @@ teacher's correction. No data augmentation was used.
 
 \input{tables/T20_history}
 
-Table~\ref{tab:history} keeps the draft's holdout measurements, all in setting V0 and from before both fixes and the
-corrected labels. The staged schedule went from \HistStageOnePVE\,mm with the backbone frozen to \BaseVzeroPVE\,mm
-for Base (Table~\ref{tab:history-stages}). The ViT-S students (Table~\ref{tab:history-students}) reached at best
-\StudentSixcRatio{} times their teacher's error, and both students re-scored on the corrected 3DPW labels are far
-from Final. Three lessons shaped the Student: a backbone already trained for mesh recovery gave the largest gain, so
-it starts from NAVER's ViT-B; heads fed through a projector at the teacher's width beat narrower heads, so it keeps
-Final's heads; and the students were limited by the images they had seen, so it trains on six times the images of
-Final's fine-tune.
+Table~\ref{tab:history} keeps the draft's measurements, in setting V0 and from before both fixes: the staged
+schedule to Base (Table~\ref{tab:history-stages}) and the ViT-S students (Table~\ref{tab:history-students}), which
+reached at best \StudentSixcRatio{} times their teacher's error. Three lessons shaped the Student: a backbone already
+trained for mesh recovery gave the largest gain, so it starts from NAVER's ViT-B; projector-fed heads at the
+teacher's width beat narrower ones, so it keeps Final's heads; and the students were limited by data, so it sees six
+times the images of Final's fine-tune.

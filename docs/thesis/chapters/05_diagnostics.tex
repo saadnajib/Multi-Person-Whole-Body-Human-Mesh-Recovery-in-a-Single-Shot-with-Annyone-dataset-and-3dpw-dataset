@@ -55,7 +55,7 @@ height \DiagBoyHeight: an adult. The number behind the necks of the figure is th
 
 \begin{table}[!htb]
 \centering\footnotesize
-\begin{tabular}{@{}p{0.2\linewidth}p{0.13\linewidth}p{0.47\linewidth}p{0.13\linewidth}@{}}
+\begin{tabular}{@{}p{0.19\linewidth}p{0.12\linewidth}p{0.45\linewidth}p{0.13\linewidth}@{}}
 \toprule
 check & sample & result & verdict \\
 \midrule
@@ -102,8 +102,7 @@ a decoding error (the black corner is in the dataset image). Synthetic; two of f
 \label{fig:diag-gt-decode}
 \end{figure}
 
-Table~\ref{tab:diag-checks} and Figure~\ref{fig:diag-gt-decode} rule out the rig, the label decoding and the gradient
-path, as did the draft's four neck tests. Shape dominates the loss (\DiagLossShareShape\,\%; translation
+The checks rule out the rig, the label decoding and the gradient path. Shape dominates the loss (\DiagLossShareShape\,\%; translation
 \DiagLossShareTransl\,\%, distance \DiagLossShareDist\,\%). The cause had to be in what training asked of the network.
 The overfit run gave two warnings: the rotation loss barely moved while the images were memorised
 (\DiagOverfitRotFirst{} $\to$ \DiagOverfitRotLast), and the translation and 2D terms rose (\DiagOverfitTranslFirst{}
@@ -141,9 +140,9 @@ size, wrong distance; PVE does not see it.}
 
 \input{tables/T08_depth_runs}
 
-Table~\ref{tab:diag-placement} shows that Base places every person too far (Figure~\ref{fig:depth-scatter}), the
-nearest farthest. The skeleton has the right height, so the body is drawn at \DiagSizeBase{} of its true size; its
-pelvis lands near the right pixel, its head does not. PVE is blind to all of it.
+Base places every person too far (Table~\ref{tab:diag-placement}, Figure~\ref{fig:depth-scatter}), the nearest
+farthest. The skeleton has the right height, so the body is drawn at \DiagSizeBase{} of its true size. PVE is blind
+to all of it.
 
 The code gave the cause: the mesh is placed by its head joint, but the anchor targets were built at the pelvis
 (Section~\ref{sec:method-depth}). A one-batch debug print showed offsets of \DiagOffsetMin{} to \DiagOffsetMax{} cells
@@ -183,8 +182,8 @@ on, before the helper mask, the neck boost and the shape weight of 20; the depth
 neck's cause. Fresh-heads-L has a normal neck (girth \DiagFreshGirth) but flips other bones: a compensated pair in the
 left arm and three metacarpals.
 
-This refutes the draft: the rig passes all 16 single-joint moves, and the normal rest-pose render fits the flip
-too, because rest pose sets every rotation to the identity. A loss did not undo the flip: the neck boost ($\times$2.41 for the boosted bones after renormalisation) left it unchanged,
+This refutes the draft: the rig passes all 16 single-joint moves, and rest pose (all rotations identity) hides the
+flip. A loss did not undo it: the neck boost ($\times$2.41 for the boosted bones after renormalisation) left it unchanged,
 and a geodesic loss moved neck02 only from \DiagNeckTwoBase{} to \DiagGeodesicNeckTwo\,deg, likely because neck02 and
 head must turn back together. So I corrected the output with one constant rotation per flipped bone
 (Section~\ref{sec:method-bonefix}): \DiagCorrNeckTwo, \DiagCorrHead, \DiagCorrMetacarpal{} and \DiagCorrFinger\,deg
@@ -247,7 +246,7 @@ Not shown: which mechanism dominates, and ages in years (the code uses three age
 By Table~\ref{tab:pilot-noise} one pilot resolves about 10\,mm PVE, 3\,deg and 2 recall points, and is read against
 its own control because of the restart cost. That suffices for every change this chapter relies on (root error, bone
 angles 175 to 5\,deg, girth 0.46 to 1.00, fingers 17.3 to 8.3\,deg), but not for a PVE change of a few millimetres, so
-the PVE costs of the depth fix and the neck pilot stay unresolved. There are no bootstrap intervals and no seed.
+the PVE costs of the depth fix and the neck pilot stay unresolved; no bootstrap intervals were computed.
 
 % -----------------------------------------------------------------------------
 \section{What did not work}
@@ -256,6 +255,5 @@ the PVE costs of the depth fix and the neck pilot stay unresolved. There are no 
 Six changes did not fix a failure (Appendix~\ref{app:pilots}, Table~\ref{tab:pilots-all}): an age-balanced sampler
 (inconclusive on 10 in-sample children), a global head orientation loss (within the spread of two identical controls),
 a region-normalised hand loss, a geodesic rotation loss, the neck and hand boost, and a $\times$20 depth loss (no gain
-over $\times$5). Each altered the loss or the sampling around a fault the loss could not see; the two fixes that worked
-came from the diagnostics. None of this shows that an idea cannot work: the sampler is unproven after 8,000 images,
-and a 10-epoch run at weight 20 was never tried.
+over $\times$5). Each worked around a fault the loss could not see; the two fixes that worked came from the
+diagnostics.

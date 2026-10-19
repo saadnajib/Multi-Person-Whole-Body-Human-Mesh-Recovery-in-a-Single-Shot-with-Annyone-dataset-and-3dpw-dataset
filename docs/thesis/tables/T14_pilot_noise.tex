@@ -7,17 +7,16 @@
 %   train.py sets no random seed.
 \begin{table}[!htb]
 \centering\footnotesize
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}p{0.27\linewidth}p{0.36\linewidth}p{0.3\linewidth}@{}}
 \toprule
 quantity & measured & one run resolves \\
 \midrule
 two identical controls: PVE & 76.3 vs.\ 68.7\,mm (7.6\,mm) & about 10\,mm \\
 \quad head direction & 13.6 vs.\ 11.7\,deg (1.9\,deg) & about 3\,deg \\
 \quad recall & 0.8 points apart & about 2 points \\
-six arms of the Base recipe & PVE 68.7--76.3\,mm; recall 88.6--90.2\,\% & \\
- & head 11.3--13.7\,deg & \\
-restart cost (controls vs.\ Base) & 72.9 vs.\ 70.5\,mm (about 2.4\,mm) & read against own control \\
-root error & no measured floor & fix 0.53--0.73 vs.\ control 1.11--1.44\,m \\
+six arms, Base recipe & \multicolumn{2}{@{}l@{}}{PVE 68.7--76.3\,mm, recall 88.6--90.2\,\%, head 11.3--13.7\,deg} \\
+restart cost & 72.9 vs.\ 70.5\,mm for Base (2.4\,mm) & read against own control \\
+root error & no measured floor & fix 0.53--0.73, control 1.11--1.44\,m \\
 \bottomrule
 \end{tabular}
 \caption[Pilot noise and restart cost]{Run-to-run variation of the 2-epoch pilots (fine-tunes of Base at learning

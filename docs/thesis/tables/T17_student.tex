@@ -36,7 +36,6 @@ Recall (\%) & \FinalRecallThreeDPW & \StudentRecallThreeDPW & 1.00 & $\geq$ 94.1
 Params (M) & \FinalParams & \StudentParams & \ParamRatioStudent$\times$ & fewer & yes \\
 GFLOPs & \FinalGFLOPs & \StudentGFLOPs & \FlopRatioStudent$\times$ & fewer & yes \\
 ms per image & \TeacherMsLFortyS & \StudentMsLFortyS & \SpeedRatioStudent$\times$ & faster & yes \\
-Training images/s & \FinalTrainImgPerSec$^{a}$ & \StudentTrainImgPerSec$^{a}$ & & & \\
 \bottomrule
 \end{tabular}
 \caption[The Student against its teacher and the 95\,\% rule]{The Student against its teacher (Final) and the
@@ -44,6 +43,6 @@ Training images/s & \FinalTrainImgPerSec$^{a}$ & \StudentTrainImgPerSec$^{a}$ & 
 teacher's, and fewer parameters, fewer FLOPs and a faster forward pass. The rule fails on every error and holds on
 recall and cost. One run, no seed. Against Multi-HMR-Anny the PVE bars would be \BarNAVERAnnyOne\,mm on AnnyOne
 (most likely in-sample for it; not met) and \BarNAVERThreeDPW\,mm on 3DPW (met). Cost: both models timed in the
-Student's job on one L40S. $^{a}$Final on an A100, the Student on the L40S; not comparable.}
+Student's job on one L40S.}
 \label{tab:student}
 \end{table}

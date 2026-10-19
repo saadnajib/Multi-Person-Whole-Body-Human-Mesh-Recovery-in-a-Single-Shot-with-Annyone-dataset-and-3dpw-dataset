@@ -28,8 +28,8 @@ L-stage 4 & + neck and hand loss $\times$4 & 73.6 & 56.5 & 73.2 & -- \\
 Base & + shape loss weight 20 & \BaseVzeroPVE & 57.5 & 74.4 & 90 \\
 \bottomrule
 \end{tabular}
-\caption{The transfer schedule that produced Base (names as in Table~\ref{tab:model-names}); recall (Rec.) in \%. L-stages 2--4: evaluation during training; L-stage 1 was never evaluated with this script; Base: the standalone
-script (the same numbers as the AnnyOne column of Table~\ref{tab:final-3dpw}).}
+\caption{The transfer schedule that produced Base (Table~\ref{tab:model-names}); recall (Rec.) in \%. L-stages 2--4:
+evaluation during training; Base: the standalone script.}
 \label{tab:history-stages}
 \end{subtable}
 
@@ -52,20 +52,15 @@ Student-S/mixed$^{b}$ & Base & 37 & 120.6 & 88.2 & 125.2 & 78 & 87 & -- & -- \\
 Student-S/final$^{b}$ & Mixed-L & 37 & 120.6 & 86.9 & 125.0 & 76 & 87 & \StudentSFinalThreeDPW & \StudentSFinalPAThreeDPW \\
 \bottomrule
 \end{tabular}
-\caption{The ViT-S students (Student-S, ViT-S backbone) against their ViT-L teachers; parameters in millions,
-precision (Prec.) and recall (Rec.) in \%. Student-S/2: feature distillation only; Student-S/6b: heads fed through a projector at the teacher's width;
-Student-S/6c: Student-S/6b continued at batch 16; Student-S/mixed and Student-S/final: Student-S/6b and Student-S/6c
-continued with 3DPW images.
-Standalone script except $^{a}$Student-S/6b (evaluation during training). $^{b}$30\,\% 3DPW images per batch, old labels.
-$^{c}$Corrected labels, all \num{\ThreeDPWTestImages} test images, the script and setting of
-Table~\ref{tab:final-3dpw}; the only Student-S numbers on these labels (Student-S/6c and Student-S/final were
-re-scored, the other students were not). Final on the same images: \FinalThreeDPW{} / \FinalPAThreeDPW\,mm.}
+\caption{The ViT-S students against their ViT-L teachers; parameters in millions, precision (Prec.) and recall
+(Rec.) in \%. Student-S/2: feature distillation only; Student-S/6b: heads fed through a projector at the teacher's
+width; Student-S/6c: Student-S/6b at batch 16; Student-S/mixed and Student-S/final: continued with 3DPW images.
+$^{a}$Evaluation during training. $^{b}$30\,\% 3DPW images per batch, old labels. $^{c}$Corrected labels, the script
+of Table~\ref{tab:final-3dpw}; Final: \FinalThreeDPW{} / \FinalPAThreeDPW\,mm.}
 \label{tab:history-students}
 \end{subtable}
 \caption[History: the schedule to Base and the ViT-S students (V0)]{History, before the depth fix, the bone
-correction and the corrected 3DPW labels. AnnyOne holdout (100 images), setting V0 (helper bones unmasked), errors in
-mm; one run per model, no seed. ``--'': not measured with the same script. The 3DPW columns of (b) are on the
-corrected labels; the students' earlier 3DPW numbers were measured on the old labels, which are retired, and are not
-reported.}
+correction and the corrected 3DPW labels. AnnyOne holdout (100 images), setting V0, errors in mm; one run per model,
+no seed. ``--'': not measured with the same script. The students' old-label 3DPW numbers are retired.}
 \label{tab:history}
 \end{table}
