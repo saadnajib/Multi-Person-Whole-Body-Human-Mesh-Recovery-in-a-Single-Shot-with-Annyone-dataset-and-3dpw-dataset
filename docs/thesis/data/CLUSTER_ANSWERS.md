@@ -69,3 +69,13 @@ stairs (downtown_sitOnStairs), downtown_walkBridge/walking pair, weekly market (
 - F24 ground-truth decode overlays (check 1): F24_gt_decode_1..4.jpg (holdout 579888 p0, holdout 579925 p0, train 462901 p0, train 326611 p3);
   data/gt_decode_summary.json.
 - Demo logs: data/demo_compare_3615018_hands.log, data/demo_compare_3615019_rest.log (the [shape] lines per detection for the spread numbers).
+
+## 19 Oct, 00:30: Final-partial-mask (run 3, job 3614042) DONE; its Relative Human eval submitted as job 3616821
+- Holdout V1 (compare table, last column, `logs/exp7_final_model_3614042.out:191-215`): PVE 73.0, PA-PVE 51.2, recall 87.4,
+  root error 680 mm, depth slope 0.42 (intercept 1.69 m), size ratio 0.79, girth 1.005, neck PVE 10.5 mm, global head 13.2 deg,
+  fingers 8.2 deg, neck02 5.0, head 8.9, finger4-1.R 9.2, metacarpal1.L 0.0; verdicts OK; neck kept, depth kept, cost vs control kept.
+  Bone fix estimated for this run: neck02 178.8, head 179.2, metacarpal1.L 179.8, finger4-1.R 179.7 deg.
+- AnnyOne test-100 V0 (run_eval_3dpw_test.sh): PVE 76.6, PA-PVE 55.2, precision 81, recall 87, MPJPE 77.9.
+- 3DPW test v23, all 8,190 images: PVE 89.9, PA-PVE 58.9, precision 66, recall 99, MPJPE 90.0.
+  (Final: 73.7 / 50.3 / 87.0; root 728; 3DPW 89.0 / 57.6 / 64 / 99. Final-masked: 71.7 / 50.7 / 86.2; 3DPW 91.1 / 59.0.)
+- Everything is within the run-to-run noise of Final; the decision rests on Relative Human (job 3616821) and the demo spread.
