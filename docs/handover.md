@@ -3192,7 +3192,7 @@ demo job 3612078; on Relative Human gender 46.5 -> 64%, children AUC 0.61 -> 0.7
 
 ## 9. Deck
 
-**Files** (since the evening of 18 Oct): `docs/supervisor_update_2026-10-19.pptx` (30 slides), the speaker script
+**Files** (since the evening of 18 Oct): `docs/supervisor_update_2026-10-19.pptx` (30 slides; 31 since 19 Oct), the speaker script
 `docs/supervisor_talk_notes_2026-10-19.md` (one "## Slide N: title" per slide: spoken part + "If asked:" part) and the
 companion `docs/deck_explained_2026-10-19.md` (every slide explained in plain words, with what is on the slide, the
 numbers and their sources, and what is not claimed; reconciled with the final deck on the evening of 18 Oct; the deck
@@ -3294,6 +3294,16 @@ pptx gone. A copy without `docs/supervisor_update_2026-10-19.pptx` is the 21-sli
 29. Backup: before and after, holdout image 579860 (old 21; appendix). The figure and its caption.
 30. Jobs and checkpoints (new; appendix). Tight: the 13-row job table at font 8 (was 8.5); the cost job 3614947 is
     folded into the 3614192 row, because a 14th row would run into the "how to read" line at 5.0 in.
+31. Real photos: predicted fingers and rest-pose line-up (new 19 Oct; appendix). Left: Base | Final crops of the
+    predicted-finger demo (job 3615018; party photo, 3DPW guitar frame; `docs/figures/fingers_base_vs_final.jpg`);
+    right: Base | Final | Final-masked rest-pose renders (job 3615019; stage and tennis photos;
+    `docs/figures/rest_pose_lineup_{stage,tennis}.jpg`); two lines of by-eye readings end above the footer.
+
+**19 Oct rebuild (before the meeting):** slide 31 added (31 slides, 31 notes; the "Check a copy" line now prints `31`, `31`,
+`31`, `1`, `1`, `0`) and stale text fixed: slide 2 row 3 ("full thesis draft (92 pages), all results in ..."), 17
+(fingers by eye, slide 31), 23 (row 1a-pose next, row 3 evidence), 25 (week 2 done items, ViT-S 121.6 / 142.6 mm),
+27 item 6, 28 (headline card: "Done: the thesis draft uses 70.5 / 73.7 mm", dot green), and the notes of 2, 16, 17,
+23, 25, 26, 27, 28; LibreOffice render checked for 2, 17, 23, 25, 27, 28, 31.
 
 **Results still to come: the lines they make stale.** When a result arrives, edit these lines in `build.js` and
 rebuild (or hand-edit the pptx as above).

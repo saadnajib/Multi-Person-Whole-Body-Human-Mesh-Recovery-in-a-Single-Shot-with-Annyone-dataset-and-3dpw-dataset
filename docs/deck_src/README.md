@@ -1,6 +1,6 @@
 # Deck source: supervisor update, 19 October 2026
 
-`build.js` builds the 30-slide deck `docs/supervisor_update_2026-10-19.pptx` and its speaker script
+`build.js` builds the 31-slide deck `docs/supervisor_update_2026-10-19.pptx` and its speaker script
 `docs/supervisor_talk_notes_2026-10-19.md` for the supervisor meeting on Monday 19 October 2026, 16:00. The 19 Oct
 version (built on the evening of 18 Oct) tells the whole story in order, in plain words: overview, data, training,
 findings and fixes, the final model, requirements and plan, appendix. It replaces the 21-slide deck of 16-18 Oct
@@ -25,11 +25,17 @@ Slides (section, number, title):
   24 Plan for 1b: a smaller model by distillation; 25 Plan: the next four weeks; 26 What I claim, what I do not,
   and my questions (DARK_CLOSE).
 - Appendix: 27 Still open, and what I test next; 28 Corrections to the draft and the repo; 29 Backup: before and
-  after, holdout image 579860; 30 Jobs and checkpoints.
+  after, holdout image 579860; 30 Jobs and checkpoints; 31 Real photos: predicted fingers and rest-pose line-up.
 
 New on 19 Oct: slides 1-4, 7-9, 11 (merges the old slides 3 and 4), 18, 19, 24, 25 and 30. Old -> new numbering of
 the reused slides: 2->10, 5->5, 6->6, 7->15, 8->16, 9->17, 11->12, 12->13, 13->14, 14->22, 15->28, 16->20, 17->21,
 18->27, 19->26, 20->23, 21->29.
+
+Added on 19 Oct (day of the meeting): slide 31, from the demo jobs 3615018 (predicted fingers, Base vs Final) and
+3615019 (rest-pose line-up, Base / Final / Final-masked); its figures `docs/figures/fingers_base_vs_final.jpg`,
+`rest_pose_lineup_stage.jpg` and `rest_pose_lineup_tennis.jpg` are crops of the thesis montages F11 and F17 (crop boxes in
+the comment above slide 31 in `build.js`). The same rebuild replaced stale text on slides 2, 17, 23, 25, 27 and 28 and in
+the notes of 2, 16, 17, 23, 25, 26, 27 and 28 (handover section 9).
 
 Files here:
 - `build.js`: the whole deck (layouts, slides, speaker notes) written with pptxgenjs, plus two post-processing steps.
@@ -56,7 +62,8 @@ the same slides, theme, media and layouts as the then-published `docs/supervisor
 byte-identical to the then-published `docs/supervisor_talk_notes_2026-10-16.md`. Checked again on the afternoon of 18 Oct for the
 21-slide version (this folder's `build.js` and `apply_theme.js` copied next to `docs/figures/`, pptxgenjs 4.0.1 from
 an existing `node_modules` instead of a fresh `npm ci`): the same result. The 30-slide version was built the same way
-on 18 Oct (evening) and rendered with LibreOffice for the layout check.
+on 18 Oct (evening) and rendered with LibreOffice for the layout check; the 31-slide version likewise on 19 Oct
+(slides 2, 17, 23, 25, 27, 28 and 31 rendered).
 
 ## What `build.js` does when it runs
 

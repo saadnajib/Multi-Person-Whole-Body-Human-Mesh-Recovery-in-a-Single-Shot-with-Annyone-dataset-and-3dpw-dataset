@@ -2,13 +2,15 @@
 
 This document explains the deck for the meeting of Monday 19 October 2026, 16:00, slide by slide, in simple words.
 It is written for the presenter, who must also defend the work and later reuse the text in the thesis. Part 6 follows
-the final 30-slide deck (`docs/supervisor_update_2026-10-19.pptx`, speaker script
+the final 31-slide deck (`docs/supervisor_update_2026-10-19.pptx`, speaker script
 `docs/supervisor_talk_notes_2026-10-19.md`): each block starts with the slide number and the exact slide title, so the
 two can be matched. This file was first written against the planned outline and reconciled with the final deck on the
 evening of 18 October.
 
 **State of the facts:** Sunday 18 October 2026, evening; updated Monday 19 October, morning, with the ViT-B student
-result (job 3614191: slides 1, 2, 23-26 and 30, Part 7 1b, Part 8 Q3a). Nothing here was measured again for this
+result (job 3614191: slides 1, 2, 23-26 and 30, Part 7 1b, Part 8 Q3a); updated again on 19 October with slide 31
+(predicted fingers and rest-pose line-up, demo jobs 3615018 and 3615019), the old ViT-S students on the corrected labels
+(job 3615020) and the full thesis draft (92 pages): slides 2, 16, 17, 23, 25-28 and 31, Part 7 1a and 3. Nothing here was measured again for this
 document. Every number comes from a file in this repository, and the source is given next to it.
 
 ## How to read this document
@@ -25,7 +27,7 @@ Definitions (what a word means) get no tag. Facts and results get one.
   holds the newest results of 18 October. `H 0b` = "Numbers at a glance".
 - `P 2` = `docs/thesis_requirements_plan.md`, section 2.
 - `E exp8` = `docs/experiments_plan.md`, section on exp8. `F` = `docs/diagnostics_findings.md` (older).
-- `D slide N` / `D notes N` = the final 30-slide deck: the text on slide N of `docs/supervisor_update_2026-10-19.pptx`
+- `D slide N` / `D notes N` = the final 31-slide deck: the text on slide N of `docs/supervisor_update_2026-10-19.pptx`
   (built by `docs/deck_src/build.js`) / the speaker notes of slide N in `docs/supervisor_talk_notes_2026-10-19.md`.
   All slide numbers in this file are the new ones; `docs/deck_src/README.md` has the old -> new map.
 - `3611336:191` = line 191 of the log of cluster job 3611336. The logs are on the cluster, not in the repo; these line
@@ -446,7 +448,8 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
   18 October, each with a status dot: **1a** correct pose, visibly varying body shape (partly); **1b** a model that is
   not exactly Multi-HMR (not met; "the ViT-B student misses it", slide 24); **1c** 3DPW evaluated in Anny space (met);
   **2a** train on 3DPW converted to Anny (met); **2b** temporal modelling (not started; designed, weeks 5-6); **3**
-  well-written report, clean and verifiable code (partly).
+  well-written report, clean and verifiable code (partly; "full thesis draft (92 pages), all results in; code clean-up
+  and model release to do").
 - **Background, not on the slide** (P 1): the e-mail has three tiers. (1) necessary within one month: 1a, 1b and 1c;
   1b is either a new architecture that beats Multi-HMR on the AnnyOne and 3DPW tests, or a much smaller model (fewer
   params and FLOPs, faster) whose PVE/MPJPE stay "more than 95%" of the large model's on both. (2) recommended: 2a and
@@ -702,16 +705,17 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
 - **Numbers:** thickness 0.46 -> 1.00 on the 100-image holdout (job 3579014:107) [Certain].
 - **Not claimed:** a neck number on real images (there is no neck ground truth there); that the correction, and not
   the 2-epoch fine-tune, makes the real-image difference (the right pair differs by both; on the holdout the same
-  fine-tune without the fix keeps thickness 0.461, so the correction is the [Likely] cause) [H 3.2]. 4 of the 12 demo
-  images were not looked at [Certain, D notes 16].
+  fine-tune without the fix keeps thickness 0.461, so the correction is the [Likely] cause) [H 3.2]. 4 of the 12 images
+  of this demo (job 3581312) were not looked at; the runForBus, sitOnStairs and fencing frames have since been seen
+  only in the final model's demo montages, with no neck reading recorded [Certain, D notes 16].
 
 ### Slide 17. Fingers: about half the error was two flipped bones
 
 - **On the slide:** three numbers: 17.3 deg (predicted fingers, v5), 8.3 deg (with the bone fix, 2-epoch pilot and
   10-epoch final model; controls 17.4), 15.1 deg (fingers set to rest pose, before the fix; the index-base flip
   stays); a hand-size table (median hand size 2.3 tokens in the full 672-px image, 4.2 with a person crop at test
-  time, 0.7 for children's hands; 41% / 0% / 80% under 2 tokens); bullets on the two flipped bones (not yet checked by
-  eye), test-time zoom (17.2 vs 17.3; body error nearly doubles) and the loss rebalance (17.5 vs 17.4) [D slide 17].
+  time, 0.7 for children's hands; 41% / 0% / 80% under 2 tokens); bullets on the two flipped bones ("by eye, Final's fingers
+  read as hands (slide 31)"), test-time zoom (17.2 vs 17.3; body error nearly doubles) and the loss rebalance (17.5 vs 17.4) [D slide 17].
 - **What we did:** first tested the old beliefs: magnifying the person at test time (17.3 -> 17.2) and a rebalanced
   loss (17.5 vs 17.4 for its control); neither helped [Certain, H 3.3]. Then the per-bone search found two hand bones
   turned half a turn: metacarpal1.L (180 deg) and finger4-1.R (178.8 deg) [Certain, H 3.2, H 3.3].
@@ -719,8 +723,11 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
   fine-tune, and 8.3 in the final model against 17.4 for its control [Certain, 3579014:114; 3611336:201,
   3611339:192]. On v10, correcting three flipped hand bones takes the finger error 32.0 -> 17.8 deg (in the notes,
   not on the slide) [Certain, 3579015:80; D notes 17].
-- **Not claimed:** better-looking fingers on real photos. Every real-photo demo so far sets the fingers to rest pose
-  (`--relax_hands 1`), so predicted hands have never been shown [Certain, P 2 row 1a; H 3.3].
+- **By eye (slide 31):** with predicted fingers (demo job 3615018, `--relax_hands 0`), Base's fingers are splayed and
+  stiff, one left-hand finger sticking out; Final's are closed and bent and read as hands; neither puts them on the
+  real fingers [Certain by eye; REVIEW_LOG 19 Oct].
+- **Not claimed:** a finger number on real photos, or fingers that match the real ones; better-looking fingers rest on
+  the eye only [Certain, D notes 17].
 
 ### Slide 18. Children and gender on real photos
 
@@ -886,9 +893,9 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
   order 1c, 2a, 1a pose, 1a shape, 1b, 2b, 3, and a "how to read" line. The evidence and next cells name the partial
   mask (job 3614042) and, in row 1b (since 19 Oct morning), the student result: evidence "Student measured: 119.6 /
   110.1 mm vs bars 77.6 / 93.7 (missed); beats Multi-HMR-Anny on 3DPW", next "your choice of reference; then longer
-  run or a different student". NAVER's numbers (60.3 / 126.9 mm, 380.9 M params) moved to slide 24 and the notes; the report
-  row says "draft exists (74 mm -> 70.5); 98 files hard-code /netscratch; no results or models committed"
-  [D slide 23].
+  run or a different student". NAVER's numbers (60.3 / 126.9 mm, 380.9 M params) moved to slide 24 and the notes; the
+  1a-pose next cell ends "predicted hands on photos: shown, by eye (slide 31)"; the report row says "thesis draft 92
+  pages, all results in; 98 files hard-code /netscratch; no models released" [D slide 23].
 - **Status words:** 1c met; 2a met; 1a pose partly; 1a shape partly, at risk; 1b not met; 2b not started; 3 partly
   [Certain, P 2; D slide 23].
 - **Student in row 1b** [Certain, C SD; job 3614191]: AnnyOne holdout PVE 119.6 mm against the bar 77.6 (teacher
@@ -1009,9 +1016,10 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
   Relative Human run (done 19 Oct, not adopted; slide 19); the student's result (job 3614191): "done 19 Oct, failed the
   bar (119.6 / 110.1 mm vs 77.6 / 93.7; slide 24)"; code: a masked-evaluation flag and the student's shape-distillation mask;
   phenotype statistics on AnnyOne (r, slope, R^2) [D slide 25; P 4 week 1; H 0a].
-- **Week 2 (26 Oct-1 Nov; 1a, 3):** a rest-pose line-up of predicted bodies (the "visibly changes" figure); predicted
-  fingers on real photos (`--relax_hands 0`; every demo so far forces rest-pose hands); the old ViT-S students on the
-  new labels; a body-joint MPJPE; write the Method and Data chapters [D slide 25; P 4 week 2].
+- **Week 2 (26 Oct-1 Nov; 1a, 3):** "Done 19 Oct: rest-pose line-up and predicted-finger demos (slide 31); old ViT-S
+  students on the new labels (121.6 / 142.6 mm)"; still to do: a body-joint MPJPE; write the Method and Data chapters
+  [D slide 25; P 4 week 2]. The ViT-S numbers are 3DPW test PVE on the v23 labels, Student-S/final 121.6 and
+  Student-S/6c 142.6 mm, against Final 89.0 [Certain, job 3615020; C "18 Oct, 22:40"].
 - **Week 3 (2-8 Nov; 1b, 3):** "The student missed the bar; its AnnyOne curve still fell: train it longer from its
   last checkpoint, if you agree (Q1)"; the 95% table against our ViT-L and NAVER's; paired bootstrap confidence intervals; write the
   Experiments chapter (depth, neck, shape mask, Relative Human) [D slide 25; P 4 week 3].
@@ -1040,7 +1048,8 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
 - **Not claimed:** results proven over seeds; why the bones flipped; children or gender solved; correct near/far depth
   (slope 0.42); fixes without cost (recall -2 points vs control on the slide; -3.2 vs v5 in the notes); that the fixes
   made most of the 3DPW gain (3DPW training did); "a model that is not Multi-HMR (slides 23-24)" (requirement 1b; the
-  notes add that the ViT-B student misses the 95% bar against our model). Not in the deck's
+  notes add that the ViT-B student misses the 95% bar against our model). The notes' fingers answer: by eye on real
+  photos Final's fingers read as hands and Base's are splayed (slide 31), but only the 8.3 deg is claimed. Not in the deck's
   list but true: visibly varied body build on real photos is not claimed either (muscle, weight near 0.5; slide 19).
 - **Questions for the supervisor** (D slide 26, P 5):
   1. (1b) Is the 95% bar against our ViT-L, NAVER's, or both? Does a smaller Multi-HMR-style student count as "not
@@ -1061,7 +1070,7 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
   unknown, next: measure training depths and the slope on training images; (3) depth-fix cost, now measured (final vs
   control: PVE within noise, recall -2 points, -3 vs v5; paired PVE not done; no x20 result at 10 epochs); (4) pilot
   noise, no seed; (5) people very close to the camera (4 of 12 holdout renders, both models); (6) children and fingers
-  (AUC 0.61 -> 0.72, not solved; fingers: bone-fix hands, then larger crops); (7) 3DPW labels, three defects fixed
+  (AUC 0.61 -> 0.72, not solved; fingers: "by eye on slide 31; then larger crops"); (7) 3DPW labels, three defects fixed
   (re-extraction 16 Oct, re-fit and re-check 18 Oct, WARN, in use by the final model).
 Background to these items, and what else is open:
 - **Depth slope 0.42** (1 = right): predictions are pulled toward about 2.5-2.9 m; cause unknown; measuring the
@@ -1073,7 +1082,7 @@ Background to these items, and what else is open:
 - **People very close to the camera:** both v5 and the depth-fix model miss them in 4 of 12 rendered holdout images;
   likely detection, not counted [Likely, H 3.1].
 - **Children:** better, not solved (slide 18).
-- **Hands on real photos:** never shown with predicted fingers (slide 17).
+- **Hands on real photos:** shown with predicted fingers since 19 Oct, by eye only (slide 31); no metric.
 - **Why the bones flipped:** unknown; v10's left arm needs a two-sided correction, not built [Certain, H 3.2].
 - **The x20 depth run for 10 epochs:** command given on 14 Oct, never confirmed [Certain, H 3.1, H 4d].
 - **3DPW precision 64% and ghost bodies** (not on this slide; slide 20 notes): about a third of the detections match
@@ -1085,8 +1094,8 @@ Background to these items, and what else is open:
 ### Slide 28. Corrections to the draft and the repo
 
 - **On the slide** (appendix) [D slide 28]: four boxes. Headline number: done, the README gives AnnyOne holdout PVE
-  70.5 mm, helper bones masked; to do, replace the thesis draft's 74 mm (the unmasked evaluation, +3.8 mm on the same
-  people). Demos: done, all demo scripts zero the fingers and the README says so. Wording: done, neck, fingers and
+  70.5 mm, helper bones masked; done, "the thesis draft uses 70.5 / 73.7 mm" (the old draft's 74 mm was the unmasked
+  evaluation, +3.8 mm on the same people; the card's dot is now green). Demos: done, all demo scripts zero the fingers and the README says so. Wording: done, neck, fingers and
   children are no longer called rig or decoding problems, and the README's Known-defects section documents the depth
   bug; to do, the README and the findings document still carry last week's neck story. Repository: done,
   reorganised, one shared cluster setup, diagnostics and experiments documented. The notes add that the demo setting
@@ -1095,7 +1104,7 @@ Background to these items, and what else is open:
 The full list of corrections the thesis draft needs is longer than the slide. The draft is not in the repository;
 these lines come from H 1 "Headline", H 6 and H 7, and apart from the headline number they are not on the slide
 [Certain that each old claim is wrong, as stated there]:
-- **Headline number:** the draft says 74 mm. That is the unmasked V0 evaluation of v5. Use 70.5 mm (V1, helper bones
+- **Headline number (done 19 Oct: the full draft in `docs/thesis/` uses 70.5 / 73.7 mm):** the old draft said 74 mm. That is the unmasked V0 evaluation of v5. Use 70.5 mm (V1, helper bones
   masked; +3.8 mm on the same people when unmasked). The thesis model is now the final model: 73.7 mm holdout V1,
   89.0 mm 3DPW test (v23) [H 1; P 2 row 3-report].
 - **Neck:** not "weak supervision on a redundant chain", not "the depth bug": two half-turned bones (slide 15).
@@ -1174,7 +1183,40 @@ job before 3611284 except 3579014 are not on it.
 | 3612325; 3613616; 3613617 | masked arm; its Relative Human run; its demo |
 | 3614042; 3616821 | partial mask (7 constants, keep age), done 19 Oct; its Relative Human run (`logs/eval_rh_3616821_0.out`): gender 47.4%, AUC 0.727, not adopted |
 | 3613926; 3614191 | exp8 student smoke test (passed); full student run, done 19 Oct: holdout PVE 119.6 (bar 77.6), 3DPW test 110.1 (bar 93.7), 95% rule fails; L40S 101.38 M / 603.3 GFLOPs / 28.5 ms vs teacher 318.38 M / 1,927.4 / 59.7 |
+| 3615018; 3615019 | demos: predicted fingers, Base vs Final; rest-pose line-up, Base / Final / Final-masked (slide 31) |
+| 3615020_[2,4] | old ViT-S students on the v23 3DPW test: Student-S/6c 142.6, Student-S/final 121.6 mm PVE |
 | 3613928; 3614192 | NAVER baseline (crashed, fixed); resubmitted, done 18 Oct evening: AnnyOne holdout PVE 60.3 (likely in-sample for NAVER), 3DPW test 126.9 |
+
+### Slide 31. Real photos: predicted fingers and rest-pose line-up
+
+- **On the slide** (appendix, added 19 Oct) [D slide 31]: on the left, predicted fingers: zoomed crops of the render
+  panels of two demo montages, the party photo (top row) and the 3DPW guitar frame (bottom row), Base | Final
+  (`docs/figures/fingers_base_vs_final.jpg`, cut from `docs/thesis/figures/img/F11_hands_photo_party.jpg` and
+  `F11_hands_3dpw_guitar.jpg`). On the right, the rest-pose line-up: the three render panels Base | Final |
+  Final-masked of the stage photo (three singers) and the tennis photo (five men) (`docs/figures/rest_pose_lineup_stage.jpg`
+  and `rest_pose_lineup_tennis.jpg`, cut from `F17_rest_photo_stage.jpg` and `F17_rest_photo_tennis.jpg`). Below, two
+  lines with the by-eye readings, ending "By eye only, demo setting (box placement); no metric on real photos."
+- **What we did:** two demo jobs on the evening of 18 Oct: 3615018 runs the demo comparison with predicted fingers
+  (`--relax_hands 0`) for Base (v5) and Final; 3615019 draws every detected person in the rest pose (`--rest_pose 1`)
+  for Base, Final and Final-masked, so that only body shape differs [Certain, C "Zip batch 2"].
+- **Why:** both were missing for requirement 1a: every earlier real-photo demo used `--relax_hands 1`, so predicted
+  hands had never been shown, and no figure showed body shape changing per person (P 2 row 1a; plan week 2).
+- **Result, fingers (by eye):** Base's fingers are splayed and stiff, with one finger of the left hand sticking out
+  (Base's metacarpal1.L is still flipped; the correction is only in Final); Final's are closed and bent and read as
+  hands (draped over an armrest, curled as if fretting a guitar, bent over a bar edge). Neither model puts the fingers
+  on the real ones; in most images the hands are too small to judge [Certain by eye; `docs/thesis/REVIEW_LOG.md`
+  "19 Oct: batch-2 figures placed"; C "Zip batch 2"].
+- **Result, shape (by eye):** Base gives everyone a similar slim, flat body (the singers look boyish); Final gives the
+  singers a fuller female shape and the man in the 3DPW bar frame a broader torso; the tennis men stay slim with a
+  slight chest in all three; Final-masked is close to Final except a slimmer bar man. The bar frame is not on the
+  slide (it is in the thesis, Figure 6.10, and in the notes) [Certain by eye; REVIEW_LOG 19 Oct].
+- **Crops** (pixel boxes x0, y0, x1, y1 in the source files; each montage has 4 panels of equal width, or 6 for F17,
+  and a label strip at the top): party Base (800, 200, 1060, 460), Final (2000, 200, 2260, 460); guitar Base
+  (626, 320, 886, 580), Final (1638, 320, 1898, 580); stage panels x 436-776, 1236-1576, 2036-2376, y 12-280; tennis
+  full panels x 400-800, 1200-1600, 2000-2400, y 12-280 (comment above slide 31 in `build.js`).
+- **Not claimed:** any finger or shape number on real photos (there is no metric); that the predicted fingers match
+  the real ones; that four crops and two line-ups stand for all twelve demo images (all are in the thesis, Figures D.6
+  and D.7); anything beyond the demo setting (bodies placed from the detector box).
 
 ---
 
@@ -1193,11 +1235,13 @@ Status words as on slide 23. Sources: P 2, P 3, H 0a, H 11.
   vs adults 0.54); muscle, weight, cup size and firmness sit at about 0.5 on real photos (demo 3612078). The masked arm
   restores their spread (std up to 0.11) but loses gender (49.3%) and most of the children gain (job 3613616, demo
   3613617) [H 0a].
-- **Missing:** a demo with predicted fingers; a figure that shows shape changing (rest-pose lineup); numbers that show
+- **Done 19 Oct, by eye only (slide 31):** a demo with predicted fingers and a rest-pose line-up (jobs 3615018,
+  3615019).
+- **Missing:** numbers that show
   each phenotype follows its label on AnnyOne (correlation, slope); the depth slope (0.42) as a stated limitation
   [P 2, P 3.3].
-- **Planned:** partial-mask run (job 3614042) with its Relative Human run and demo, week 1; decide by 25 Oct; lineup
-  and finger demo, week 2 [P 4; H 0a].
+- **Planned:** partial-mask run (job 3614042) with its Relative Human run and demo, week 1; done 19 Oct, not adopted;
+  lineup and finger demo: done 19 Oct (slide 31) [P 4; H 0a].
 
 ### 1b. A model that is not exactly Multi-HMR
 
@@ -1261,7 +1305,8 @@ Status words as on slide 23. Sources: P 2, P 3, H 0a, H 11.
 ### 3. Report and code
 
 **Status: partly.**
-- **Evidence [Certain]:** a draft exists outside the repository, with the stale 74 mm headline; 98 tracked files
+- **Evidence [Certain]:** a full thesis draft of 92 pages (main text 60) in `docs/thesis/`, all results in, built
+  clean, using 70.5 / 73.7 mm; 98 tracked files
   hard-code `/netscratch`; no results or checkpoints committed; 79 of 89 commits are authored "Claude" (P 2).
 - **Missing:** chapter plan with current numbers; a model release with checksums; one reproduce script; clean paths and
   environment file; README rewrite [P 6.2].
