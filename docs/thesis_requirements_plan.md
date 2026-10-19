@@ -86,9 +86,9 @@ met. [1a-pose] is close on 3DPW. Not met: [1b] (the model is Multi-HMR with an A
 | 1a-pose, in the wild | partly, by eye only | 4 photos (3612078): necks normal; the boy is an adult body; placement offsets and ghost bodies unchanged [Certain, by eye]. **Every real-photo demo so far forces the fingers to rest pose** (`--relax_hands 1`, `slurm/demo/run_demo_compare.sh:171`) [Certain] | a demo with predicted fingers; a number on a labelled real set beyond Relative Human (recall v5 47%, final model 65%, job 3612131); offsets and ghosts as stated limitations |
 | 1a-shape, visible change | partly / at risk | Men look male now, by eye [Likely]. Medians moved onto the 3DPW converter constants: muscle 0.28 -> 0.48, weight 0.59 -> 0.48, age 0.61 -> 0.56 (demo `[shape]` lines, not matched to people; handover 3.4) [Certain, log]; spreads of muscle, weight, cup size, firmness, age <= 0.05 [Unverified]. Relative Human, final model (3612131:26-32) [Certain, log]: gender accuracy 0.642 (v5 0.465; mean women 0.861, men 0.551 = still mid-range); children AUC 0.719 (v5 0.606), babies 0.438 vs adults 0.536. No correlation, slope or R² exists for any phenotype [Certain]. Mask arms, one run each (19 Oct; handover 0a): the full mask (3612325, RH 3613616) brings the demo spread back (weight 0.04 -> 0.11) but loses gender (49.3%) and most of the children shift; the partial mask, seven 0.5 constants masked and age kept (3614042, RH 3616821), keeps the children (AUC 0.727, babies 0.465, 34.3% below 0.45) but loses gender as well (47.4%; men 0.725, women 0.888); its demo spread was not measured. Decision: the unmasked final model stays [Certain, logs] | per-phenotype r / slope / R² on AnnyOne; variety of muscle / weight without losing gender (no recipe yet) |
 | 1a-shape, trained on AnnyOne labels | met | `--use_anny_shape 1 --alpha_shape 20`, L1 on all 11 values (`loss.py:319-326`; `exp7_final_model.sh:751-752`) [Certain] | nothing |
-| 1b, not exactly Multi-HMR | **not met** | `model.py` is the upstream paper model with the output resized to 163x6 rotations and 11 phenotypes, plus a 0-parameter bone fix [Certain]. Baseline measured 18 Oct evening (job 3614192, NAVER's `multiHMR_672_L_anny`, our labels and settings) [Certain]: AnnyOne holdout PVE 60.3 / PA-PVE 44.6 / recall 89% ([Likely] in-sample for NAVER, trained on all of AnnyOne), 3DPW test 126.9 / 68.8 / recall 97%; ours 73.7 / 50.3 / 87% and 89.0 / 57.6 / 99%. 95% bar: vs NAVER 63.5 mm AnnyOne (out of reach for a student of a 73.7 mm teacher) and 133.6 mm 3DPW (met); vs our ViT-L 77.6 / 93.7. Cost measured (job 3614947, `logs/model_cost_3614947.out`, A100, fp32 + TF32, batch 1) [Certain]: NAVER 380.9 M params (same ViT-L backbone 304.4 M + 8-layer decoder head 76.6 M), backbone 1,917 GFLOPs, head FLOPs and ms not measured for its class; ours 318.4 M (head 14.0 M), 1,927 GFLOPs, 77.9 ms. Ours is already 16% smaller than NAVER's, which by itself does not meet 1b ("significantly smaller") | a route (3.2) and the supervisor's yes, including which baseline sets the bar |
+| 1b, not exactly Multi-HMR | **not met** | `model.py` is the upstream paper model with the output resized to 163x6 rotations and 11 phenotypes, plus a 0-parameter bone fix [Certain]. Baseline measured 18 Oct evening (job 3614192, NAVER's `multiHMR_672_L_anny`, our labels and settings) [Certain]: AnnyOne holdout PVE 60.3 / PA-PVE 44.6 / recall 89% ([Likely] in-sample for NAVER, trained on all of AnnyOne), 3DPW test 126.9 / 68.8 / recall 97%; ours 73.7 / 50.3 / 87% and 89.0 / 57.6 / 99%. 95% bar: vs NAVER 63.5 mm AnnyOne (out of reach for a student of a 73.7 mm teacher) and 133.6 mm 3DPW (met); vs our ViT-L 77.6 / 93.7. Cost measured (job 3614947, `logs/model_cost_3614947.out`, A100, fp32 + TF32, batch 1) [Certain]: NAVER 380.9 M params (same ViT-L backbone 304.4 M + 8-layer decoder head 76.6 M), backbone 1,917 GFLOPs, head FLOPs and ms not measured for its class; ours 318.4 M (head 14.0 M), 1,927 GFLOPs, 77.9 ms. Ours is already 16% smaller than NAVER's, which by itself does not meet 1b ("significantly smaller"). **Student result, 19 Oct morning** [Certain, job 3614191, `logs/exp8_distill_vitb_3614191.out`; `docs/thesis/data/CLUSTER_ANSWERS.md` "STUDENT DONE"]: ViT-B student 119.6 / 110.1 mm PVE (AnnyOne holdout / 3DPW test) vs bars 77.6 / 93.7: the 95% rule FAILS against our ViT-L; against NAVER it is better on 3DPW (110.1 vs 126.9, 3.76x fewer params) and meets NAVER's 3DPW bar (133.6) but not its AnnyOne bar (63.5) (3.2) | the supervisor's choice of reference (slide 26, Q1); then the next step of 3.2 (longer run, or stop the route) |
 | 1b-i, new architecture | not started | no candidate. NAVER's `multiHMR_672_L_anny.pt` evaluated 18 Oct (job 3614192): our final model already beats it on 3DPW test (89.0 vs 126.9 mm PVE) but not on AnnyOne (73.7 vs 60.3, [Likely] in-sample for NAVER), so a new-architecture route would hinge on AnnyOne [Certain for the numbers]. NAVER's cost: 380.9 M params, head 76.6 M (job 3614947) | the supervisor's view on the in-sample AnnyOne number |
-| 1b-ii, smaller model | partly (code only) | distillation ran 4 times (v6-v8). The old ViT-S students had 1.17-1.54x their teacher's error (bar 1.05x), on the retired labels [Certain]. Cost: ViT-B student 101.4 M params / 603 GFLOPs vs 318.4 M / 1927 for our ViT-L, 3.1x / 3.2x (investigator count; backbone part reproduced by `model_cost.py --no-build`; measured in the exp8 smoke test, job 3613926: 101.38 M / 603.3 GFLOPs / 51.4 ms vs 318.38 M / 1,927.4 / 110 ms on an A40). Against NAVER's measured 380.9 M (job 3614947) the student has 3.76x fewer params; our final model alone is only 16% smaller than NAVER's. Full run job 3614191 | the exp8 run's errors; v23 numbers for every student |
+| 1b-ii, smaller model | **partly: cost met, accuracy not met** (19 Oct) | distillation ran 4 times (v6-v8). The old ViT-S students had 1.17-1.54x their teacher's error (bar 1.05x), on the retired labels [Certain]. Cost: ViT-B student 101.4 M params / 603 GFLOPs vs 318.4 M / 1927 for our ViT-L, 3.1x / 3.2x (investigator count; backbone part reproduced by `model_cost.py --no-build`; measured in the exp8 smoke test, job 3613926: 101.38 M / 603.3 GFLOPs / 51.4 ms vs 318.38 M / 1,927.4 / 110 ms on an A40). Against NAVER's measured 380.9 M (job 3614947) the student has 3.76x fewer params; our final model alone is only 16% smaller than NAVER's. **Full run job 3614191, done 19 Oct morning** [Certain, log lines in `docs/thesis/data/CLUSTER_ANSWERS.md` "STUDENT DONE"]: cost on one L40S 101.38 M / 603.3 GFLOPs / 28.5 ms vs 318.38 M / 1,927.4 / 59.7 ms (3.14x / 3.19x / 2.10x, met); holdout V1 PVE 119.6 (bar 77.6, teacher 73.7), MPJPE 127.2 (bar 82.0); 3DPW test PVE 110.1 (bar 93.7, teacher 89.0), MPJPE 112.0 (bar 92.9): exp8 VERDICT FAIL on all four; recall kept (85.4 vs 87.0; 99 vs 99). AnnyOne curve still falling (130.5 -> 122.8 over the last 5 epochs), 3DPW-val flat (88.0 -> 87.7) | an accuracy within the bar, or the supervisor's yes to a reference the student meets (3.2, "Result") |
 | 1c, 3DPW in Anny space | met, with caveats | v23 labels, test 8,190 images / 11,854 people; conversion check OVERALL WARN (old labels FAIL), body joints median 14.1 mm (3611284; handover 3.5) [Certain] | state the caveats in the thesis (3.1, item 4) |
 | 2a, 3DPW train + test in Anny, trained on | met | train 5,882 images / 7,584 people, validation 2,622 / 3,311; the final model trains on 30% 3DPW-train (`exp7_final_model.sh:215,757`) [Certain] | nothing (a 50% mix ablation is optional) |
 | 2b, temporal | **not started** | no temporal code in the repo (grep) [Certain]; AnnyOne is single images, multi-view, no motion [Likely] | design in section 4, weeks 5-6 |
@@ -153,6 +153,28 @@ met. [1a-pose] is close on 3DPW. Not met: [1b] (the model is Multi-HMR with an A
 
 ### 3.2 The route for [1b]
 
+**Result, 19 Oct morning: the ViT-B student fails the 95% rule against our ViT-L** [Certain, job 3614191,
+`logs/exp8_distill_vitb_3614191.out`; every number with its log line in `docs/thesis/data/CLUSTER_ANSWERS.md`, section
+"STUDENT DONE"; handover 0a].
+- Accuracy: AnnyOne holdout V1 PVE 119.6 vs bar 77.6 (teacher 73.7), MPJPE 127.2 vs 82.0; 3DPW test PVE 110.1 vs bar
+  93.7 (teacher 89.0), MPJPE 112.0 vs 92.9. exp8's verdict: FAIL on all four (PVE +62% on AnnyOne, +24% on 3DPW).
+  Recall kept: 85.4 vs 87.0 (holdout), 99 vs 99 (3DPW). The student's own bone fix gives the same holdout as the
+  teacher's (119.6 vs 119.7), so the bone-fix gate (week 3, item 2) has nothing to decide.
+- Cost, on one L40S, both models: 101.38 M vs 318.38 M params, 603.3 vs 1,927.4 GFLOPs, 28.5 vs 59.7 ms (3.14x /
+  3.19x / 2.10x): this half of the rule is met.
+- Curve (in-training holdout V0 / 3DPW-val PVE at epochs 25 and 30): 130.5 -> 122.8 and 88.0 -> 87.7. AnnyOne was
+  still falling; 3DPW-val was flat.
+- **Two readings.** (a) Against our ViT-L as "the larger model" (what this section proposed): [1b-ii] is not met on
+  either set. (b) Against NAVER's `multiHMR_672_L_anny`, the baseline of the e-mail: the student is better on 3DPW
+  (110.1 vs 126.9) with 3.76x fewer params (101.38 vs 380.94 M), meets NAVER's 3DPW bar (133.6) and misses its AnnyOne
+  bar (63.5), where NAVER's 60.3 is [Likely] in-sample. Which reading counts is question 1 for the supervisor (section
+  5; slide 26).
+- **Next, from the options already listed below ("Fallback")**: train the same ViT-B longer, from its last checkpoint
+  (`train/checkpoints/00029.pt`), and report the ratio as measured: [Likely] it helps AnnyOne, whose curve still fell,
+  [Guessing] not enough on 3DPW, whose curve is flat; or stop the smaller-model route and argue 1b through the
+  comparison with NAVER's baseline (reading (b); the per-frame comparison with NAVER of the last fallback below). The choice follows the supervisor's answer.
+- The odds below were the guess before the run; they were wrong on 3DPW (guessed likely, missed by 16 mm).
+
 **Primary: [1b-ii], a ViT-B student distilled from the final model** (`slurm/experiments/exp8_distill_vitb.sh`).
 - The code exists. The distillation path ran four times (v6-v8). exp8 adds the guards, the student's own bone fix,
   the benchmark and the 95% table [Certain, read].
@@ -194,7 +216,7 @@ is Multi-HMR, i.e. NAVER's `multiHMR_672_L_anny`. Our ViT-L is "the larger model
 - exp8's own table uses /0.95 (targets 77.6 / 93.7) and the re-measured teacher only (`exp8_distill_vitb.sh`,
   header "THE 95% RULE"). Read its ratio column, apply x1.05 by hand and add the NAVER column by hand.
 
-**Odds** [Guessing]. 95% on 3DPW: likely (NAVER's B = L there). 95% on AnnyOne: about 50/50; NAVER's B is 14.7% worse
+**Odds** [Guessing; written before the run, see "Result" above: both missed]. 95% on 3DPW: likely (NAVER's B = L there). 95% on AnnyOne: about 50/50; NAVER's B is 14.7% worse
 than its L on synthetic BEDLAM-val (67.2 vs 58.6), and AnnyOne is synthetic.
 
 **Fallback (decide ~10 Nov).**
@@ -279,6 +301,8 @@ Feasible, with a real risk and no buffer [Likely]. The baseline, the shape mask 
 1-2. The student was submitted on 18 Oct (job 3614191, 30 epochs, 20 h limit), earlier and shorter than first planned
 (the Tue 20 / 100-epoch commands below are the superseded plan): its result comes a day or two after the queue starts it;
 if it misses the 95% bar, the fallback (train longer) is decided the same day; (1) closes by Sun 15 Nov. Say this on Monday.
+**19 Oct morning:** the student finished and missed the bar on both sets (3.2, "Result"); the fallback decision now
+waits on the supervisor's answer to question 1 (which reference) at the meeting.
 
 ---
 

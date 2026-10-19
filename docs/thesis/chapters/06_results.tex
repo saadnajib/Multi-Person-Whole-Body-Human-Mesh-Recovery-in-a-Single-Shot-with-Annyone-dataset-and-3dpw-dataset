@@ -415,9 +415,8 @@ Not shown: a second run, a longer schedule, and the Student's shape, fingers and
 
 \input{tables/T20_history}
 
-Table~\ref{tab:history} keeps the draft's measurements, in setting V0 and from before both fixes: the staged
-schedule to Base (Table~\ref{tab:history-stages}) and the ViT-S students (Table~\ref{tab:history-students}), which
-reached at best \StudentSixcRatio{} times their teacher's error. Three lessons shaped the Student: a backbone already
-trained for mesh recovery gave the largest gain, so it starts from NAVER's ViT-B; projector-fed heads at the
-teacher's width beat narrower ones, so it keeps Final's heads; and the students were limited by data, so it sees six
-times the images of Final's fine-tune.
+Table~\ref{tab:history} keeps the draft's V0 measurements from before both fixes: the schedule to Base
+(Table~\ref{tab:history-stages}) and the ViT-S students (Table~\ref{tab:history-students}), at best
+\StudentSixcRatio{} times their teacher's error. Three lessons followed: a backbone trained for mesh recovery gave the
+largest gain, so the Student starts from NAVER's ViT-B; heads at the teacher's width beat narrower ones, so it keeps
+Final's heads; and data limited the students, so it sees six times more images.

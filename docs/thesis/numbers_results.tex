@@ -45,7 +45,7 @@
 
 % --- Model cost (T16, F18) ----------------------------------------------------
 % Final model and NAVER on an NVIDIA A100-PCIe-40GB (job 3614947, fp32+TF32, batch 1,
-% 20 warm-up + 50 timed, one person); teacher/student ms pair on an A40 (job 3613926).
+% 20 warm-up + 50 timed, one person); teacher/student ms pair on the L40S of the Student job (3614191).
 % 1 MAC = 2 FLOPs, 672 px input.
 \newcommand{\FinalParams}{318.38}       % M params; 3614947 (model_cost_naver_vs_final.json); H 0a
 \newcommand{\FinalHeadParams}{14.01}    % M params, heads only; 3614947; H 0a
@@ -109,7 +109,6 @@
 \newcommand{\BaseIntercept}{2.36}     % m; 3571596; H 3.1
 \newcommand{\FinalHeadPx}{7.6}        % px, head 2D error; 3611336:175; H 3.1; data/holdout_per_person_final.csv mean head_px_err (V1)
 \newcommand{\ControlHeadPx}{67.1}     % px; 3611339:166; H 3.1
-\newcommand{\BaseHeadPx}{64.5}        % px; H 3.1 footnote; plan T8
 \newcommand{\FinalPelvisPx}{41.1}     % px, pelvis 2D error; 3611336:175; H 3.1
 \newcommand{\ControlPelvisPx}{26.7}   % px; 3611339:166; H 3.1
 \newcommand{\FinalDepthR}{0.56}       % Pearson r true vs predicted depth, Final; data/plot_stats.md (F15)
@@ -120,7 +119,6 @@
 \newcommand{\ControlMatched}{219}     % matched people, V1, Control; data/plot_stats.md
 \newcommand{\BaseMatched}{222}        % matched people, V1, Base; F15_depth_scatter.tex header (gen.py)
 \newcommand{\FinalIdentityCross}{3.01}% m, where Final's fit meets the identity line; data/plot_stats.md
-\newcommand{\ControlIdentityCross}{3.67}% m; data/plot_stats.md
 \newcommand{\FinalMPJPE}{77.9}        % mm, V1 MPJPE, Final; mean of mpjpe over V1_eval_masked rows of data/holdout_per_person_final.csv (its pve/pa_pve means reproduce 73.7/50.3)
 
 % --- Neck, head and fingers, V1 (T15 part A; H 5/7; T9/T10 in chapter 5) --------------------------------------
@@ -146,8 +144,6 @@
 \newcommand{\NoTrainFingers}{8.2}     % deg, correction, no training; 3579014:114; H 0b
 \newcommand{\FinalNeckRegion}{5.5}    % deg, per-region joint error, neck, Final; 3611336:186; H 5/7
 \newcommand{\ControlNeckRegion}{62.6} % deg; 3611339:177; H 5/7
-\newcommand{\FinalHeadRegion}{5.0}    % deg, head region, Final; 3611336:186; H 5/7
-\newcommand{\ControlHeadRegion}{89.7} % deg; 3611339:177; H 5/7
 
 % --- Final vs Control: gaps quoted in the text (computed from the values above) -------------------------------
 \newcommand{\GapPVE}{3.7}             % mm, 77.4 - 73.7 (V1); H 5/7 reading 2
@@ -157,18 +153,8 @@
 \newcommand{\RestartCost}{2.4}        % mm, controls mean 72.9 vs Base 70.5; H 3.6
 
 % --- In-training curves (F20; data/val_curves_exp7.csv; data/plot_stats.md) -----------------------------------
-\newcommand{\ValMinFinal}{73.4}       % mm, 3DPW val, Final, epoch 7; 3611336:55-164; data/plot_stats.md
-\newcommand{\ValMinControl}{75.5}     % mm, 3DPW val, Control, epoch 4; 3611339:48-157; data/plot_stats.md
 \newcommand{\ValLastFinal}{74.5}      % mm, epoch 10; data/plot_stats.md
-\newcommand{\ValLastControl}{75.9}    % mm, epoch 10; data/plot_stats.md
-\newcommand{\ValMeanFinal}{75.7}      % mm, mean over 10 epochs (75.69); data/plot_stats.md
-\newcommand{\ValMeanControl}{77.7}    % mm, mean over 10 epochs (77.72); data/plot_stats.md
-\newcommand{\ValFirstFinal}{79.9}     % mm, epoch 1; data/val_curves_exp7.csv
-\newcommand{\ValFirstControl}{80.6}   % mm, epoch 1; data/val_curves_exp7.csv
 \newcommand{\HoldVzeroLastFinal}{79.3}  % mm, in-training AnnyOne holdout (V0), epoch 10, Final; data/plot_stats.md
-\newcommand{\HoldVzeroLastControl}{81.2}% mm, epoch 10, Control; data/plot_stats.md
-\newcommand{\HoldVzeroMeanFinal}{80.7}  % mm, mean over epochs (80.73); data/plot_stats.md
-\newcommand{\HoldVzeroMeanControl}{79.2}% mm, mean over epochs (79.19); data/plot_stats.md
 
 % --- 3DPW test, v23 labels: remaining cells quoted in the text (T15 part B; H 0b) -----------------------------
 \newcommand{\NeckPilotThreeDPW}{120.2}   % mm; 3612075:118-125; H 0b
@@ -184,7 +170,6 @@
 \newcommand{\GainFixesThreeDPW}{2.5}     % mm, 91.5 - 89.0; H 0b "the fixes add 2.5 mm"
 \newcommand{\GainFixesPAThreeDPW}{2.1}   % mm, 59.7 - 57.6; H 0b
 \newcommand{\GainOverOldThreeDPW}{6.5}   % mm, 95.5 - 89.0; H 0b
-\newcommand{\GainBaseToFinalThreeDPW}{32.8} % mm, 121.8 - 89.0; H 5/7
 \newcommand{\FinalTestHundredPVE}{77.5}  % mm, AnnyOne test-100, V0; 3611336:218-223; H 0b
 \newcommand{\FinalTestHundredPAPVE}{54.4}% mm; 3611336:218-223; H 0b
 \newcommand{\ThreeDPWTestImages}{8190}   % images, v23 test; H 0b
@@ -195,8 +180,6 @@
 \newcommand{\FinalMaskedRootErr}{682}    % mm, V1; 3612325 log; H 0a
 \newcommand{\FinalMaskedThreeDPW}{91.1}  % mm, 3DPW test v23; 3612325 log; H 0a
 \newcommand{\FinalMaskedPAThreeDPW}{59.0}% mm; 3612325 log; H 0a
-\newcommand{\FinalMaskedPrecThreeDPW}{68}% percent; 3612325 log; H 0a
-\newcommand{\FinalMaskedTestHundredPVE}{75.4} % mm, AnnyOne test-100 V0; 3612325 log; H 0a
 \newcommand{\SpreadMuscleFinal}{0.04}    % std of predicted muscle, 12 demo images, Final; 3612078 [shape] lines; H 0a
 \newcommand{\SpreadMuscleMasked}{0.06}   % Final-masked; 3613617; H 0a
 \newcommand{\SpreadWeightFinal}{0.04}    % 3612078; H 0a
@@ -208,8 +191,6 @@
 \newcommand{\SpreadAgeFinal}{0.03}       % 3612078; H 0a
 \newcommand{\SpreadAgeMasked}{0.08}      % 3613617; H 0a
 \newcommand{\SpreadRuleThreshold}{0.08}  % std a mask had to exceed to become the final model (decision rule); H 0a
-\newcommand{\MuscleMedianFinal}{0.48}    % median predicted muscle on the demo, Final; 3612078; H 0a
-\newcommand{\MuscleMedianMasked}{0.31}   % median predicted muscle on the demo, Final-masked; 3613617; H 0a
 
 % --- Final-partial-mask (job 3614042, the seven 0.5 constants masked, age kept; RH 3616821; no demo run) ------
 % CA = data/CLUSTER_ANSWERS.md, sections "19 Oct, 00:30" (training job) and "19 Oct, 01:20" (Relative Human).
@@ -217,19 +198,8 @@
 \newcommand{\FinalPartialPAPVE}{51.2}     % mm, V1; 3614042:191-215; CA 00:30
 \newcommand{\FinalPartialRecall}{87.4}    % percent, V1; 3614042:191-215; CA 00:30
 \newcommand{\FinalPartialRootErr}{680}    % mm, V1; 3614042:191-215; CA 00:30
-\newcommand{\FinalPartialSlope}{0.42}     % depth slope (intercept 1.69 m); 3614042:191-215; CA 00:30
-\newcommand{\FinalPartialSize}{0.79}      % drawn size pred/true; 3614042:191-215; CA 00:30
-\newcommand{\FinalPartialGirth}{1.005}    % neck girth pred/GT; 3614042:191-215; CA 00:30
-\newcommand{\FinalPartialNeckTwo}{5.0}    % deg, neck02; 3614042:191-215; CA 00:30
-\newcommand{\FinalPartialHeadBone}{8.9}   % deg, head bone; 3614042:191-215; CA 00:30
-\newcommand{\FinalPartialFingers}{8.2}    % deg, predicted fingers; 3614042:191-215; CA 00:30
-\newcommand{\FinalPartialTestHundredPVE}{76.6}  % mm, AnnyOne test-100 V0; 3614042 log (run_eval_3dpw_test.sh part); CA 00:30
-\newcommand{\FinalPartialTestHundredPAPVE}{55.2}% mm; same; CA 00:30
-\newcommand{\FinalPartialTestHundredRecall}{87} % percent; same; CA 00:30
 \newcommand{\FinalPartialThreeDPW}{89.9}  % mm, 3DPW test v23, 8,190 images; 3614042 log (3DPW test part); CA 00:30
 \newcommand{\FinalPartialPAThreeDPW}{58.9}% mm; same; CA 00:30
-\newcommand{\FinalPartialPrecThreeDPW}{66}% percent; same; CA 00:30
-\newcommand{\FinalPartialRecallThreeDPW}{99}% percent; same; CA 00:30
 \newcommand{\RHRecallPartial}{63.0}       % percent (1341 of 2130); 3616821 (logs/eval_rh_3616821_0.out); CA 01:20
 \newcommand{\RHGenderPartial}{47.4}       % percent (n 1271); 3616821; CA 01:20
 \newcommand{\RHMenGenderPartial}{0.725}   % mean predicted gender of men (male = 0); 3616821; CA 01:20
@@ -240,8 +210,6 @@
 \newcommand{\RHAgeKidPartial}{0.506}      % kids; 3616821; CA 01:20
 \newcommand{\RHAgeBabyPartial}{0.465}     % babies; 3616821; CA 01:20
 \newcommand{\RHBabiesBelowPartial}{34.3}  % percent of matched babies below 0.45 (of 67); 3616821; CA 01:20
-\newcommand{\RHKidsBelowPartial}{10.3}    % percent of matched kids below 0.45 (of 117); 3616821; CA 01:20
-\newcommand{\RHMatchedPartial}{1341}      % matched people, all groups (recall 0.630); 3616821; CA 01:20
 
 % --- Relative Human, remaining cells (T12; recomputed from data/rh_per_person_*.csv where marked) -------------
 \newcommand{\RHAgeAdultBase}{0.631}   % mean predicted age, adults; 3611285_0; data/plot_stats.md
@@ -253,12 +221,10 @@
 \newcommand{\RHAgeAdultMasked}{0.638} % 3613616; data/plot_stats.md
 \newcommand{\RHAgeKidMasked}{0.611}   % data/plot_stats.md
 \newcommand{\RHAgeBabyMasked}{0.524}  % data/plot_stats.md
-\newcommand{\RHBabyMedianFinal}{0.456}% median, babies, Final; data/plot_stats.md
 \newcommand{\RHBabiesBelowBase}{2.6}  % percent of matched babies below 0.45 (1 of 38); data/plot_stats.md (handover rounds to 3)
 \newcommand{\RHBabiesBelowFinal}{49.3}% percent (36 of 73); data/plot_stats.md
 \newcommand{\RHBabiesBelowMasked}{16.9}% percent (10 of 59); data/plot_stats.md
 \newcommand{\RHKidsBelowFinal}{16.8}  % percent (20 of 119); data/plot_stats.md
-\newcommand{\RHAdultsBelowFinal}{1.2} % percent (13 of 1113); data/plot_stats.md
 \newcommand{\RHMenGenderBase}{0.535}  % mean predicted gender of men (male = 0); 3611285_0:30; data/rh_per_person_base.csv
 \newcommand{\RHWomenGenderBase}{0.551}% 3611285_0:30; data/rh_per_person_base.csv
 \newcommand{\RHMenGenderFinal}{0.551} % 3612131:32; data/rh_per_person_final.csv
@@ -268,10 +234,6 @@
 \newcommand{\RHHeightKidBase}{0.451}  % mean height phenotype, kids; 3611285_0; data/rh_per_person_base.csv
 \newcommand{\RHHeightBabyBase}{0.394} % data/rh_per_person_base.csv
 \newcommand{\RHHeightAdultBase}{0.507}% data/rh_per_person_base.csv
-\newcommand{\RHChildrenBase}{127}     % kids + babies matched, Base (AUC positives); 3611285_0; data/rh_per_person_base.csv
-\newcommand{\RHChildrenFinal}{192}    % kids + babies matched, Final; 3612131; data/rh_per_person_final.csv
-\newcommand{\RHAdultsBase}{821}       % adults matched, Base; data/plot_stats.md
-\newcommand{\RHAdultsFinal}{1113}     % adults matched, Final; data/plot_stats.md
 
 % --- Student (T17, F19): job 3614191 (logs/exp8_distill_vitb_3614191.out), done 19 Oct; CA = data/CLUSTER_ANSWERS.md
 % section "STUDENT DONE". The 95% rule fails on PVE and MPJPE on both sets (final table 3614191:259-283).
@@ -289,7 +251,6 @@
 \newcommand{\StudentRatioPVE}{1.62}      % 119.6 / 73.7, holdout V1 (bar 1.05)
 \newcommand{\StudentRatioThreeDPW}{1.24} % 110.1 / 89.0, 3DPW test
 \newcommand{\StudentGainOverNAVERThreeDPW}{16.8} % mm, 126.9 - 110.1; CA STUDENT DONE
-\newcommand{\StudentTrainImgPerSec}{11.6}% training images per second, L40S; 3614191 (20,894 s for 240,000 images); CA STUDENT DONE
 \newcommand{\StudentCurveHoldFifteen}{139.5} % mm, in-training holdout V0 PVE, epoch 15; 3614191:59-143
 \newcommand{\StudentCurveHoldLast}{122.8}    % mm, same, epoch 30; 3614191:59-143
 \newcommand{\StudentCurveValTwentyFive}{88.0}% mm, in-training 3DPW-val PVE, epoch 25; 3614191:59-143
@@ -297,9 +258,6 @@
 \newcommand{\BarMPJPE}{82.0}          % mm, 77.9 / 0.95, AnnyOne V1 MPJPE bar (computed here)
 \newcommand{\BarMPJPEThreeDPW}{92.9}  % mm, 88.3 / 0.95; plan T11
 \newcommand{\StudentEpochs}{30}       % epochs x 1,000 steps, batch 8; exp8 header; H 0a
-\newcommand{\StudentImages}{240000}   % training images; exp8 header; plan T11
-\newcommand{\StudentBackboneParams}{86.58} % M, ViT-B/14 backbone; model_cost.py --no-build --all; H 0a
-\newcommand{\FinalTrainImgPerSec}{10.9}% training images per second, Final, A100; 3611336:15; H 5/7
 
 % --- History (T19; draft tables tab:main and tab:kd_eval, setting V0) -----------------------------------------
 \newcommand{\HistStageOnePVE}{145}    % mm, V0 training-time, frozen backbone; draft main.tex:681
@@ -307,7 +265,6 @@
 \newcommand{\BaseVzeroPVE}{74.3}      % mm, Base, V0 standalone evaluation; draft main.tex:684; H 0b (3612073:25-32)
 \newcommand{\BaseOldVzeroPVE}{78.5}   % mm, Mixed-L, V0; draft tab:kd_eval; H 0b (3612074:25-32)
 \newcommand{\StudentSixcRatio}{1.54}  % 114.5 / 74.3 (S6c over its teacher, V0)
-\newcommand{\StudentSEightRatio}{1.54}% 120.6 / 78.5 (S8 over its teacher Mixed-L, V0)
 % Student-S on the corrected (v23) 3DPW test labels, 8,190 images, the script of T15 part B (job 3615020; the
 % only Student-S numbers on these labels; their AnnyOne test-100 rows equal T20: 114.5/84.6/118.4, 120.6/86.9/125.0)
 \newcommand{\StudentSSixcThreeDPW}{142.6}   % mm, Student-S/6c (v6c e149), PVE; 3615020_2:119; H 0b

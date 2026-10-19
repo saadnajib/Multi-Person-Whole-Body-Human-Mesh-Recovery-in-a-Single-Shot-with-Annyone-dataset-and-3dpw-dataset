@@ -7,18 +7,7 @@
 
 \newcommand{\DiscStatusDate}{18~October 2026}  % date of the status in T1 / Section 7.1; thesis_requirements_plan.md section 2 ("18 Oct, evening")
 \newcommand{\DiscFinalSmallerPct}{16}          % percent fewer params, Final vs Multi-HMR-Anny: 1 - 318.38/380.94 = 0.164; 3614947; H 0a "16% fewer"
-\newcommand{\DiscNAVERAnnyOneGap}{13.4}        % mm, 73.7 - 60.3 (Final vs Multi-HMR-Anny, AnnyOne V1; likely in-sample for NAVER); H 0a
 \newcommand{\DiscBaseControlGapPVE}{6.9}       % mm, 77.4 - 70.5 (Control vs Base, V1 PVE); H 5/7 table
 \newcommand{\DiscPAPVEBelowBase}{3.0}          % mm, 53.3 - 50.3 (Base vs Final, V1 PA-PVE); H 5/7 table
-\newcommand{\DiscNoTrainPVEChange}{0.8}        % mm, 71.3 - 70.5 (bone correction applied to Base, no training, V1 PVE); 3579014:110; H 0b exp6 table
 \newcommand{\DiscNeckVerts}{171}               % neck-skin vertices behind PVE_neck; tables/T09_neck.tex caption (diag_holdout_trace)
-\newcommand{\DiscNeckVertShare}{1.2}           % percent, 171 / 13,718 Anny vertices (\MethodNumVerts)
 \newcommand{\DiscNeckPVEShare}{0.2}            % mm, estimate: (27.7 - 11.0) mm x 171 / 13,718 = 0.21; arithmetic on H 0b numbers, not a measurement
-\newcommand{\DiscNoTrainPAPVE}{52.2}           % mm, V1 PA-PVE, bone correction on Base without training; 3579014:110; H 0b exp6 table; T09
-\newcommand{\DiscNeckPilotPAPVE}{50.9}         % mm, V1 PA-PVE, neck pilot (correction + 2-epoch fine-tune); 3579014:110; H 0b; T09
-\newcommand{\DiscNeckPilotCtrlPAPVE}{55.2}     % mm, V1 PA-PVE, its 2-epoch control (exp5 ctrl); H 0b; T09
-\newcommand{\DiscNeckPilotPVE}{68.8}           % mm, V1 PVE, neck pilot; 3579014; H 0b; T09
-\newcommand{\DiscGroupMeanNeckA}{62.7}         % deg, old per-group mean neck error that hid the flip; H 6 "Neck"; chapter 5
-\newcommand{\DiscGroupMeanNeckB}{89.5}         % deg, same; H 6
-\newcommand{\DiscFFNOurs}{4096}                % decoder FFN width hard-coded in our adapter (4*1024); H 0a "(2) NAVER baseline 3613928 CRASHED"
-\newcommand{\DiscFFNNaver}{2048}               % decoder FFN width in NAVER's checkpoint (2*1024); H 0a

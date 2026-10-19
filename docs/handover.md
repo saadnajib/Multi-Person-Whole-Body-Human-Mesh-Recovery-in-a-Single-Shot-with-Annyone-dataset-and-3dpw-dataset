@@ -449,6 +449,40 @@ because age stayed supervised; gender is lost as under the full mask. [Guessing,
 supervised in this run and gender accuracy still fell to chance, so the final model's gender gain likely depends on the
 seven constants on 3DPW men as much as on the gender label. Thesis: 6.8 (Table 6.x `tab:mask-arms`, T21; T12 fourth
 column), 7.1 (1a-shape, T01), 8.2, 4.3, T13, T19 updated 19 Oct. Deck: slides 19 and 30 updated (section 9).
+**19 Oct morning: STUDENT DONE, 95% rule FAILS.** [Certain, job 3614191, `logs/exp8_distill_vitb_3614191.out`; every
+number with its log line in `docs/thesis/data/CLUSTER_ANSWERS.md`, section "STUDENT DONE"] The ViT-B student distilled
+from the final model (RUN `student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30`): 30 epochs x 1,000 x batch 8 on
+one L40S, 20,894 s (5.8 h), 11.6 img/s; 77 NaN/Inf steps skipped; heads frozen in epochs 0-4.
+  - Holdout V1 (lines 195-207): student PVE 119.6, PA-PVE 80.8, MPJPE 127.2, recall 85.4, FP 64; teacher 73.7 / 50.3 /
+    77.9 / 87.0, FP 42. Rotation errors (deg) student vs teacher: root 13.5 vs 8.7, spine 6.5 / 5.8, neck 5.7 / 5.5,
+    head 4.5 / 5.0, arm 10.6 / 8.4, fingers 9.3 / 8.3, leg 6.4 / 5.1; root error 830.7 vs 728.5 mm.
+  - AnnyOne test-100 V0: student 122.7 / 84.2 / 127.7, recall 85; teacher 77.5 / 54.4 / 78.5, recall 87.
+  - 3DPW test v23 (8,190 images): student PVE 110.1, PA-PVE 71.8, MPJPE 112.0, recall 99; teacher 89.0 / 57.6 / 88.3 / 99.
+  - Cost on one L40S (lines 213-221): teacher 318.38 M params / 1,927.4 GFLOPs / 59.7 ms full forward (backbone 50.7 ms);
+    student 101.38 M (backbone 86.58, feat_proj 0.79, heads 14.01) / 603.3 GFLOPs / 28.5 ms (backbone 19.1 ms): 3.14x fewer
+    params, 3.19x fewer FLOPs, 2.10x faster. (The A40 smoke-test pair 110 / 51.4 ms, 2.14x, is superseded in the deck.)
+  - Final table (lines 259-283): bars AnnyOne PVE <= 77.6, MPJPE <= 82.0; 3DPW PVE <= 93.7, MPJPE <= 92.9. **VERDICT:
+    FAIL on all four** (PVE +62% on AnnyOne, +24% on 3DPW against the teacher). Recall is kept (85.4 vs 87.0; 99 vs 99).
+  - Curve (in-training V0 holdout / 3DPW-val PVE, lines 59-143) at epochs 5, 10, 15, 20, 25, 30: 165.1/104.9,
+    170.0/101.5, 139.5/93.0, 133.0/90.9, 130.5/88.0, 122.8/87.7. AnnyOne still falling (~8 mm per 5 epochs); 3DPW-val
+    flat (88.0 -> 87.7).
+  - Bone fix: the student's own estimate (neck02 178.9, head 179.1, metacarpal1.L 179.7, finger4-1.R 179.9 deg) is
+    0.2-1.8 deg from the teacher's; holdout with its own fix 119.6 vs with the teacher's 119.7: no difference, so the
+    bone fix does not explain the gap (week 3 "bone-fix gate" of the plan: nothing to do).
+  - Against NAVER's Multi-HMR-Anny (job 3614192): 3DPW 110.1 vs 126.9 mm (the student is better) with 101.38 vs 380.94 M
+    params (3.76x fewer); AnnyOne 119.6 vs 60.3 (NAVER's number likely in-sample). Against NAVER's bars (63.5 / 133.6):
+    3DPW met, AnnyOne not met.
+  - Reading. [Certain] Against our ViT-L, 1b-ii is not met on either test set; the cost side passes. [Likely] a longer
+    run helps AnnyOne (the curve still fell); [Guessing] it will not close the 16 mm 3DPW gap (the 3DPW-val curve is
+    flat). Against NAVER's model, the baseline of the e-mail, the student is better on real 3DPW at a quarter of the
+    parameters and misses only the AnnyOne bar, where NAVER's number is likely in-sample. So which model sets the bar
+    is question 1 for the supervisor today (slide 26). Options already in the plan (`docs/thesis_requirements_plan.md`
+    3.2 fallback): train the same ViT-B longer from its last checkpoint (`train/checkpoints/00029.pt`) and report the
+    ratio as measured, or stop the smaller-model route and argue 1b through the baseline comparison. The plan's guess
+    before the run (3DPW likely, AnnyOne about 50/50) was wrong on 3DPW.
+  - Deck rebuilt 19 Oct morning: slides 1, 2, 23, 24, 25, 26, 30 and their notes (section 9);
+    `docs/deck_explained_2026-10-19.md` (slides 1, 2, 23-26, 30, Part 7 1b, Part 8 Q3a);
+    `docs/thesis_requirements_plan.md` (2, 3.2). `docs/thesis/` not touched by this update.
 
 Paste this section with section 0. Each step names the section with the details.
 
@@ -713,6 +747,12 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   backbone 1,917.2 GFLOPs, head FLOPs and ms not measured for its class; final model 318.38 M (head 14.01), 1,927.4 GFLOPs,
   77.9 ms median one-person forward (backbone 60.8 ms), 1.54 GB peak: 16% fewer params than NAVER's; the student
   (101.38 M) 3.76x fewer than NAVER's, 3.14x fewer than ours. The 110 / 51.4 ms teacher / student pair is on an A40 (3613926).
+- ViT-B student (exp8, job 3614191, done 19 Oct morning; 0a) [Certain, log]: holdout V1 PVE 119.6 / PA-PVE 80.8 / MPJPE
+  127.2 / recall 85.4 (teacher 73.7 / 50.3 / 77.9 / 87.0); 3DPW test PVE 110.1 / 71.8 / 112.0 / recall 99 (teacher 89.0 /
+  57.6 / 88.3 / 99). Bars 77.6 / 93.7 (PVE), 82.0 / 92.9 (MPJPE): **95% rule FAILS on all four** (+62% / +24% PVE). Cost on
+  one L40S: 101.38 M / 603.3 GFLOPs / 28.5 ms vs 318.38 M / 1,927.4 / 59.7 ms (3.14x / 3.19x / 2.10x). Curve: AnnyOne
+  still falling (130.5 -> 122.8 over the last 5 epochs), 3DPW-val flat (88.0 -> 87.7). Against NAVER: 3DPW 110.1 vs
+  126.9 (better, 3.76x fewer params); NAVER's bars 63.5 / 133.6: 3DPW met, AnnyOne not.
 - Pilot noise: two identical configs differ by 7.6 mm PVE and 1.9 deg global head. One pilot resolves ~10 mm, ~3 deg,
   ~2 recall points.
 - Neck, v5 (all eight v5-line checkpoints alike): neck02 175.6 deg (half-turn), head 177.9 deg, global head only
@@ -833,6 +873,7 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   | full shape mask (3612325) | 91.1 | 59.0 | -- | 68.0 | 99.0 | 75.4 / 54.8 / -- |
   | partial shape mask, age kept (3614042, 19 Oct) | 89.9 | 58.9 | 90.0 | 66.0 | 99.0 | 76.6 / 55.2 / 87 |
   | NAVER `multiHMR_672_L_anny` (3614192; helper bones always masked) | 126.9 | 68.8 | 129.4 | 75.0 | 97.0 | 60.3 / 44.6 / 89 (masked = V1; likely in-sample) |
+  | ViT-B student of the final model (3614191, 19 Oct) | 110.1 | 71.8 | 112.0 | -- | 99.0 | 122.7 / 84.2 / 85 |
 
   ViT-S students, same script and images (job 3615020, 18 Oct 22:40) [Certain, logs]: Student-S/final (v8 e52) 121.6 / 83.7,
   Student-S/6c (v6c e149) 142.6 / 91.0 PVE / PA-PVE (MPJPE 123.3 / 147.5, precision 56 / 45, recall 98 / 98; AnnyOne 120.6, 114.5).
@@ -3260,11 +3301,11 @@ rebuild (or hand-edit the pptx as above).
 | result | slide text | speaker notes | what changes |
 |---|---|---|---|
 | NAVER baseline `multiHMR_672_L_anny`, job 3614192: **DONE 18 Oct evening** (errors in the deck); its cost, job 3614947: **DONE** (380.9 M params, head 76.6 M; in the deck) | now carried by 20 (3DPW line "NAVER 126.9"; source line), 23 (row 1b evidence), 24 (NAVER row "60.3 mm*" / "126.9 mm", footnote *, the bars 63.5 / 133.6 in the rule line), 26 (question 1), 30 (row 3614192); also 25 (week 1 "done 18 Oct") | 20, 23 (main + If asked), 24, 25, 26 (main + If asked), 30 | nothing pending: slide 24's NAVER row reads 380.9 M / 1,917 (backbone) / not measured (ms and head FLOPs are not measured for NAVER's class, by design), job 3614947 |
-| exp8, the ViT-B student, job 3614191 (pending; smoke test 3613926 passed) | 24 (student row "pending (this week)"; the timeline bullet), 30 (row 3614191); also 1 ("ViT-B student running"), 2 (row 1b), 23 (row 1b, next), 25 (weeks 1 and 3) | 24, 23 (main), 25, 30 | the student's holdout and 3DPW-test PVE / MPJPE and its ratio against both ViT-Ls (bar <= 77.6 mm and <= 93.7 mm against ours); if it misses with a still-falling curve, week 3's longer run |
+| exp8, the ViT-B student, job 3614191: **DONE 19 Oct morning, 95% rule FAILS** (119.6 / 110.1 mm vs bars 77.6 / 93.7; 0a) | now carried by 24 (student row 101.4 M / 603 / 28.5 / "119.6 mm" / "110.1 mm"; teacher ms 59.7 and header "ms / image (L40S)"; "student vs teacher" row "2.10× faster", "bar ≤ 77.6: missed", "bar ≤ 93.7: missed"; how-to-read; timeline bullet "result 19 Oct: the 95% rule fails on both sets (+62% / +24%) ..."; the risk bullet became "Decision: against Multi-HMR-Anny: better on 3DPW (110.1 vs 126.9 mm) with 3.76× fewer params; which reference counts is your call."), 23 (row 1b evidence "Student measured: ..." and next "your choice of reference; then longer run or a different student"; header "evidence (19 Oct)"), 26 (question 1 ends "(Student: 119.6 / 110.1 mm; bars vs ours 77.6 / 93.7, vs NAVER's 63.5 / 133.6)"; Not claimed "(slides 23–24)"), 25 (week 1 "done 19 Oct, failed the bar"; week 3 "train it longer ..., if you agree (Q1)"), 30 (row 3614191 "ViT-B student: done, 119.6 / 110.1 mm (smoke 3613926)"), 1 (line 5 "ViT-B student misses the 95% bar"), 2 (row 1b "the ViT-B student misses it"); deck rebuilt 19 Oct morning, LibreOffice render checked for 1, 2, 23, 24, 25, 26, 30 | 1, 2, 23 (main + If asked ms), 24 (rewritten: 6 sentences + If asked), 25, 26 (main), 30 | nothing pending in the deck; next step depends on the supervisor's question 1 (longer run from `00029.pt`, or stop the route) |
 | partial mask, age kept, job 3614042 + its Relative Human job 3616821: **DONE 19 Oct (01:20)**; decision: the unmasked final model stays (0a) | now carried by 19 (bottom line "Result, 19 Oct", replacing "Reading and next step ... queued") and 30 (row 3614042 "partial mask, age kept (done; not adopted)"); deck rebuilt 19 Oct 01:20. The deck still says "queued" / "next" in 23 (row 1a shape, next), 25 (week 1) and the notes of 26: not updated | 19 (main + If asked) and 30 updated; 25 and 26 not | nothing pending: gender 47.4% fails the rule, AUC 0.727 passes, demo spread not measured (not needed) |
 | the other four demo images of the 2-epoch model (runForBus, sitOnStairs, fencing frames, one photo; job 3581312) | none | 16 (If asked: "I have looked at 8 of these 12 images so far ..."), 27 (main: "the 8 real images I have seen so far"; If asked: "I have looked at 8 of these 12 images so far"), 26 (If asked: "in the 8 of its 12 images I have seen") | how many of the 12 show normal necks with the fix |
 | `long_pc_dist20` (4d) | 14 (legend: "No control was run at ×5 or ×20"), 27 item 3 ("no ×20 result at 10 epochs") | 14 (main), 27 (If asked), 26 (If asked: "Five, not twenty, because ...") | root error, size, slope, PVE, recall of x20 for 10 epochs next to x5 for 10 epochs |
-| the supervisor's answers (slide 26, four questions) | 26 (question box "Questions for you"), 23 (rows 1b "needs your yes" and 2b), 24 (risk bullet "Your call"), 18 (last bullet's question), 27 item 6 | 26 (main: "I have four questions now ..."; If asked: "Option 1", "Option 2"), 23 (If asked: "that is my first question on slide 26"), 24 | record them in the paragraph below |
+| the supervisor's answers (slide 26, four questions) | 26 (question box "Questions for you"), 23 (rows 1b "your choice of reference" and 2b), 24 (decision bullet "which reference counts is your call"), 18 (last bullet's question), 27 item 6 | 26 (main: "I have four questions now ..."; If asked: "Option 1", "Option 2"), 23 (If asked: "that is my first question on slide 26"), 24 | record them in the paragraph below |
 | the supervisor's children decisions (Path A or B; the shape mask) | 18 (last bullet), 27 item 6 | 27 (main: "the decision is a limitation or weak age labels"), 26 (If asked, "Both options") | record both in the paragraph below. Note 26's "Both options" still says the mask-on run "is in progress (slide 18)": that run is done and on slide 19; fix it in `build.js` at the next rebuild |
 
 Done and in the deck, nothing pending: the 3DPW re-fit and the v23 check (slide 6), the Relative Human evaluations of
@@ -3272,14 +3313,15 @@ v5, exp6 and the final model (slide 18), the final model (exp7; slides 8, 14, 15
 re-evaluations of v5, v9 e62 and exp6 (slide 20), the demo of the final model (slide 21), the masked arm (slides 18
 and 19), the partial mask and its Relative Human run (jobs 3614042, 3616821; slides 19 and 30, 19 Oct), the exp8
 smoke test (slide 24), the NAVER baseline's errors (job 3614192; slides 20, 23, 24, 26, 30) and its cost (job
-3614947; slides 23, 24, 30).
+3614947; slides 23, 24, 30), the ViT-B student (job 3614191, 19 Oct morning; slides 1, 2, 23, 24, 25, 26, 30).
 
 **The question on slide 26:** last week's question was: fine-tune v9 now (fixed targets, depth loss x5), or first
 fix the 3DPW labels, re-fit, then fine-tune? The student chose the second and did it before the meeting: the re-fit
 and its check (18 Oct) and the final model (exp7, evening of 18 Oct; slide 20); note 26 says so. The box asks four
 questions (`docs/thesis_requirements_plan.md`, section 5): (1) for 1b, is the 95% bar against our ViT-L, NAVER-L or
 both (the student reports both; NAVER: 60.3 mm AnnyOne, likely in-sample, and 126.9 mm 3DPW, vs ours 73.7 / 89.0, so
-NAVER's bars are 63.5 / 133.6 mm and ours 77.6 / 93.7), and does a smaller Multi-HMR-style student count as "not exactly
+NAVER's bars are 63.5 / 133.6 mm and ours 77.6 / 93.7; the ViT-B student, done 19 Oct, has 119.6 / 110.1 mm: it misses
+both of our bars and meets NAVER's on 3DPW only), and does a smaller Multi-HMR-style student count as "not exactly
 Multi-HMR"? (2) Does
 a temporal refiner on frozen per-frame features count as "understands motion"? (3) Children: a limitation, or weak
 age labels from Relative Human (1-2 weeks)? (4) The submission date. If the supervisor still wants last week's option
@@ -3386,6 +3428,8 @@ commands, the Monday bullets, the writing and clean-up list). Read it before pla
   (job 3614192, 0a): 60.3 mm AnnyOne holdout [Likely in-sample for it] / 126.9 mm 3DPW, so its bars are 63.5 (out of
   reach for a student of our 73.7 mm teacher) and 133.6 (met); ours 77.6 / 93.7. Its cost (job 3614947, 0a): 380.9 M
   params (head 76.6 M) vs our 318.4 M (head 14.0 M), so ours is already 16% smaller; the student is 3.76x smaller than NAVER's.
+  **Result, 19 Oct morning (0a): the student (job 3614191) has 119.6 / 110.1 mm PVE vs bars 77.6 / 93.7: the 95% rule
+  FAILS against our ViT-L; on 3DPW it beats NAVER (126.9) with 3.76x fewer params.** Which reference counts is slide 26, Q1.
 - Fixed/committed on 18 Oct (`a9db35c`, on `main`): the NAVER adapter now exposes nearness / img_size / patch_size /
   person_center_idx; exp8, model_cost.py and the baseline script are committed, reviewed twice, never run on the cluster.
   Still to write: a masked-eval flag; `kd_shp` masking of the 8 constants.
