@@ -1,4 +1,4 @@
-% T12 Relative Human (Results 6.7 / 6.8). Owner: Results writer.
+% T12 Relative Human (Results 6.7 / 6.8). Owner: Results writer. Final-partial-mask column added 19 Oct.
 % Source: REWRITE_PLAN.md section 4 (T12); H 0a "DECIDED"; H 0b; H 3.4.
 % Base = 3611285_0 (:23-31), Final = 3612131 (:25-33), Final-masked = 3613616 (logs/eval_rh_3613616_0.out).
 % Checked 18 Oct against data/rh_per_person_{base,final,masked}.csv (matched == 1): recall, gender accuracy, mean
@@ -6,34 +6,37 @@
 % shown. The Final-masked teen age (0.616), heights (0.505 / 0.461 / 0.478) and matched count (1002 + 96 + 59 = 1,157)
 % were "--" in the plan and are recomputed here from rh_per_person_masked.csv (ages also in data/plot_stats.md).
 % Demo spread: jobs 3612078 (Final) vs 3613617 (Final-masked), 12 images, [shape] lines (H 0a); Base not reported.
+% Final-partial-mask = job 3616821 (logs/eval_rh_3616821_0.out; data/CLUSTER_ANSWERS.md "19 Oct, 01:20"): teen age 0.515,
+% heights adult 0.527 / kid 0.497 / baby 0.504, matched 1086 adults + 117 kids + 67 babies = 1,270 (all groups 1,341);
+% no demo run for it (not needed once gender failed the rule) -> n/m.
 \begin{table}[tbp]
 \centering\small
-\begin{tabular}{@{}lrrr@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
- & Base & Final & Final-masked \\
+ & Base & Final & \shortstack[r]{Final-\\masked} & \shortstack[r]{Final-\\partial-mask} \\
 \midrule
-Recall (\%) & \RHRecallBase & \RHRecallFinal & \RHRecallMasked \\
-Gender accuracy (\%) & \RHGenderBase & \RHGenderFinal & \RHGenderMasked \\
-\quad mean gender, men (male = 0) & \RHMenGenderBase & \RHMenGenderFinal & \RHMenGenderMasked \\
-\quad mean gender, women (female = 1) & \RHWomenGenderBase & \RHWomenGenderFinal & \RHWomenGenderMasked \\
-Child-vs-adult AUC & \RHAUCBase & \RHAUCFinal & \RHAUCMasked \\
+Recall (\%) & \RHRecallBase & \RHRecallFinal & \RHRecallMasked & \RHRecallPartial \\
+Gender accuracy (\%) & \RHGenderBase & \RHGenderFinal & \RHGenderMasked & \RHGenderPartial \\
+\quad mean gender, men (male = 0) & \RHMenGenderBase & \RHMenGenderFinal & \RHMenGenderMasked & \RHMenGenderPartial \\
+\quad mean gender, women (female = 1) & \RHWomenGenderBase & \RHWomenGenderFinal & \RHWomenGenderMasked & \RHWomenGenderPartial \\
+Child-vs-adult AUC & \RHAUCBase & \RHAUCFinal & \RHAUCMasked & \RHAUCPartial \\
 \addlinespace
-Mean age, adult & \RHAgeAdultBase & \RHAgeAdultFinal & \RHAgeAdultMasked \\
-\quad teen & 0.597 & 0.524 & 0.616 \\
-\quad kid & \RHAgeKidBase & \RHAgeKidFinal & \RHAgeKidMasked \\
-\quad baby & \RHAgeBabyBase & \RHAgeBabyFinal & \RHAgeBabyMasked \\
-Babies with age $<$ 0.45 (\%) & \RHBabiesBelowBase & \RHBabiesBelowFinal & \RHBabiesBelowMasked \\
-Mean height, adult & \RHHeightAdultBase & 0.500 & 0.505 \\
-\quad kid & \RHHeightKidBase & 0.466 & 0.461 \\
-\quad baby & \RHHeightBabyBase & 0.464 & 0.478 \\
-Matched children + adults & 948 & 1,305 & 1,157 \\
+Mean age, adult & \RHAgeAdultBase & \RHAgeAdultFinal & \RHAgeAdultMasked & \RHAgeAdultPartial \\
+\quad teen & 0.597 & 0.524 & 0.616 & \RHAgeTeenPartial \\
+\quad kid & \RHAgeKidBase & \RHAgeKidFinal & \RHAgeKidMasked & \RHAgeKidPartial \\
+\quad baby & \RHAgeBabyBase & \RHAgeBabyFinal & \RHAgeBabyMasked & \RHAgeBabyPartial \\
+Babies with age $<$ 0.45 (\%) & \RHBabiesBelowBase & \RHBabiesBelowFinal & \RHBabiesBelowMasked & \RHBabiesBelowPartial \\
+Mean height, adult & \RHHeightAdultBase & 0.500 & 0.505 & 0.527 \\
+\quad kid & \RHHeightKidBase & 0.466 & 0.461 & 0.497 \\
+\quad baby & \RHHeightBabyBase & 0.464 & 0.478 & 0.504 \\
+Matched children + adults & 948 & 1,305 & 1,157 & 1,270 \\
 \midrule
-\multicolumn{4}{@{}l}{\emph{Demo images: standard deviation of the prediction}} \\
-Muscle & -- & \SpreadMuscleFinal & \SpreadMuscleMasked \\
-Weight & -- & \SpreadWeightFinal & \SpreadWeightMasked \\
-Cup size & -- & \SpreadCupFinal & \SpreadCupMasked \\
-Firmness & -- & \SpreadFirmFinal & \SpreadFirmMasked \\
-Age & -- & \SpreadAgeFinal & \SpreadAgeMasked \\
+\multicolumn{5}{@{}l}{\emph{Demo images: standard deviation of the prediction}} \\
+Muscle & -- & \SpreadMuscleFinal & \SpreadMuscleMasked & n/m \\
+Weight & -- & \SpreadWeightFinal & \SpreadWeightMasked & n/m \\
+Cup size & -- & \SpreadCupFinal & \SpreadCupMasked & n/m \\
+Firmness & -- & \SpreadFirmFinal & \SpreadFirmMasked & n/m \\
+Age & -- & \SpreadAgeFinal & \SpreadAgeMasked & n/m \\
 \bottomrule
 \end{tabular}
 \caption[Body shape on real photos: Relative Human and the demo images]{Body shape on real photos. Upper part:
@@ -41,8 +44,9 @@ Relative Human validation split (635 images, 2,130 labelled people), detected pe
 boxes at IoU $\geq$ 0.3; ages and heights are Anny phenotype values in $[0, 1]$, not years; ``child-shaped'' means a
 predicted age below 0.45; the AUC ranks kids and babies against adults by predicted age (0.5 = chance). The matched
 sets differ between models because recall differs. Lower part: spread of the predicted phenotypes over all detected
-people of the 12 demo images (4 photos and 8 3DPW test frames), not matched to people; not reported for Base. One run
-per model, no seed. The neck pilot (bone correction and a 2-epoch fine-tune) is the same as Base within run-to-run
+people of the 12 demo images (4 photos and 8 3DPW test frames), not matched to people; not reported for Base, not
+measured (n/m) for Final-partial-mask. Final-masked masks all eight constant 3DPW phenotypes, Final-partial-mask the
+seven at 0.5 (age kept supervised; Section~\ref{sec:res-mask}). One run per model, no seed. The neck pilot (bone correction and a 2-epoch fine-tune) is the same as Base within run-to-run
 variation (AUC 0.613).}
 \label{tab:relhuman}
 \end{table}

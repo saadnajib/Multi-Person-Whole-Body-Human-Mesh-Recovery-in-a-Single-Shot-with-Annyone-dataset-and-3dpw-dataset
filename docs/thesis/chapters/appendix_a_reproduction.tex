@@ -59,9 +59,10 @@ node, because \path{model.py} imports the renderer and the login node has no EGL
 \section{Runs, jobs, logs and checkpoints}
 \label{sec:app-runs}
 
-Table~\ref{tab:runs} lists every job behind a number, a table or a figure of the thesis. Jobs submitted on the evening
-of 18 October (the partial shape mask, the Student and the two figure demos) were still pending or running when this
-appendix was written; their rows name the log and output folder they write. The Student-S runs on the v23 labels,
+Table~\ref{tab:runs} lists every job behind a number, a table or a figure of the thesis. Of the jobs submitted on the evening
+of 18 October, the partial shape mask and its Relative Human evaluation finished on 19 October and the two figure
+demos have returned; the Student was still running when this appendix was written, and its row names the log and
+output folder it writes. The Student-S runs on the v23 labels,
 submitted the same evening, have returned (Table~\ref{tab:history-students}).
 
 \input{tables/T13_runs}
@@ -175,7 +176,8 @@ cd /netscratch/najib/multi-hmr && CHECK_ONLY=1 bash slurm/eval/run_eval_baseline
 \end{lstlisting}
 
 \paragraph{Relative Human.} Base and the neck pilot (array tasks 0 and 1), Final, and Final-masked; the bone
-correction comes from each checkpoint's saved arguments:
+correction comes from each checkpoint's saved arguments. Final-partial-mask runs the same way with
+\texttt{MODEL} set to its checkpoint (\path{v5_pc_dist5_bonefix_v23_e10_shpmask_noage/train/checkpoints/00009.pt}):
 \begin{lstlisting}
 cd /netscratch/najib/multi-hmr && sbatch --array=0-1 slurm/diagnostics/eval_relative_human.sh
 cd /netscratch/najib/multi-hmr && MODEL=/netscratch/najib/multi-hmr/models/multiHMR/exp7_v5_final_00009.pt sbatch --array=0 slurm/diagnostics/eval_relative_human.sh

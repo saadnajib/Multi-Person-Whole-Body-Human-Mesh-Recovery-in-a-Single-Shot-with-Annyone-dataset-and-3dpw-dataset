@@ -62,7 +62,7 @@ Fresh-heads-L & \path{anny_v10_scratch_mixed}, epoch 290 (``v10''; called ``scra
 Control & exp7 control arm \path{v5_root_dist1_nofix_v23_e10}, epoch 9; job 3611339 & Base & as L-stage 3 & 70\,\% AnnyOne + 30\,\% 3DPW train, v23 labels \\
 Final & exp7 fix arm \path{v5_pc_dist5_bonefix_v23_e10}, epoch 9; job 3611336 & Base + Base's bone correction & as L-stage 3 & as Control \\
 Final-masked & exp7 \path{v5_pc_dist5_bonefix_v23_e10_shpmask}, epoch 9; job 3612325 & as Final & as L-stage 3 & as Control \\
-Final-partial-mask & exp7 \path{v5_pc_dist5_bonefix_v23_e10_shpmask_noage}; job 3614042 (running on 18 Oct) & as Final & as L-stage 3 & as Control \\
+Final-partial-mask & exp7 \path{v5_pc_dist5_bonefix_v23_e10_shpmask_noage}, epoch 9; job 3614042 (done 19 Oct: children kept, gender lost; not adopted) & as Final & as L-stage 3 & as Control \\
 \addlinespace
 \multicolumn{5}{@{}l}{\emph{ViT-S students (``Student-S''), history}} \\
 Student-S/1 & distillation v1, \path{anny_distill_vits} & ImageNet DINOv2-S; random heads; teacher Base & ViT-S/14, all blocks trained & AnnyOne \\
@@ -110,7 +110,7 @@ Fresh-heads-L & 300 planned $\times$ 1,000 $\times$ 4, lr $10^{-5}$ & \texttt{--
 Control & 10 $\times$ 1,000 $\times$ 4, lr $10^{-5}$ & Base recipe, \texttt{--start\_2d\_epoch 0 --mask\_3dpw\_hands 1 --gt\_center\_joint root --alpha\_dist 1 --alpha\_transl 1 --bone\_fix none} (Appendix~\ref{app:flags}) & \path{results/experiments/exp7_final_model/v5_root_dist1_nofix_v23_e10/train/checkpoints/00009.pt} \\
 Final & as Control & as Control but \texttt{--gt\_center\_joint person\_center --alpha\_dist 5 --alpha\_transl 5 --bone\_fix} (four bones) & \path{results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10/train/checkpoints/00009.pt} (copy \path{models/multiHMR/exp7_v5_final_00009.pt}) \\
 Final-masked & as Control & Final + \texttt{--mask\_3dpw\_shape 1} (8 converter constants) & \path{results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask/train/checkpoints/00009.pt} \\
-Final-partial-mask & as Control & Final + \texttt{--mask\_3dpw\_shape 1 --mask\_3dpw\_shape\_names} with the 7 constants other than age & \path{results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/train/checkpoints/00009.pt} (when finished) \\
+Final-partial-mask & as Control & Final + \texttt{--mask\_3dpw\_shape 1 --mask\_3dpw\_shape\_names} with the 7 constants other than age & \path{results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/train/checkpoints/00009.pt} \\
 \addlinespace
 Student-S/1 & 300 planned $\times$ 1,000 $\times$ 4, lr $10^{-4}$ & feature distillation \texttt{--lambda\_kd 1.0}, 2D terms from epoch 20 & not recorded \\
 Student-S/2 & 200 planned $\times$ 1,000 $\times$ 4, lr $2\cdot10^{-5}$ halved every 60 & as Student-S/1, 2D terms from epoch 0 & not recorded \\

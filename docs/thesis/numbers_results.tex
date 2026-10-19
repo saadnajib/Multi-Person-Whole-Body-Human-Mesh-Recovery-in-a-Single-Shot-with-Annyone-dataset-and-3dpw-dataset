@@ -6,7 +6,8 @@
 %   V0  = same images, helper bones unmasked, train.py evaluate();
 %   3DPW test = all 8,190 images of the v23 labels, run_eval_3dpw_test.sh, V0.
 % Run names: Base = v5 epoch 99; Control = exp7 control; Final = exp7 fix arm;
-% Final-masked = exp7 with --mask_3dpw_shape 1; Student = exp8 ViT-B;
+% Final-masked = exp7 with --mask_3dpw_shape 1; Final-partial-mask = the same with
+% --mask_3dpw_shape_names (seven constants, age kept); Student = exp8 ViT-B;
 % Multi-HMR-Anny (NAVER) = multiHMR_672_L_anny.pt.
 % =============================================================================
 
@@ -209,6 +210,38 @@
 \newcommand{\SpreadRuleThreshold}{0.08}  % std a mask had to exceed to become the final model (decision rule); H 0a
 \newcommand{\MuscleMedianFinal}{0.48}    % median predicted muscle on the demo, Final; 3612078; H 0a
 \newcommand{\MuscleMedianMasked}{0.31}   % median predicted muscle on the demo, Final-masked; 3613617; H 0a
+
+% --- Final-partial-mask (job 3614042, the seven 0.5 constants masked, age kept; RH 3616821; no demo run) ------
+% CA = data/CLUSTER_ANSWERS.md, sections "19 Oct, 00:30" (training job) and "19 Oct, 01:20" (Relative Human).
+\newcommand{\FinalPartialPVE}{73.0}       % mm, V1; 3614042:191-215 (compare table, last column); CA 00:30
+\newcommand{\FinalPartialPAPVE}{51.2}     % mm, V1; 3614042:191-215; CA 00:30
+\newcommand{\FinalPartialRecall}{87.4}    % percent, V1; 3614042:191-215; CA 00:30
+\newcommand{\FinalPartialRootErr}{680}    % mm, V1; 3614042:191-215; CA 00:30
+\newcommand{\FinalPartialSlope}{0.42}     % depth slope (intercept 1.69 m); 3614042:191-215; CA 00:30
+\newcommand{\FinalPartialSize}{0.79}      % drawn size pred/true; 3614042:191-215; CA 00:30
+\newcommand{\FinalPartialGirth}{1.005}    % neck girth pred/GT; 3614042:191-215; CA 00:30
+\newcommand{\FinalPartialNeckTwo}{5.0}    % deg, neck02; 3614042:191-215; CA 00:30
+\newcommand{\FinalPartialHeadBone}{8.9}   % deg, head bone; 3614042:191-215; CA 00:30
+\newcommand{\FinalPartialFingers}{8.2}    % deg, predicted fingers; 3614042:191-215; CA 00:30
+\newcommand{\FinalPartialTestHundredPVE}{76.6}  % mm, AnnyOne test-100 V0; 3614042 log (run_eval_3dpw_test.sh part); CA 00:30
+\newcommand{\FinalPartialTestHundredPAPVE}{55.2}% mm; same; CA 00:30
+\newcommand{\FinalPartialTestHundredRecall}{87} % percent; same; CA 00:30
+\newcommand{\FinalPartialThreeDPW}{89.9}  % mm, 3DPW test v23, 8,190 images; 3614042 log (3DPW test part); CA 00:30
+\newcommand{\FinalPartialPAThreeDPW}{58.9}% mm; same; CA 00:30
+\newcommand{\FinalPartialPrecThreeDPW}{66}% percent; same; CA 00:30
+\newcommand{\FinalPartialRecallThreeDPW}{99}% percent; same; CA 00:30
+\newcommand{\RHRecallPartial}{63.0}       % percent (1341 of 2130); 3616821 (logs/eval_rh_3616821_0.out); CA 01:20
+\newcommand{\RHGenderPartial}{47.4}       % percent (n 1271); 3616821; CA 01:20
+\newcommand{\RHMenGenderPartial}{0.725}   % mean predicted gender of men (male = 0); 3616821; CA 01:20
+\newcommand{\RHWomenGenderPartial}{0.888} % mean predicted gender of women (female = 1); 3616821; CA 01:20
+\newcommand{\RHAUCPartial}{0.727}         % child-vs-adult AUC (n_pos 184, n_neg 1086); 3616821; CA 01:20
+\newcommand{\RHAgeAdultPartial}{0.532}    % mean predicted age, adults (median 0.524); 3616821; CA 01:20
+\newcommand{\RHAgeTeenPartial}{0.515}     % teens; 3616821; CA 01:20
+\newcommand{\RHAgeKidPartial}{0.506}      % kids; 3616821; CA 01:20
+\newcommand{\RHAgeBabyPartial}{0.465}     % babies; 3616821; CA 01:20
+\newcommand{\RHBabiesBelowPartial}{34.3}  % percent of matched babies below 0.45 (of 67); 3616821; CA 01:20
+\newcommand{\RHKidsBelowPartial}{10.3}    % percent of matched kids below 0.45 (of 117); 3616821; CA 01:20
+\newcommand{\RHMatchedPartial}{1341}      % matched people, all groups (recall 0.630); 3616821; CA 01:20
 
 % --- Relative Human, remaining cells (T12; recomputed from data/rh_per_person_*.csv where marked) -------------
 \newcommand{\RHAgeAdultBase}{0.631}   % mean predicted age, adults; 3611285_0; data/plot_stats.md

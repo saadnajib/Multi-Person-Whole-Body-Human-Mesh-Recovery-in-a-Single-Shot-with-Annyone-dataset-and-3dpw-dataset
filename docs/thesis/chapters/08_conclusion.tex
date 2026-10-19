@@ -50,10 +50,10 @@ Section~\ref{sec:res-student}. If it misses the 95\,\% bar while its error is st
 training from the last checkpoint and report the ratio as measured. Which model sets the bar, Final or
 Multi-HMR-Anny, is the supervisor's decision.
 
-\paragraph{The partial shape mask (1a).} Final-partial-mask masks the seven constant phenotypes of the converted labels
-and keeps age supervised. It was submitted on 18 October and had not finished. It tests the reading of
-Section~\ref{sec:res-mask} that the age label carries the gains on children and gender while the seven constants cause
-the collapse of muscle and weight. Its Relative Human evaluation and a demo follow.
+\paragraph{The partial shape mask (1a), done.} Final-partial-mask, which masks the seven constant phenotypes and keeps age
+supervised, finished on 19 October: it kept the children's gain (AUC \RHAUCPartial) but lost the gender gain
+(\RHGenderPartial\,\%), so the unmasked Final stays the final model and the Student's teacher
+(Section~\ref{sec:res-mask}).
 
 \paragraph{Evidence that shape follows the person (1a).} The rest-pose line-up (Figure~\ref{fig:rest-lineup}) and
 the demo with predicted fingers (Figure~\ref{fig:fingers-demo}) are done, by eye only. Still planned is a number:

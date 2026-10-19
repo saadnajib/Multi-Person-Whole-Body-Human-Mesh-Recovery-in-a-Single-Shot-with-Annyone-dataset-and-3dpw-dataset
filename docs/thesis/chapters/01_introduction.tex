@@ -172,8 +172,9 @@ distilled model.
 \item \textbf{Body shape on real photos.} On the Relative Human photos, which label age group and gender, Final raises
   gender accuracy from \RHGenderBase{} to \RHGenderFinal\,\% and the child-against-adult AUC from \RHAUCBase{} to
   \RHAUCFinal{} (Section~\ref{sec:res-rh}, Table~\ref{tab:relhuman}). A shape mask on the converter's constant
-  phenotypes brings back the person-to-person variety of muscle and weight but loses the gender gain; I kept Final
-  unmasked (Section~\ref{sec:res-mask}).
+  phenotypes brings back the person-to-person variety of muscle and weight but loses the gender gain, and a partial
+  mask that keeps age supervised keeps the children but loses gender too; I kept Final unmasked
+  (Section~\ref{sec:res-mask}).
 
 \item \textbf{The baseline, measured with the same code.} I evaluated NAVER's Multi-HMR-Anny with our labels and
   settings. On 3DPW it reaches \NAVERThreeDPW\,mm PVE, against \FinalThreeDPW\,mm for Final. NAVER's model was trained on

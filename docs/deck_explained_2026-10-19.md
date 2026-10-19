@@ -392,7 +392,8 @@ gradients) [Certain, H 0a step 6]. Checkpoint:
     [Certain for the numbers]. [Likely] the age label 0.55 was doing useful work (pulling real-photo ages down) and
     the seven 0.5 values caused the collapse of body build. **Decision (18 Oct, 15:30): the unmasked model stays the
     final model and the teacher** [Certain, H 0a].
-  - Next: mask only the seven 0.5 values and keep age (job 3614042, queued; result after the meeting) [Certain, H 0a].
+  - Then: mask only the seven 0.5 values and keep age (job 3614042, done 19 Oct; Relative Human 3616821): children kept
+    (AUC 0.727), gender at chance (47.4%), so the unmasked model stays (slide 19) [Certain, H 0a].
 - **Source.** H 0a, H 3.4, `loss.py`.
 
 ### 5.5 The control run (job 3611339)
@@ -759,9 +760,11 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
 - **On the slide** [D slide 19]: two boxes, "What the mask does" (the problem: 8 constant shape values in every
   3DPW label; the final model learned them, spread about 0.04 on real photos; the mask: do not learn these 8 values
   from 3DPW people, keep gender, height and proportions; training job 3612325) and "What happened (one run each)"
-  (variety comes back; gender and children fall back; error unchanged within noise), and a bottom line "Reading and
-  next step" (the age label likely does the useful work, the seven 0.5 constants cause the collapse; decided 18 Oct:
-  the unmasked model stays the final model and the student's teacher; next: the partial mask, job 3614042, queued).
+  (variety comes back; gender and children fall back; error unchanged within noise), and a bottom line "Result,
+  19 Oct" (rebuilt 19 Oct, 01:20; it read "Reading and next step ... job 3614042, queued" before): the partial mask,
+  seven 0.5 constants masked and age kept (jobs 3614042, 3616821), keeps the children (AUC 0.73, babies 0.47) but
+  gender is at chance (47%); so age carries the children and gender likely leans on the constants too (untested);
+  the unmasked model stays the final model and the student's teacher.
 - **What we did:** one extra run with `--mask_3dpw_shape 1`, which stops the shape loss on the 8 constant 3DPW values
   (job 3612325); then Relative Human (job 3613616) and the demo (job 3613617) [Certain, H 0a].
 - **Why:** on real photos the final model's muscle, weight, cup size and firmness sit at about 0.5, the converter
@@ -783,9 +786,15 @@ says so ("not on the slide", "in the notes"). The deck is the reference: if the 
 
 - **Result:** body variety vs gender and children. The unmasked model stays the final model and the teacher
   [Certain, H 0a "DECIDED"].
-- **Next:** mask only the seven 0.5 values and keep age supervised (job 3614042, queued; result after the meeting)
-  [Certain, H 0a]. [Likely] the age label 0.55 carries the gender and children gain and the 0.5 constants cause the
-  collapse.
+- **Partial mask, done 19 Oct (01:20)** [Certain, `logs/exp7_final_model_3614042.out:191-215`,
+  `logs/eval_rh_3616821_0.out`; H 0a]: the seven 0.5 values masked, age and gender kept (job 3614042; Relative Human
+  job 3616821). Holdout V1 73.0 / PA-PVE 51.2 / recall 87.4, 3DPW test 89.9 / 58.9 (inside noise); Relative Human
+  recall 63.0%, gender 47.4% (men 0.725, women 0.888), AUC 0.727, ages adult 0.532 / kid 0.506 / baby 0.465, babies
+  below 0.45 34.3% (final 49.3%, masked arm 16.9%). The rule (gender >= 60%, AUC >= 0.7, spread opened) fails on
+  gender; its demo spread was not measured (not needed). **The unmasked model stays the final model and the teacher.**
+  [Guessing, not tested] gender stayed supervised and still fell to chance, so the final model's gender gain likely
+  depends on the seven constants on 3DPW men as much as on the gender label. The earlier reading (the age label carries
+  both gains) holds for the children only.
 - **Not claimed:** that the masked values are *right* on real people. No real set we have gives ground truth for muscle
   or weight [Certain, P 3.3]. One run per arm, noise applies.
 
@@ -1079,7 +1088,7 @@ these lines come from H 1 "Headline", H 6 and H 7, and apart from the headline n
 
 **On the slide** (appendix) [D slide 30]: one table, job | what | path under `/netscratch/najib/multi-hmr`, with 13
 rows (font 8): v5 epoch 99; 3611336 final model (3DPW test in its log); 3611339 control; 3612325 masked-shape arm; 3614042
-partial mask (queued); 3614191 ViT-B student (smoke test 3613926; `logs/exp8_distill_vitb_3614191.out`); 3614192 /
+partial mask, age kept (done; not adopted); 3614191 ViT-B student (smoke test 3613926; `logs/exp8_distill_vitb_3614191.out`); 3614192 /
 3614947 "NAVER: 60.3 / 126.9 mm; 380.9 M vs our 318.4 M" (`logs/{eval-test3dpw-3614192_0,model_cost_3614947}.out`;
 `models/multiHMR/multiHMR_672_L_anny.pt`; the cost job is folded into the NAVER row because a 14th row did not fit;
 its json `results/diagnostics/model_cost_naver_vs_final.json` is named in the notes only); 3611285 Relative Human v5 (_0) and neck pilot (_1); 3612131 / 3613616
@@ -1095,7 +1104,7 @@ job before 3611284 except 3579014 are not on it.
   (copy `models/multiHMR/exp7_v5_final_00009.pt`)
 - control: `results/experiments/exp7_final_model/v5_root_dist1_nofix_v23_e10/`
 - masked arm: `results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask/`
-- partial mask (queued): `results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/`
+- partial mask (done 19 Oct; not adopted): `results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/train/checkpoints/00009.pt`
 - student (running): `results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/`
 - bone fix used: `results/experiments/exp6_bone_fix/anny_s2_shape_v5_00099_n200_s0/bone_fix.json`
 - 3DPW labels: `threedpw_anny_v23/labels/`
@@ -1124,7 +1133,7 @@ job before 3611284 except 3579014 are not on it.
 | 3612078 | demo, v5 vs final model |
 | 3612131 | Relative Human, final model |
 | 3612325; 3613616; 3613617 | masked arm; its Relative Human run; its demo |
-| 3614042 | partial mask (7 constants, keep age), queued |
+| 3614042; 3616821 | partial mask (7 constants, keep age), done 19 Oct; its Relative Human run (`logs/eval_rh_3616821_0.out`): gender 47.4%, AUC 0.727, not adopted |
 | 3613926; 3614191 | exp8 student smoke test (passed); full student run (submitted 18 Oct) |
 | 3613928; 3614192 | NAVER baseline (crashed, fixed); resubmitted, done 18 Oct evening: AnnyOne holdout PVE 60.3 (likely in-sample for NAVER), 3DPW test 126.9 |
 
@@ -1257,7 +1266,8 @@ Our 3DPW labels set 8 of the 11 shape values to constants (age 0.55, seven value
 tell muscle or weight [Certain, H 3.4]. Training on them pulls real-photo predictions to those constants: in the final
 model muscle, weight, cup size and firmness sit at about 0.5 [Certain, demo 3612078]. Masking brings their spread back
 (std 0.04 -> 0.06-0.11) but costs gender and the children gain [Certain, H 0a]. So the final model stays unmasked; a
-run that masks only the seven 0.5 values and keeps age is queued (job 3614042).
+run that masks only the seven 0.5 values and keeps age (job 3614042, done 19 Oct) kept the children but also lost
+gender (47.4%), so it was not adopted either (slide 19).
 
 **Q6. What is pilot noise, and how do you deal with it?**
 Training sets no random seed, so the same settings run twice gave 7.6 mm different PVE, 1.9 degrees different head

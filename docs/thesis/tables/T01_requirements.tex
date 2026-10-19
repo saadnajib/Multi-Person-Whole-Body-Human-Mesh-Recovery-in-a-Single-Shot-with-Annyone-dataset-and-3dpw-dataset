@@ -3,7 +3,8 @@
 % 18 Oct evening); deck explained part 7 (D part 7); handover 0a, 0b.
 % Status words only: met / met with caveats / partly / not met / not started (plan section 5).
 % Job ids behind the evidence (never in the text): 3611336:224-229 (3DPW test, Final), 3611336:191-209 (holdout),
-% 3612131 (RH Final), 3612078 (demo Final), 3613616 / 3613617 (RH / demo Final-masked), 3614191 (Student,
+% 3612131 (RH Final), 3612078 (demo Final), 3613616 / 3613617 (RH / demo Final-masked), 3614042 / 3616821
+% (training / RH Final-partial-mask, done 19 Oct), 3614191 (Student,
 % pending), 3613926 (Student cost), 3614192 (NAVER accuracy), 3614947 (NAVER cost), 3611284 (label check v23).
 % Every number is a macro (numbers_results / _data / _discussion).
 \begin{table}[tbp]
@@ -27,8 +28,9 @@ Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
   \textbf{partly} &
   Relative Human: gender \RHGenderFinal\,\% (Base \RHGenderBase), child AUC \RHAUCFinal{} (Base \RHAUCBase)
   (Table~\ref{tab:relhuman}); muscle, weight, cup size, firmness nearly constant on photos (standard deviation
-  \SpreadMuscleFinal--\SpreadCupFinal); the shape mask trades this for gender (Section~\ref{sec:res-mask}) &
-  per-phenotype agreement on AnnyOne; the partial mask \\
+  \SpreadMuscleFinal--\SpreadCupFinal); three mask arms: the full mask trades this for gender, the partial mask
+  keeps children and loses gender too (Table~\ref{tab:mask-arms}) &
+  per-phenotype agreement on AnnyOne; variety without losing gender \\
 \addlinespace
 1b & ``Must not be exactly the same as the Multi-HMR model'': new and better on both test sets, or ``significantly
   smaller'' and $\geq$\,95\,\% as good &

@@ -1,6 +1,6 @@
 # Master thesis: Multi-Person Human Mesh Recovery with the Anny Body Model
 
-LaTeX source of the rewritten thesis (full draft since 18 Oct 2026; 130 pages with appendices on 19 Oct). The plan behind it
+LaTeX source of the rewritten thesis (full draft since 18 Oct 2026; 132 pages with appendices on 19 Oct, after the partial-mask result). The plan behind it
 (what each chapter, table and figure holds, the writing rules) is `REWRITE_PLAN.md`; the review pass that made the
 chapters one document is logged in `REVIEW_LOG.md`; the old draft is kept read-only in `draft_2026-10_original/`.
 
@@ -27,7 +27,7 @@ numbers.tex              \input of the numbers_*.tex files (one macro per headli
 numbers_<chapter>.tex    data, method, diagnostics, results, background, discussion
 references.bib           every entry is cited; "% TODO verify" marks fields the student must check against the paper
 chapters/                00_abstract, 01_introduction ... 08_conclusion, appendix_a_reproduction ... appendix_e_pilots
-tables/                  T01-T20 (one file per table); draft_*.tex = the old draft's tables, reference only, not input
+tables/                  T01-T21 (one file per table; T21 = the three shape-mask arms, added 19 Oct); draft_*.tex = the old draft's tables, reference only, not input
 figures/img/             raster figures (docs/figures/*.jpg, demo montages, files sent from the cluster)
 figures/plots/           pgfplots figures F15, F16, F18, F19 (placeholder), F20, F22
 figures/tikz/            TikZ drawings F1-F5
@@ -35,8 +35,8 @@ figures/RPTU-*.pdf       title-page logos
 data/                    CSVs behind the plots; plot_stats.md = the statistics computed from them; data/README.md
 ```
 
-Pages per part (19 Oct): front matter 8, ch. 1: 6, ch. 2: 10, ch. 3: 12, ch. 4: 16, ch. 5: 10, ch. 6: 20, ch. 7: 8,
-ch. 8: 2, lists 4, App. A: 14, B: 2, C: 4, D: 6, E: 4, bibliography 4. The main text (chapters 1-8) is 84 pages,
+Pages per part (19 Oct): front matter 8, ch. 1: 6, ch. 2: 10, ch. 3: 12, ch. 4: 16, ch. 5: 10, ch. 6: 22, ch. 7: 8,
+ch. 8: 2, lists 4, App. A: 14, B: 2, C: 4, D: 6, E: 4, bibliography 4. The main text (chapters 1-8) is 86 pages,
 against the plan's 60-80; `REVIEW_LOG.md` lists the trimming candidates.
 
 ## The naming rule
@@ -66,11 +66,11 @@ are named by what they are ("depth pilot", "neck pilot"), never by their job.
 
 ## Open TODO list (grep -n TODO chapters tables figures thesis.tex references.bib)
 
-Pending results (fill the macro or the cell, then delete the `\TODO`):
+Pending results (fill the macro or the cell, then delete the `\TODO`). Final-partial-mask (jobs 3614042, 3616821) is in
+since 19 Oct (6.8 with T21, T12, 7.1, T01, 8.2, 4.3, T13, T19); no TODO left for it.
 - Student (job 3614191): `numbers_results.tex` (`\StudentPending`, `\StudentCell`), `tables/T17_student.tex`,
   `tables/T16_baseline_cost.tex`, `figures/plots/F19_student.tex` (+ `data/F19_student.csv`), `figures/plots/F18_cost_pve.tex`
   (replace the dashed line by a point), chapter 6.10, chapter 7 (1b paragraph, T01 status word), chapter 8.
-- Final-partial-mask (job 3614042): chapter 6.8, chapter 7 (1a-shape, T01), chapter 8.
 - Figures: F14 `figures/img/F14_label_check.jpg`.
 
 Pending checks by the student:

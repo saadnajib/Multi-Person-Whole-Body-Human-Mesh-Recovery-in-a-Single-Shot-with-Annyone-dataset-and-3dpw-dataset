@@ -4,7 +4,7 @@
 % 5 (writing rules). Numbers: numbers_results.tex (owned here); a few stable macros of numbers_method.tex
 % (\MethodVzeroGap, \MethodLabelFloor, \MethodHandMaskBones, \MethodShapeMaskCount).
 % Tables owned here: T12 tab:relhuman, T15 tab:final (tab:final-annyone, tab:final-3dpw), T16 tab:baseline,
-% T17 tab:student, T20 tab:history (tab:history-stages, tab:history-students).
+% T17 tab:student, T21 tab:mask-arms, T20 tab:history (tab:history-stages, tab:history-students).
 % Tables referenced, placed elsewhere: T8 tab:depth-runs, T9 tab:neck-bones, T10 tab:fingers (Chapter 5),
 % T11 tab:student-recipe, tab:model-names (Chapter 4).
 % Figures placed here: F7 fig:depth-579862, F15 fig:depth-scatter, F9 fig:neck-3dpw-bar, F11 fig:fingers-demo
@@ -403,8 +403,15 @@ images are in Figure~\ref{fig:rest-more}.}
 \section{The shape-mask trade-off}
 \label{sec:res-mask}
 
-The masked model is the third column of Table~\ref{tab:relhuman}; its holdout and 3DPW numbers are given here. On the
-AnnyOne holdout Final-masked reads \FinalMaskedPVE\,mm PVE, \FinalMaskedPAPVE\,mm PA-PVE, \FinalMaskedRecall\,\%
+\input{tables/T21_mask_arms}
+
+Two runs test the shape mask of Section~\ref{sec:method-real}, one run each. Final-masked stops the shape loss
+on the \MethodShapeMaskCount{} values the converter fixes for every 3DPW person: age 0.55 and seven values at
+\MethodConstOther. Final-partial-mask stops it only on the seven values at \MethodConstOther{} and keeps age
+supervised. Gender stays supervised in both. Table~\ref{tab:mask-arms} sets the two next to Final; their full
+Relative Human columns are in Table~\ref{tab:relhuman}.
+
+On the AnnyOne holdout Final-masked reads \FinalMaskedPVE\,mm PVE, \FinalMaskedPAPVE\,mm PA-PVE, \FinalMaskedRecall\,\%
 recall and \num{\FinalMaskedRootErr}\,mm root error (Final: \FinalPVE, \FinalPAPVE, \FinalRecall, \num{\FinalRootErr});
 on the 3DPW test \FinalMaskedThreeDPW\,mm PVE and \FinalMaskedPAThreeDPW\,mm PA-PVE (Final \FinalThreeDPW{} and
 \FinalPAThreeDPW). On Relative Human it loses most of what Final gained: recall \RHRecallMasked\,\%, gender accuracy
@@ -414,20 +421,35 @@ variety Final had lost: the spread of the predicted muscle rises from \SpreadMus
 of weight from \SpreadWeightFinal{} to \SpreadWeightMasked, of cup size from \SpreadCupFinal{} to \SpreadCupMasked{}
 and of firmness from \SpreadFirmFinal{} to \SpreadFirmMasked.
 
-The mask stops the shape loss on the \MethodShapeMaskCount{} values the converter fixes for every 3DPW person: age
-0.55 and seven values at 0.5. The body errors stay within run-to-run variation, as expected, since the 3DPW meshes
+Final-partial-mask reads \FinalPartialPVE\,mm PVE, \FinalPartialPAPVE\,mm PA-PVE, \FinalPartialRecall\,\% recall and
+\num{\FinalPartialRootErr}\,mm root error on the holdout; neck02 (\FinalPartialNeckTwo\textdegree), the head bone
+(\FinalPartialHeadBone\textdegree) and the fingers (\FinalPartialFingers\textdegree) stay at Final's level
+(\FinalNeckTwo\textdegree, \FinalHeadBone\textdegree, \FinalFingers\textdegree). On the 3DPW test it reads
+\FinalPartialThreeDPW\,mm PVE and \FinalPartialPAThreeDPW\,mm PA-PVE. On Relative Human it keeps the children: the AUC
+is \RHAUCPartial, the mean predicted age is \RHAgeAdultPartial{} for adults, \RHAgeKidPartial{} for kids and
+\RHAgeBabyPartial{} for babies, and \RHBabiesBelowPartial\,\% of the babies are child-shaped (Final
+\RHBabiesBelowFinal\,\%, Final-masked \RHBabiesBelowMasked\,\%). Gender is lost as under the full mask: accuracy
+\RHGenderPartial\,\%, with both sexes on the female side (men \RHMenGenderPartial, women \RHWomenGenderPartial);
+recall is \RHRecallPartial\,\%.
+
+The body errors of both masked runs stay within run-to-run variation of Final, as expected, since the 3DPW meshes
 keep the neutral body. The trade-off is in the shape head. Without the mask, Final learned the seven constants and
 predicts nearly the same muscle, weight, cup size and firmness for everyone on real photos, so shape does not visibly
-change from person to person for those values. With the mask the values vary again, but gender falls back to chance
-and the children's gain shrinks. The likely reading is that the age label carries the children and gender gain and
-the seven constants cause the collapse; it was not tested. Before the run I fixed a rule: the masked model would
-replace Final if gender accuracy stayed at 60\,\% or more, the AUC at 0.7 or more, and the spread of muscle and weight
-rose above \SpreadRuleThreshold. Gender failed the rule, so Final stays the final model and the Student's teacher.
+change from person to person for those values. With the full mask the values vary again, but gender falls back to
+chance and the children's gain shrinks. The partial mask separates the two parts of that loss. With age supervised
+the children's gain stays (AUC, adult age and kid age at Final's level), so the age label carries it. Gender falls to
+chance although the gender label stays supervised in both masked runs. A reading that was not tested: Final's gender
+gain depends on the seven constants on the 3DPW men (cup size and firmness at \MethodConstOther{} among them) as much
+as on the gender label.
+
+Before the first masked run I fixed a rule: a masked model would replace Final if gender accuracy stayed at 60\,\% or
+more, the AUC at 0.7 or more, and the spread of muscle and weight rose above \SpreadRuleThreshold. Both masked runs
+fail the rule on gender while passing it on the AUC, so Final stays the final model and the Student's teacher.
 
 Not shown: whether the varied values are right. No real data set I have gives muscle or weight, so the spread shows
-variety, not accuracy. Why gender accuracy falls, although gender itself stays supervised under the mask, is not
-known. The partial mask, Final-partial-mask, which masks the seven constants and keeps age supervised, decides between the
-two readings: \TODO{Final-partial-mask result (holdout, 3DPW, Relative Human, demo spread), job pending}.
+variety, not accuracy. For Final-partial-mask no demo was run, because gender had already failed the rule, so whether
+masking only the seven constants also brings the variety back is not known. Why gender accuracy falls when the seven
+constants are masked is not known either; the reading above is one candidate. Each arm ran once, without a seed.
 
 % -----------------------------------------------------------------------------
 \section{Baseline comparison and model cost}

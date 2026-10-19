@@ -202,7 +202,7 @@ Fresh-heads-L & fresh heads on Multi-HMR-Anny's backbone, trained with \MethodMi
 Control & Base, \MethodFinalEpochs{} epochs, \MethodMixRatio\% 3DPW on the corrected labels, hand mask, neither fix; the reference for Final \\
 Final & Control's recipe plus the depth fix and the bone correction; the thesis model and the Student's teacher \\
 Final-masked & Final plus the shape mask on the \MethodShapeMaskCount{} converter constants; a tested option \\
-Final-partial-mask & Final plus the shape mask on the \MethodShapeMaskPartial{} constants other than age; pending \\
+Final-partial-mask & Final plus the shape mask on the \MethodShapeMaskPartial{} constants other than age; a tested option (children kept, gender lost) \\
 Student-S/1 to /6c, /mixed, /final & the ViT-S students of Base (/mixed and /final also saw 3DPW on the old labels; /final's teacher is Mixed-L), before both fixes; history \\
 Student & the ViT-B student distilled from Final; the answer to requirement 1b \\
 \bottomrule
@@ -322,9 +322,9 @@ and leaves \MethodShapeMaskCount{} phenotypes at constants: age \MethodConstAge,
 and the three ethnicity values at \MethodConstOther. With \texttt{-{}-mask\_3dpw\_shape 1} the shape term ignores these
 constants for 3DPW people; gender, height and proportions stay supervised. The mesh terms still carry the neutral body,
 which is also what the 3DPW test PVE compares against. The partial variant (\texttt{-{}-mask\_3dpw\_shape\_names}) masks only the \MethodShapeMaskPartial{} values at
-\MethodConstOther{} and keeps age supervised. Final-masked uses the full mask; Final-partial-mask, with the partial one, had
-not finished when this chapter was written. I kept the unmasked model as Final and teacher: the masked one regained
-body variety but lost the gender gain and part of the child gain on real photos (Chapter~\ref{ch:results}).
+\MethodConstOther{} and keeps age supervised. Final-masked uses the full mask, Final-partial-mask the partial one. I kept the unmasked model as Final and teacher:
+the fully masked one regained body variety but lost the gender gain and part of the child gain on real photos, and the
+partially masked one kept the child gain but lost the gender gain as well (Section~\ref{sec:res-mask}).
 
 % -----------------------------------------------------------------------------
 \section{Knowledge distillation}

@@ -1,0 +1,43 @@
+% T21 The three mask arms (Results 6.8). Added 19 Oct with the Final-partial-mask result.
+% Final = 3611336 (V1 :191-207, 3DPW :224-229), RH 3612131; Final-masked = 3612325, RH 3613616, demo 3613617;
+% Final-partial-mask = 3614042 (V1 :191-215, 3DPW and test-100 in the same log), RH 3616821
+% (logs/eval_rh_3616821_0.out); data/CLUSTER_ANSWERS.md "19 Oct, 00:30" and "19 Oct, 01:20". Demo spread for
+% Final-partial-mask: no demo run (not needed once gender failed the rule) -> n/m. Rule: H 0a "DECIDED".
+\begin{table}[tbp]
+\centering\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+ & Final & Final-masked & \shortstack[r]{Final-\\partial-mask} & Rule \\
+\midrule
+Masked 3DPW phenotypes & none & \MethodShapeMaskCount{} (age + 7) & \MethodShapeMaskPartial{} (age kept) & \\
+\addlinespace
+\multicolumn{5}{@{}l}{\emph{AnnyOne holdout, V1}} \\
+PVE (mm) & \FinalPVE & \FinalMaskedPVE & \FinalPartialPVE & \\
+PA-PVE (mm) & \FinalPAPVE & \FinalMaskedPAPVE & \FinalPartialPAPVE & \\
+Recall (\%) & \FinalRecall & \FinalMaskedRecall & \FinalPartialRecall & \\
+Root error (mm) & \FinalRootErr & \FinalMaskedRootErr & \FinalPartialRootErr & \\
+\addlinespace
+\multicolumn{5}{@{}l}{\emph{3DPW test, v23 labels, V0}} \\
+PVE (mm) & \FinalThreeDPW & \FinalMaskedThreeDPW & \FinalPartialThreeDPW & \\
+PA-PVE (mm) & \FinalPAThreeDPW & \FinalMaskedPAThreeDPW & \FinalPartialPAThreeDPW & \\
+\addlinespace
+\multicolumn{5}{@{}l}{\emph{Relative Human validation}} \\
+Recall (\%) & \RHRecallFinal & \RHRecallMasked & \RHRecallPartial & \\
+Gender accuracy (\%) & \RHGenderFinal & \RHGenderMasked & \RHGenderPartial & $\geq$ 60 \\
+Child-vs-adult AUC & \RHAUCFinal & \RHAUCMasked & \RHAUCPartial & $\geq$ 0.7 \\
+Babies with age $<$ 0.45 (\%) & \RHBabiesBelowFinal & \RHBabiesBelowMasked & \RHBabiesBelowPartial & \\
+\addlinespace
+\multicolumn{5}{@{}l}{\emph{Demo images, standard deviation of the prediction}} \\
+Muscle & \SpreadMuscleFinal & \SpreadMuscleMasked & n/m & $>$ \SpreadRuleThreshold \\
+Weight & \SpreadWeightFinal & \SpreadWeightMasked & n/m & $>$ \SpreadRuleThreshold \\
+\bottomrule
+\end{tabular}
+\caption[The shape-mask arms: Final, Final-masked, Final-partial-mask]{The three shape-mask arms. Final supervises
+all converted 3DPW phenotypes; Final-masked masks the \MethodShapeMaskCount{} constants of the converted labels (age
+0.55 and seven values at 0.5); Final-partial-mask masks only the seven at 0.5 and keeps age supervised. Gender stays
+supervised in all three. AnnyOne holdout: 100 images, setting V1; 3DPW test: all 8,190 images, corrected labels,
+setting V0; Relative Human: validation split, matched people (full columns in Table~\ref{tab:relhuman}); demo: 12
+images, not matched to people; n/m: not measured. Rule: the thresholds, fixed before the first masked run, that a
+masked arm had to meet to replace Final. One run per arm, no seed; two identical runs differed by \NoisePVE\,mm PVE.}
+\label{tab:mask-arms}
+\end{table}

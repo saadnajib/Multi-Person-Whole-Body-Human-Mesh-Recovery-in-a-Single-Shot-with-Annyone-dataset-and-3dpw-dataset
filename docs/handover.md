@@ -431,6 +431,24 @@ exp7 env `MASK_3DPW_SHAPE_NAMES=muscle,weight,cupsize,firmness,african,asian,cau
 Consequence for exp8: TEACHER = the unmasked 3611336 checkpoint (the script default); do NOT pass MASK_3DPW_SHAPE=1 to
 the student by default either (same reasoning; the plan's 'student masks its own shape loss' is now an ablation, not the
 default). For the thesis: the shape mask is a measured negative result (one run each, noise applies).
+**19 Oct 01:20: Final-partial-mask DONE + Relative Human DONE: decision unmasked Final stays.** [Certain, logs;
+`docs/thesis/data/CLUSTER_ANSWERS.md`, sections "19 Oct, 00:30" and "19 Oct, 01:20"] Run 3 (job 3614042, RUN
+`v5_pc_dist5_bonefix_v23_e10_shpmask_noage`, `MASK_3DPW_SHAPE_NAMES=muscle,weight,cupsize,firmness,african,asian,caucasian`:
+the seven 0.5 constants masked, age 0.55 and gender kept). AnnyOne holdout V1 (`logs/exp7_final_model_3614042.out:191-215`):
+PVE 73.0 / PA-PVE 51.2 / recall 87.4, root error 680 mm, slope 0.42 (intercept 1.69 m), size 0.79, girth 1.005, neck02 5.0
+deg, head 8.9, fingers 8.2; verdicts OK (unmasked final 73.7 / 50.3 / 87.0, 728 mm). AnnyOne test-100 V0 76.6 / 55.2 /
+recall 87; 3DPW test v23 PVE 89.9 / PA-PVE 58.9 / precision 66 / recall 99 / MPJPE 90.0 (unmasked 89.0 / 57.6 / 64 / 99).
+All within the noise of the final model. Relative Human val (job 3616821, `logs/eval_rh_3616821_0.out`; 635 images, 2,130
+people, IoU 0.3): recall 63.0% (1,341 of 2,130); gender accuracy 47.4% (men 0.725, women 0.888: both on the female side);
+child-vs-adult AUC 0.727 (184 vs 1,086); mean age adult 0.532 / teen 0.515 / kid 0.506 / baby 0.465; below 0.45: kids
+10.3%, babies 34.3%. Against the unmasked final (64.7 / 64.2 / 0.719 / 0.536, 0.500, 0.438 / babies 49.3%), the full
+mask (57.2 / 49.3 / 0.708 / 0.638, 0.611, 0.524 / 16.9%) and v5 (47.1 / 46.5 / 0.606). Rule (gender >= 60%, AUC >= 0.7,
+spread opened): gender FAILS, AUC passes; the demo spread was not measured (no demo run; not needed once gender failed).
+**Decision: the unmasked final model (3611336) remains the thesis model and the student's teacher.** Children are kept
+because age stayed supervised; gender is lost as under the full mask. [Guessing, not tested] the gender label stayed
+supervised in this run and gender accuracy still fell to chance, so the final model's gender gain likely depends on the
+seven constants on 3DPW men as much as on the gender label. Thesis: 6.8 (Table 6.x `tab:mask-arms`, T21; T12 fourth
+column), 7.1 (1a-shape, T01), 8.2, 4.3, T13, T19 updated 19 Oct. Deck: slides 19 and 30 updated (section 9).
 
 Paste this section with section 0. Each step names the section with the details.
 
@@ -679,6 +697,13 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   (v5 90.2); neck02 4.8 vs 175.8 deg, girth 0.996 vs 0.464, PVE_neck 11.0 vs 27.7 mm, head bone 8.9 vs 177.7 deg,
   global head 13.1 vs 13.0 (v5 12.0); fingers 8.3 vs 17.4 deg. One run per arm, no seed. Table and reading: section
   5, item 7.
+- Shape-mask arms (one run each; 0a) [Certain, logs]: full mask (job 3612325, all 8 constants; RH 3613616): V1 71.7 /
+  50.7 / recall 86.2, root 682 mm; 3DPW 91.1 / 59.0; Relative Human recall 57.2%, gender 49.3%, AUC 0.708, babies below
+  0.45 16.9%; demo spread muscle 0.06, weight 0.11. Partial mask (job 3614042, the seven 0.5 constants, age kept; RH
+  3616821, 19 Oct): V1 73.0 / 51.2 / recall 87.4, root 680 mm, neck02 5.0, fingers 8.2 (3614042:191-215); 3DPW 89.9 /
+  58.9; Relative Human recall 63.0%, gender 47.4% (men 0.725, women 0.888), AUC 0.727, ages 0.532 / 0.506 / 0.465
+  (adult / kid / baby), babies below 0.45 34.3%; demo spread not measured. Both fail the gender rule (>= 60%): the
+  unmasked final model stays.
 - NAVER's `multiHMR_672_L_anny` (the 1b baseline; job 3614192, 18 Oct evening, 0a) [Certain, log]: the same 100 holdout
   images (helper bones masked) PVE 60.3, PA-PVE 44.6, MPJPE 63.3, PA-MPJPE 45.0, recall 89.0%, precision 82.0% (final
   model 73.7 / 50.3 / recall 87.0); 3DPW test (v23, 8,190 images) PVE 126.9, PA-PVE 68.8, MPJPE 129.4, recall 97%,
@@ -805,6 +830,8 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   | exp6 neck pilot (3612075; bone fix from its args) | 120.2 | 68.7 | 124.8 | 53.0 | 100.0 | 72.7 / 55.0 / 89 |
   | exp7 control (3611339) | 91.5 | 59.7 | 90.9 | 62.0 | 99.0 | 81.2 / 60.6 / 89 |
   | final model (3611336) | **89.0** | **57.6** | **88.3** | 64.0 | 99.0 | 77.5 / 54.4 / 87 |
+  | full shape mask (3612325) | 91.1 | 59.0 | -- | 68.0 | 99.0 | 75.4 / 54.8 / -- |
+  | partial shape mask, age kept (3614042, 19 Oct) | 89.9 | 58.9 | 90.0 | 66.0 | 99.0 | 76.6 / 55.2 / 87 |
   | NAVER `multiHMR_672_L_anny` (3614192; helper bones always masked) | 126.9 | 68.8 | 129.4 | 75.0 | 97.0 | 60.3 / 44.6 / 89 (masked = V1; likely in-sample) |
 
   ViT-S students, same script and images (job 3615020, 18 Oct 22:40) [Certain, logs]: Student-S/final (v8 e52) 121.6 / 83.7,
@@ -3106,6 +3133,8 @@ its notes at `.../main/docs/supervisor_talk_notes_2026-10-19.md` and the slide-b
 | 3612074 | eval-test3dpw (log `logs/eval-test3dpw-3612074_0.out`) | the same for v9 e62 (`models/multiHMR/anny_teacher_v9_mixed_00062.pt`), serv-3335, 3DPW pass 13 min 16 s: 3DPW test PVE 95.5, PA-PVE 62.9, MPJPE 94.8, precision 73.0, recall 94.0 (:117-124); AnnyOne test-100 78.5 / 57.4 / 89 (:25-32). Run name `evaltest_teacher_v9_e62__threedpw_anny_v23`. Section 5, item 7 |
 | 3612075 | eval-test3dpw (log `logs/eval-test3dpw-3612075_0.out`) | the same for exp6 (`models/multiHMR/exp6_v5_bonefix_00001.pt`; `[bone_fix] ON, 4 bone(s)` inherited from its args, :10), serv-3335, 3DPW pass 13 min 27 s: 3DPW test PVE 120.2, PA-PVE 68.7, MPJPE 124.8, precision 53.0, recall 100.0 (:118-125); AnnyOne test-100 72.7 / 55.0 / 89 (:26-33). Run name `evaltest_exp6_v5_bonefix__threedpw_anny_v23`. Section 5, item 7 |
 | 3612078 | demo-compare (log `logs/demo-compare-3612078.out`) | real-image demo of the final model, 18 Oct: `DEMO_MODELS="anny_s2_shape_v5\|00099 exp7_v5_final\|00009"` (`slurm/demo/run_demo_compare.sh`; the final checkpoint copied to `models/multiHMR/exp7_v5_final_00009.pt`); serv-9225, started 09:20. v5: `[load_model] bone_fix: none in the checkpoint args` (:18); final model: `bone_fix: checkpoint args (bone_fix_spec)` and `[bone_fix] ON, 4 bone(s)` (:424, :427). 4 photos (`example_data`) + 8 3DPW-test frames; outputs `demo_out_<model>_photos/`, `_3dpwtest/`; montages `demo_montage_photos/`, `demo_montage_3dpwtest/` (login node, `scripts/analysis/make_montage.py`, commands at :815-823). `[shape]` gender over all 12 images: v5 0.32-0.76 (median 0.59), final 0.05-0.99 (median 0.90); age v5 0.50-0.77 (0.61), final 0.42-0.65 (0.56). By eye: men get male bodies, the boy stays adult (3.4). Figure `docs/figures/final_model_real_photos.jpg`, deck slide 17 |
+| 3614042 | exp7 (log `logs/exp7_final_model_3614042.out`) | run 3, the partial shape mask, done 19 Oct (00:30): Final's recipe + `MASK_3DPW_SHAPE=1 MASK_3DPW_SHAPE_NAMES=muscle,weight,cupsize,firmness,african,asian,caucasian` (age and gender supervised), RUN `v5_pc_dist5_bonefix_v23_e10_shpmask_noage`. Holdout V1 PVE 73.0, PA-PVE 51.2, recall 87.4, root error 680 mm, slope 0.42, size 0.79, girth 1.005, neck02 5.0, head 8.9, fingers 8.2 (:191-215); AnnyOne test-100 V0 76.6 / 55.2 / 87; 3DPW test v23 89.9 / 58.9 / MPJPE 90.0, precision 66, recall 99. Checkpoint `results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/train/checkpoints/00009.pt`. 0a "19 Oct 01:20" |
+| 3616821 | eval_rh (log `logs/eval_rh_3616821_0.out`) | Relative Human val of run 3 (partial mask), done 19 Oct (01:20): recall 0.630 (1,341 / 2,130); gender accuracy 0.474 (n 1,271; men 0.725, women 0.888); AUC 0.727 (184 vs 1,086); age adult 0.532 / teen 0.515 / kid 0.506 / baby 0.465; below 0.45: 0.003 / 0.000 / 0.103 / 0.343; height 0.527 / 0.520 / 0.497 / 0.504. Fails the gender rule: the unmasked final model stays. 0a "19 Oct 01:20" |
 
 **Experiments, one line each:** exp1 depth anchor (placement much better, slope not, likely cost; rule failed);
 exp2 children sampler (inconclusive at 2 epochs); exp3 global head loss (null); exp4 fingers crop + region-norm (both null); exp5
@@ -3203,7 +3232,11 @@ pptx gone. A copy without `docs/supervisor_update_2026-10-19.pptx` is the 21-sli
     bullets.
 18. Children and gender on real photos (new; the old 10's tiles, trimmed). The three-column table (v5 | final |
     masked arm), the three tiles and the three bullets.
-19. Masked shape labels: a trade-off (new). The two boxes and the "Reading and next step" line (job 3614042, queued).
+19. Masked shape labels: a trade-off (new). The two boxes and the bottom line, since the 19 Oct (01:20) rebuild
+    "Result, 19 Oct" (partial mask: children kept, gender at chance; the unmasked model stays), same length as the
+    old "Reading and next step ... job 3614042, queued" line; LibreOffice render: inside its box. The deck still
+    says "queued" / "next" for this run on slide 23 (row 1a shape, next), slide 25 (week 1) and in the notes of
+    slide 26 ("a partial mask that keeps age is queued"): not updated.
 20. Final model: all fixes together, with a control (old 16). The table and the lines under it end above the footer.
 21. Final model on real photos: v5 vs final (by eye) (old 17). The title stays on one line; the source block ends
     level with the figure.
@@ -3228,7 +3261,7 @@ rebuild (or hand-edit the pptx as above).
 |---|---|---|---|
 | NAVER baseline `multiHMR_672_L_anny`, job 3614192: **DONE 18 Oct evening** (errors in the deck); its cost, job 3614947: **DONE** (380.9 M params, head 76.6 M; in the deck) | now carried by 20 (3DPW line "NAVER 126.9"; source line), 23 (row 1b evidence), 24 (NAVER row "60.3 mm*" / "126.9 mm", footnote *, the bars 63.5 / 133.6 in the rule line), 26 (question 1), 30 (row 3614192); also 25 (week 1 "done 18 Oct") | 20, 23 (main + If asked), 24, 25, 26 (main + If asked), 30 | nothing pending: slide 24's NAVER row reads 380.9 M / 1,917 (backbone) / not measured (ms and head FLOPs are not measured for NAVER's class, by design), job 3614947 |
 | exp8, the ViT-B student, job 3614191 (pending; smoke test 3613926 passed) | 24 (student row "pending (this week)"; the timeline bullet), 30 (row 3614191); also 1 ("ViT-B student running"), 2 (row 1b), 23 (row 1b, next), 25 (weeks 1 and 3) | 24, 23 (main), 25, 30 | the student's holdout and 3DPW-test PVE / MPJPE and its ratio against both ViT-Ls (bar <= 77.6 mm and <= 93.7 mm against ours); if it misses with a still-falling curve, week 3's longer run |
-| partial mask, age kept, job 3614042 (queued) | 19 ("Reading and next step": "job 3614042, queued; result after this meeting"), 30 (row 3614042, "queued"); also named in 23 (row 1a shape, next) and 25 (week 1) | 19 ("It is queued; the result comes after this meeting"), 25, 30 | Relative Human gender, AUC and babies' age, and the demo spread of muscle / weight with age supervised; whether it becomes the final ViT-L (decision on Sun 25 Oct, slide 25) |
+| partial mask, age kept, job 3614042 + its Relative Human job 3616821: **DONE 19 Oct (01:20)**; decision: the unmasked final model stays (0a) | now carried by 19 (bottom line "Result, 19 Oct", replacing "Reading and next step ... queued") and 30 (row 3614042 "partial mask, age kept (done; not adopted)"); deck rebuilt 19 Oct 01:20. The deck still says "queued" / "next" in 23 (row 1a shape, next), 25 (week 1) and the notes of 26: not updated | 19 (main + If asked) and 30 updated; 25 and 26 not | nothing pending: gender 47.4% fails the rule, AUC 0.727 passes, demo spread not measured (not needed) |
 | the other four demo images of the 2-epoch model (runForBus, sitOnStairs, fencing frames, one photo; job 3581312) | none | 16 (If asked: "I have looked at 8 of these 12 images so far ..."), 27 (main: "the 8 real images I have seen so far"; If asked: "I have looked at 8 of these 12 images so far"), 26 (If asked: "in the 8 of its 12 images I have seen") | how many of the 12 show normal necks with the fix |
 | `long_pc_dist20` (4d) | 14 (legend: "No control was run at ×5 or ×20"), 27 item 3 ("no ×20 result at 10 epochs") | 14 (main), 27 (If asked), 26 (If asked: "Five, not twenty, because ...") | root error, size, slope, PVE, recall of x20 for 10 epochs next to x5 for 10 epochs |
 | the supervisor's answers (slide 26, four questions) | 26 (question box "Questions for you"), 23 (rows 1b "needs your yes" and 2b), 24 (risk bullet "Your call"), 18 (last bullet's question), 27 item 6 | 26 (main: "I have four questions now ..."; If asked: "Option 1", "Option 2"), 23 (If asked: "that is my first question on slide 26"), 24 | record them in the paragraph below |
@@ -3237,7 +3270,8 @@ rebuild (or hand-edit the pptx as above).
 Done and in the deck, nothing pending: the 3DPW re-fit and the v23 check (slide 6), the Relative Human evaluations of
 v5, exp6 and the final model (slide 18), the final model (exp7; slides 8, 14, 15, 17 and 20), the v23 3DPW-test
 re-evaluations of v5, v9 e62 and exp6 (slide 20), the demo of the final model (slide 21), the masked arm (slides 18
-and 19), the exp8 smoke test (slide 24), the NAVER baseline's errors (job 3614192; slides 20, 23, 24, 26, 30) and its cost (job
+and 19), the partial mask and its Relative Human run (jobs 3614042, 3616821; slides 19 and 30, 19 Oct), the exp8
+smoke test (slide 24), the NAVER baseline's errors (job 3614192; slides 20, 23, 24, 26, 30) and its cost (job
 3614947; slides 23, 24, 30).
 
 **The question on slide 26:** last week's question was: fine-tune v9 now (fixed targets, depth loss x5), or first
