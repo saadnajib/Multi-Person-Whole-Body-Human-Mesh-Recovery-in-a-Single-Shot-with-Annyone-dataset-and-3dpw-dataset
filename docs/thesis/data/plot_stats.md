@@ -74,3 +74,28 @@ columns are the in-training AnnyOne holdout evaluation (setting V0), not the V1 
 | 3DPW validation, Control | min 75.5 (epoch 4), last 75.9, mean over epochs 77.72 |
 | AnnyOne holdout (V0, in training), Final | min 78.9 (epoch 9), last 79.3, mean over epochs 80.73 |
 | AnnyOne holdout (V0, in training), Control | min 76.8 (epoch 9), last 81.2, mean over epochs 79.19 |
+
+## Phenotype correlation on the AnnyOne holdout (19 Oct, computed from the three holdout_per_person CSVs, rows `variant == V1_eval_masked`)
+
+Per phenotype: Pearson r between the predicted and the true value, the slope of pred on gt, and the spread (sd) of the
+predictions next to the spread of the labels. Full table: `holdout_phenotype_corr.csv` (n = 222 / 219 / 214 people).
+
+| phenotype | Base r / slope / sd_pred | Control r / slope / sd_pred | Final r / slope / sd_pred | sd of the labels |
+|---|---|---|---|---|
+| gender | 0.77 / 0.52 / 0.090 | 0.69 / 0.54 / 0.104 | 0.73 / 0.48 / 0.087 | 0.133 |
+| age | 0.44 / 0.16 / 0.024 | 0.31 / 0.14 / 0.029 | 0.31 / 0.16 / 0.036 | 0.067 |
+| height | 0.52 / 0.36 / 0.038 | 0.55 / 0.38 / 0.039 | 0.48 / 0.37 / 0.043 | 0.055 |
+| proportions | 0.74 / 0.57 / 0.058 | 0.66 / 0.42 / 0.048 | 0.67 / 0.50 / 0.056 | 0.074 |
+| muscle | 0.41 / 0.21 / 0.053 | 0.35 / 0.16 / 0.049 | 0.27 / 0.13 / 0.052 | 0.108 |
+| weight | 0.80 / 0.67 / 0.205 | 0.80 / 0.65 / 0.200 | 0.77 / 0.61 / 0.194 | 0.247 |
+| cupsize | 0.70 / 0.52 / 0.179 | 0.68 / 0.50 / 0.175 | 0.69 / 0.47 / 0.164 | 0.243 |
+| firmness | 0.45 / 0.36 / 0.162 | 0.45 / 0.35 / 0.159 | 0.46 / 0.34 / 0.149 | 0.198 |
+| african | 0.40 / 0.23 / 0.040 | 0.35 / 0.20 / 0.040 | 0.30 / 0.17 / 0.040 | 0.071 |
+| asian | 0.65 / 0.26 / 0.036 | 0.62 / 0.26 / 0.037 | 0.62 / 0.25 / 0.036 | 0.087 |
+| caucasian | 0.50 / 0.25 / 0.053 | 0.48 / 0.23 / 0.051 | 0.46 / 0.22 / 0.050 | 0.104 |
+
+Reading: on synthetic images, where the labels vary, the final model does vary weight (r 0.77, spread 0.19 against 0.25
+in the labels), cup size (0.69) and gender (0.73). Muscle is the weak one (r 0.27, slope 0.13) and it got weaker from
+Base (0.41) through the 3DPW fine-tunes, as expected when 30% of the batches carry the converter constant 0.5. Every
+slope is below 1: the predictions are pulled towards the middle. The flat shape on real photos (handover 3.4) is
+therefore the 3DPW constants, not a model that cannot express shape.
