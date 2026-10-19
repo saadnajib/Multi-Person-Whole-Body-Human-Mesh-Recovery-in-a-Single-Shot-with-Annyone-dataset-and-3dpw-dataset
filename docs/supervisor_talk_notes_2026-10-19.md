@@ -34,6 +34,7 @@ If asked:
 - Joints: the 14.1 millimetres are measured at the points the fit aims at. The bare bone heads that train.py uses are 30.0 millimetres off, was 32.5, mostly a fixed torso rig gap, not a fit error. The script marks the 26 millimetres for 3DPW as likely, from von Marcard et al., 2018; I have not checked the paper.
 - Still fixed by design: age 0.55 for everyone and seven more shape values at 0.5; only height and proportions are fitted, and gender comes from 3DPW.
 - 2D and left/right: left and right were correct in every checked person, and the mirror test passes.
+Overlays of a good and the worst label are on slide 32.
 
 ## Slide 7: What the model learns: the losses in plain words
 
@@ -199,4 +200,8 @@ This appendix slide is the provenance table: every number in the deck comes from
 ## Slide 31: Real photos: predicted fingers and rest-pose line-up
 
 Two things I could not show before. Left: predicted fingers on real photos, relaxation off. Base's fingers are splayed and stiff; one left-hand finger sticks out, because its left index base is still flipped. Final's are closed and bent and read as hands, curled as if fretting the guitar. Neither model puts them on the real fingers, and in most images the hands are too small to judge. Right: everyone in rest pose, so only shape differs. Base gives everyone a similar slim, flat body; Final gives the singers a fuller female shape and the bar man a broader torso; the tennis men stay slim in all three; Final-masked is close to Final. By eye only; no metric.
+
+## Slide 32: 3DPW labels on the image: a good case and the worst case
+
+These are two of our 3DPW labels drawn on the image: the 3DPW SMPL mesh on the left of each pair, our Anny label on the right. Left, a good case: two people in courtyard_arguing, joints within 12 and 14 millimetres. Right, the worst frame of the whole check, picked on purpose: a climber at 57 millimetres, because the Anny body is thinner. The median is 14.1 millimetres, below the roughly 26 millimetres accuracy of 3DPW's own joints. The check still grades WARN: forearm ratio 0.95, thigh 1.06, and 3.2 percent of people have a joint over 100 millimetres. Head and hands are not supervised by these labels.
 

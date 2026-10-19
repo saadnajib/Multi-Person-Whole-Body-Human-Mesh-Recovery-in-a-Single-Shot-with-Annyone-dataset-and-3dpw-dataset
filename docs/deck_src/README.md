@@ -1,6 +1,6 @@
 # Deck source: supervisor update, 19 October 2026
 
-`build.js` builds the 31-slide deck `docs/supervisor_update_2026-10-19.pptx` and its speaker script
+`build.js` builds the 32-slide deck `docs/supervisor_update_2026-10-19.pptx` and its speaker script
 `docs/supervisor_talk_notes_2026-10-19.md` for the supervisor meeting on Monday 19 October 2026, 16:00. The 19 Oct
 version (built on the evening of 18 Oct) tells the whole story in order, in plain words: overview, data, training,
 findings and fixes, the final model, requirements and plan, appendix. It replaces the 21-slide deck of 16-18 Oct
@@ -25,7 +25,8 @@ Slides (section, number, title):
   24 Plan for 1b: a smaller model by distillation; 25 Plan: the next four weeks; 26 What I claim, what I do not,
   and my questions (DARK_CLOSE).
 - Appendix: 27 Still open, and what I test next; 28 Corrections to the draft and the repo; 29 Backup: before and
-  after, holdout image 579860; 30 Jobs and checkpoints; 31 Real photos: predicted fingers and rest-pose line-up.
+  after, holdout image 579860; 30 Jobs and checkpoints; 31 Real photos: predicted fingers and rest-pose line-up;
+  32 3DPW labels on the image: a good case and the worst case.
 
 New on 19 Oct: slides 1-4, 7-9, 11 (merges the old slides 3 and 4), 18, 19, 24, 25 and 30. Old -> new numbering of
 the reused slides: 2->10, 5->5, 6->6, 7->15, 8->16, 9->17, 11->12, 12->13, 13->14, 14->22, 15->28, 16->20, 17->21,
@@ -36,6 +37,10 @@ Added on 19 Oct (day of the meeting): slide 31, from the demo jobs 3615018 (pred
 `rest_pose_lineup_stage.jpg` and `rest_pose_lineup_tennis.jpg` are crops of the thesis montages F11 and F17 (crop boxes in
 the comment above slide 31 in `build.js`). The same rebuild replaced stale text on slides 2, 17, 23, 25, 27 and 28 and in
 the notes of 2, 16, 17, 23, 25, 26, 27 and 28 (handover section 9).
+
+Added later on 19 Oct: slide 32, two crops of the thesis label-check figures F14 (conversion check, job 3611284):
+`docs/figures/label_check_courtyard.jpg` and `label_check_climbing.jpg`, the 3DPW SMPL and Anny label panels, box
+(545, 170, 1628, 830) of each 1628 x 960 source (comment above slide 32 in `build.js`); the notes of slide 6 point to it.
 
 Files here:
 - `build.js`: the whole deck (layouts, slides, speaker notes) written with pptxgenjs, plus two post-processing steps.

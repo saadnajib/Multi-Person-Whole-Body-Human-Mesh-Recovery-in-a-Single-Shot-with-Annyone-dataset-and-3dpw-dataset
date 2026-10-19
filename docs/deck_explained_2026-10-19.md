@@ -1218,6 +1218,20 @@ job before 3611284 except 3579014 are not on it.
   the real ones; that four crops and two line-ups stand for all twelve demo images (all are in the thesis, Figures D.6
   and D.7); anything beyond the demo setting (bodies placed from the detector box).
 
+### Slide 32. 3DPW labels on the image: a good case and the worst case
+
+- **On the slide** (appendix, added 19 Oct) [D slide 32]: two label-check panels side by side, each cropped to the
+  3DPW SMPL mesh (orange, OpenPose 2D yellow) and our Anny label (blue; joints red = 3DPW SMPL, green = Anny):
+  left `docs/figures/label_check_courtyard.jpg` (training sequence courtyard_arguing_00, image 24, two people, joint
+  errors 12 and 14 mm), right `docs/figures/label_check_climbing.jpg` (outdoors_climbing_02, image 633, the worst joint
+  error of the check, 57 mm). Both are cut from `docs/thesis/figures/img/F14_label_check_*.jpg` with box
+  (545, 170, 1628, 830), dropping the photo panel and the label strip.
+- **What it shows:** body joints of our labels match 3DPW's to 14.1 mm (median over 3,314 people), below the ~26 mm
+  accuracy of 3DPW's own joints; the worst frame, picked on purpose, is 57 mm because the Anny body is thinner than the
+  climber [Certain, conversion check job 3611284; slides 5-6].
+- **Not claimed:** that the labels are perfect: the check grades WARN (forearm ratio 0.95, thigh 1.06; 3.2% of people
+  have a joint over 100 mm). Head and hands stay at rest in every label, so these labels do not supervise them.
+
 ---
 
 ## Part 7. Thesis requirements: status and evidence

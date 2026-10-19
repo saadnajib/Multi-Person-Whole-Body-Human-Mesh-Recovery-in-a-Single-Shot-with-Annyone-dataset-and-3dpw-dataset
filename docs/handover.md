@@ -3192,7 +3192,7 @@ demo job 3612078; on Relative Human gender 46.5 -> 64%, children AUC 0.61 -> 0.7
 
 ## 9. Deck
 
-**Files** (since the evening of 18 Oct): `docs/supervisor_update_2026-10-19.pptx` (30 slides; 31 since 19 Oct), the speaker script
+**Files** (since the evening of 18 Oct): `docs/supervisor_update_2026-10-19.pptx` (30 slides; 31 since 19 Oct; 32 since later on 19 Oct), the speaker script
 `docs/supervisor_talk_notes_2026-10-19.md` (one "## Slide N: title" per slide: spoken part + "If asked:" part) and the
 companion `docs/deck_explained_2026-10-19.md` (every slide explained in plain words, with what is on the slide, the
 numbers and their sources, and what is not claimed; reconciled with the final deck on the evening of 18 Oct; the deck
@@ -3342,6 +3342,8 @@ numbers of 18 Oct, 3.4) or Path B (A plus BEV-style weak labels from RH train, 1
 measurement the student proposed first is done. (2) The 3DPW shape mask: the full mask was tested (masked arm, job
 3612325; slide 19) and not adopted; the partial mask that keeps age is queued (job 3614042). Record both answers here
 after the meeting.
+
+Slide 32 (added 19 Oct, appendix): 3DPW labels on the image, a good case (courtyard_arguing_00 image 24, 12 / 14 mm) and the worst (outdoors_climbing_02 image 633, 57 mm); crops `docs/figures/label_check_{courtyard,climbing}.jpg` of the F14 label-check figures (job 3611284); slide 6 notes point to it.
 
 ---
 
