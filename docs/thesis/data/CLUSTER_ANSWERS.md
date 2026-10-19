@@ -79,3 +79,16 @@ stairs (downtown_sitOnStairs), downtown_walkBridge/walking pair, weekly market (
 - 3DPW test v23, all 8,190 images: PVE 89.9, PA-PVE 58.9, precision 66, recall 99, MPJPE 90.0.
   (Final: 73.7 / 50.3 / 87.0; root 728; 3DPW 89.0 / 57.6 / 64 / 99. Final-masked: 71.7 / 50.7 / 86.2; 3DPW 91.1 / 59.0.)
 - Everything is within the run-to-run noise of Final; the decision rests on Relative Human (job 3616821) and the demo spread.
+
+## 19 Oct, 01:20: Relative Human of Final-partial-mask (job 3616821, `logs/eval_rh_3616821_0.out`) -> DECISION: unmasked Final stays
+- val, 635 images, 2,130 people, iou 0.3, child_thr 0.45: overall recall 0.630 (1341/2130).
+  adult n_lab 1680 matched 1086 recall 0.646 age mean 0.532 (median 0.524) <thr 0.003 height 0.527 g_acc 0.468 (n 1050);
+  teen 101 / 70 / 0.693 / 0.515 / 0.513 / 0.000 / 0.520 / 0.500 (68); kid 209 / 117 / 0.560 / 0.506 / 0.505 / 0.103 / 0.497 / 0.495 (107);
+  baby 117 / 67 / 0.573 / 0.465 / 0.478 / 0.343 / 0.504 / 0.556 (45).
+  child-vs-adult AUC 0.727 (n_pos 184, n_neg 1086); gender accuracy 0.474 (n 1271), pred gender mean male 0.725, female 0.888.
+- Rule (gender >= 60%, AUC >= 0.7, spread opened): gender FAILS (47.4%), AUC passes (0.727), spread not measured (no demo run; not needed).
+  -> The unmasked Final (3611336) remains the thesis model and the Student's teacher. Final-partial-mask is the fourth column of
+  the shape-mask trade-off (chapter 6.8, Table 6.2): children kept (age label kept), gender lost like the full mask.
+- Reading, untested: the gender label was still supervised here and gender accuracy still collapsed (both sexes predicted
+  female-side), so Final's gender gain likely depends on the seven 0.5 constants on 3DPW men (cup size, firmness, ...) as much as on
+  the gender label. Not tested further.
