@@ -232,3 +232,6 @@ caption was written, and every verdict in the captions is by eye.
   inside the box, existing macros). The JSON has no camera field, so the camera match is not quoted in the caption.
 - Table 7.1 was already 10 pt too tall for its page before this pass; the edits keep it at 10 pt. PDF size grew to
   48 MB (the montages are embedded at full resolution); 130 pages.
+
+## 19 Oct: long version frozen before trimming
+The full 132-page version is commit 76aa1a4 (main) and docs/thesis/thesis_long_2026-10-19.pdf. Every paragraph cut in the trimming pass can be recovered with `git show 76aa1a4:docs/thesis/<file>`.
