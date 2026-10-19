@@ -8,14 +8,18 @@
 % Tables referenced, placed elsewhere: T8 tab:depth-runs, T9 tab:neck-bones, T10 tab:fingers (Chapter 5),
 % T11 tab:student-recipe, tab:model-names (Chapter 4).
 % Figures placed here: F7 fig:depth-579862, F15 fig:depth-scatter, F9 fig:neck-3dpw-bar, F11 fig:fingers-demo
-% (pending), F12 fig:holdout-montage, F20 fig:val-curves, F10 fig:3dpw-overlays, F13 fig:real-photos, F16 fig:rh-age,
-% F17 fig:rest-lineup (pending), F18 fig:cost-pve, F19 fig:student-curves (pending), F22 fig:vits-curves.
+% (zoomed crops of three demo montages; all 12 in Appendix D), F12 fig:holdout-montage, F20 fig:val-curves,
+% F10 fig:3dpw-overlays, F13 fig:real-photos, F16 fig:rh-age, F17 fig:rest-lineup (render panels of three montages;
+% the other nine in Appendix D), F18 fig:cost-pve, F19 fig:student-curves (pending), F22 fig:vits-curves.
 % Figures referenced, placed elsewhere: F6 fig:diag-neck-base (Chapter 5), F8 fig:depth-579860, F9 office pair
 % fig:neck-3dpw-office, photo montages fig:photo-montages (Appendix D).
-% F12 note: the delivered montages figures/img/F12_holdout_<idx>_img_gt_v5_final.jpg are mis-cropped (the cluster
-% command assumed 4 trace panels, the trace writes 5, so their last column is half of Final's V1 panel plus three
-% quarters of its demo panel). The figure uses F12_holdout_<idx>_demo_crop.jpg, re-cropped from those files by the
-% scratchpad script recrop_f12.py: image | GT | Base | Final, all the left 504 px of the same panels, demo setting.
+% F12 note: the figure uses F12_holdout_<idx>_img_gt_base_final.jpg (zip batch 2, 19 Oct): image | GT | Base V1 |
+% Final V1, 672-px panels with 4-px gaps, each body at its model's own predicted depth. The older files
+% F12_holdout_<idx>_img_gt_v5_final.jpg (mis-cropped) and F12_holdout_<idx>_demo_crop.jpg (demo setting) stay on disk
+% but are no longer used.
+% F11/F17 note: the montages are photo | model render pairs (F11: Base, Final; F17: Base, Final, Final-masked; labels
+% baked into a 44-px header). The chapter figures cut panels out of them with \includegraphics trim (JPEG at 72 dpi,
+% so 1 px = 1 bp); the full montages are in Appendix D (fig:fingers-all, fig:rest-more).
 % =============================================================================
 
 \chapter{Experiments and Results}
@@ -146,15 +150,33 @@ fresh heads (Section~\ref{sec:diag-neck}), need a two-sided correction, which I 
 \section{Fingers}
 \label{sec:res-fingers}
 
+% F11: crops of the render panels of F11_hands_photo_party.jpg (2700 x 944, panels 675 px), F11_hands_3dpw_guitar.jpg
+% and F11_hands_3dpw_bar.jpg (2024 x 944, panels 506 px); trim = {left bottom right top} in px. Demo with
+% --relax_hands 0; Base without, Final with the bone correction (demo log data/demo_compare_3615018_hands.log).
 \begin{figure}[tbp]
 \centering
-\IfFileExists{figures/img/F11_hands_photos.jpg}%
-  {\includegraphics[width=\linewidth]{figures/img/F11_hands_photos.jpg}}%
-  {\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F11 pending: demo with predicted fingers
-   (\texttt{-{}-relax\_hands 0}); file figures/img/F11\_hands\_photos.jpg}}}}
-\caption[Predicted fingers on the demo images, Base and Final]{Predicted (not rest-pose) fingers on the demo images:
-Base next to Final, bodies placed from the detector box; judged by eye, no metric. Base's left index-finger base is
-flipped in these renders; the correction is in Final only.}
+\begin{tabular}{@{}c@{\hspace{4pt}}c@{}}
+\small Base, predicted fingers & \small Final, predicted fingers \\[2pt]
+\includegraphics[trim={880 324 1350 170},clip,width=0.40\linewidth]{F11_hands_photo_party} &
+\includegraphics[trim={2230 324 0 170},clip,width=0.40\linewidth]{F11_hands_photo_party} \\
+\multicolumn{2}{c}{\small (a) party photo: the hand at the face and the hand over the armrest} \\[4pt]
+\includegraphics[trim={580 354 1124 330},clip,width=0.40\linewidth]{F11_hands_3dpw_guitar} &
+\includegraphics[trim={1592 354 112 330},clip,width=0.40\linewidth]{F11_hands_3dpw_guitar} \\
+\multicolumn{2}{c}{\small (b) 3DPW test frame, guitar: strumming hand (left) and fretting hand (right)} \\[4pt]
+\includegraphics[trim={560 404 1124 330},clip,width=0.40\linewidth]{F11_hands_3dpw_bar} &
+\includegraphics[trim={1572 404 112 330},clip,width=0.40\linewidth]{F11_hands_3dpw_bar} \\
+\multicolumn{2}{c}{\small (c) 3DPW test frame \texttt{downtown\_bar}: the hand on the bar and the hanging hand} \\
+\end{tabular}
+\caption[Predicted fingers on three demo images, Base and Final]{Predicted fingers (not set to rest pose) on three
+demo images, zoomed on the hands: the party photo and the 3DPW test frames guitar and \texttt{downtown\_bar}; Base left,
+Final right. Demo setting: bodies placed from the detector box, so meshes sit beside their people. Base's renders
+still carry the two flipped hand bones, the left index-finger base (metacarpal1.L, which bends that finger
+backwards) and the right ring-finger base; Final has the correction. By eye, Base's fingers are splayed and stiff,
+with a finger of the left hand sticking out from the others, while Final's are closed and bent and look like hands:
+draped over the armrest in (a), curled like the fretting hand in (b), bent over the bar edge in (c). Neither model
+puts the fingers on the real ones. Three images, judged by eye; no finger metric exists for real images, and the two
+columns differ by the correction and by the fine-tune. All twelve montages, uncropped, are in
+Figure~\ref{fig:fingers-all}.}
 \label{fig:fingers-demo}
 \end{figure}
 
@@ -169,9 +191,15 @@ test time, which did not help; real images add nothing to the fingers, because t
 terms of the \MethodHandMaskBones{} hand bones for 3DPW people (their labels hold rest-pose hands), and the mesh terms
 still carry the rest-pose hands.
 
-Not shown: predicted fingers have not been shown on a real photo. Every real-photo demo so far sets the fingers to
-rest pose; a demo with predicted fingers has been run, and Figure~\ref{fig:fingers-demo} waits for its images. The
-finger number is an angle on the synthetic holdout only.
+Predicted fingers on real images are shown in Figure~\ref{fig:fingers-demo}; every earlier real-photo demo set them
+to rest pose. Judged by eye, the claws of Base are gone in Final: Base spreads the fingers stiffly and lets one finger
+of the left hand stick out from the others, as the flipped metacarpal1.L would, while Final closes and bends them,
+draped over an armrest, curled as if fretting, bent over a bar edge, in a way that reads as a hand. Where the hands are small, as in the
+tennis photo and the street frames of Figure~\ref{fig:fingers-all}, the difference cannot be judged at print size.
+
+Not shown: a finger number on real images. The finger number is an angle on the synthetic holdout only; the 3DPW
+labels carry rest-pose hands and the demo images have no labels, so the real-image evidence is three images by eye.
+Base's renders carry both hand flips, so the figure shows the correction and the fine-tune together, not either alone.
 
 % -----------------------------------------------------------------------------
 \section{Final against Control and Base on AnnyOne}
@@ -189,25 +217,23 @@ Table~\ref{tab:final-annyone}. Values from the training logs.}
 \label{fig:val-curves}
 \end{figure}
 
+% F12: F12_holdout_<idx>_img_gt_base_final.jpg (2700 x 672): image | GT | Base | Final, setting V1 (both model panels
+% are labelled "V1_eval_masked" in the image; Base = v5 trace, Final = exp7 holdout trace).
 \begin{figure}[tbp]
 \centering
-\begin{subfigure}{0.495\linewidth}\centering
-  \includegraphics[width=\linewidth]{F12_holdout_579860_demo_crop}\caption{579860}\end{subfigure}\hfill
-\begin{subfigure}{0.495\linewidth}\centering
-  \includegraphics[width=\linewidth]{F12_holdout_579862_demo_crop}\caption{579862}\end{subfigure}\\[4pt]
-\begin{subfigure}{0.495\linewidth}\centering
-  \includegraphics[width=\linewidth]{F12_holdout_579863_demo_crop}\caption{579863}\end{subfigure}\hfill
-\begin{subfigure}{0.495\linewidth}\centering
-  \includegraphics[width=\linewidth]{F12_holdout_579865_demo_crop}\caption{579865}\end{subfigure}\\[4pt]
-\begin{subfigure}{0.495\linewidth}\centering
-  \includegraphics[width=\linewidth]{F12_holdout_579868_demo_crop}\caption{579868}\end{subfigure}\hfill
-\begin{subfigure}{0.495\linewidth}\centering
-  \includegraphics[width=\linewidth]{F12_holdout_579871_demo_crop}\caption{579871}\end{subfigure}
-\caption[Six holdout images: image, ground truth, Base, Final]{Six AnnyOne holdout images, each as image | ground
-truth | Base | Final. Ground truth drawn with the dataset camera; Base and Final in the demo setting of the trace
-(helper bones masked, field-of-view camera, demo detection threshold), each at its own predicted depth. Every panel
-is cut to the left three quarters of the frame, so people at the right edge are cropped. Mesh colours mark
-detections, not identities. Synthetic images; judged by eye.}
+\includegraphics[width=0.83\linewidth]{F12_holdout_579860_img_gt_base_final}\\[2pt]
+\includegraphics[width=0.83\linewidth]{F12_holdout_579862_img_gt_base_final}\\[2pt]
+\includegraphics[width=0.83\linewidth]{F12_holdout_579863_img_gt_base_final}\\[2pt]
+\includegraphics[width=0.83\linewidth]{F12_holdout_579865_img_gt_base_final}\\[2pt]
+\includegraphics[width=0.83\linewidth]{F12_holdout_579868_img_gt_base_final}\\[2pt]
+\includegraphics[width=0.83\linewidth]{F12_holdout_579871_img_gt_base_final}
+\caption[Six holdout images: image, ground truth, Base, Final (V1)]{Six AnnyOne holdout images (index in the first
+panel), each as image | ground truth | Base | Final. Ground truth drawn with the dataset camera; Base and Final in
+setting V1, the headline setting of Table~\ref{tab:final-annyone} (both model panels are labelled
+``V1\_eval\_masked''), each body at its model's own predicted depth. By eye, Base draws its bodies smaller and further back than the ground truth, Final close to its
+size and place. Mesh colours mark detections, not identities. People without a ground-truth mesh (the foreground arm
+in 579862) are not counted; people a model misses (the two lying in the foreground of 579865) have no predicted mesh.
+Synthetic images, one run per model; judged by eye.}
 \label{fig:holdout-montage}
 \end{figure}
 
@@ -233,8 +259,7 @@ head, so people whose head is cut off or hidden are found less often; this was n
 
 Not shown: PVE paired on the same people (the matched sets differ: \FinalMatched, \ControlMatched{} and \BaseMatched{}
 people), recall on people with a visible head, bootstrap intervals, and a second run of Final. The holdout has 100
-synthetic images without children. Figure~\ref{fig:holdout-montage} uses the demo setting rather than V1, because only
-those panels were available complete for both models.
+synthetic images without children, and Figure~\ref{fig:holdout-montage} shows six of them.
 
 % -----------------------------------------------------------------------------
 \section{3DPW test on the corrected labels}
@@ -329,17 +354,47 @@ Not shown: ages in years, which I never quote because the code uses three age sc
 held-out synthetic images (the holdout has none); and any shape number beyond age, gender and height, since Relative
 Human has no 3D bodies. The numbers cover detected people only, and the matched sets differ (\RHChildrenFinal{} kids
 and babies against \RHAdultsFinal{} adults for Final, \RHChildrenBase{} against \RHAdultsBase{} for Base). The demo
-images hold one child. The rest-pose line-up of Figure~\ref{fig:rest-lineup}, which would show shape without pose,
-is pending.
+images hold one child.
 
+The rest-pose line-up of Figure~\ref{fig:rest-lineup} shows shape without pose: every detected person is drawn in
+rest pose, so only the body differs. Judged by eye, Base gives nearly everyone the same slim, flat body; the three
+singers on the stage look boyish. Final gives the singers a fuller chest and hips and the man in the bar a broader,
+heavier torso. The men of the tennis photo keep a slim body with a slight chest in all three models, so in rest pose no
+model draws them clearly male, a weaker result than the posed renders suggest and in line with the men's mid-range
+gender score in Table~\ref{tab:relhuman}. Final-masked looks like Final on the stage and on the tennis court and
+draws the man in the bar slimmer again; the variety of muscle and weight that the mask restores in the numbers of
+Section~\ref{sec:res-mask} is hard to see at this size. The line-up uses the demo setting (bodies placed from the
+detector box) and is a by-eye reading of three of the twelve images; the other nine are in
+Figure~\ref{fig:rest-more}.
+
+% F17: render panels 2, 4 and 6 of F17_rest_photo_tennis.jpg and F17_rest_photo_stage.jpg (8094 x 944, panels
+% 1349 px) and F17_rest_3dpw_bar.jpg (3036 x 944, panels 506 px); the photo panels 1, 3, 5 are left out (the renders
+% are drawn over the photo). Demo with --rest_pose 1 (log data/demo_compare_3615019_rest.log).
 \begin{figure}[tbp]
 \centering
-\IfFileExists{figures/img/F17_restpose_photos.jpg}%
-  {\includegraphics[width=\linewidth]{figures/img/F17_restpose_photos.jpg}}%
-  {\fbox{\parbox[c][3cm][c]{0.8\linewidth}{\centering\TODO{F17 pending: demo with \texttt{-{}-rest\_pose 1}
-   (Base, Final, Final-masked); file figures/img/F17\_restpose\_photos.jpg}}}}
-\caption[Rest-pose line-up of the demo people]{Rest-pose line-up: every detected person of the 12 demo images in rest
-pose, so only body shape differs; Base, Final and Final-masked. Judged by eye; no metric.}
+\begin{tabular}{@{}c@{\hspace{3pt}}c@{\hspace{3pt}}c@{}}
+\small Base & \small Final & \small Final-masked \\[2pt]
+\includegraphics[trim={1349 0 5396 44},clip,width=0.325\linewidth]{F17_rest_photo_tennis} &
+\includegraphics[trim={4047 0 2698 44},clip,width=0.325\linewidth]{F17_rest_photo_tennis} &
+\includegraphics[trim={6745 0 0 44},clip,width=0.325\linewidth]{F17_rest_photo_tennis} \\
+\multicolumn{3}{c}{\small (a) tennis photo: five men in a line} \\[4pt]
+\includegraphics[trim={1349 0 5396 44},clip,width=0.325\linewidth]{F17_rest_photo_stage} &
+\includegraphics[trim={4047 0 2698 44},clip,width=0.325\linewidth]{F17_rest_photo_stage} &
+\includegraphics[trim={6745 0 0 44},clip,width=0.325\linewidth]{F17_rest_photo_stage} \\
+\multicolumn{3}{c}{\small (b) stage photo: three singers} \\[4pt]
+\includegraphics[trim={506 0 2024 44},clip,height=4.2cm]{F17_rest_3dpw_bar} &
+\includegraphics[trim={1518 0 1012 44},clip,height=4.2cm]{F17_rest_3dpw_bar} &
+\includegraphics[trim={2530 0 0 44},clip,height=4.2cm]{F17_rest_3dpw_bar} \\
+\multicolumn{3}{c}{\small (c) 3DPW test frame \texttt{downtown\_bar}: two men} \\
+\end{tabular}
+\caption[Rest-pose line-up: Base, Final, Final-masked]{Rest-pose line-up on three demo images (the tennis and stage
+photos and the 3DPW test frame \texttt{downtown\_bar}): every detected person drawn in rest pose over the photo, so
+only body shape differs; Base, Final and Final-masked from left to right. Demo setting: bodies placed from the
+detector box. By eye, Base gives everyone a similar slim, flat body; Final gives the singers a fuller female shape
+and the man in front in (c) a broader torso; the tennis men stay slim with a slight chest in all three;
+Final-masked is close to Final except for a slimmer man in (c). Judged by eye on three images, one run per model; no
+shape metric exists for these images (the Relative Human numbers are in Table~\ref{tab:relhuman}). The other nine
+images are in Figure~\ref{fig:rest-more}.}
 \label{fig:rest-lineup}
 \end{figure}
 

@@ -3,14 +3,16 @@
 % Writing rules: section 5 of the plan (every caption: images, models, setting, caveat). No job ids here.
 % F14 (label check) and F21 (age sweep) are in Chapters 3 and 2; F6 and F24 in Chapter 5; the first four 3DPW
 % montages of F10 and the real-photo figure F13 in Chapter 6. Sources: docs/figures/*.jpg and the demo montages
-% of the cluster (figures/img/).
+% of the cluster (figures/img/). F11 (all 12 hands montages) and F17 (the 9 rest-pose montages not in Chapter 6)
+% are at the end.
 
 \chapter{Extra Figures}
 \label{app:figures}
 
 This appendix holds the figures that the chapters refer to but do not show: the second depth example, the two-frame
-neck pair, two more bone-correction pairs on the holdout, the other four 3DPW test frames of the demo and the four real
-photos. Every panel is judged by eye; where a body is placed from the detector box, depth errors are hidden.
+neck pair, two more bone-correction pairs on the holdout, the other four 3DPW test frames of the demo, the four real
+photos, all twelve demo images with predicted fingers and the nine rest-pose line-ups that Chapter~\ref{ch:results}
+does not show. Every panel is judged by eye; where a body is placed from the detector box, depth errors are hidden.
 
 % F8 (plan section 3). Source docs/figures/depth_before_after_579860.jpg.
 \begin{figure}[tbp]
@@ -75,4 +77,53 @@ Figure~\ref{fig:3dpw-overlays}.}
 used in training, each shown as photo and Base, then photo and Final; bodies placed from the detector box, fingers at
 rest pose; judged by eye, no metric. The tennis photo also appears in Figure~\ref{fig:real-photos}.}
 \label{fig:photo-montages}
+\end{figure}
+
+% F11, all twelve montages (photo | Base | photo | Final, labels baked in; demo with --relax_hands 0). Chapter 6
+% shows zoomed crops of party, guitar and bar only.
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.82\linewidth]{F11_hands_photo_garden}\\[2pt]
+\includegraphics[width=0.82\linewidth]{F11_hands_photo_tennis}\\[2pt]
+\includegraphics[width=0.82\linewidth]{F11_hands_photo_stage}\\[2pt]
+\includegraphics[width=0.82\linewidth]{F11_hands_3dpw_fencing}\\[2pt]
+\includegraphics[width=0.82\linewidth]{F11_hands_3dpw_stairs}\\[2pt]
+\includegraphics[width=0.82\linewidth]{F11_hands_3dpw_walking}\\[2pt]
+\includegraphics[width=0.82\linewidth]{F11_hands_3dpw_runforbus}\\[4pt]
+\includegraphics[width=0.385\linewidth]{F11_hands_photo_party}\hspace{2pt}%
+\includegraphics[width=0.288\linewidth]{F11_hands_3dpw_guitar}\hspace{2pt}%
+\includegraphics[width=0.288\linewidth]{F11_hands_3dpw_bar}\\[2pt]
+\includegraphics[width=0.288\linewidth]{F11_hands_3dpw_office}\hspace{2pt}%
+\includegraphics[width=0.288\linewidth]{F11_hands_3dpw_market}
+\caption[All twelve demo images with predicted fingers, Base and Final]{All twelve demo images with predicted fingers
+(not set to rest pose), each as photo and Base, then photo and Final (labels in the image). Top to bottom: the garden,
+tennis and stage photos, the 3DPW test frames fencing, stairs, \texttt{downtown\_walking} and
+\texttt{downtown\_runForBus}; then the party photo, guitar, \texttt{downtown\_bar}, \texttt{office\_phoneCall} and
+the weekly market. Demo setting, bodies placed from the detector box; Base still has the flipped left index-finger
+base (metacarpal1.L) and right ring-finger base, Final has the correction. In most of these images the hands are a
+few pixels wide and cannot be judged; Figure~\ref{fig:fingers-demo} zooms on the three where they can. Judged by
+eye; no metric.}
+\label{fig:fingers-all}
+\end{figure}
+
+% F17, the nine rest-pose montages not shown in Chapter 6 (photo | Base | photo | Final | photo | Final-masked,
+% labels baked in; demo with --rest_pose 1). Chapter 6 shows tennis, stage and downtown_bar.
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.9\linewidth]{F17_rest_photo_garden}\\[2pt]
+\includegraphics[width=0.9\linewidth]{F17_rest_3dpw_fencing}\\[2pt]
+\includegraphics[width=0.9\linewidth]{F17_rest_3dpw_stairs}\\[2pt]
+\includegraphics[width=0.9\linewidth]{F17_rest_3dpw_walking}\\[2pt]
+\includegraphics[width=0.9\linewidth]{F17_rest_3dpw_runforbus}\\[4pt]
+\includegraphics[width=0.495\linewidth]{F17_rest_photo_party}\hfill
+\includegraphics[width=0.495\linewidth]{F17_rest_3dpw_guitar}\\[2pt]
+\includegraphics[width=0.495\linewidth]{F17_rest_3dpw_office}\hfill
+\includegraphics[width=0.495\linewidth]{F17_rest_3dpw_market}
+\caption[Nine more rest-pose line-ups: Base, Final, Final-masked]{The other nine demo images in rest pose, each as
+photo and Base, photo and Final, photo and Final-masked (labels in the image). Top to bottom: the garden photo, the
+3DPW test frames fencing, stairs, \texttt{downtown\_walking} and \texttt{downtown\_runForBus}; then the party photo,
+guitar, \texttt{office\_phoneCall} and the weekly market. Every detected person is in rest pose, so only body shape
+differs. Demo setting, bodies placed from the detector box; at this size only gross differences of build can be
+seen. Judged by eye; no metric. The other three images are in Figure~\ref{fig:rest-lineup}.}
+\label{fig:rest-more}
 \end{figure}

@@ -4,7 +4,7 @@
 % Numbers: numbers_diagnostics.tex (macros \Diag...), loaded by numbers.tex; loaded here only when compiled alone.
 % Tables owned here: tables/T08_depth_runs, T09_neck, T10_fingers, T14_pilot_noise, T18_shape_head; two inline
 % tables (six checks, placement) and one inline pilots table.
-% Figures here: F6 (exists, figures/img/neck_before_after_v5.jpg) and F24 (pending: figures/img/F24_gt_decode_1.jpg),
+% Figures here: F6 (exists, figures/img/neck_before_after_v5.jpg) and F24 (figures/img/F24_gt_decode_1.jpg and _3.jpg; _2, _4 unused),
 % both wrapped in \IfFileExists. Referenced only: F15 fig:depth-scatter, F13 fig:real-photos, F9 fig:neck-3dpw-bar,
 % F23 fig:exp6-compare (Appendix D), T12 tab:relhuman, chapters ch:method and ch:results.
 % =============================================================================
@@ -93,14 +93,24 @@ excluded from every later fine-tune. Check 6 trains a throw-away copy for 400 st
 \label{tab:diag-checks}
 \end{table}
 
+% F24: check-1 panels (image | ground-truth mesh with the dataset camera | ground-truth joints and box).
+% _1 = holdout 579888 person 0 (tag hands), _3 = train 462901 person 0 (tag neck); _2 (holdout 579925) and
+% _4 (train 326611 p3) are not shown. Numbers: data/gt_decode_summary.json, n = 55, joints_inside_image_mean 0.845,
+% joints_inside_bbox_mean 0.849 (= \DiagGTInsideImage, \DiagGTInsideBox); the file has no camera field.
 \begin{figure}[htbp]
 \centering
-\IfFileExists{figures/img/F24_gt_decode_1.jpg}%
-  {\includegraphics[width=0.7\linewidth]{figures/img/F24_gt_decode_1.jpg}}%
-  {\DiagPending[0.7\linewidth]{F24: AnnyOne labels rendered with the dataset camera
-   (cluster: results/diagnostics/gt\_decode/vis/, two files)}}
-\caption[Check 1: AnnyOne labels decoded with the dataset camera]{Check 1: AnnyOne ground truth decoded through the
-training body model and drawn with the dataset camera, manifest images; no network involved.}
+\begin{subfigure}{0.495\linewidth}\centering
+  \includegraphics[width=\linewidth]{F24_gt_decode_1}\caption{holdout 579888, a close-up with hands}\end{subfigure}\hfill
+\begin{subfigure}{0.495\linewidth}\centering
+  \includegraphics[width=\linewidth]{F24_gt_decode_3}\caption{training image 462901, low camera}\end{subfigure}
+\caption[Check 1: AnnyOne labels decoded with the dataset camera]{Check 1 on two manifest images, holdout 579888 (a)
+and training image 462901 (b): each as image | ground-truth mesh | ground-truth joints and box. The AnnyOne label is
+decoded through the training body model and drawn with the dataset camera; no network is involved. By eye the mesh
+lies on the person, down to the spread fingers in (a) and the raised hand and the hand at the mouth in (b), and the
+joints fall on the body. In (a) the frame cuts the head and the legs, so part of the joints lie outside the image
+and the box: truncation, not a decoding error (the black corner is part of the dataset image). Over all 55 manifest
+people \DiagGTInsideImage\,\% of the joints lie inside the image and \DiagGTInsideBox\,\% inside the box. Synthetic
+images; two of the four rendered cases.}
 \label{fig:diag-gt-decode}
 \end{figure}
 
@@ -247,7 +257,8 @@ did not help; a hand-crop branch was never tried. The region-normalised loss cut
 from about 70\,\% (with the boost) to 33\,\%, a rebalance, not an upweighting. The fingers also have the smallest
 gradients of any bone group; that they are under-trained is a guess I did not test.
 
-Predicted fingers have not been shown on a real photo: every demo sets them to rest pose. Rest pose keeps the
+Until the last demo every real-photo render set the fingers to rest pose; predicted fingers on real images, judged
+by eye, are in Figure~\ref{fig:fingers-demo} of Chapter~\ref{ch:results}. Rest pose keeps the
 metacarpals, so the \DiagFingersRest\,deg contains the metacarpal flip; a rest-pose floor with the correction, and the
 split of the 9.1-degree drop between the two bones, were not measured.
 

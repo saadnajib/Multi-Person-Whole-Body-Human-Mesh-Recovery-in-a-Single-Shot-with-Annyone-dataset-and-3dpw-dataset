@@ -38,10 +38,11 @@ cannot see were corrected on the AnnyOne holdout: the half-turned neck bones (ne
 \FinalNeckTwo\,deg for Control and Final) and two flipped hand bones (fingers \ControlFingers{} against
 \FinalFingers\,deg; Sections~\ref{sec:res-bone} and~\ref{sec:res-fingers}). On real photos the evidence is by eye:
 the necks have normal width, while placement offsets, ghost bodies and hard poses such as the seated guitar player
-remain (Figures~\ref{fig:3dpw-overlays} and~\ref{fig:real-photos}). Missing are predicted fingers on a real photo
-(every demo so far sets them to rest pose; Figure~\ref{fig:fingers-demo} waits for that render), correct near and
-far depth (the slope is \FinalSlope; Figure~\ref{fig:depth-scatter}), and a second run. Section~\ref{sec:future}
-plans the finger demo and a repeat of Final; the slope stays an open limitation.
+remain (Figures~\ref{fig:3dpw-overlays} and~\ref{fig:real-photos}). Predicted fingers on real images are shown in
+Figure~\ref{fig:fingers-demo}: by eye, Final's fingers close and bend like hands where Base's are splayed and stiff,
+on the three images whose hands are large enough to judge. Missing are correct near and far depth (the slope is
+\FinalSlope; Figure~\ref{fig:depth-scatter}) and a second run. Section~\ref{sec:future} plans a repeat of Final;
+the slope stays an open limitation.
 
 \paragraph{1a-shape.} He asked that ``mesh size, proportions, age, muscles, and other aspects of the 3D shape must
 visibly change according to the person'', since AnnyOne carries these labels. The status is \emph{partly}. Training
@@ -53,11 +54,13 @@ partly: children separate from adults (AUC \RHAUCBase{} to \RHAUCFinal), but hal
 adult-shaped body. Muscle, weight, cup size and firmness do not visibly change; their standard deviation on the demo
 images is \SpreadMuscleFinal--\SpreadCupFinal, because Final learned the constants the converter writes for every
 3DPW person. The shape mask brought the spread back but lost the gender gain, so I kept the unmasked model
-(Section~\ref{sec:res-mask}). Missing are a measure of how well each phenotype follows its label on AnnyOne, the
-rest-pose line-up (Figure~\ref{fig:rest-lineup}) and the partial mask, Final-partial-mask, which frees the seven
+(Section~\ref{sec:res-mask}). The rest-pose line-up (Figure~\ref{fig:rest-lineup}) agrees by eye: Final gives the
+women a fuller female shape and one man a broader torso where Base draws everyone alike, but the men of the tennis
+photo stay slim with a slight chest in every model. Missing are a measure of how well each phenotype follows its
+label on AnnyOne and the partial mask, Final-partial-mask, which frees the seven
 constants at \MethodConstOther{} and keeps age supervised \TODO{Final-partial-mask result: update 1a-shape and T1}.
 Whether a predicted muscle or weight value is right for a real person cannot be measured with the data I have.
-Section~\ref{sec:future} plans the partial mask and the line-up.
+Section~\ref{sec:future} plans the partial mask and the per-phenotype measure.
 
 \paragraph{1b.} His wording: ``The model must not be exactly the same as the Multi-HMR (or any other existing)
 model.'' A new architecture must beat the baseline on both the AnnyOne and the 3DPW test; a ``significantly
@@ -185,10 +188,12 @@ There are no bootstrap intervals, the root error has no measured noise floor, an
 \DataHoldoutImages{} images with \DiagHoldoutPeople{} people and no children. A repeat of Final
 (Section~\ref{sec:future}) would turn ``within run-to-run variation'' into a measured spread.
 
-\paragraph{Fingers on real photos.} Predicted fingers have not been shown on a real photo. The finger number
-(\FinalFingers\,deg) is an angle on the synthetic holdout; every real-photo demo so far sets the fingers to rest pose,
-and the 3DPW labels carry rest-pose hands, so no real-image number exists either. A demo with predicted fingers has
-been run, and its render (Figure~\ref{fig:fingers-demo}) is pending.
+\paragraph{Fingers on real photos.} Predicted fingers on real images are shown in Figure~\ref{fig:fingers-demo}
+and judged by eye only: Final's fingers look like hands where Base's are splayed, on three images whose hands are
+large enough to see; on the smaller hands of the other demo images nothing can be judged. The finger number
+(\FinalFingers\,deg) is an angle on the synthetic holdout, and the 3DPW labels carry rest-pose hands, so no
+real-image number exists. Base's renders carry both flipped hand bones, so the figure shows the correction and the
+fine-tune together.
 
 \paragraph{The recall cost.} Final finds \FinalRecall\,\% of the holdout people, \GapRecallControl{} points fewer
 than Control, at the edge of run-to-run variation, and \GapRecallBase{} points fewer than Base, beyond it; every

@@ -18,8 +18,9 @@ Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
   \textbf{partly} &
   3DPW test: PVE \FinalThreeDPW\,mm, recall \FinalRecallThreeDPW\,\%, precision \FinalPrecThreeDPW\,\%
   (Table~\ref{tab:final-3dpw}); neck and finger flips corrected on the holdout (Sections~\ref{sec:res-bone},
-  \ref{sec:res-fingers}); real photos by eye only (Figures~\ref{fig:3dpw-overlays}, \ref{fig:real-photos}) &
-  predicted fingers on a real photo; depth slope \FinalSlope{} (Figure~\ref{fig:depth-scatter}); a second run \\
+  \ref{sec:res-fingers}); real photos by eye only (Figures~\ref{fig:3dpw-overlays}, \ref{fig:real-photos},
+  \ref{fig:fingers-demo}) &
+  depth slope \FinalSlope{} (Figure~\ref{fig:depth-scatter}); a second run \\
 \addlinespace
 1a-shape & ``Mesh size, proportions, age, muscles, and other aspects of the 3D shape must visibly change according to
   the person'' &
@@ -27,7 +28,7 @@ Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
   Relative Human: gender \RHGenderFinal\,\% (Base \RHGenderBase), child AUC \RHAUCFinal{} (Base \RHAUCBase)
   (Table~\ref{tab:relhuman}); muscle, weight, cup size, firmness nearly constant on photos (standard deviation
   \SpreadMuscleFinal--\SpreadCupFinal); the shape mask trades this for gender (Section~\ref{sec:res-mask}) &
-  per-phenotype agreement on AnnyOne; rest-pose line-up (Figure~\ref{fig:rest-lineup}); the partial mask \\
+  per-phenotype agreement on AnnyOne; the partial mask \\
 \addlinespace
 1b & ``Must not be exactly the same as the Multi-HMR model'': new and better on both test sets, or ``significantly
   smaller'' and $\geq$\,95\,\% as good &

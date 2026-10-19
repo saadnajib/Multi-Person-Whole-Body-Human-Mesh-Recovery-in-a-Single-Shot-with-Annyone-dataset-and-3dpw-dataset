@@ -207,3 +207,28 @@ Ten biggest trimming candidates (page cost each), for the student to decide; not
     two sentences carry it.
 
 Cutting 1-10 in full would save about 17 pages of the main text and 8 of the appendices.
+
+## 19 Oct: batch-2 figures placed
+
+Zip batch 2 (`data/CLUSTER_ANSWERS.md`, last section) placed in the thesis; every image was viewed before its
+caption was written, and every verdict in the captions is by eye.
+
+- F11, predicted fingers: Figure 6.4 (`fig:fingers-demo`, section 6.4) shows zoomed crops of the render panels of
+  `F11_hands_photo_party`, `F11_hands_3dpw_guitar` and `F11_hands_3dpw_bar` (cut with `\includegraphics` trim; no new
+  image files). By eye Base's fingers are splayed and stiff, with one finger of the left hand sticking out (the
+  still-flipped metacarpal1.L), Final's are closed and bent and read as hands. The tennis photo and the street frames have
+  hands too small to judge; all twelve montages are Figure D.6 (`fig:fingers-all`). Sentences updated: 1 (forward
+  reference), 5.5, 6.4 "Not shown", 7.1 1a-pose, 7.3 "Fingers on real photos", 8.1, 8.2, Table 7.1 (1a-pose row).
+- F17, rest-pose line-up: Figure 6.10 (`fig:rest-lineup`, placed in section 6.6) shows the three render panels of
+  `F17_rest_photo_tennis`, `F17_rest_photo_stage` and `F17_rest_3dpw_bar`; the montages hold six panels (photo and
+  render for each of Base, Final, Final-masked), not three. By eye Base gives everyone a similar slim, flat body,
+  Final gives the singers a fuller female shape and the man in the bar a broader torso, the tennis men stay slim with
+  a slight chest in all three models, Final-masked is close to Final except for a slimmer bar man. New paragraph in
+  6.6; 7.1 1a-shape and 8.2 updated. The other nine montages are Figure D.7 (`fig:rest-more`).
+- F12: Figure 6.6 (`fig:holdout-montage`) now uses `F12_holdout_<idx>_img_gt_base_final.jpg` (V1); the demo-crop
+  and mis-cropped files stay on disk unused. The "demo setting" caveat and the matching sentence of 6.5 are gone.
+- F24: Figure 5.2 (`fig:diag-gt-decode`) shows `F24_gt_decode_1` (holdout 579888) and `_3` (training 462901) side
+  by side; the caption quotes the joint coverage of `data/gt_decode_summary.json` (84.5 % inside the image, 84.9 %
+  inside the box, existing macros). The JSON has no camera field, so the camera match is not quoted in the caption.
+- Table 7.1 was already 10 pt too tall for its page before this pass; the edits keep it at 10 pt. PDF size grew to
+  48 MB (the montages are embedded at full resolution); 130 pages.

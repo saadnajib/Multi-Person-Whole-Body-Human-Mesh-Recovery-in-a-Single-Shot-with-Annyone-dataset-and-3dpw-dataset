@@ -1,6 +1,6 @@
 # Master thesis: Multi-Person Human Mesh Recovery with the Anny Body Model
 
-LaTeX source of the rewritten thesis (full draft since 18 Oct 2026, 126 pages with appendices). The plan behind it
+LaTeX source of the rewritten thesis (full draft since 18 Oct 2026; 130 pages with appendices on 19 Oct). The plan behind it
 (what each chapter, table and figure holds, the writing rules) is `REWRITE_PLAN.md`; the review pass that made the
 chapters one document is logged in `REVIEW_LOG.md`; the old draft is kept read-only in `draft_2026-10_original/`.
 
@@ -14,8 +14,9 @@ latexmk -c          # remove the aux files, keep thesis.pdf
 Needs pdflatex, biber, and the packages TikZ, pgfplots (`compat=1.18`), booktabs, siunitx, subcaption, longtable,
 multirow, biblatex, listings. No `-shell-escape`. The build must end with zero errors, zero undefined references and
 zero undefined citations (state on 18 Oct: it does); the only expected warnings are a few overfull boxes below 10 pt.
-Figures that have not been delivered yet (F11 hands, F14 label check, F17 rest pose, F24 gt-decode, F19 student
-curves) are wrapped in `\IfFileExists` or drawn as "pending" boxes, so the build never breaks on a missing image.
+Figures that have not been delivered yet (F14 label check, F19 student curves) are wrapped in `\IfFileExists` or
+drawn as "pending" boxes, so the build never breaks on a missing image. F11 (predicted fingers), F17 (rest-pose
+line-up), F24 (ground-truth decode) and the V1 holdout montages of F12 were placed on 19 Oct (zip batch 2).
 
 ## Layout
 
@@ -34,8 +35,8 @@ figures/RPTU-*.pdf       title-page logos
 data/                    CSVs behind the plots; plot_stats.md = the statistics computed from them; data/README.md
 ```
 
-Pages per part (18 Oct): front matter 8, ch. 1: 6, ch. 2: 10, ch. 3: 12, ch. 4: 16, ch. 5: 10, ch. 6: 18, ch. 7: 8,
-ch. 8: 2, lists 4, App. A: 14, B: 2, C: 4, D: 4, E: 4, bibliography 4. The main text (chapters 1-8) is 82 pages,
+Pages per part (19 Oct): front matter 8, ch. 1: 6, ch. 2: 10, ch. 3: 12, ch. 4: 16, ch. 5: 10, ch. 6: 20, ch. 7: 8,
+ch. 8: 2, lists 4, App. A: 14, B: 2, C: 4, D: 6, E: 4, bibliography 4. The main text (chapters 1-8) is 84 pages,
 against the plan's 60-80; `REVIEW_LOG.md` lists the trimming candidates.
 
 ## The naming rule
@@ -70,8 +71,7 @@ Pending results (fill the macro or the cell, then delete the `\TODO`):
   `tables/T16_baseline_cost.tex`, `figures/plots/F19_student.tex` (+ `data/F19_student.csv`), `figures/plots/F18_cost_pve.tex`
   (replace the dashed line by a point), chapter 6.10, chapter 7 (1b paragraph, T01 status word), chapter 8.
 - Final-partial-mask (job 3614042): chapter 6.8, chapter 7 (1a-shape, T01), chapter 8.
-- Figures: F11 `figures/img/F11_hands_photos.jpg` (job 3615018), F17 `figures/img/F17_restpose_photos.jpg`
-  (job 3615019), F14 `figures/img/F14_label_check.jpg`, F24 `figures/img/F24_gt_decode_1.jpg`.
+- Figures: F14 `figures/img/F14_label_check.jpg`.
 
 Pending checks by the student:
 - `thesis.tex`: the "Use of AI tools" wording against RPTU's rules; the title-page date (`\today`).
