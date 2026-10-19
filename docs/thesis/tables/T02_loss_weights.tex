@@ -4,32 +4,34 @@
 % Student: slurm/experiments/exp8_distill_vitb.sh header ("targets", "KD") and :319-331;
 % distillation terms train.py:505-539; hand mask loss.py:231-253 (38 bones in the smoke log, H 0a step 6);
 % shape mask loss.py:255-310 (off in all three columns; on in Final-masked, job 3612325).
+% loss.py line numbers of the terms (column dropped 19 Oct): bce 314, offset 315, rotmat 319-335, shape 336-343,
+% dist 344, transl 345, global_rot 350-363, j3d 367-377, v3d 378, v2d 381-382, j2d 383-384.
 % Boost renormalisation x4 -> x2.41 / x0.60: H 1 "x4 boost"; loss.py configure_joint_weights.
-\begin{table}[!tbp]
+\begin{table}[!htb]
 \centering\footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}>{\raggedright}p{2.6cm}>{\raggedright}p{5.35cm}cccc@{}}
+\begin{tabular}{@{}>{\raggedright}p{2.75cm}>{\raggedright}p{6.0cm}cccc@{}}
 \toprule
-Term (log name; \texttt{loss.py}) & What it compares, in plain words & Default & Final & Control & Student \tabularnewline
+Term (log name) & What it compares, in plain words & Default & Final & Control & Student \tabularnewline
 \midrule
-Detection (\texttt{bce}; 314) & CornerNet focal loss on the per-token score ``an anchor joint lies in this token'' & \MethodWDet & \MethodWDet & \MethodWDet & \MethodWDet \tabularnewline
-Offset (\texttt{offset}; 315) & L1 on the anchor's position inside its token & \MethodWOffset & \MethodWOffset & \MethodWOffset & \MethodWOffset \tabularnewline
-Rotations (\texttt{rotmat}; 319--335) & L1 over the 9 entries of every bone's parent-relative rotation matrix & \MethodWRot & \MethodWRot & \MethodWRot & \MethodWRot \tabularnewline
-\quad neck and hand boost & multiplier on neck, head and hand bones, then renormalised to mean 1 ($\times$\MethodBoostOn{} for them, $\times$\MethodBoostOff{} for the rest) & 1 & \MethodBoost & \MethodBoost & \MethodBoost \tabularnewline
-Shape (\texttt{shape}; 336--343) & L1 on the \MethodNumPheno{} phenotypes after the sigmoid & \MethodWShapeDefault & \MethodWShape & \MethodWShape & \MethodWShape \tabularnewline
-Distance (\texttt{dist}; 344) & L1 on the anchor's log-depth, normalised by the focal length & \MethodWDistDefault & \MethodWDist & \MethodWDistDefault & \MethodWDist \tabularnewline
-Translation (\texttt{transl}; 345) & L1 on the anchor's 3D position in the camera frame & \MethodWDistDefault & \MethodWDist & \MethodWDistDefault & \MethodWDist \tabularnewline
-3D joints (\texttt{j3d}; 367--377) & L1 on the \MethodNumBones{} joints, each skeleton moved to its own pelvis & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD \tabularnewline
-3D vertices (\texttt{v3d}; 378) & the same for the mesh vertices & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD \tabularnewline
-2D joints (\texttt{j2d}; 383--384) & L1 in pixels on the projected joints, placed by the predicted anchor and depth & \MethodWTwoDDefault & \MethodWTwoD & \MethodWTwoD & \MethodWTwoD \tabularnewline
-2D vertices (\texttt{v2d}; 381--382) & the same for the projected vertices & \MethodWTwoDDefault & \MethodWTwoD & \MethodWTwoD & \MethodWTwoD \tabularnewline
-\quad first epoch of the 2D terms & \texttt{-{}-start\_2d\_epoch} & \MethodStartTwoDDefault & \MethodStartTwoD & \MethodStartTwoD & \MethodStartTwoD \tabularnewline
-Global rotation (\texttt{global\_rot}; 350--363) & L1 on the camera-frame orientation of head, neck03 and both wrists & 0 & 0 & 0 & 0 \tabularnewline
-Feature distillation (\texttt{kd}) & KL divergence between the softened channel distributions of student and teacher tokens, $T=\MethodKDTemp$ & -- & -- & -- & \MethodKDLambda \tabularnewline
-Output distillation (\texttt{kd\_out}) & L1 to the teacher's rotations, phenotypes and depth on the same people & -- & -- & -- & \MethodKDOutLambda \tabularnewline
+Detection (\texttt{bce}) & focal loss on the per-token score ``an anchor lies here'' & \MethodWDet & \MethodWDet & \MethodWDet & \MethodWDet \tabularnewline
+Offset (\texttt{offset}) & L1 on the anchor's position inside its token & \MethodWOffset & \MethodWOffset & \MethodWOffset & \MethodWOffset \tabularnewline
+Rotations (\texttt{rotmat}) & L1 over the 9 entries of each parent-relative rotation & \MethodWRot & \MethodWRot & \MethodWRot & \MethodWRot \tabularnewline
+\quad neck and hand boost & renormalised: $\times$\MethodBoostOn{} for neck, head, hands, $\times$\MethodBoostOff{} for the rest & 1 & \MethodBoost & \MethodBoost & \MethodBoost \tabularnewline
+Shape (\texttt{shape}) & L1 on the \MethodNumPheno{} phenotypes after the sigmoid & \MethodWShapeDefault & \MethodWShape & \MethodWShape & \MethodWShape \tabularnewline
+Distance (\texttt{dist}) & L1 on the anchor's focal-normalised log-depth & \MethodWDistDefault & \MethodWDist & \MethodWDistDefault & \MethodWDist \tabularnewline
+Translation (\texttt{transl}) & L1 on the anchor's 3D position in the camera frame & \MethodWDistDefault & \MethodWDist & \MethodWDistDefault & \MethodWDist \tabularnewline
+3D joints (\texttt{j3d}) & L1 on the \MethodNumBones{} joints, each skeleton at its own pelvis & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD \tabularnewline
+3D vertices (\texttt{v3d}) & the same for the mesh vertices & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD \tabularnewline
+2D joints (\texttt{j2d}) & L1 in pixels on the joints projected from anchor and depth & \MethodWTwoDDefault & \MethodWTwoD & \MethodWTwoD & \MethodWTwoD \tabularnewline
+2D vertices (\texttt{v2d}) & the same for the projected vertices & \MethodWTwoDDefault & \MethodWTwoD & \MethodWTwoD & \MethodWTwoD \tabularnewline
+\quad first 2D epoch & \texttt{-{}-start\_2d\_epoch} & \MethodStartTwoDDefault & \MethodStartTwoD & \MethodStartTwoD & \MethodStartTwoD \tabularnewline
+Global rot.\ (\texttt{global\_rot}) & L1 on camera-frame head, neck03, wrist orientation & 0 & 0 & 0 & 0 \tabularnewline
+Feature KD (\texttt{kd}) & KL between softened student and teacher tokens, $T=\MethodKDTemp$ & -- & -- & -- & \MethodKDLambda \tabularnewline
+Output KD (\texttt{kd\_out}) & L1 to the teacher's rotations, phenotypes, depth & -- & -- & -- & \MethodKDOutLambda \tabularnewline
 \midrule
-Joint the targets describe & \texttt{-{}-gt\_center\_joint}: transl, dist, detection token and offset targets & pelvis & head & pelvis & head \tabularnewline
-Bone correction & constant output rotation on neck02, head, metacarpal1.L, finger4-1.R & none & on & none & on \tabularnewline
+Target joint & \texttt{-{}-gt\_center\_joint}: transl, dist, token, offset targets & pelvis & head & pelvis & head \tabularnewline
+Bone correction & neck02, head, metacarpal1.L, finger4-1.R & none & on & none & on \tabularnewline
 \bottomrule
 \end{tabular}
 \caption[Loss terms and their weights]{Loss terms and their weights. ``Default'' is the value in \texttt{loss.py}; Final, Control and Student are the

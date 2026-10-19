@@ -5,18 +5,19 @@
 %   docs/experiments_plan.md:413-419. Restart cost ~2.4 mm (controls mean 72.9 vs v5 70.5; deck notes slide 22).
 %   Root error: every fix run 0.53-0.73 m, every control 1.11-1.44 m (handover 3.1). exp5 L1 control 76.9 (3573521:98).
 %   train.py sets no random seed.
-\begin{table}[htbp]
+\begin{table}[!htb]
 \centering\footnotesize
-\begin{tabular}{@{}p{0.36\linewidth}p{0.3\linewidth}p{0.26\linewidth}@{}}
+\begin{tabular}{@{}lll@{}}
 \toprule
 quantity & measured & one run resolves \\
 \midrule
-two identical 2-epoch controls: PVE & 76.3 vs.\ 68.7\,mm (7.6\,mm) & about 10\,mm \\
-\quad global head direction & 13.6 vs.\ 11.7\,deg (1.9\,deg) & about 3\,deg \\
+two identical controls: PVE & 76.3 vs.\ 68.7\,mm (7.6\,mm) & about 10\,mm \\
+\quad head direction & 13.6 vs.\ 11.7\,deg (1.9\,deg) & about 3\,deg \\
 \quad recall & 0.8 points apart & about 2 points \\
-six 2-epoch arms of the Base recipe & PVE 68.7--76.3\,mm; recall 88.6--90.2\,\%; head 11.3--13.7\,deg & \\
-restart cost (mean of controls vs.\ Base) & 72.9 vs.\ 70.5\,mm (about 2.4\,mm) & read pilots against their own control \\
-root error & no measured floor & every fix run (0.53--0.73\,m) below every control (1.11--1.44\,m) \\
+six arms of the Base recipe & PVE 68.7--76.3\,mm; recall 88.6--90.2\,\% & \\
+ & head 11.3--13.7\,deg & \\
+restart cost (controls vs.\ Base) & 72.9 vs.\ 70.5\,mm (about 2.4\,mm) & read against own control \\
+root error & no measured floor & fix 0.53--0.73 vs.\ control 1.11--1.44\,m \\
 \bottomrule
 \end{tabular}
 \caption[Pilot noise and restart cost]{Run-to-run variation of the 2-epoch pilots. V1, 100-image AnnyOne holdout,

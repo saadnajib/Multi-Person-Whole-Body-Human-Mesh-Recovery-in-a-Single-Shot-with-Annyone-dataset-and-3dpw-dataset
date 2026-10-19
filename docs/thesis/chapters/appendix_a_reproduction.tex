@@ -4,31 +4,29 @@
 % index), 10; docs/deck_explained_2026-10-19.md slide 30; data/CLUSTER_ANSWERS.md; the script headers named below;
 % slurm/env.sh; slurm/egl.sh; exp7_final_model.sh :74-92 (GPUs), :853 (container); exp8_distill_vitb.sh header.
 % Tables: T19 (tables/T19_model_names.tex, first), T13 (tables/T13_runs.tex). docs/model_names.md = T19 in Markdown.
+% Trimmed 19 Oct: the scripts table (old A.4, tab:scripts-new) and the commands (old A.5) moved to docs/thesis/REPRODUCE.md;
+% labels sec:app-scripts and sec:app-commands now sit on the pointer at the end of the runs section. Long version:
+% git show 76aa1a4:docs/thesis/chapters/appendix_a_reproduction.tex.
 
-\chapter{Reproduction: Model Names, Scripts, Runs and Job Ids}
+\chapter{Reproduction: Model Names, Runs and Job Ids}
 \label{app:reproduction}
 \begingroup % until the end of the file: \path may also break after _ and - (long run names)
 \expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}%
 
 Every number in this thesis can be traced in two steps. Each headline number is a macro in one of the files
 \path{numbers_*.tex} of the thesis source, and the comment next to it names the Slurm job and the line of its log, for
-example \texttt{3611336:191}. Table~\ref{tab:runs} maps that job to the model name used in the text, the script, the
-log and the checkpoint. Table~\ref{tab:names} below maps every model name to the run name it had during the project.
-This appendix is the only place where job ids and old run names appear.
+example \texttt{3611336:191}. Table~\ref{tab:runs} maps that job to the model, the log and the checkpoint, and
+Table~\ref{tab:names} maps every model name to the run name it had during the project. This appendix is the only
+place where job ids and old run names appear.
 
 \section{Model names}
 \label{sec:app-names}
 
-The chapters use only the thesis names of Table~\ref{tab:names}; the old run and checkpoint names appear only here and
-in Table~\ref{tab:runs}. The names are built as follows. ``L'' is our ViT-L line: every model that keeps the ViT-L
-backbone. ``L-stage 1'' to ``L-stage 4'' are the steps of the transfer schedule that turned NAVER's released model into
-ours: new heads with the whole backbone trained, new heads with the backbone frozen, the last four backbone blocks
-trained, and the extra loss weight on neck and hand bones. Base is the end of that schedule and the start of every
-later fine-tune. Mixed-L and Fresh-heads-L are the two older ViT-L runs that also trained on real 3DPW images. Final and
-Control are the two arms of the last experiment: the same 10-epoch fine-tune of Base, with and without the two fixes.
-Final-masked and Final-partial-mask add a shape mask for 3DPW people to Final. Student-S is the history of ViT-S
-students (the number after the slash is the old version number), and Student is the ViT-B model distilled from Final.
-Multi-HMR-Anny is NAVER's released checkpoint, the starting weights of the L line and the baseline of requirement 1b.
+``L'' is our ViT-L line, every model that keeps the ViT-L backbone. L-stage 1 to 4 are the steps of the transfer
+schedule that turned NAVER's released model into ours; Base is its end and the start of every later fine-tune. Final
+and Control are the two arms of the last experiment, the same 10-epoch fine-tune of Base with and without the two
+fixes. The number after ``Student-S/'' is the old version number of a ViT-S student; Student is the ViT-B model
+distilled from Final.
 
 \input{tables/T19_model_names}
 
@@ -59,150 +57,14 @@ node, because \path{model.py} imports the renderer and the login node has no EGL
 \section{Runs, jobs, logs and checkpoints}
 \label{sec:app-runs}
 
-Table~\ref{tab:runs} lists every job behind a number, a table or a figure of the thesis. Of the jobs submitted on the evening
-of 18 October, the partial shape mask and its Relative Human evaluation finished on 19 October and the two figure
-demos have returned; the Student was still running when this appendix was written, and its row names the log and
-output folder it writes. The Student-S runs on the v23 labels,
-submitted the same evening, have returned (Table~\ref{tab:history-students}).
+Table~\ref{tab:runs} lists every job behind a number, a table or a figure of the thesis. The Student was still
+running when this appendix was written; its row names the log and output folder it writes.
 
 \input{tables/T13_runs}
 
-\section{Scripts}
-\label{sec:app-scripts}
-
-Table~\ref{tab:scripts-new} lists the scripts behind the experiments, one line each. Each Slurm script documents its
-recipe, its guards and its success rule in its header; the training scripts of the L line and of Student-S lie in
-\path{slurm/history/} and \path{slurm/train/} (Table~\ref{tab:names}).
-
-\begingroup
-\expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}%
-\small
-\setlength{\tabcolsep}{3pt}
-\begin{longtable}{@{}>{\raggedright}p{4.6cm}>{\raggedright\arraybackslash}p{8.0cm}@{}}
-\caption[Scripts behind the experiments]{Scripts behind the experiments and what each produces. Paths relative to the
-repository root.}
-\label{tab:scripts-new}\\
-\toprule
-Script & What it produces \\
-\midrule
-\endfirsthead
-\toprule
-Script & What it produces \\
-\midrule
-\endhead
-\bottomrule
-\endfoot
-\multicolumn{2}{@{}l}{\emph{Training experiments (\path{slurm/experiments/})}} \\
-\path{exp1_depth_anchor.sh} & depth pilots: fine-tune of Base with the targets at the head joint (or at the pelvis, the control), holdout trace with the placement table \\
-\path{exp2_children.sh} & sampler pilot: children per batch measured, fine-tune with age-balanced sampling, holdout, manifest and youngest-50 traces \\
-\path{exp3_neck_global_rot.sh} & head-loss pilot: fine-tune with an extra loss on the camera-frame orientation of head, neck03 and wrists \\
-\path{exp4_fingers.sh} & finger pilot: hand sizes in tokens, a test-time person-crop trace, a fine-tune with the region-normalised rotation loss \\
-\path{exp5_neck_fix.sh} & geodesic pilot: fine-tune with the geodesic rotation loss, then a per-bone dump \\
-\path{exp6_bone_fix.sh} & bone correction: estimates the constant per flipped bone, tests it without training and after a 2-epoch fine-tune \\
-\path{exp7_final_model.sh} & Final (\texttt{ARM=fix}), Control (\texttt{ARM=control}), Final-masked and Final-partial-mask: label guards, training, holdout trace with per-bone dump, comparison table, 3DPW test \\
-\path{exp8_distill_vitb.sh} & Student: guards, distillation from Final, the Student's own bone correction, holdout traces of Student and teacher, model cost, 3DPW tests, the final table \path{final_table.json} \\
-\addlinespace
-\multicolumn{2}{@{}l}{\emph{Evaluation (\path{slurm/eval/})}} \\
-\path{run_eval_3dpw_test.sh} & \texttt{train.py --eval\_only 1}: AnnyOne test-100 (V0) and every 3DPW test image of the chosen labels; overrides \texttt{EVAL\_LABELS}, \texttt{MODEL\_ENTRY}, \texttt{EVAL\_BONE\_FIX}, \texttt{EVAL\_MODEL\_CLASS} \\
-\path{run_eval_baseline_naver.sh} & the same evaluation for Multi-HMR-Anny, built with its own model class \\
-\path{run_eval_3dpw.sh}, \path{run_eval_3dpw_teacher.sh} & older evaluation of one checkpoint on the AnnyOne holdout and the 3DPW validation split (history) \\
-\addlinespace
-\multicolumn{2}{@{}l}{\emph{Diagnostics (\path{slurm/diagnostics/})}} \\
-\path{diag_holdout.sh} & holdout trace (\path{diag_holdout_trace.py}): settings V0 to V3, placement, per-person CSV, panels \\
-\path{diag_manifest.sh} & diagnostic manifest, ground-truth decode overlays, manifest traces \\
-\path{diag_bodymodel.sh} & body-model probe: Anny age sweep, 16 single-joint perturbations, the 88 helper bones \\
-\path{diag_gradients.sh} & gradient check of every head output \\
-\path{diag_overfit.sh} & capped overfit on the 40 manifest training images \\
-\path{diag_phenotypes.sh}, \path{diag_young.sh} & AnnyOne phenotype distribution; trace of the 50 youngest training people \\
-\path{diag_crop_camera.sh} & predicted ages on the real photos with a corrected crop camera \\
-\path{diag_neck_bones.sh} & per-bone dump of the neck chain and other bones, one trace per checkpoint \\
-\path{check_3dpw_conversion.sh} & conversion check of a 3DPW label set against the original 3DPW ground truth \\
-\path{eval_relative_human.sh} & Relative Human evaluation of one checkpoint (\path{eval_relative_human.py}) \\
-\path{model_cost.sh} & parameters, GFLOPs and latency of one or more checkpoints on a GPU node (\path{model_cost.py}) \\
-\addlinespace
-\multicolumn{2}{@{}l}{\emph{Demos (\path{slurm/demo/})}} \\
-\path{run_demo_compare.sh} & two or more models on the same 4 photos and 8 3DPW test frames, bodies placed from the detector box; model list \texttt{DEMO\_MODELS} \\
-\path{run_demo.sh}, \path{run_demo_3dpw.sh}, \path{run_demo_syn.sh}, \path{run_demo_student.sh} & single-model demos on the photos, random 3DPW frames, AnnyOne holdout images, a student checkpoint \\
-\addlinespace
-\multicolumn{2}{@{}l}{\emph{Python scripts}} \\
-\path{scripts/analysis/model_cost.py} & analytic backbone FLOPs, hooked head FLOPs, parameters, and with \texttt{--bench} the median latency at batch 1 \\
-\path{scripts/diagnostics/eval_relative_human.py} & per Relative Human age group: recall, predicted age and height, child-vs-adult AUC, gender accuracy; \path{summary.txt} and \path{per_person.csv} \\
-\path{scripts/diagnostics/compute_bone_fix.py} & the constant correction per flipped bone, as \path{bone_fix.json}, with the global guard \\
-\path{scripts/data/smpl_to_anny.py} & converter v2.3: fits Anny to the SMPL joints of one 3DPW person-sequence, writes one \path{.npz} per person \\
-\path{scripts/data/build_threedpw_anny_labels.py} & label files and split indices from the fits (login node) \\
-\path{scripts/data/check_refit_task.py} & re-fit post-check: gender convention, shared frame grid, error per person (login node) \\
-\path{slurm/data/run_smpl_to_anny_task.sh} & Slurm array over the 87 person-sequences of \path{configs/threedpw_tasks.txt} \\
-\end{longtable}
-\endgroup
-
-\section{Commands}
-\label{sec:app-commands}
-
-The commands below are the ones that produced the thesis numbers, copied from the script headers and from the project
-handover. Each runs from the login node in the repository clone, after \texttt{git pull} and with the conda
-environment active (the submit modes run their label checks there before calling \texttt{sbatch}).
-
-\begingroup
-\lstset{basicstyle=\ttfamily\scriptsize, breaklines=true, columns=fullflexible, keepspaces=true,
-        breakatwhitespace=false, postbreak=\mbox{\hspace{1.5em}}, aboveskip=4pt, belowskip=6pt}
-
-\paragraph{Final and Control.} Guards only, then the two arms (5-hour limit each; one job each). The comparison
-table is rebuilt on the login node once both have finished:
-\begin{lstlisting}
-cd /netscratch/najib/multi-hmr && git pull && conda activate multihmr && CHECK_ONLY=1 bash slurm/experiments/exp7_final_model.sh
-cd /netscratch/najib/multi-hmr && bash slurm/experiments/exp7_final_model.sh
-cd /netscratch/najib/multi-hmr && ARM=control bash slurm/experiments/exp7_final_model.sh
-cd /netscratch/najib/multi-hmr && TABLE_ONLY=1 bash slurm/experiments/exp7_final_model.sh
-\end{lstlisting}
-The smoke test, Final-masked and Final-partial-mask:
-\begin{lstlisting}
-cd /netscratch/najib/multi-hmr && EPOCHS=1 N_ITERS=20 EVAL_TEST=0 VAL_3DPW_N=20 N_VIS=2 bash slurm/experiments/exp7_final_model.sh
-cd /netscratch/najib/multi-hmr && MASK_3DPW_SHAPE=1 bash slurm/experiments/exp7_final_model.sh
-cd /netscratch/najib/multi-hmr && MASK_3DPW_SHAPE=1 MASK_3DPW_SHAPE_NAMES=muscle,weight,cupsize,firmness,african,asian,caucasian bash slurm/experiments/exp7_final_model.sh
-\end{lstlisting}
-
-\paragraph{3DPW test of the older models.} Base, Mixed-L and the neck pilot on the v23 labels, one job each:
-\begin{lstlisting}
-cd /netscratch/najib/multi-hmr && for M in "logs/anny_model/anny_s2_shape_v5/checkpoints/00099.pt|teacher_v5" "models/multiHMR/anny_teacher_v9_mixed_00062.pt|teacher_v9_e62" "models/multiHMR/exp6_v5_bonefix_00001.pt|exp6_v5_bonefix"; do EVAL_LABELS=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels MODEL_ENTRY="/netscratch/najib/multi-hmr/${M%%|*}|0|dinov2_vitl14|${M##*|}" sbatch --array=0 slurm/eval/run_eval_3dpw_test.sh; done
-\end{lstlisting}
-Student-S/6c and Student-S/final on the same labels (array tasks 2 and 4 of the script's model list):
-\begin{lstlisting}
-cd /netscratch/najib/multi-hmr && EVAL_LABELS=/netscratch/najib/multi-hmr/threedpw_anny_v23/labels sbatch --array=2,4 slurm/eval/run_eval_3dpw_test.sh
-\end{lstlisting}
-
-\paragraph{Multi-HMR-Anny baseline.} Checks, then one job (40-minute limit):
-\begin{lstlisting}
-cd /netscratch/najib/multi-hmr && CHECK_ONLY=1 bash slurm/eval/run_eval_baseline_naver.sh && bash slurm/eval/run_eval_baseline_naver.sh
-\end{lstlisting}
-
-\paragraph{Relative Human.} Base and the neck pilot (array tasks 0 and 1), Final, and Final-masked; the bone
-correction comes from each checkpoint's saved arguments. Final-partial-mask runs the same way with
-\texttt{MODEL} set to its checkpoint (\path{v5_pc_dist5_bonefix_v23_e10_shpmask_noage/train/checkpoints/00009.pt}):
-\begin{lstlisting}
-cd /netscratch/najib/multi-hmr && sbatch --array=0-1 slurm/diagnostics/eval_relative_human.sh
-cd /netscratch/najib/multi-hmr && MODEL=/netscratch/najib/multi-hmr/models/multiHMR/exp7_v5_final_00009.pt sbatch --array=0 slurm/diagnostics/eval_relative_human.sh
-cd /netscratch/najib/multi-hmr && MODEL=/netscratch/najib/multi-hmr/results/experiments/exp7_final_model/v5_pc_dist5_bonefix_v23_e10_shpmask/train/checkpoints/00009.pt TAG=exp7_shpmask_00009 sbatch --array=0 slurm/diagnostics/eval_relative_human.sh
-\end{lstlisting}
-The scores can be recomputed from the cached predictions without a GPU, for example with another IoU:
-\begin{lstlisting}
-cd /netscratch/najib/multi-hmr && conda activate multihmr && python scripts/diagnostics/eval_relative_human.py --score_only --out results/diagnostics/relative_human_val_exp7_v5_final_00009 --iou 0.5
-\end{lstlisting}
-
-\paragraph{Model cost.} Multi-HMR-Anny and Final, with latency (the script submits itself):
-\begin{lstlisting}
-cd /netscratch/najib/multi-hmr && bash slurm/diagnostics/model_cost.sh
-\end{lstlisting}
-The analytic backbone table for ViT-S, ViT-B and ViT-L runs anywhere:
-\begin{lstlisting}
-python scripts/analysis/model_cost.py --no-build --all
-\end{lstlisting}
-
-\paragraph{Student.} Smoke test, then the full run with a 20-hour limit:
-\begin{lstlisting}
-cd /netscratch/najib/multi-hmr && conda activate multihmr && git pull && SMOKE=1 bash slurm/experiments/exp8_distill_vitb.sh
-cd /netscratch/najib/multi-hmr && conda activate multihmr && git pull && TIME=20:00:00 bash slurm/experiments/exp8_distill_vitb.sh
-\end{lstlisting}
-\endgroup
+The scripts behind these jobs and the exact commands that produced the thesis numbers are listed in the file
+\path{docs/thesis/REPRODUCE.md} of the repository.\label{sec:app-scripts}\label{sec:app-commands} Each command runs
+from the login node in the repository clone; the flags each training run passes are in Appendix~\ref{app:flags}.
 
 \section{What cannot be reproduced exactly}
 \label{sec:app-repro-limits}

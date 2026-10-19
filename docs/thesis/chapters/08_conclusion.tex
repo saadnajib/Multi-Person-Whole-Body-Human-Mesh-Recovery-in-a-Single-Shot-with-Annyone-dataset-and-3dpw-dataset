@@ -50,14 +50,8 @@ Section~\ref{sec:res-student}. If it misses the 95\,\% bar while its error is st
 training from the last checkpoint and report the ratio as measured. Which model sets the bar, Final or
 Multi-HMR-Anny, is the supervisor's decision.
 
-\paragraph{The partial shape mask (1a), done.} Final-partial-mask, which masks the seven constant phenotypes and keeps age
-supervised, finished on 19 October: it kept the children's gain (AUC \RHAUCPartial) but lost the gender gain
-(\RHGenderPartial\,\%), so the unmasked Final stays the final model and the Student's teacher
-(Section~\ref{sec:res-mask}).
-
-\paragraph{Evidence that shape follows the person (1a).} The rest-pose line-up (Figure~\ref{fig:rest-lineup}) and
-the demo with predicted fingers (Figure~\ref{fig:fingers-demo}) are done, by eye only. Still planned is a number:
-per-phenotype correlation, slope and $R^2$ between prediction and label on the AnnyOne holdout, from per-person files
+\paragraph{Evidence that shape follows the person (1a).} The rest-pose line-up (Figure~\ref{fig:rest-lineup}) is
+a by-eye reading. Still planned is a number: per-phenotype correlation, slope and $R^2$ between prediction and label on the AnnyOne holdout, from per-person files
 that already exist.
 
 \paragraph{A measured spread for Final.} A second run of Final with the same recipe would replace ``within run-to-run

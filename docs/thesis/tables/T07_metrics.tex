@@ -3,30 +3,30 @@
 % docs/deck_explained_2026-10-19.md part 2 and slide 9; scripts/diagnostics/diag_holdout_trace.py:14-24 (settings);
 % scripts/diagnostics/eval_relative_human.py docstring (AUC, gender accuracy, IoU, child threshold);
 % README :321 (V0 - V1 = +3.8 mm); REWRITE_PLAN.md 1.1 #15 (163-joint MPJPE, not comparable).
-\begin{table}[!tbp]
+\begin{table}[!htb]
 \centering\footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}>{\raggedright}p{2.3cm}>{\raggedright}p{4.85cm}>{\raggedright}p{1.5cm}>{\raggedright\arraybackslash}p{3.6cm}@{}}
+\begin{tabular}{@{}>{\raggedright}p{2.6cm}>{\raggedright}p{6.4cm}>{\raggedright\arraybackslash}p{3.4cm}@{}}
 \toprule
-Metric & What it measures & Ideal value & Blind to \\
+Metric & What it measures & Blind to \\
 \midrule
-PVE (mm) & mean distance between predicted and true mesh vertices after both pelvises are put at the same point & 0 & placement, depth, drawn size \\
-PA-PVE (mm) & PVE after the best rotation, scale and shift (Procrustes) & 0 & placement, size, global orientation \\
-MPJPE (mm) & PVE on the \MethodNumBones{} Anny joints instead of the vertices, pelvis-aligned & 0 & as PVE; not comparable with published 3DPW numbers \\
-Recall (\%) & share of labelled people matched by a detection & 100 & false detections \\
-Precision (\%) & share of detections matched to a labelled person & 100 & unlabelled bystanders count as errors \\
-Root error (mm) & 3D distance between predicted and true pelvis joint, no alignment & 0 & pose and shape \\
-Size ratio & predicted head-to-pelvis distance in the image over the true one & 1 & 3D body size \\
-Depth slope / intercept & line fitted to predicted against true pelvis depth & 1 / 0\,m & per-person errors around the line \\
-Bone angle error (deg) & angle of $\hat{R}_b^{\top}R_b$ for one bone's parent-relative rotation; about 180 means a flipped bone & 0 & bones that compensate each other \\
-Global head direction (deg) & angle between predicted and true camera-frame head orientation & 0 & the chain below the head \\
-Neck girth ratio & radius of the neck skin, predicted over true & 1 & neck length \\
-PVE\textsubscript{neck} (mm) & vertex error over the neck skin, centred at neck01 & 0 & the rest of the body \\
-Child AUC & chance that a random child gets a lower predicted age than a random adult (Relative Human) & 1 (0.5 = chance) & undetected people; how far ages are off \\
-Gender accuracy (\%) & predicted gender on the right side of 0.5 (Relative Human) & 100 (50 = chance) & undetected people \\
+PVE (mm) & vertex error after both pelvises are put at the same point & placement, depth, size \\
+PA-PVE (mm) & PVE after the best rotation, scale and shift (Procrustes) & also global orientation \\
+MPJPE (mm) & PVE on the \MethodNumBones{} Anny joints & as PVE \\
+Recall, precision (\%) & labelled people matched; detections matched & false detections; bystanders \\
+Root error (m) & 3D pelvis distance, no alignment & pose and shape \\
+Size ratio & drawn head-to-pelvis distance, predicted over true (1 is right) & 3D body size \\
+Depth slope / intercept & line fitted to predicted against true pelvis depth (1 / 0\,m) & errors around the line \\
+Bone angle error (deg) & angle of $\hat{R}_b^{\top}R_b$ for a parent-relative rotation; ${\approx}180$ = flipped & compensating bones \\
+Head direction (deg) & camera-frame head orientation error & the chain below the head \\
+Neck girth ratio & neck-skin radius, predicted over true (1 is right) & neck length \\
+PVE\textsubscript{neck} (mm) & vertex error over the neck skin, centred at neck01 & the rest of the body \\
+Child AUC & chance that a child gets a lower predicted age than an adult (0.5 = chance) & undetected people \\
+Gender accuracy (\%) & predicted gender on the right side of 0.5 (50 = chance) & undetected people \\
 \bottomrule
 \end{tabular}
-\caption[Metrics]{Metrics used in this thesis. All errors are means over matched people. On the AnnyOne holdout the headline
+\caption[Metrics]{Metrics used in this thesis. All errors are means over matched people; the last two are on
+Relative Human; MPJPE is not comparable with published 3DPW numbers. On the AnnyOne holdout the headline
 setting is V1 (helper bones masked); V0 leaves them unmasked and reads \MethodVzeroGap\,mm higher in PVE on the same
 people. 3DPW numbers are against our converted labels only (Chapter~\ref{ch:data}).}
 \label{tab:metrics}

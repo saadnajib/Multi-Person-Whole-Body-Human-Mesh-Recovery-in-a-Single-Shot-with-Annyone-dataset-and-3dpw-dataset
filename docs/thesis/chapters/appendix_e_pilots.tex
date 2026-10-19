@@ -12,6 +12,8 @@
 %   noise: tables/T14_pilot_noise.tex (tab:pilot-noise), H 3.6; deck explanation slide 22.
 % Numbers come from numbers_diagnostics.tex (\Diag...) where a macro exists; the rest are written out with the source
 % in the comment of the same line. No job ids, no old run names (plan section 5).
+% Trimmed 19 Oct: the six per-pilot paragraphs after Table E.1 dropped (Chapter 5 holds the diagnosis); recover with
+% git show 76aa1a4:docs/thesis/chapters/appendix_e_pilots.tex.
 
 \chapter{Pilot Results in Full}
 \label{app:pilots}
@@ -20,7 +22,8 @@ Before the final runs, six short pilots tested one change each against a control
 gives, for each, what it changed, the success rule written into its script before it ran, the result and the control.
 All pilots fine-tune Base on AnnyOne only, at learning rate $10^{-5}$ and batch 4, for 2 epochs (8,000 images) unless
 noted, and are read on the 100-image AnnyOne holdout in setting V1. Each is one run without a seed, so every result
-must be read against the run-to-run variation of Section~\ref{sec:diag-noise}, summarised at the end of this appendix.
+must be read against the run-to-run variation of Section~\ref{sec:diag-noise}, summarised below the table.
+Chapter~\ref{ch:diagnostics} explains what each result means; the full depth runs are Table~\ref{tab:depth-runs}.
 
 \begingroup
 \footnotesize
@@ -77,68 +80,6 @@ no training: fails (head direction \DiagHeadDirNoTrain{} vs.\ limit 15.0\,deg); 
 the geodesic pilot's L1 control \\
 \end{longtable}
 \endgroup
-
-\paragraph{Depth pilots.} The pilots built the depth, translation, detection-cell and offset targets at the head
-joint, which the network anchors, instead of at the pelvis (Section~\ref{sec:method-depth}); three of them also raised
-the depth and translation weights to 5 or 20. By their own rule they failed: every run, the two controls included,
-missed the PVE or recall clause, and the slope clause passed even for the 2-epoch control, because it asked only for
-some move toward 1. Outside the rule the change was large and consistent. The root error fell from \DiagRootErrBase{}
-to \DiagRootErrFixLow--\DiagRootErrFixHigh\,m in all five fix runs, against \DiagRootErrCtrlLow--\DiagRootErrCtrlHigh\,m
-in the controls; the best 10-epoch run ($\times$5) reached \DiagXFiveTenRoot\,m and size 0.84% 3572482 (H 3.1)
-, but the slope moved only from \DiagDepthSlopeBase{} to \DiagSlopeSwitch--\DiagSlopeStrongHigh{}. Every fix run was
-\DiagFixCostPVELow--\DiagFixCostPVEHigh\,mm worse in PVE and \DiagFixCostRecallLow--\DiagFixCostRecallHigh{} recall
-points lower than its control; each gap lies within run-to-run variation, but all five point the same way, and the
-$\times$5 and $\times$20 runs have no control at the same weight. Table~\ref{tab:depth-runs} lists every run. The
-$\times$5 variant became part of Final.
-
-\paragraph{Sampler pilot.} A weighted sampler drew images with a child (age below 0.3) for a quarter of the draws,
-which raised the share of children among the supervised people from \DiagSamplerBefore{} to
-\DiagSamplerAfterLow--\DiagSamplerAfterHigh\,\%. On the 10 children of the diagnostic manifest, who are training
-images, the pilot reached \DiagSamplerChildPVE\,mm against \DiagSamplerChildPVECtrl\,mm for its control and 47.8\,mm
-for Base% 3571955:169-170; 3571956:164-165 (H 3.4)
-. A 4.6\,mm gap on 10 in-sample people cannot be read, and the youngest training people kept their predicted age
-floor (\DiagSamplerBabyBefore{} $\to$ \DiagSamplerBabyAfter). Both arms missed the adult guard (holdout PVE 75.1 and
-74.9 against 70.5\,mm% 3571955 / 3571956 (H 3.4 "ADULT REGRESSION")
-), which is the restart cost of any fine-tune rather than an effect of the sampler. The pilot is inconclusive after
-8,000 images; it does not show that sampling cannot work, and it has no mechanism for real photos.
-
-\paragraph{Head-loss pilot.} An extra L1 term compared the camera-frame orientation of head, neck03 and both wrists
-with the ground truth, so that the many ways a four-bone neck can reach one head pose would all be judged by where the
-head points. The head direction reached \DiagGlobalHeadArm\,deg and so met the rule's 12.0\,deg, but two identical
-control runs gave \DiagGlobalHeadCtrlA{} and \DiagGlobalHeadCtrlB\,deg: the pilot differs from them by less than they
-differ from each other. Its safety limit was missed narrowly (71.8\,mm against 71.5, 89.0\,\% against 89.2), as it was
-by every control run. The local neck bones stayed where they were (group mean 62.5\,deg% 3571957:100 (H 3.2)
-), which the half-turned neck02 found later explains (Section~\ref{sec:diag-neck}).
-
-\paragraph{Finger pilot.} Two ideas were tested. A test-time crop around each person (factor 1.3, no training) gave
-the hands more tokens; the finger error moved from \DiagFingersBase{} to \DiagFingersZoom\,deg while the body PVE rose
-to \DiagZoomPVE\,mm, because the network had never seen such a camera. The region-normalised rotation loss averaged
-the rotation error within body, hands and head-neck before averaging across them; this cut the hands' share of the
-rotation loss from about 70 to 33\,\%% H 3.3 (notes, slide 17)
-, a rebalance rather than an upweighting. The fingers ended at \DiagFingersRegion{} against
-\DiagFingersRegionCtrl\,deg for the control: no effect. Neither idea reached the rest-pose floor of
-\DiagFingersRest\,deg. Half of the finger error turned out to be two flipped bones, which the bone-correction pilot
-removed.
-
-\paragraph{Geodesic pilot.} The rotation term measured the geodesic angle between predicted and true bone rotation
-instead of the L1 distance between their matrix entries. The flip did not move: neck02 went from \DiagNeckTwoBase{}
-to \DiagGeodesicNeckTwo\,deg and the head bone from \DiagDumpHead{} to \DiagGeodesicHead\,deg, while the L1 control
-stayed at 175.7 and 177.9\,deg% 3573521:89-91 (H 3.2)
-. The likely reason is that neck02 and the head would have to turn back together, and any partial move raises the
-loss; this was not tested. Its L1 control (PVE \DiagPVECtrlTwo\,mm) also served as the control of the next pilot.
-
-\paragraph{Bone-correction pilot.} One constant rotation per flipped bone, estimated on 200 training images
-(\DiagCorrNeckTwo{} to \DiagCorrMetacarpal\,deg), was applied right after the rotation decoding
-(Section~\ref{sec:method-bonefix}). Without training it turned the neck bones back (neck02
-\DiagNeckTwoBase{} $\to$ \DiagNeckTwoNoTrain\,deg, girth \DiagNeckGirthBase{} $\to$ \DiagGirthNoTrain) but failed its
-rule, because the head direction rose from \DiagHeadDirBase{} to \DiagHeadDirNoTrain\,deg against a limit of 15.0:
-one constant cannot undo a compensation that differs from person to person. After a 2-epoch fine-tune with the
-correction in place it passed every check against its control: corrected bones under 15\,deg, girth 0.997, recall
-89.4 against a limit of 89.1, head direction \DiagHeadDirFineTune{} against a limit of 16.8\,deg% 3579014:101-121 (H 3.2)
-. Its PVE of \DiagPVEFineTune\,mm against \DiagPVECtrlTwo\,mm for the control shows no sign of a PVE cost; it does not
-show a gain. On Fresh-heads-L the same method corrected three flipped metacarpals without training and passed (fingers
-32.0 $\to$ 17.8\,deg% 3579015:70-86 (H 3.2)
-). The correction became part of Final.
 
 \paragraph{Pilot noise.} Table~\ref{tab:pilot-noise} in Chapter~\ref{ch:diagnostics} gives the yardstick for all of
 the above. Two runs of one configuration differed by \DiagNoisePVE\,mm PVE, \DiagNoiseHead\,deg head direction and

@@ -3,7 +3,7 @@
 % Plan: docs/thesis/REWRITE_PLAN.md sections 1.7, 2 ("5 Diagnostics"), 4 (T8, T9, T10, T14, T18), 5 (rules).
 % Numbers: numbers_diagnostics.tex (macros \Diag...), loaded by numbers.tex; loaded here only when compiled alone.
 % Tables owned here: tables/T08_depth_runs, T09_neck, T10_fingers, T14_pilot_noise, T18_shape_head; two inline
-% tables (six checks, placement) and one inline pilots table.
+% tables (six checks, placement). Trimmed 19 Oct: the pilots table moved to Appendix E only (git 76aa1a4).
 % Figures here: F6 (exists, figures/img/neck_before_after_v5.jpg) and F24 (figures/img/F24_gt_decode_1.jpg and _3.jpg; _2, _4 unused),
 % both wrapped in \IfFileExists. Referenced only: F15 fig:depth-scatter, F13 fig:real-photos, F9 fig:neck-3dpw-bar,
 % F23 fig:exp6-compare (Appendix D), T12 tab:relhuman, chapters ch:method and ch:results.
@@ -17,20 +17,18 @@
 \label{ch:diagnostics}
 
 Base showed three failures in its renders: thin, twisted necks, claw-like fingers and adult bodies on children.
-Before changing any training setting, I tested each belief about their causes on its own. This chapter reports those
-tests, including the explanations that turned out wrong; Chapter~\ref{ch:results} reports the models built on them.
-Unless stated otherwise, every number is from Base on the \DiagHoldoutImages-image AnnyOne holdout in setting V1
-(helper bones masked, matched people; Chapter~\ref{ch:method}). Every comparison is one run per arm without a fixed
-seed and is read against the run-to-run variation of Section~\ref{sec:diag-noise}.
+Before changing any training setting, I tested each belief about their causes on its own, including the ones that
+turned out wrong. Unless stated otherwise, every number is from Base on the \DiagHoldoutImages-image AnnyOne holdout in
+setting V1, one run per arm without a seed, read against the variation of Section~\ref{sec:diag-noise}.
 
 % -----------------------------------------------------------------------------
 \section{The three visible failures}
 \label{sec:diag-failures}
 
-\begin{figure}[htbp]
+\begin{figure}[!htb]
 \centering
 \IfFileExists{figures/img/neck_before_after_v5.jpg}%
-  {\includegraphics[width=0.5\linewidth]{figures/img/neck_before_after_v5.jpg}}%
+  {\includegraphics[width=0.42\linewidth]{figures/img/neck_before_after_v5.jpg}}%
   {\DiagPending{F6: holdout images 579862 and 579863, Base without and with the bone correction
    (docs/figures/neck\_before\_after\_v5.jpg)}}
 \caption[The thin neck of Base and the bone correction]{Holdout images 579862 (top) and 579863 (bottom). Left: Base as
@@ -40,51 +38,45 @@ small. Necks judged by eye.}
 \label{fig:diag-neck-base}
 \end{figure}
 
-Figure~\ref{fig:diag-neck-base} shows the first failure as it was seen: in the left column Base draws each neck as a
-thin stalk pinched under the head, on holdout images it never trained on. The second failure was the fingers, which
-curled into claws; from then on every real-photo demo set them to rest pose. The third was children: a standing boy in
-one of our own photos received an adult body (Figure~\ref{fig:real-photos}).
+In Figure~\ref{fig:diag-neck-base} (left) Base draws each neck as a thin stalk pinched under the head. The fingers
+curled into claws, so every real-photo demo set them to rest pose. A standing boy in one of our photos received an
+adult body (Figure~\ref{fig:real-photos}).
 
-The draft gave each failure a cause without testing an alternative. For the neck it concluded that linear blend
-skinning stretches the skin between Anny's stacked neck bones, ``a property of the rig, not a training failure''; a
-later reading blamed weak supervision on a redundant four-bone chain. For the fingers the belief was resolution. For
-children it was that age had not been learned, and the evidence was five small people in our own photos predicted at
-adult ages of \DiagSmallPeopleAgeLow{} to \DiagSmallPeopleAgeHigh. This chapter shows that the neck explanation is
-wrong, that resolution explains little of the finger error, and that the child evidence was wrong. Looked at again,
-four of the five ``small people'' were adults who crouched, sat or were cut off by the frame: their skeletal height is
-measured on the posed body, and their height phenotype (\DiagSmallPeopleHeightLow--\DiagSmallPeopleHeightHigh) gives
-an adult rest body. Only the boy was a child, and he received age \DiagBoyAge{} and height \DiagBoyHeight: an adult.
-
-The figure shows neither fingers, children nor a real photo; the neck widths are judged by eye, and the number behind
-them is the neck girth of Table~\ref{tab:neck-bones}.
+The draft gave each failure an untested cause: skinning of the stacked neck bones (``a property of the rig''),
+finger resolution, and unlearned age, shown by five small people in our photos predicted at adult ages
+(\DiagSmallPeopleAgeLow--\DiagSmallPeopleAgeHigh). The neck cause is wrong, resolution explains little, and the child
+evidence was wrong: four of the five were adults who crouched, sat or were cut off by the frame (height phenotype
+\DiagSmallPeopleHeightLow--\DiagSmallPeopleHeightHigh). Only the boy was a child, and he received age \DiagBoyAge{} and
+height \DiagBoyHeight: an adult. The number behind the necks of the figure is the girth of Table~\ref{tab:neck-bones}.
 
 % -----------------------------------------------------------------------------
 \section{What is not the cause: six structural checks}
 \label{sec:diag-checks}
 
-\begin{table}[htbp]
+\begin{table}[!htb]
 \centering\footnotesize
-\begin{tabular}{@{}p{0.23\linewidth}p{0.17\linewidth}p{0.52\linewidth}@{}}
+\begin{tabular}{@{}p{0.2\linewidth}p{0.13\linewidth}p{0.47\linewidth}p{0.13\linewidth}@{}}
 \toprule
-check & sample & result \\
+check & sample & result & verdict \\
 \midrule
 1 labels decode onto the people (no network) & manifest, 55 people &
-meshes sit on the people; \DiagGTInsideImage\,\% of joints inside the image, \DiagGTInsideBox\,\% inside the box
-(the rest is truncation); dataset camera right on 100\,\% of images \\
+\DiagGTInsideImage\,\% of joints inside the image, \DiagGTInsideBox\,\% inside the box (the rest is truncation);
+dataset camera right on 100\,\% of images & labels fine \\
 2 body model, age sweep & body model &
 skeletal height \DiagAgeSweepLow\,m at age 0, \DiagAgeSweepHigh\,m at age 0.8; head/height \DiagHeadRatioLow{} to
-\DiagHeadRatioHigh \\
+\DiagHeadRatioHigh & child shape exists \\
 3 single-joint moves & body model &
-all \DiagPerturbations{} pass (96--100\,\% of moved vertices in the intended part) \\
+all \DiagPerturbations{} pass (96--100\,\% of moved vertices in the intended part) & rig fine \\
 4 gradients & 4 holdout images &
-zero-gradient bones are exactly the \DiagHelperBones{} helpers; all \DiagActiveBones{} active bones and
-\DiagShapeOutputs{} shape outputs get gradient; two of three camera outputs get none \\
+zero gradient only for the \DiagHelperBones{} helpers; all \DiagActiveBones{} active bones and \DiagShapeOutputs{}
+shape outputs get gradient (\DiagGradRoot{} at the root to \DiagGradFingers{} at the fingers); two of three camera
+outputs get none & path fine \\
 5 prediction vs.\ truth, shape swap & holdout, manifest &
 neck length \DiagNeckLengthPct\,\% of truth; true shape lowers the 10 manifest children's PVE
-\DiagChildSwapBefore{} $\to$ \DiagChildSwapAfter\,mm \\
+\DiagChildSwapBefore{} $\to$ \DiagChildSwapAfter\,mm & shape head is the gap \\
 6 capped overfit & 40 manifest training images &
 training PVE $-$\DiagOverfitTrainDrop\,\% (\DiagOverfitTrainBefore{} $\to$ \DiagOverfitTrainAfter\,mm), holdout
-+\DiagOverfitHoldRise\,\%; two warnings (text) \\
++\DiagOverfitHoldRise\,\% & learns; two warnings \\
 \bottomrule
 \end{tabular}
 \caption[Six structural checks]{Six checks on Base before any training change. The manifest holds 40 training images
@@ -97,100 +89,82 @@ excluded from every later fine-tune. Check 6 trains a throw-away copy for 400 st
 % _1 = holdout 579888 person 0 (tag hands), _3 = train 462901 person 0 (tag neck); _2 (holdout 579925) and
 % _4 (train 326611 p3) are not shown. Numbers: data/gt_decode_summary.json, n = 55, joints_inside_image_mean 0.845,
 % joints_inside_bbox_mean 0.849 (= \DiagGTInsideImage, \DiagGTInsideBox); the file has no camera field.
-\begin{figure}[htbp]
+\begin{figure}[!htb]
 \centering
 \begin{subfigure}{0.495\linewidth}\centering
   \includegraphics[width=\linewidth]{F24_gt_decode_1}\caption{holdout 579888, a close-up with hands}\end{subfigure}\hfill
 \begin{subfigure}{0.495\linewidth}\centering
   \includegraphics[width=\linewidth]{F24_gt_decode_3}\caption{training image 462901, low camera}\end{subfigure}
-\caption[Check 1: AnnyOne labels decoded with the dataset camera]{Check 1 on two manifest images, holdout 579888 (a)
-and training image 462901 (b): each as image | ground-truth mesh | ground-truth joints and box. The AnnyOne label is
-decoded through the training body model and drawn with the dataset camera; no network is involved. By eye the mesh
-lies on the person, down to the spread fingers in (a) and the raised hand and the hand at the mouth in (b), and the
-joints fall on the body. In (a) the frame cuts the head and the legs, so part of the joints lie outside the image
-and the box: truncation, not a decoding error (the black corner is part of the dataset image). Over all 55 manifest
-people \DiagGTInsideImage\,\% of the joints lie inside the image and \DiagGTInsideBox\,\% inside the box. Synthetic
-images; two of the four rendered cases.}
+\caption[Check 1: AnnyOne labels decoded with the dataset camera]{Check 1 on two manifest images: image |
+ground-truth mesh | joints and box, decoded through the training body model and drawn with the dataset camera; no
+network. By eye the mesh lies on the person, down to the fingers. In (a) the frame cuts head and legs: truncation, not
+a decoding error (the black corner is in the dataset image). Synthetic; two of four rendered cases.}
 \label{fig:diag-gt-decode}
 \end{figure}
 
-Table~\ref{tab:diag-checks} lists the checks and Figure~\ref{fig:diag-gt-decode} shows the first. The joints missing
-from the image are also missing from the box, so they are truncation, not a decoding error. The body model makes a
-child with child proportions, and each single-joint move, neck and fingers included, moves the intended part.
-Gradients range from \DiagGradRoot{} at the root to \DiagGradFingers{} at the fingers; shape dominates the loss
-(\DiagLossShareShape\,\%), translation and distance take \DiagLossShareTransl\,\% and \DiagLossShareDist\,\%.
+Table~\ref{tab:diag-checks} and Figure~\ref{fig:diag-gt-decode} rule out the rig, the label decoding and the gradient
+path, as did the draft's four neck tests. Shape dominates the loss (\DiagLossShareShape\,\%; translation
+\DiagLossShareTransl\,\%, distance \DiagLossShareDist\,\%). The cause had to be in what training asked of the network.
+The overfit run gave two warnings: the rotation loss barely moved while the images were memorised
+(\DiagOverfitRotFirst{} $\to$ \DiagOverfitRotLast), and the translation and 2D terms rose (\DiagOverfitTranslFirst{}
+$\to$ \DiagOverfitTranslLast, \DiagOverfitTwoDFirst{} $\to$ \DiagOverfitTwoDLast, first against last five epochs),
+possibly a first sign of the depth bug. That evidence is weak: the values are single-batch prints, and the half-run
+averages fall (\DiagOverfitTranslHalfA{} $\to$ \DiagOverfitTranslHalfB, \DiagOverfitTwoDHalfA{} $\to$
+\DiagOverfitTwoDHalfB).
 
-So the rig, the label decoding and the gradient path are not the cause; the draft's four neck tests (rest-pose render
-normal, all neck bones active, thin neck on synthetic images, proportions accurate) stay valid as eliminations of the
-same kind. The cause had to be in what training asked of the network. The overfit run gave two warnings. The summed
-rotation loss barely moved while the images were memorised (\DiagOverfitRotFirst{} $\to$ \DiagOverfitRotLast). And the
-translation and 2D terms rose (\DiagOverfitTranslFirst{} $\to$ \DiagOverfitTranslLast, \DiagOverfitTwoDFirst{} $\to$
-\DiagOverfitTwoDLast, first against last five epochs) while the pelvis-centred 3D terms fell: possibly a first sign of
-the depth bug. That evidence is weak, since each value is a single-batch print and the half-run averages fall instead
-(\DiagOverfitTranslHalfA{} $\to$ \DiagOverfitTranslHalfB, \DiagOverfitTwoDHalfA{} $\to$ \DiagOverfitTwoDHalfB).
-
-The checks are blind to two faults, and both were present: a target built at a different joint than the model's
-anchor, because the checks compare pelvis-centred quantities, and a bone flipped the same way in every person, because
-the rig was tested in isolation and bone errors were averaged by group. The holdout has no children, so every child
-number below is in-sample or from real photos.
+The checks are blind to two faults, and both were present: a target at another joint than the anchor (they compare
+pelvis-centred quantities) and a bone flipped the same way in every person (bone errors were averaged by group).
 
 % -----------------------------------------------------------------------------
 \section{The hidden depth bug}
 \label{sec:diag-depth}
 
-\begin{table}[htbp]
+\begin{table}[!htb]
 \centering\footnotesize
 \begin{tabular}{@{}lrr@{}}
 \toprule
 quantity & truth & Base \\
 \midrule
 pelvis depth, mean (sd)                 & \DiagDepthTrueMean\,m (\DiagDepthTrueSd) & \DiagDepthPredMean\,m (\DiagDepthPredSd) \\
-fit of predicted on true depth          & $1\times\text{true} + 0$ & $\DiagDepthSlopeBase\times\text{true} + \DiagDepthInterceptBase$\,m \\
 people placed farther than truth        & --      & \DiagDepthFartherPct\,\% \\
 corr.\ of true depth with depth error   & --      & \DiagDepthCorrError \\
 skeletal height (3D)                    & \DiagSkelHeightTrue\,m & \DiagSkelHeightPred\,m ($r = \DiagSkelHeightCorr$) \\
-drawn size (pixels), pred./true         & 1       & \DiagSizeBase \\
 head / pelvis 2D error, median          & 0       & \DiagHeadPxBaseMedian{} / \DiagPelvisPxBaseMedian\,px \\
 corr.\ of PVE with depth error          & --      & \DiagCorrPVEDepth \\
 \bottomrule
 \end{tabular}
 \caption[Placement of Base on the holdout]{Where Base places people. V1, 100-image AnnyOne holdout, all
-\DiagHoldoutPeople{} matched people. Right metric size, wrong distance, so drawn too small; PVE does not see it.}
+\DiagHoldoutPeople{} matched people; slope, intercept and drawn size are in Table~\ref{tab:depth-runs}. Right metric
+size, wrong distance; PVE does not see it.}
 \label{tab:diag-placement}
 \end{table}
 
 \input{tables/T08_depth_runs}
 
-Table~\ref{tab:diag-placement} is the placement section of the holdout trace. Base places every person too far
-(Figure~\ref{fig:depth-scatter}), and the nearest are pushed farthest. The skeleton has the right height, so the body is drawn at \DiagSizeBase{} of its true size; its
-pelvis lands near the right pixel, its head does not. PVE is blind to all of it (correlation \DiagCorrPVEDepth).
+Table~\ref{tab:diag-placement} shows that Base places every person too far (Figure~\ref{fig:depth-scatter}), the
+nearest farthest. The skeleton has the right height, so the body is drawn at \DiagSizeBase{} of its true size; its
+pelvis lands near the right pixel, its head does not. PVE is blind to all of it.
 
-The code gave the cause. The model places each mesh by its head joint and reports the head as its position, but the
-training code built the translation, distance, detection-cell and offset targets at joint 0, the pelvis. A one-batch
-debug print showed predicted offsets of \DiagOffsetMin{} to \DiagOffsetMax{} cells where the legal range is
-$\pm$0.5. The likely mechanism, not tested on its own: the detection and offset terms pull the anchor pixel toward the
-pelvis while the mesh hangs from it by the head, so every projected joint is displaced. The 2D terms, the only strong
-terms that see depth (the 3D terms are pelvis-centred), can shrink that displacement only by drawing the body smaller,
-that is, farther away; the distance and translation terms, \DiagLossShareDepthTerms\,\% of the loss, could not resist.
-Near people have the largest displacement and were pushed farthest. Building the targets at the head
-(Chapter~\ref{ch:method}) is the fix, and Table~\ref{tab:depth-runs} tests it against same-schedule controls.
+The code gave the cause: the mesh is placed by its head joint, but the anchor targets were built at the pelvis
+(Section~\ref{sec:method-depth}). A one-batch debug print showed offsets of \DiagOffsetMin{} to \DiagOffsetMax{} cells
+where the legal range is $\pm$0.5. The likely mechanism, not tested on its own: with the mesh hanging from a misplaced
+head, the 2D terms can shrink the misfit only by drawing the body smaller, that is, farther away, and the direct depth
+terms (\DiagLossShareDepthTerms\,\% of the loss) could not resist; near people have the largest misfit.
 
-All five fix runs reach a root error of \DiagRootErrFixLow--\DiagRootErrFixHigh\,m, both controls stay at
-\DiagRootErrCtrlLow--\DiagRootErrCtrlHigh\,m; the drawn size rises from \DiagSizeCtrlLow--\DiagSizeCtrlHigh{} to
-\DiagSizeFixLow--\DiagSizeFixHigh{} and the head lands within 7--10 instead of 58--67 pixels. With real images and the
-bone correction in training, Final keeps it: \DiagFinalRootErr{} against \DiagControlRootErr\,m for Control, size
-\DiagFinalSize{} against \DiagControlSize. Every fix run lies below every control, far outside run-to-run variation.
-Two other checkpoints trained with pelvis targets carry the bug too. It stayed hidden because PVE aligns the pelvis first and the real-photo demos place each body from its detection box; only the
-synthetic demo and the trace panels used the model's own depth.
+Table~\ref{tab:depth-runs} tests the fix against same-schedule controls. All five fix runs reach a root error of
+\DiagRootErrFixLow--\DiagRootErrFixHigh\,m, both controls stay at \DiagRootErrCtrlLow--\DiagRootErrCtrlHigh\,m, the
+drawn size rises from \DiagSizeCtrlLow--\DiagSizeCtrlHigh{} to \DiagSizeFixLow--\DiagSizeFixHigh, and the head lands
+within 7--10 instead of 58--67 pixels: every fix run lies below every control, far outside run-to-run variation. Two
+other checkpoints trained with pelvis targets carry the bug too. It stayed hidden because PVE aligns the pelvis first
+and the real-photo demos place each body from its detection box.
 
-The table does not show correct depth. The fix moved the offset and the body size, not the slope (Final
-\DiagFinalSlope; \DiagSlopeSwitch{} with the switch alone, \DiagSlopeStrongLow--\DiagSlopeStrongHigh{} with a stronger
-depth loss); predictions are still pulled toward 2.5--2.9\,m for a reason I have not found. The pelvis 2D error rose
-from about 23 to 31--41 pixels, likely because the head is now pinned while the body is still too small (not checked).
-Every fix run is worse than its control by +\DiagFixCostPVELow{} to +\DiagFixCostPVEHigh\,mm PVE and
-$-$\DiagFixCostRecallLow{} to $-$\DiagFixCostRecallHigh{} recall points: each gap within run-to-run variation, all in
-the same direction, so a likely cost. By the success rule written beforehand (PVE $\le$ 71.5\,mm, recall $\ge$
-89.2\,\%) every run failed, the controls included.
+Not shown is correct depth: the slope barely moved (\DiagSlopeSwitch{} with the switch alone,
+\DiagSlopeStrongLow--\DiagSlopeStrongHigh{} with a stronger depth loss), and predictions are still pulled toward
+2.5--2.9\,m for a reason I have not found. The pelvis 2D error rose to 31--41 pixels, likely because the head is now
+pinned while the body is still too small (not checked). Every fix run is worse than its control by
++\DiagFixCostPVELow{} to +\DiagFixCostPVEHigh\,mm PVE and $-$\DiagFixCostRecallLow{} to $-$\DiagFixCostRecallHigh{}
+recall points: each gap within variation, all in one direction, so a likely cost. By the success rule written
+beforehand (PVE $\le$ 71.5\,mm, recall $\ge$ 89.2\,\%) every run failed, the controls included.
 
 % -----------------------------------------------------------------------------
 \section{The neck: a per-bone dump}
@@ -200,42 +174,28 @@ the same direction, so a likely cost. By the success rule written beforehand (PV
 
 A per-bone dump of the neck chain found the fault (Table~\ref{tab:neck-bones}, first column). neck02 is
 \DiagDumpNeckTwo\,deg wrong, a half-turn about its own axis (twist \DiagDumpNeckTwoTwist, swing
-\DiagDumpNeckTwoSwing\,deg), and the head bone \DiagDumpHead\,deg. neck03 is right relative to its parent
-(\DiagDumpNeckThree\,deg) but \DiagDumpNeckThreeGlobal\,deg off in the camera frame. The two half-turns cancel, so the
-head points the right way (\DiagDumpHeadGlobal\,deg) and PVE never showed it; the skin between is twisted thin, girth
-\DiagNeckGirthBase{} of the truth and neck-skin error \DiagNeckSkinBase\,mm. The earlier group means (62.7 and 89.5\,deg) hid the
-flip. The flip is in all eight checkpoints of the Base line
-(L-stage 2 to L-stage 4, Base, Mixed-L, the 10-epoch depth pilot and two geodesic-loss pilots; neck02
+\DiagDumpNeckTwoSwing\,deg), and the head bone \DiagDumpHead\,deg; neck03 is right relative to its parent
+(\DiagDumpNeckThree\,deg) but \DiagDumpNeckThreeGlobal\,deg off in the camera frame. The half-turns cancel, so the head
+points the right way (\DiagDumpHeadGlobal\,deg); the skin between is twisted thin. Group means (62.7 and 89.5\,deg) had
+hidden the flip. It is in all eight checkpoints of the Base line (neck02
 \DiagNeckTwoRangeLow--\DiagNeckTwoRangeHigh\,deg, girth \DiagGirthRangeLow--\DiagGirthRangeHigh), from the first stage
-on, before the helper mask, the neck boost and the shape weight of 20. The depth pilot keeps it, so depth is not the
-neck's cause. Fresh-heads-L, trained from the same pretrained backbone with fresh heads, has a normal neck (girth \DiagFreshGirth) but flips
-other bones: a compensated pair in the left arm and three metacarpals.
+on, before the helper mask, the neck boost and the shape weight of 20; the depth pilot keeps it, so depth is not the
+neck's cause. Fresh-heads-L has a normal neck (girth \DiagFreshGirth) but flips other bones: a compensated pair in the
+left arm and three metacarpals.
 
-This refutes the draft. The rig passes all 16 single-joint moves, and the normal rest-pose render fits the flip just as
-well, because rest pose sets every rotation to the identity and removes both half-turns; only the dump separates the
-two explanations. A loss cannot undo the flip: the neck boost (renormalised to $\times$2.41 for the boosted bones,
-$\times$0.60 for the rest) left it unchanged, and a geodesic loss moved neck02 only from \DiagNeckTwoBase{} to
-\DiagGeodesicNeckTwo\,deg, likely because neck02 and head must turn back together and any partial turn raises the loss.
-So I corrected the output: one constant rotation per flipped bone, $R_b \leftarrow R_b C_b$, estimated on 200 training
-images (Chapter~\ref{ch:method}); the constants are \DiagCorrNeckTwo, \DiagCorrHead, \DiagCorrMetacarpal{} and
-\DiagCorrFinger\,deg for neck02, head, metacarpal1.L and finger4-1.R.
+This refutes the draft: the rig passes all 16 single-joint moves, and the normal rest-pose render fits the flip
+too, because rest pose sets every rotation to the identity. A loss did not undo the flip: the neck boost ($\times$2.41 for the boosted bones after renormalisation) left it unchanged,
+and a geodesic loss moved neck02 only from \DiagNeckTwoBase{} to \DiagGeodesicNeckTwo\,deg, likely because neck02 and
+head must turn back together. So I corrected the output with one constant rotation per flipped bone
+(Section~\ref{sec:method-bonefix}): \DiagCorrNeckTwo, \DiagCorrHead, \DiagCorrMetacarpal{} and \DiagCorrFinger\,deg
+for neck02, head, metacarpal1.L and finger4-1.R.
 
-Without training the correction turns neck02 back to \DiagNeckTwoNoTrain\,deg and restores girth (\DiagGirthNoTrain)
-and neck-skin error (\DiagNeckSkinNoTrain\,mm), but the head direction worsens from \DiagHeadDirBase{} to
-\DiagHeadDirNoTrain\,deg, above the 15-degree limit set beforehand. The likely reason is the compensated chain: the
-head's error differs per person, so one constant cannot undo it. After a 2-epoch fine-tune with the correction the
-head direction is \DiagHeadDirFineTune\,deg against \DiagHeadDirCtrlTwo\,deg for the control, which keeps the flip.
-Body PVE is \DiagPVEBase, \DiagPVENoTrain{} and \DiagPVEFineTune{} against \DiagPVECtrlTwo\,mm for the control, a gap
-within variation (the control also sits above six earlier arms): no sign of a PVE cost, not a gain. Final keeps the
-correction through 10 epochs with real images (neck02 \DiagFinalNeckTwo\,deg, girth \DiagFinalGirth, head direction
-\DiagFinalHeadDir{} against \DiagControlHeadDir\,deg for Control). Figure~\ref{fig:exp6-compare} shows two more holdout
-pairs.
-
-Not shown: why the bones flipped. The 6D start value of the rotation output is singular and starts a bone tilted about
-its local $x$ axis, which fits the tilted metacarpal1.L but not neck02's twist; the origin is unknown, and the
-correction, which adds no parameters, says nothing about it. A two-sided correction for compensated chains was not
-implemented. Real photos have no neck ground truth; their pairs (Figure~\ref{fig:neck-3dpw-bar}) are judged by eye and
-also differ by the fine-tune.
+Without training the correction restores neck02, girth and neck-skin error, but the head direction worsens to
+\DiagHeadDirNoTrain\,deg, above the 15-degree limit set beforehand, likely because the head's error differs per
+person; a 2-epoch fine-tune brings it to \DiagHeadDirFineTune\,deg (control \DiagHeadDirCtrlTwo). The body-PVE gaps
+lie within variation. Figure~\ref{fig:exp6-compare} shows two more holdout pairs. Not shown: why the bones flipped
+(the singular 6D start value fits the tilted metacarpal1.L, not neck02's twist), and necks on real photos, which have
+no ground truth (Figure~\ref{fig:neck-3dpw-bar}, by eye).
 
 % -----------------------------------------------------------------------------
 \section{The fingers}
@@ -244,23 +204,15 @@ also differ by the fine-tune.
 \input{tables/T10_fingers}
 
 In Table~\ref{tab:fingers} predicted fingers are \DiagFingersBase\,deg off and fingers at rest \DiagFingersRest\,deg:
-the prediction was worse than none. Hands are small, \DiagHandTokens{} tokens long at the median and under two tokens
-for \DiagHandUnderTwo\,\%. A person crop at test time raises the median to 4.2 tokens, but the finger error stays at
-\DiagFingersZoom\,deg while body PVE nearly doubles (\DiagZoomPVE\,mm), since the model never saw such a camera. A
-region-normalised rotation loss gave \DiagFingersRegion{} against \DiagFingersRegionCtrl\,deg. The per-bone search on
-training images then found two hand bones half-turned, metacarpal1.L (180\,deg) and finger4-1.R (178.8\,deg);
-correcting them gives \DiagFingersFixNoTrain\,deg without training, \DiagFingersFixFT{} after the fine-tune, and
-\DiagFingersFinal{} for Final against \DiagFingersControl\,deg for Control.
+the prediction was worse than none. Hands are small (\DiagHandTokens{} tokens long at the median, under two tokens for
+\DiagHandUnderTwo\,\%), but a person crop at test time leaves the finger error at \DiagFingersZoom\,deg while body PVE
+nearly doubles, and a region-normalised rotation loss (a rebalance from about 70 to 33\,\% of the rotation loss, not an
+upweighting) changed nothing. The per-bone search on training images then found metacarpal1.L and finger4-1.R
+half-turned; correcting them roughly halves the finger error, with and without training.
 
-About half the finger error was two flipped bones, not resolution. Resolution was tested only by test-time zoom, which
-did not help; a hand-crop branch was never tried. The region-normalised loss cut the hands' share of the rotation loss
-from about 70\,\% (with the boost) to 33\,\%, a rebalance, not an upweighting. The fingers also have the smallest
-gradients of any bone group; that they are under-trained is a guess I did not test.
-
-Until the last demo every real-photo render set the fingers to rest pose; predicted fingers on real images, judged
-by eye, are in Figure~\ref{fig:fingers-demo} of Chapter~\ref{ch:results}. Rest pose keeps the
-metacarpals, so the \DiagFingersRest\,deg contains the metacarpal flip; a rest-pose floor with the correction, and the
-split of the 9.1-degree drop between the two bones, were not measured.
+About half the finger error was two flipped bones, not resolution. Resolution was tested only by test-time zoom; a
+hand-crop branch was never tried, and a rest-pose floor with the correction was not measured. Predicted fingers on
+real photos are in Figure~\ref{fig:fingers-demo}.
 
 % -----------------------------------------------------------------------------
 \section{Children and body shape}
@@ -270,34 +222,22 @@ split of the 9.1-degree drop between the two bones, were not measured.
 
 Table~\ref{tab:shape-head}(a) is the draft's shape-weight test on 10 holdout images: raising the shape weight from 1
 to 20 moved the age bias from \DiagShapeAgeBiasOld{} to \DiagShapeAgeBiasNew{} and the height bias from
-\DiagShapeHeightBiasOld{} to \DiagShapeHeightBiasNew. Part~(b) shows that this holds near the mode only. On all
-holdout people the age bias is \DiagAgeBiasHoldout, but nobody there is younger than \DiagHoldoutMinAge. In both tails
-predictions move toward the training median: true ages 0.6--0.8 come out at \DiagTailOldPred, and the 50 youngest
-training people (true \DiagBabyAgeTrue) at \DiagBabyAgePred. On real photos Base reads children as short adults. On
-Relative Human (Table~\ref{tab:relhuman}) kids get a mean age of \DiagRHKidAge, babies \DiagRHBabyAge{} and adults
-\DiagRHAdultAge; the child-versus-adult AUC is \DiagRHAUC, and none of \DiagRHKids{} kids and \DiagRHBabiesBelow{} of
-\DiagRHBabies{} babies fall below the child threshold 0.45. The smallness goes into height instead (adults
-\DiagRHAdultHeight, kids \DiagRHKidHeight, babies \DiagRHBabyHeight). Gender carries no signal (men
-\DiagRHMenGender, women \DiagRHWomenGender, accuracy \DiagRHGenderAcc\,\%). On our demo photos the medians of all 299
-shape lines (gender \DiagDemoGenderMedian, age \DiagDemoAgeMedian, height \DiagDemoHeightMedian) equal the training
-medians (\DiagTrainGenderMedian, \DiagTrainAgeMedian, \DiagTrainHeightMedian). Their narrow age spread (standard
-deviation \DiagDemoAgeStd{} against \DiagTrainAgeStd) is no evidence, since the lines are about 30 adults counted
-several times; only the gender spread is (14\,\% of lines below 0.5 though men dominate).
+\DiagShapeHeightBiasOld{} to \DiagShapeHeightBiasNew. Part~(b) shows that this holds near the mode only: in both
+tails predictions move toward the training median (the holdout has no children, so the young tail is in-sample). On Relative Human (Table~\ref{tab:relhuman}) Base reads children
+as short adults: kids get a mean age of \DiagRHKidAge, babies \DiagRHBabyAge{} and adults \DiagRHAdultAge{} (AUC
+\DiagRHAUC), none of \DiagRHKids{} kids and \DiagRHBabiesBelow{} of \DiagRHBabies{} babies fall below the child
+threshold; the smallness goes into height instead. Gender carries no signal (accuracy \DiagRHGenderAcc\,\%). On
+our demo photos the medians of all 299 shape lines (gender \DiagDemoGenderMedian, age \DiagDemoAgeMedian, height
+\DiagDemoHeightMedian) equal the training medians.
 
 Children and female-looking men are one failure: with weak image cues the shape head returns the training median.
-Two mechanisms fit, and the evidence cannot rank them: the gap between synthetic and real images, or the loss. An L1
-on sigmoid outputs regresses to the median, the sigmoid's gradient $s(1-s)$ is 0.25 at $s=0.5$ but 0.015 at
-$s=0.015$, and children are rare (\DiagChildShare\,\% of training people below age 0.3, about
-\DiagChildBatchShare\,\% of supervised people per batch); the 3DPW labels pin age at 0.55. Anny explains why the
-failure looks like a short adult. Age blends five shapes at anchors $-1/3$, 0, 1/3, 2/3, 1 (newborn to old), and the
-child shape appears below about 0.4--0.5. Its cue is narrow shoulders relative to the head: shoulder over head width
-is \DiagShoulderHeadChild{} at age 0.1 and \DiagShoulderHeadAdult{} at 0.6. A low height at age 0.6 gives a short,
-broad-shouldered adult (at least \DiagSmallestAdult\,m), and proportions barely matter (leg over stature
-\DiagProportionsLeg); only a lower age gives a child.
+Two mechanisms fit, and the evidence cannot rank them: the gap between synthetic and real images, or the loss (an L1
+on sigmoid outputs regresses to the median, the sigmoid's gradient is 0.25 at 0.5 but 0.015 at 0.015, and only
+\DiagChildShare\,\% of training people are below age 0.3). It looks like a short adult because Anny's child shape (shoulder over head width \DiagShoulderHeadChild{} at age
+0.1, \DiagShoulderHeadAdult{} at 0.6) appears only below an age of about 0.4--0.5: a low height at age 0.6 gives a
+short adult (at least \DiagSmallestAdult\,m), and proportions barely matter (leg over stature \DiagProportionsLeg).
 
-Not shown: children on held-out synthetic images (there are none), which mechanism dominates, and ages in years, which
-I never quote because the code uses three age scales that disagree. Part~(a) has $n = 10$. Final improves on Relative
-Human (Chapter~\ref{ch:results}): a measured improvement, not a solution.
+Not shown: which mechanism dominates, and ages in years (the code uses three age scales that disagree).
 
 % -----------------------------------------------------------------------------
 \section{Pilot noise and restart cost}
@@ -305,51 +245,18 @@ Human (Chapter~\ref{ch:results}): a measured improvement, not a solution.
 
 \input{tables/T14_pilot_noise}
 
-Two 2-epoch runs of one configuration differed by \DiagNoisePVE\,mm PVE (\DiagNoisePVEA{} against \DiagNoisePVEB),
-\DiagNoiseHead\,deg head direction and \DiagNoiseRecall{} recall points (Table~\ref{tab:pilot-noise}); six arms of the
-Base recipe span \DiagSixArmsPVELow--\DiagSixArmsPVEHigh\,mm. Restarting a fine-tune of Base costs about
-\DiagRestartCost\,mm (controls \DiagControlsMean{} against \DiagPVEBase\,mm).
-
-One pilot therefore resolves about 10\,mm PVE, 3\,deg and 2 recall points. That suffices for every change this chapter
-relies on (root error, bone angles 175 to 5\,deg, girth 0.46 to 1.00, fingers 17.3 to 8.3\,deg), but not for a PVE
-change of a few millimetres, so the costs of the depth fix and the neck pilot's PVE stay unresolved. Because of the
-restart cost a pilot is read against its own control, never against Base alone.
-
-There are no bootstrap intervals, the root error has no measured floor, and the training code sets no seed, so a
-repeated run is a repeat, not a seeded run.
+By Table~\ref{tab:pilot-noise} one pilot resolves about 10\,mm PVE, 3\,deg and 2 recall points, and is read against
+its own control because of the restart cost. That suffices for every change this chapter relies on (root error, bone
+angles 175 to 5\,deg, girth 0.46 to 1.00, fingers 17.3 to 8.3\,deg), but not for a PVE change of a few millimetres, so
+the PVE costs of the depth fix and the neck pilot stay unresolved. There are no bootstrap intervals and no seed.
 
 % -----------------------------------------------------------------------------
 \section{What did not work}
 \label{sec:diag-negative}
 
-\begin{table}[htbp]
-\centering\footnotesize
-\begin{tabular}{@{}p{0.24\linewidth}p{0.42\linewidth}p{0.26\linewidth}@{}}
-\toprule
-change & result & reading \\
-\midrule
-age-balanced sampler (children per batch \DiagSamplerBefore{} $\to$ \DiagSamplerAfterLow--\DiagSamplerAfterHigh\,\%) &
-10 manifest children PVE \DiagSamplerChildPVE{} vs.\ \DiagSamplerChildPVECtrl\,mm; baby age floor \DiagSamplerBabyBefore{} $\to$ \DiagSamplerBabyAfter &
-inconclusive ($n = 10$, in-sample) \\
-global head orientation loss & head direction \DiagGlobalHeadArm{} vs.\ \DiagGlobalHeadCtrlA{} and \DiagGlobalHeadCtrlB\,deg (identical controls) &
-within variation \\
-region-normalised hand loss & fingers \DiagFingersRegion{} vs.\ \DiagFingersRegionCtrl\,deg & no effect \\
-geodesic rotation loss & neck02 \DiagNeckTwoBase{} $\to$ \DiagGeodesicNeckTwo, head \DiagDumpHead{} $\to$ \DiagGeodesicHead\,deg & no movement \\
-neck and hand boost $\times$4 & $\times$2.41 / $\times$0.60 after renormalisation; neck unchanged & no effect \\
-depth loss $\times$20 & root \DiagXTwentyRoot\,m in 2 epochs vs.\ \DiagXFiveTenRoot\,m for $\times$5 in 10; slope \DiagXTwentySlope{} vs.\ \DiagXFiveTwoSlope{} ($\times$5, 2 epochs) &
-no gain over $\times$5 \\
-\bottomrule
-\end{tabular}
-\caption[Pilots that did not work]{Changes that did not fix a failure. V1, 100-image AnnyOne holdout; 2-epoch
-fine-tunes of Base unless stated, one run each, each read against its own control.}
-\label{tab:diag-pilots}
-\end{table}
-
-In Table~\ref{tab:diag-pilots}, the sampler's 4.6\,mm on 10 in-sample children is not
-readable, and the global head loss differs from two identical controls by less than they differ from each other.
-Each change altered the loss or the sampling around a fault the loss could not see: a half-turned bone, a target at the wrong
-joint, a shape head pulled to the median. The two fixes that worked, head-joint targets and the bone correction, came
-from the diagnostics.
-
-None of this shows that an idea cannot work: the sampler is unproven after 8,000 images, and larger hand crops and a
-10-epoch run at weight 20 were never tried.
+Six changes did not fix a failure (Appendix~\ref{app:pilots}, Table~\ref{tab:pilots-all}): an age-balanced sampler
+(inconclusive on 10 in-sample children), a global head orientation loss (within the spread of two identical controls),
+a region-normalised hand loss, a geodesic rotation loss, the neck and hand boost, and a $\times$20 depth loss (no gain
+over $\times$5). Each altered the loss or the sampling around a fault the loss could not see; the two fixes that worked
+came from the diagnostics. None of this shows that an idea cannot work: the sampler is unproven after 8,000 images,
+and a 10-epoch run at weight 20 was never tried.

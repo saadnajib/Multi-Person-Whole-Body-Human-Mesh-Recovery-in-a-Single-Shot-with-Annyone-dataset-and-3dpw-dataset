@@ -7,7 +7,11 @@
 %   3DPW val, Control: min 75.5 (epoch 4), last 75.9, mean over epochs 77.72
 %   holdout V0, Final:   min 78.9 (epoch 9), last 79.3, mean over epochs 80.73
 %   holdout V0, Control: min 76.8 (epoch 9), last 81.2, mean over epochs 79.19
+% 19 Oct trimming pass: moved from Chapter 6 to Appendix D; the figure environment now lives in this file, so
+% Appendix D needs only \input{figures/plots/F20_val_curves}. Chapter 6 (sec:res-final) reads it in one sentence.
 % Needs: pgfplots (compat 1.18) with \usepgfplotslibrary{groupplots}. Colours defined locally.
+\begin{figure}[tbp]
+\centering
 \definecolor{plFinal}{HTML}{2A78D6}% blue: Final
 \definecolor{plControl}{HTML}{EB6834}% orange: Control
 \definecolor{plBase}{HTML}{7A7A76}% grey: Base
@@ -32,3 +36,9 @@
 \addplot[color=plFinal, mark=*, mark size=1.7pt, thick] coordinates {(1,81.1) (2,80.2) (3,80.1) (4,80.8) (5,81.6) (6,82.3) (7,81.1) (8,81.9) (9,78.9) (10,79.3)};
 \end{groupplot}
 \end{tikzpicture}
+\caption[In-training PVE per epoch, Final and Control]{PVE per epoch during training, Final and Control (one run
+each, no seed). Left: 300 images of the corrected 3DPW validation labels. Right: the AnnyOne holdout as evaluated
+during training, setting V0 (helper bones unmasked), so higher than the V1 numbers of
+Table~\ref{tab:final-annyone}. Values from the training logs; read in Section~\ref{sec:res-final}.}
+\label{fig:val-curves}
+\end{figure}
