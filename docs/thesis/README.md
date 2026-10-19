@@ -4,6 +4,8 @@ LaTeX source of the rewritten thesis (full draft since 18 Oct 2026; 132 pages wi
 (what each chapter, table and figure holds, the writing rules) is `REWRITE_PLAN.md`; the review pass that made the
 chapters one document is logged in `REVIEW_LOG.md`; the old draft is kept read-only in `draft_2026-10_original/`.
 
+`hardcover_titlepage.tex` is the separate one-page title for the bound copy (same fields as `thesis.tex`); build it alone with `latexmk -pdf hardcover_titlepage.tex`.
+
 ## Build
 
 ```
