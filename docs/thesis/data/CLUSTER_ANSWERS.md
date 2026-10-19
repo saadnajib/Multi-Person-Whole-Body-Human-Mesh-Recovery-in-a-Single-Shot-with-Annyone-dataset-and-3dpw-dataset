@@ -92,3 +92,20 @@ stairs (downtown_sitOnStairs), downtown_walkBridge/walking pair, weekly market (
 - Reading, untested: the gender label was still supervised here and gender accuracy still collapsed (both sexes predicted
   female-side), so Final's gender gain likely depends on the seven 0.5 constants on 3DPW men (cup size, firmness, ...) as much as on
   the gender label. Not tested further.
+
+## 19 Oct morning: STUDENT DONE (job 3614191, `logs/exp8_distill_vitb_3614191.out`) -> 95% rule FAILS
+- Training: 30 epochs x 1000 x batch 8 on an L40S, 20,894 s (5.8 h), 11.6 img/s; 77 NaN/Inf steps skipped; heads frozen epochs 0-4.
+  In-training curve (V0 holdout PVE / 3DPW-val PVE) at epochs 5, 10, 15, 20, 25, 30: 165.1/104.9, 170.0/101.5, 139.5/93.0,
+  133.0/90.9, 130.5/88.0, 122.8/87.7 (log lines 59-143). AnnyOne still falling ~8 mm per 5 epochs; 3DPW-val flat (88.0 -> 87.7).
+- Student bone fix (own estimate): neck02 178.9, head 179.1, metacarpal1.L 179.7, finger4-1.R 179.9 deg (0.2-1.8 deg from the teacher's);
+  holdout with own fix 119.6 vs with the teacher's 119.7 (no difference).
+- Holdout V1 (lines 195-207): student PVE 119.6, PA-PVE 80.8, MPJPE 127.2, recall 85.4, FP 64; teacher 73.7 / 50.3 / 77.9 / 87.0, FP 42.
+  Region rotation errors (deg) student vs teacher: root 13.5 vs 8.7, spine 6.5/5.8, neck 5.7/5.5, head 4.5/5.0, arm 10.6/8.4,
+  fingers 9.3/8.3, leg 6.4/5.1. Root error 830.7 vs 728.5 mm.
+- AnnyOne test-100 V0: student 122.7 / 84.2 / 127.7, recall 85; teacher 77.5 / 54.4 / 78.5, recall 87.
+- 3DPW test v23 (8,190 images): student PVE 110.1, PA-PVE 71.8, MPJPE 112.0, recall 99; teacher 89.0 / 57.6 / 88.3 / 99.
+- Cost on an L40S (lines 213-221): teacher 318.38 M / 1927.4 GFLOPs / 59.7 ms full (50.7 ms backbone); student 101.38 M (backbone 86.58,
+  feat_proj 0.79, heads 14.01) / 603.3 GFLOPs / 28.5 ms full (19.1 ms backbone); 3.14x fewer params, 3.19x fewer FLOPs, 2.10x faster.
+- Final table (lines 259-283): bars AnnyOne PVE <= 77.6, MPJPE <= 82.0; 3DPW PVE <= 93.7, MPJPE <= 92.9. VERDICT: FAIL on all four.
+- Against Multi-HMR-Anny (NAVER): 3DPW 110.1 vs 126.9 mm (student better), 101.38 vs 380.94 M params (3.76x fewer);
+  AnnyOne 119.6 vs 60.3 (NAVER likely in-sample). Against NAVER's bars (63.5 / 133.6): 3DPW met, AnnyOne not met.
