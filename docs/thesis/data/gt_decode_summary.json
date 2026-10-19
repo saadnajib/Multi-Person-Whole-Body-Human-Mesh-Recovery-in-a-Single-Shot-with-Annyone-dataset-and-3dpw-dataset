@@ -1,0 +1,944 @@
+{
+  "n": 55,
+  "joints_inside_image_mean": 0.8451756775379181,
+  "joints_inside_bbox_mean": 0.8487451098181985,
+  "bbox_formats": {
+    "xyxy_px": 29,
+    "xywh_px": 26
+  },
+  "worst_bbox_containment": [
+    [
+      0.2699386477470398,
+      289687,
+      1
+    ],
+    [
+      0.349693238735199,
+      172826,
+      0
+    ],
+    [
+      0.3619631826877594,
+      63795,
+      1
+    ],
+    [
+      0.3742331266403198,
+      219996,
+      3
+    ],
+    [
+      0.4110429286956787,
+      163064,
+      1
+    ]
+  ],
+  "per_tag": {
+    "adult": {
+      "n": 15,
+      "inside_image": 0.9562372167905172,
+      "inside_bbox": 0.9754601120948792,
+      "pixel_height": 293.2109303792318
+    },
+    "child": {
+      "n": 10,
+      "inside_image": 0.9846625745296478,
+      "inside_bbox": 0.9337423205375671,
+      "pixel_height": 153.44971923828126
+    },
+    "hands": {
+      "n": 15,
+      "inside_image": 0.6327198247114817,
+      "inside_bbox": 0.6384457945823669,
+      "pixel_height": 1033.37316792806
+    },
+    "neck": {
+      "n": 15,
+      "inside_image": 0.8535787264506022,
+      "inside_bbox": 0.8756646156311035,
+      "pixel_height": 400.4422108968099
+    }
+  },
+  "rows": [
+    {
+      "split": "train",
+      "idx": 406053,
+      "person": 0,
+      "tags": [
+        "child"
+      ],
+      "age": 0.00015353990602307022,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 0.5276073217391968,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 2.59836483001709,
+      "pixel_height": 48.79022216796875,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 17309,
+      "person": 2,
+      "tags": [
+        "child"
+      ],
+      "age": 0.0004457920731510967,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 3.154456377029419,
+      "pixel_height": 75.51202392578125,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 17328,
+      "person": 2,
+      "tags": [
+        "child"
+      ],
+      "age": 0.0004457920731510967,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 3.659210205078125,
+      "pixel_height": 99.3662109375,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 42108,
+      "person": 0,
+      "tags": [
+        "child"
+      ],
+      "age": 0.0011979013215750456,
+      "joints_inside_image": 0.9509202241897583,
+      "joints_inside_bbox": 0.9509202241897583,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.319675087928772,
+      "pixel_height": 622.4759826660156,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 512922,
+      "person": 4,
+      "tags": [
+        "child"
+      ],
+      "age": 0.0015599938342347741,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 2.7355964183807373,
+      "pixel_height": 70.36676025390625,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 174878,
+      "person": 0,
+      "tags": [
+        "child"
+      ],
+      "age": 0.00164971430785954,
+      "joints_inside_image": 0.89570552110672,
+      "joints_inside_bbox": 0.8588956594467163,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 2.4541854858398438,
+      "pixel_height": 351.1454162597656,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 204712,
+      "person": 0,
+      "tags": [
+        "child"
+      ],
+      "age": 0.003490074537694454,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 2.9008805751800537,
+      "pixel_height": 58.6688232421875,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 204724,
+      "person": 1,
+      "tags": [
+        "child"
+      ],
+      "age": 0.003490074537694454,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 4.472715854644775,
+      "pixel_height": 90.42822265625,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 488674,
+      "person": 0,
+      "tags": [
+        "child"
+      ],
+      "age": 0.0036376232746988535,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 3.5580692291259766,
+      "pixel_height": 70.4659423828125,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 488693,
+      "person": 0,
+      "tags": [
+        "child"
+      ],
+      "age": 0.0036376232746988535,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 2.58056902885437,
+      "pixel_height": 47.277587890625,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 496732,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.5197082161903381,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 3.3311874866485596,
+      "pixel_height": 104.13729858398438,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 389923,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.5959590673446655,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 4.220221042633057,
+      "pixel_height": 131.22213745117188,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 289687,
+      "person": 1,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.5208602547645569,
+      "joints_inside_image": 0.2699386477470398,
+      "joints_inside_bbox": 0.2699386477470398,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.8917582035064697,
+      "pixel_height": 301.43829345703125,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 575702,
+      "person": 2,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.5899502635002136,
+      "joints_inside_image": 0.8343558311462402,
+      "joints_inside_bbox": 0.8650306463241577,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 2.1390316486358643,
+      "pixel_height": 554.3850555419922,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 462901,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.7224292755126953,
+      "joints_inside_image": 0.803680956363678,
+      "joints_inside_bbox": 0.9141104221343994,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 1.7502371072769165,
+      "pixel_height": 693.9603424072266,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 297807,
+      "person": 3,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.6827775239944458,
+      "joints_inside_image": 0.5030674934387207,
+      "joints_inside_bbox": 0.5030674934387207,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.4243136644363403,
+      "pixel_height": 852.6574096679688,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 418051,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.48633599281311035,
+      "joints_inside_image": 0.6380367875099182,
+      "joints_inside_bbox": 0.907975435256958,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 2.977595329284668,
+      "pixel_height": 385.4317626953125,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 475080,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.6380029320716858,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 2.712819814682007,
+      "pixel_height": 398.5127868652344,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 489289,
+      "person": 4,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.5657241344451904,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 0.8650306463241577,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.7789349555969238,
+      "pixel_height": 260.51092529296875,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 219803,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.6377695202827454,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.7726373672485352,
+      "pixel_height": 286.7362365722656,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 511810,
+      "person": 1,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.5251671075820923,
+      "joints_inside_image": 0.42944782972335815,
+      "joints_inside_bbox": 0.42944782972335815,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.0465030670166016,
+      "pixel_height": 1545.98388671875,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 95499,
+      "person": 2,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.7771787643432617,
+      "joints_inside_image": 0.7730061411857605,
+      "joints_inside_bbox": 0.8282208442687988,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 0.520919680595398,
+      "pixel_height": 865.8228149414062,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 527662,
+      "person": 2,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.9412624835968018,
+      "joints_inside_image": 0.9815950393676758,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 0.6582075953483582,
+      "pixel_height": 548.1371917724609,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 157457,
+      "person": 0,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.7088761925697327,
+      "joints_inside_image": 0.8588956594467163,
+      "joints_inside_bbox": 0.8588956594467163,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.4081634283065796,
+      "pixel_height": 821.4202880859375,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 163064,
+      "person": 1,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.5557217597961426,
+      "joints_inside_image": 0.4110429286956787,
+      "joints_inside_bbox": 0.4110429286956787,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.5070507526397705,
+      "pixel_height": 1174.4095458984375,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 417181,
+      "person": 1,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.867124617099762,
+      "joints_inside_image": 0.7116564512252808,
+      "joints_inside_bbox": 0.46625766158103943,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.6425029039382935,
+      "pixel_height": 1216.6754150390625,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 63795,
+      "person": 1,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.7490838766098022,
+      "joints_inside_image": 0.34355828166007996,
+      "joints_inside_bbox": 0.3619631826877594,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 1.094695806503296,
+      "pixel_height": 1761.6602783203125,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 219996,
+      "person": 3,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.5755304098129272,
+      "joints_inside_image": 0.3742331266403198,
+      "joints_inside_bbox": 0.3742331266403198,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.4008328914642334,
+      "pixel_height": 1240.5501708984375,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 172826,
+      "person": 0,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.7371038794517517,
+      "joints_inside_image": 0.349693238735199,
+      "joints_inside_bbox": 0.349693238735199,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.4103540182113647,
+      "pixel_height": 1446.24755859375,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 384993,
+      "person": 2,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.8209890127182007,
+      "joints_inside_image": 0.7914110422134399,
+      "joints_inside_bbox": 0.8404907584190369,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 1.9832171201705933,
+      "pixel_height": 785.6605834960938,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 64085,
+      "person": 2,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5289487838745117,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 2.675800323486328,
+      "pixel_height": 462.58168029785156,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 45333,
+      "person": 0,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.570868730545044,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 2.3193652629852295,
+      "pixel_height": 276.06298828125,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 36343,
+      "person": 0,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5018643736839294,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 0.9631901383399963,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 4.1251020431518555,
+      "pixel_height": 239.68080139160156,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 313466,
+      "person": 2,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5294346809387207,
+      "joints_inside_image": 0.9938650131225586,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 2.343087911605835,
+      "pixel_height": 165.3365478515625,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 113477,
+      "person": 1,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5121396780014038,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 3.5928549766540527,
+      "pixel_height": 212.4896240234375,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 339854,
+      "person": 3,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5966858863830566,
+      "joints_inside_image": 0.7668711543083191,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 1.5428824424743652,
+      "pixel_height": 350.7153625488281,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 326611,
+      "person": 3,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.6123069524765015,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 2.675405979156494,
+      "pixel_height": 234.40261840820312,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 101975,
+      "person": 2,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.6152993440628052,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 5.60676908493042,
+      "pixel_height": 218.80630493164062,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 5992,
+      "person": 0,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.6044496297836304,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 4.6892852783203125,
+      "pixel_height": 121.50289916992188,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "train",
+      "idx": 390986,
+      "person": 1,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5808396339416504,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 3.3360843658447266,
+      "pixel_height": 222.35577392578125,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579932,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.5903862118721008,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 1.5593013763427734,
+      "pixel_height": 423.1663360595703,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579933,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.5903862118721008,
+      "joints_inside_image": 0.8098159432411194,
+      "joints_inside_bbox": 0.8098159432411194,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 2.1873271465301514,
+      "pixel_height": 782.3481750488281,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579934,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.5903862118721008,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.3770747184753418,
+      "pixel_height": 232.98226928710938,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579935,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.5903862118721008,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 2.1647591590881348,
+      "pixel_height": 224.85903930664062,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579936,
+      "person": 0,
+      "tags": [
+        "neck"
+      ],
+      "age": 0.5903862118721008,
+      "joints_inside_image": 0.9447852373123169,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 1.5120600461959839,
+      "pixel_height": 374.28509521484375,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579925,
+      "person": 0,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.5131155252456665,
+      "joints_inside_image": 0.7914110422134399,
+      "joints_inside_bbox": 0.6687116622924805,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.625976324081421,
+      "pixel_height": 1072.5136108398438,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579903,
+      "person": 4,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.5227628946304321,
+      "joints_inside_image": 0.8282208442687988,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 0.8814224004745483,
+      "pixel_height": 342.0858154296875,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579926,
+      "person": 0,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.5131155252456665,
+      "joints_inside_image": 0.7914110422134399,
+      "joints_inside_bbox": 0.6809815764427185,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.8179055452346802,
+      "pixel_height": 931.34912109375,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579888,
+      "person": 0,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.6082742810249329,
+      "joints_inside_image": 0.47852760553359985,
+      "joints_inside_bbox": 0.47852760553359985,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 1.9522836208343506,
+      "pixel_height": 1032.1602478027344,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579907,
+      "person": 1,
+      "tags": [
+        "hands"
+      ],
+      "age": 0.5268521308898926,
+      "joints_inside_image": 0.5766870975494385,
+      "joints_inside_bbox": 0.8282208442687988,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 1.51819908618927,
+      "pixel_height": 715.9209899902344,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579902,
+      "person": 2,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5291366577148438,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 0.9018404483795166,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 1.9464492797851562,
+      "pixel_height": 310.6123352050781,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579901,
+      "person": 2,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5291366577148438,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 1.0,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 2.3637566566467285,
+      "pixel_height": 178.82821655273438,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579872,
+      "person": 3,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5282090306282043,
+      "joints_inside_image": 1.0,
+      "joints_inside_bbox": 0.9938650131225586,
+      "bbox_format": "xyxy_px",
+      "root_depth_m": 2.431086301803589,
+      "pixel_height": 250.0408477783203,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579909,
+      "person": 2,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5291366577148438,
+      "joints_inside_image": 0.6687116622924805,
+      "joints_inside_bbox": 0.907975435256958,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 1.5476137399673462,
+      "pixel_height": 720.669921875,
+      "W": 1280,
+      "H": 1280
+    },
+    {
+      "split": "holdout",
+      "idx": 579882,
+      "person": 3,
+      "tags": [
+        "adult"
+      ],
+      "age": 0.5282090306282043,
+      "joints_inside_image": 0.9141104221343994,
+      "joints_inside_bbox": 0.8650306463241577,
+      "bbox_format": "xywh_px",
+      "root_depth_m": 2.362617254257202,
+      "pixel_height": 434.0780334472656,
+      "W": 1280,
+      "H": 1280
+    }
+  ]
+}

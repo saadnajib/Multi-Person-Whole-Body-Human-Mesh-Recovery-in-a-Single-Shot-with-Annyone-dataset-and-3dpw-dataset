@@ -58,3 +58,14 @@ stairs (downtown_sitOnStairs), downtown_walkBridge/walking pair, weekly market (
   login node (demo_montage_hands_{photos,3dpwtest}, demo_montage_rest_{photos,3dpwtest}); zip batch 2 (45 MB) ready on the cluster,
   not yet uploaded here.
 - v7/v8 ViT-L history runs have checkpoints and tfevents only, no train.log: dropped from the thesis history.
+
+## Zip batch 2 received (19 Oct, 00:05; three zips)
+- F11 predicted fingers (demo job 3615018, --relax_hands 0, Base | Final, 2 panels each): figures/img/F11_hands_photo_{garden,tennis,stage,party}.jpg,
+  F11_hands_3dpw_{bar,guitar,office,market,walking,fencing,stairs,runforbus}.jpg. Caption note: Base's metacarpal1.L is flipped in these
+  renders (the correction is only in Final), so Base's left index base looks bent backwards.
+- F17 rest-pose line-up (demo job 3615019, --rest_pose 1, Base | Final | Final-masked, 3 panels): F17_rest_photo_{garden,tennis,stage,party}.jpg,
+  F17_rest_3dpw_{...}.jpg (same eight frames).
+- F12 proper V1 holdout montages (image | GT | Base V1 | Final V1, 672-px panels, 4-px gaps): F12_holdout_<idx>_img_gt_base_final.jpg x 6.
+- F24 ground-truth decode overlays (check 1): F24_gt_decode_1..4.jpg (holdout 579888 p0, holdout 579925 p0, train 462901 p0, train 326611 p3);
+  data/gt_decode_summary.json.
+- Demo logs: data/demo_compare_3615018_hands.log, data/demo_compare_3615019_rest.log (the [shape] lines per detection for the spread numbers).
