@@ -5,7 +5,7 @@
 % backbone 86.58 M from model_cost.py (H 0a); projector 0.79 M and heads 14.0 M from the exp8 header.
 % Part B sources: Final 3611336:191 (V1 PVE 73.7), :224-229 (3DPW PVE 89.0, MPJPE 88.3); Multi-HMR-Anny job 3614192
 % (60.3 / 63.3 / 126.9 / 129.4) via H 0b; bars = error / 0.95 (exp8 header "THE 95% RULE"); 66.6 and 136.2 computed
-% here from those values. Final holdout V1 MPJPE: not in any source read (the job re-measures it) -> TODO.
+% here from those values. Final holdout V1 MPJPE: 77.9 (re-measured in the student job, 3614191:263).
 \begin{table}[!htb]
 \centering\footnotesize
 \setlength{\tabcolsep}{4pt}
@@ -27,7 +27,8 @@ Bone correction & four bones, estimated on Base & teacher's in training; own one
  & against Final & against Multi-HMR-Anny \\
 \midrule
 AnnyOne holdout PVE (V1) & \MethodTeacherHoldoutPVE{} $\to$ \textbf{\MethodBarHoldout} & \MethodNaverHoldoutPVE{} $\to$ \MethodBarNaverHoldout{} (likely in-sample) \\
-AnnyOne holdout MPJPE (V1) & 77.9 $\to$ \textbf{82.0} % 3614191:259-263 (teacher holdout V1 MPJPE re-measured in the student job; bar = /0.95) & \MethodNaverHoldoutMPJPE{} $\to$ \MethodBarNaverHoldoutMPJPE \\
+% Final holdout V1 MPJPE 77.9 re-measured in the student job, bar 82.0 = 77.9/0.95: 3614191:259-263
+AnnyOne holdout MPJPE (V1) & 77.9 $\to$ \textbf{82.0} & \MethodNaverHoldoutMPJPE{} $\to$ \MethodBarNaverHoldoutMPJPE \\
 3DPW test PVE (v23) & \MethodTeacherThreeDPWPVE{} $\to$ \textbf{\MethodBarThreeDPW} & \MethodNaverThreeDPWPVE{} $\to$ \MethodBarNaverThreeDPW \\
 3DPW test MPJPE (v23) & \MethodTeacherThreeDPWMPJPE{} $\to$ \MethodBarThreeDPWMPJPE & \MethodNaverThreeDPWMPJPE{} $\to$ \MethodBarNaverThreeDPWMPJPE \\
 \bottomrule

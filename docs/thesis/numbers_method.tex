@@ -35,7 +35,7 @@
 \newcommand{\MethodParamsHeadsL}{14.01}     % M, our heads; job 3614947; H 0b
 \newcommand{\MethodParamsTotalL}{318.38}    % M; job 3614947 / 3613926; H 0a, H 0b
 \newcommand{\MethodGflopsL}{1927.4}         % GFLOPs, Final; job 3613926; H 0a; D slide 24
-\newcommand{\MethodMsL}{110}                % ms/image, Final, A40, batch 1; job 3613926; D slide 24
+\newcommand{\MethodMsL}{59.7}               % ms/image, Final, full one-person forward, L40S, batch 1; student job 3614191:213-221 (A40 smoke pair was 110 / 51.4, job 3613926)
 
 % --- Loss weights (defaults: loss.py:436-452; Final: exp7_final_model.sh:211-213, 762-766) --
 \newcommand{\MethodWDet}{10}              % alpha_bce; loss.py:436; same in every run
@@ -113,10 +113,10 @@
 \newcommand{\MethodStudentProjParams}{0.79}% M, feat_proj 768 -> 1024; exp8 header :20
 \newcommand{\MethodStudentParams}{101.38} % M; job 3613926; H 0a
 \newcommand{\MethodStudentGflops}{603.3}  % GFLOPs; job 3613926; H 0a
-\newcommand{\MethodStudentMs}{51.4}       % ms/image, A40, batch 1; job 3613926
+\newcommand{\MethodStudentMs}{28.5}       % ms/image, Student, same L40S, same job; 3614191:213-221
 \newcommand{\MethodRatioParams}{3.14}     % 318.38 / 101.38; H 0a
 \newcommand{\MethodRatioGflops}{3.19}     % 1927.4 / 603.3; H 0a
-\newcommand{\MethodRatioMs}{2.14}         % 110 / 51.4, A40; H 0a
+\newcommand{\MethodRatioMs}{2.10}         % 59.7 / 28.5, L40S, both in job 3614191
 \newcommand{\MethodStudentEpochs}{30}     % exp8 header "schedule"
 \newcommand{\MethodStudentIters}{1000}    % exp8 header "schedule"
 \newcommand{\MethodStudentBatch}{8}       % exp8 header "schedule"
