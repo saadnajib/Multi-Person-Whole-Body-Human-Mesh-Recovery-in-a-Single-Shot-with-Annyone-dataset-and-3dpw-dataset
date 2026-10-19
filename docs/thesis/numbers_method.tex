@@ -13,25 +13,15 @@
 
 % --- Input, backbone, tokens --------------------------------------------------
 \newcommand{\MethodImgSize}{672}          % px network input; exp7_final_model.sh:762 (--img_size 672)
-\newcommand{\MethodRenderSize}{1280}      % px, AnnyOne render size; H 1 "Data"; D part 2
-\newcommand{\MethodPatchSize}{14}         % px, DINOv2 /14 patches; H 1 "Terms"
 \newcommand{\MethodTokenGrid}{48}         % 672 / 14 tokens per side; H 1 "Terms"
-\newcommand{\MethodNumTokens}{2304}       % 48 x 48; draft main.tex:245
 \newcommand{\MethodWidthL}{1024}          % ViT-L token width; draft main.tex:246
 \newcommand{\MethodWidthB}{768}           % ViT-B token width; exp8 header :20 (Linear 768 -> 1024)
-\newcommand{\MethodWidthS}{384}           % ViT-S token width; draft main.tex:246, :377
 \newcommand{\MethodBlocksL}{24}           % ViT-L blocks; draft main.tex:567; exp7 --unfreeze_last_n_blocks 4 "of 24"
-\newcommand{\MethodBlocksB}{12}           % ViT-B blocks; exp8 header (throughput: "all 12 blocks")
-\newcommand{\MethodCamChannels}{99}       % Fourier ray embedding channels; exp8 header :20 ("+99 camera channels"); model.py:99-105 (n=3, 16 bands)
-\newcommand{\MethodFovN}{60}              % deg, reference FOV of the depth normalisation; model.py:93 (self.fovn)
-\newcommand{\MethodMaxDist}{50}           % m, depth clamp; model.py:327 (torch.clamp(dist, 0, 50))
 
 % --- Human Perception Head (HPH) ----------------------------------------------
 \newcommand{\MethodHPHDim}{1024}          % model.py:225 (dim=1024)
 \newcommand{\MethodHPHDepth}{2}           % model.py:57, :226 (xat_depth=2)
 \newcommand{\MethodHPHHeads}{8}           % model.py:58, :227 (xat_num_heads=8)
-\newcommand{\MethodHPHDimHead}{32}        % model.py:229 (dim_head=32)
-\newcommand{\MethodHPHMlp}{1024}          % model.py:228 (mlp_dim=1024)
 
 % --- Anny output --------------------------------------------------------------
 \newcommand{\MethodNumBones}{163}         % model.py:114 (self.nrot = 163); H 1
@@ -42,13 +32,9 @@
 \newcommand{\MethodRotDims}{6}            % 6D rotation output; model.py:581 (joint_rep_dim 6)
 
 % --- Size and cost (672 px, one person; 1 MAC = 2 FLOPs) ----------------------
-\newcommand{\MethodParamsBackboneL}{304.37} % M; job 3614947; H 0b
 \newcommand{\MethodParamsHeadsL}{14.01}     % M, our heads; job 3614947; H 0b
 \newcommand{\MethodParamsTotalL}{318.38}    % M; job 3614947 / 3613926; H 0a, H 0b
-\newcommand{\MethodParamsHeadNaver}{76.57}  % M, heads of multiHMR_672_L_anny; job 3614947; H 0b
-\newcommand{\MethodParamsTotalNaver}{380.94}% M; job 3614947; H 0b
 \newcommand{\MethodGflopsL}{1927.4}         % GFLOPs, Final; job 3613926; H 0a; D slide 24
-\newcommand{\MethodGflopsBackboneL}{1917.2} % GFLOPs, ViT-L backbone; model_cost.py; H 0b
 \newcommand{\MethodMsL}{110}                % ms/image, Final, A40, batch 1; job 3613926; D slide 24
 
 % --- Loss weights (defaults: loss.py:436-452; Final: exp7_final_model.sh:211-213, 762-766) --
@@ -88,87 +74,43 @@
 \newcommand{\MethodFinalSteps}{10000}     % 10 x 1000; D part 5
 \newcommand{\MethodFinalLR}{\ensuremath{10^{-5}}} % exp7:224 (LR 1e-5)
 \newcommand{\MethodFinalTrainSec}{4292}   % s of training, A100; job 3611336; D part 5; H 0a step 6
-\newcommand{\MethodFinalImgPerSec}{10.9}  % images/s, A100; job 3611336; D part 5
 \newcommand{\MethodFinalNaNSteps}{16}     % optimiser steps skipped for NaN/Inf gradients out of 10,000; job 3611336; D part 5
-\newcommand{\MethodPilotNaNLow}{1}        % NaN/Inf steps per 2,000 in the 2-epoch pilots, low; H 1
-\newcommand{\MethodPilotNaNHigh}{7}       % same, high; H 1
 \newcommand{\MethodMixRatio}{30}          % percent 3DPW-train per batch; exp7:225 (MIX_RATIO 0.3)
 \newcommand{\MethodSynthRatio}{70}        % percent AnnyOne per batch; D part 5
-\newcommand{\MethodValThreeDPWN}{300}     % 3DPW-validation images evaluated per epoch; exp7:226
 \newcommand{\MethodTrainThreeDPWImages}{5882} % v23 3DPW-train images; H 0b
-\newcommand{\MethodTrainThreeDPWPeople}{7584} % v23 3DPW-train people; H 0b
-\newcommand{\MethodPeoplePerImgAnnyOne}{2.73} % people per AnnyOne image; 3571601:21; D part 5
-\newcommand{\MethodPeoplePerImgThreeDPW}{1.2} % about 1.2 people per 3DPW image; D part 5.3; T3
 \newcommand{\MethodThreeDPWPeopleShare}{16}   % about 16 percent of supervised people are 3DPW; H 3.4 ([Likely] estimate)
 \newcommand{\MethodManifestImages}{55}        % diagnostic manifest images excluded from sampling (40 train + 15 holdout); H 1
-\newcommand{\MethodStageOneLR}{\ensuremath{3\times10^{-5}}} % draft main.tex:568 (frozen-backbone stage; history scripts edited after the runs, H 3.2)
 
 % --- Depth anchor ---------------------------------------------------------------
 \newcommand{\MethodBaseSlope}{0.33}       % Base, depth slope, V1 holdout; 3571596; H 3.1
 \newcommand{\MethodBaseIntercept}{2.36}   % m, Base intercept; 3571596; H 3.1
 \newcommand{\MethodBaseSize}{0.63}        % Base drawn-size ratio; H 3.1 (not 0.67)
-\newcommand{\MethodBaseRootErr}{1.21}     % m, Base absolute root error; 3571596:55; H 3.1
-\newcommand{\MethodBaseHeadPx}{64.5}      % px, Base head pixel error; H 3.1; D slide 12
-\newcommand{\MethodOffsetLow}{2}          % predicted offsets -2 ... -19 cells (one-batch debug print); 3571599:9-14; H 3.1
-\newcommand{\MethodOffsetHigh}{19}        % see above
-\newcommand{\MethodOffsetLegal}{0.5}      % legal offset range +/-0.5 cell; train.py:273-275 (clamped to +/-1)
 \newcommand{\MethodHoldoutPeople}{222}    % matched holdout people, V1; H 3.2; D slide 12
-\newcommand{\MethodBaseHeightPred}{1.405} % m, predicted 3D body height, Base; D notes 12 via D slide 12
-\newcommand{\MethodBaseHeightTrue}{1.409} % m, true 3D body height; D notes 12 via D slide 12
 \newcommand{\MethodFinalSlope}{0.42}      % Final, V1; 3611336:175-193; H 3.1
 \newcommand{\MethodFinalIntercept}{1.75}  % m, Final; 3611336:175-193; H 3.1
-\newcommand{\MethodPilotDistOneRoot}{0.73}  % m, root error, 10-epoch fix pilot with weight x1; 3571933; H 3.1
-\newcommand{\MethodPilotDistFiveRoot}{0.54} % m, root error, 10-epoch fix pilot with weight x5; 3572482; H 3.1
 
 % --- Bone correction ------------------------------------------------------------
 \newcommand{\MethodBoneFixImages}{200}    % training images used to estimate C_b; 3579014:2; H 3.2
 \newcommand{\MethodCNeckTwo}{178.8}       % deg, C_neck02; 3579014:12, :37
 \newcommand{\MethodCHead}{179.2}          % deg, C_head; 3579014:12, :37
-\newcommand{\MethodCMetacarpal}{179.8}    % deg, C_metacarpal1.L; 3579014:12, :37
-\newcommand{\MethodCFinger}{179.7}        % deg, C_finger4-1.R; 3579014:12, :37
 \newcommand{\MethodBaseNeckTwo}{175.6}    % deg, Base neck02 median local error, V1; 3573518:13
 \newcommand{\MethodBaseHead}{177.9}       % deg, Base head bone; 3573518:15
 \newcommand{\MethodBaseGlobalHead}{12.0}  % deg, Base global head direction error; 3573518:15
 \newcommand{\MethodBaseGirth}{0.46}       % neck girth pred/GT, Base; 3573518:69
 \newcommand{\MethodFixGirth}{1.00}        % girth with the correction, no training (1.004); 3579014:107
 \newcommand{\MethodFinalGirth}{0.996}     % Final; 3611336:198-207
-\newcommand{\MethodFinalNeckTwo}{4.8}     % deg, Final neck02; 3611336:198-207
 \newcommand{\MethodFlippedCkpts}{8}       % v5-line checkpoints with the flip; H 3.2
-\newcommand{\MethodGeodesicAfter}{175.0}  % deg, neck02 after the geodesic-loss pilot; 3573521:89-91
 \newcommand{\MethodBoneFixThr}{90}        % deg, compute_bone_fix auto rule: median local error > 90 with a FLIP/CONST verdict; exp8 header "bone fix"
-\newcommand{\MethodGuardRise}{5}          % deg, global-guard limit of compute_bone_fix.py; H 1 "GLOBAL GUARD"
-\newcommand{\MethodZeroTrainGlobalHead}{19.1} % deg, global head with the correction and no training; 3579014:113
 
 % --- Student-S (ViT-S) history; all holdout numbers V0, before both fixes, old labels -----
-\newcommand{\MethodStudentSParams}{37}    % M; draft main.tex:438
-\newcommand{\MethodStudentSRatio}{8.6}    % times fewer params than the teacher; draft main.tex:439
-\newcommand{\MethodStudentSProj}{0.4}     % M, 384 x 1024 projector; draft main.tex:436
-\newcommand{\MethodHeadTensors}{67}       % non-backbone tensors; draft main.tex:394
-\newcommand{\MethodHeadTensorsCopied}{54} % tensors that transfer at head_dim 0; draft main.tex:395
-\newcommand{\MethodHeadTensorsWidth}{13}  % width-dependent tensors that do not; draft main.tex:395-396
-\newcommand{\MethodTeacherVzeroPVE}{74.3} % mm, Base, V0; draft main.tex:713
 \newcommand{\MethodStudentSOnePVE}{193.4} % mm, S1/S2 feature KD only (V0); draft main.tex:712
-\newcommand{\MethodStudentSInitBefore}{193} % mm, ImageNet init (exp8 header "student": 193 -> 156)
-\newcommand{\MethodStudentSInitAfter}{156}  % mm, HMR-trained init, best of S4; exp8 header; draft tab:kd_epochs
-\newcommand{\MethodStudentSFivePVE}{159}  % mm, S5 best PVE; draft tab:kd_epochs
-\newcommand{\MethodStudentSFivePA}{113}   % mm, S5 best PA-PVE; draft tab:kd_epochs
-\newcommand{\MethodStudentSSixPVE}{152}   % mm, S6 best PVE; draft tab:kd_epochs; exp8 header
-\newcommand{\MethodStudentSSixPA}{105}    % mm, S6 best PA-PVE; draft tab:kd_epochs
-\newcommand{\MethodStudentSSixbPVE}{126.9}% mm, S6b epoch 130; draft main.tex:776
 \newcommand{\MethodStudentSSixcPVE}{114.5}% mm, S6c (batch 16); draft main.tex:785
-\newcommand{\MethodStudentSSixcPA}{84.6}  % mm, S6c PA-PVE; draft main.tex:785
-\newcommand{\MethodStudentSSevenPVE}{120.6}% mm, S7 (S6b + 30% 3DPW old labels); draft tab:kd_eval
 \newcommand{\MethodStudentSEightPVE}{120.6}% mm, S8 (S6c + 30% 3DPW old labels, teacher Mixed-L); draft tab:kd_eval
-\newcommand{\MethodStudentSGapBefore}{2.6} % x the teacher's error, feature KD only; draft main.tex:714
-\newcommand{\MethodStudentSGapAfter}{1.5}  % x the teacher's error, S6c; draft main.tex:791
 \newcommand{\MethodItTimeBefore}{1.24}    % s per iteration before TF32 + bf16 teacher, A100; draft main.tex:449
 \newcommand{\MethodItTimeAfter}{0.47}     % s per iteration after; draft main.tex:449
-\newcommand{\MethodStudentSWarmup}{20}    % epochs the random entry projections needed; draft main.tex:741-756
 
 % --- Student (ViT-B), recipe: slurm/experiments/exp8_distill_vitb.sh header ---
-\newcommand{\MethodStudentBackboneParams}{86.58} % M, ViT-B backbone; model_cost.py table, H 0a
 \newcommand{\MethodStudentProjParams}{0.79}% M, feat_proj 768 -> 1024; exp8 header :20
-\newcommand{\MethodStudentHeadParams}{14.0}% M, teacher-sized heads; exp8 header :24
 \newcommand{\MethodStudentParams}{101.38} % M; job 3613926; H 0a
 \newcommand{\MethodStudentGflops}{603.3}  % GFLOPs; job 3613926; H 0a
 \newcommand{\MethodStudentMs}{51.4}       % ms/image, A40, batch 1; job 3613926
@@ -182,7 +124,6 @@
 \newcommand{\MethodStudentLR}{\ensuremath{3\times10^{-5}}} % exp8 header "schedule" (LR 3e-5)
 \newcommand{\MethodStudentLRDecay}{12}    % epochs between halvings = 2/5 of 30; exp8:224
 \newcommand{\MethodStudentFreeze}{5}      % epochs the copied heads stay frozen; exp8 header "heads"
-\newcommand{\MethodStudentEvalFreq}{5}    % evaluation every 5 epochs; exp8 header "schedule"
 \newcommand{\MethodRuleFactor}{0.95}      % student error <= teacher error / 0.95; exp8 header "THE 95% RULE"
 \newcommand{\MethodTeacherHoldoutPVE}{73.7}   % mm, Final, V1; 3611336:191
 \newcommand{\MethodTeacherThreeDPWPVE}{89.0}  % mm, Final, 3DPW test v23; 3611336:224-229
@@ -202,7 +143,6 @@
 \newcommand{\MethodBarNaverThreeDPWMPJPE}{136.2}% 129.4 / 0.95 (computed here)
 
 % --- Evaluation protocol --------------------------------------------------------
-\newcommand{\MethodAnnyOneSize}{579960}   % AnnyOne images; H 1
 \newcommand{\MethodHoldoutN}{100}         % holdout images; H 1
 \newcommand{\MethodHoldoutFirst}{579860}  % first holdout index; H 1
 \newcommand{\MethodHoldoutLast}{579959}   % last holdout index; H 1
@@ -215,36 +155,14 @@
 \newcommand{\MethodChildThr}{0.45}        % predicted age below which a person counts as child-shaped; H 0b
 \newcommand{\MethodDemoPhotos}{4}         % demo photos; H 0b (job 3581312)
 \newcommand{\MethodDemoFrames}{8}         % demo 3DPW test frames; H 0b
-\newcommand{\MethodNoisePVE}{7.6}         % mm between two identical 2-epoch runs; 3571958 vs 3571960; H 3.6
-\newcommand{\MethodNoiseHead}{1.9}        % deg global head, same pair; H 3.6
 \newcommand{\MethodNoiseRecall}{2}        % about 2 recall points resolvable by one run; H 3.6; D slide 9
-\newcommand{\MethodNoiseRecallPair}{0.8}  % recall points between the identical pair; H 3.6
 \newcommand{\MethodRestartCost}{2.4}      % mm PVE for restarting a fine-tune of Base unchanged; H 3.6; D slide 22
 \newcommand{\MethodLabelFloor}{14}        % mm, about the converter's own joint error on 3DPW (v23); H 0b; T5
 
 % --- Student-S table (tab:students-s): best holdout PVE / PA-PVE, V0; draft tab:kd_epochs ("best" row) and tab:kd_eval
-\newcommand{\MethodStudentSOnePA}{128.2}  % mm, S1/S2 PA-PVE; draft tab:kd_eval
-\newcommand{\MethodStudentSThreePVE}{191} % mm, S3 best; draft tab:kd_epochs
-\newcommand{\MethodStudentSThreePA}{133}  % mm; draft tab:kd_epochs
-\newcommand{\MethodStudentSFourPA}{117}   % mm, S4 best PA-PVE (PVE = \MethodStudentSInitAfter); draft tab:kd_epochs
-\newcommand{\MethodStudentSSixbPA}{92.1}  % mm; draft main.tex:776
-\newcommand{\MethodStudentSSevenPA}{88.2} % mm; draft tab:kd_eval
-\newcommand{\MethodStudentSEightPA}{86.9} % mm; draft tab:kd_eval
-\newcommand{\MethodStudentSContLR}{\ensuremath{2\times10^{-5}}} % S6b / S6c continuation LR; draft main.tex:773
-\newcommand{\MethodStudentSContEpochs}{150} % epochs of the S6b / S6c continuation; draft main.tex:772-783
-\newcommand{\MethodStudentSBatchBig}{16}  % S6c batch; draft main.tex:782
-\newcommand{\MethodBackboneSParams}{22.06}% M, ViT-S backbone, analytic; model_cost.py table (REWRITE_PLAN.md T16)
 
 % --- Remaining literals of the chapter text -------------------------------------
 \newcommand{\MethodLOneHalfTurn}{4.83}    % L1 over the 9 matrix entries at 135 deg; loss.py:55, :505
 \newcommand{\MethodLOneFullTurn}{4.00}    % L1 at 180 deg; loss.py:55, :505
-\newcommand{\MethodShortSteps}{2000}      % steps of a 2-epoch fine-tune (2 x 1000); H 1 (NaN rate "per 2,000")
-\newcommand{\MethodShortEpochs}{2}        % epochs of the short pilots; H 3.1
-\newcommand{\MethodWDistPilotMax}{20}     % largest depth weight tried (2 epochs only); H 3.1
-\newcommand{\MethodBaseOldEpoch}{62}      % epoch of Mixed-L; H 1 models table
-\newcommand{\MethodStudentSTwoDEpoch}{5}  % S5: 2D terms from epoch 5; draft tab:student_runs
-\newcommand{\MethodStudentSLimit}{48}     % hours, job limit S6 hit at epoch 138; draft main.tex:770
-\newcommand{\MethodStudentSSixbEpoch}{130}% epoch of the S6b value; draft main.tex:776
-\newcommand{\MethodStudentImageRatio}{6}  % 240,000 / 40,000 images; exp8 header ("6x the teacher's own fine-tune")
 \newcommand{\MethodResolvePVE}{10}        % mm PVE one run can resolve; H 3.6; D slide 9
 \newcommand{\MethodResolveHead}{3}        % deg one run can resolve; H 3.6; D slide 9

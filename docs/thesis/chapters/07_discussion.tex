@@ -38,11 +38,12 @@ because Final learned the constants the converter writes for every 3DPW person, 
 without losing gender (Section~\ref{sec:res-mask}). Missing are a measure of how well each phenotype follows its label
 on AnnyOne, which Section~\ref{sec:future} plans, and a recipe for that variety.
 
-\paragraph{1b (not met).} Final is Multi-HMR with its output resized to Anny, and \DiscFinalSmallerPct\,\% smaller
-than NAVER's model, which is not ``significantly smaller''. Missing are the Student's accuracy
-\TODO{Student result: update 1b, T1 and the status word}, the supervisor's choice of the reference model, and his
-view on whether a Multi-HMR-style network with a smaller backbone counts. If the Student misses while its error still
-falls, Section~\ref{sec:future} plans to continue its training.
+\paragraph{1b (not met).} Final is Multi-HMR with its output resized to Anny, and only \DiscFinalSmallerPct\,\%
+smaller than NAVER's model. The Student is \ParamRatioStudent$\times$ smaller than Final but misses the 95\,\% bar on
+both sets (Section~\ref{sec:res-student}); read against Multi-HMR-Anny instead, it meets the 3DPW bar and misses the
+AnnyOne bar, which rests on a likely in-sample number. Missing are the supervisor's choice of the reference model and
+his view on whether a Multi-HMR-style network with a smaller backbone counts; Section~\ref{sec:future} plans the next
+step for each answer.
 
 \paragraph{1c (met with caveats).} The caveats are those of Section~\ref{sec:data-limits}: the labels test pose,
 gender, height and proportions but not body build, and no number compares with published 3DPW results. A body-joint

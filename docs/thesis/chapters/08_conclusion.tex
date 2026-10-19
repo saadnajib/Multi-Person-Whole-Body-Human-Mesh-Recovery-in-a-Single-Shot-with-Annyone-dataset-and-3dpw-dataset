@@ -30,8 +30,9 @@ in Base on the images where the hands are large enough to judge. For the shape (
 \RHGenderFinal\,\% of the Relative Human people (Base \RHGenderBase\,\%) and separates children from adults with an
 AUC of \RHAUCFinal{} (Base \RHAUCBase); children are a measured improvement, not solved, and muscle and weight barely
 vary between people on real photos. For 1b, the Student has \ParamRatioStudent$\times$ fewer parameters and
-\FlopRatioStudent$\times$ fewer FLOPs than Final, but its accuracy was not yet measured, so 1b is not met at the time
-of writing; NAVER's Multi-HMR-Anny, measured with our code, reaches \NAVERThreeDPW\,mm on 3DPW. For 1c and 2a, the
+\FlopRatioStudent$\times$ fewer FLOPs than Final, but its error is \StudentRatioPVE{} times the teacher's on AnnyOne
+and \StudentRatioThreeDPW{} times on 3DPW, so 1b is not met against Final; on 3DPW it is still better than NAVER's
+Multi-HMR-Anny (\StudentThreeDPW{} against \NAVERThreeDPW\,mm). For 1c and 2a, the
 converted 3DPW labels exist with three defects fixed and an independent check, and training on them brought the 3DPW
 error from \BaseThreeDPW{} (Base) to \ControlThreeDPW\,mm (Control) before any fix. Motion in video (2b) was not
 started. For 3, every number traces to a run, a log and a checkpoint (Appendix~\ref{app:reproduction}); the code is not
@@ -42,13 +43,14 @@ with published 3DPW results; Section~\ref{sec:disc-limitations} lists the limita
 \section{Future work}
 \label{sec:future}
 
-The steps below are planned, each with its state on 18 October 2026.
+The steps below are planned, each with its state on 19 October 2026.
 
-\paragraph{The Student's result (1b).} The Student was training on that date, in a single job of
-\MethodStudentEpochs{} epochs. Its result is expected within days of the job's start and fills the table of
-Section~\ref{sec:res-student}. If it misses the 95\,\% bar while its error is still falling, I will continue its
-training from the last checkpoint and report the ratio as measured. Which model sets the bar, Final or
-Multi-HMR-Anny, is the supervisor's decision.
+\paragraph{The reference for 1b.} The next step is the supervisor's decision on which model sets the 95\,\% bar.
+If it is Final, the planned option is to train the Student longer from its last checkpoint, since its AnnyOne error
+was still falling; this needs a resume mode that is not yet written, and the ratio will be reported as measured. A
+ViT-L cut to its first 12 blocks would be only about two times smaller and is not planned. If it is Multi-HMR-Anny,
+the Student meets the 3DPW bar, and the AnnyOne bar rests on a likely in-sample number; I would then report both
+ratios with that caveat.
 
 \paragraph{Evidence that shape follows the person (1a).} The rest-pose line-up (Figure~\ref{fig:rest-lineup}) is
 a by-eye reading. Still planned is a number: per-phenotype correlation, slope and $R^2$ between prediction and label on the AnnyOne holdout, from per-person files

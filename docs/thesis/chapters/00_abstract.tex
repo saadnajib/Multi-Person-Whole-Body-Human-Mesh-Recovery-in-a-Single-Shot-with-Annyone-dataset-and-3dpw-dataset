@@ -34,9 +34,10 @@ error from \ControlNeckTwo{} to \FinalNeckTwo\,degrees and the finger error from
 starting model; most of this gain comes from training on real images at all. On real photos with age and gender
 labels (Relative Human), gender accuracy rose from \RHGenderBase{} to \RHGenderFinal\,\% and the separation of
 children from adults (AUC) from \num[round-mode=places,round-precision=2]{\RHAUCBase} to
-\num[round-mode=places,round-precision=2]{\RHAUCFinal}. For a smaller model, a ViT-B student distilled from the final
-model has \ParamRatioStudent{} times fewer parameters and \FlopRatioStudent{} times fewer FLOPs; its training was
-running when this text was written.
+\num[round-mode=places,round-precision=2]{\RHAUCFinal}. A ViT-B student distilled from the final model has
+\ParamRatioStudent{} times fewer parameters and \FlopRatioStudent{} times fewer FLOPs, but misses the target of 95\,\%
+of the final model's accuracy on both test sets (\StudentThreeDPW\,mm PVE on 3DPW); it is still better than NAVER's
+model there.
 
 Three things remain open. Children are a measured improvement, not solved. Near and far people still receive
 similar depths: the fix moved the depth offset and the body size, not the depth slope (\FinalSlope, where 1 is

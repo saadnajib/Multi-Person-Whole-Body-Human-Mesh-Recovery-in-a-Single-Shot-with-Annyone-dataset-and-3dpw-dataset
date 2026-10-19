@@ -392,25 +392,31 @@ total FLOPs; and its published SMPL-X numbers, which are not comparable. Times o
 \input{figures/plots/F19_student}
 
 The Student follows the recipe of Table~\ref{tab:student-recipe} (Section~\ref{sec:method-student}): a DINOv2 ViT-B
-backbone (\StudentBackboneParams\,M parameters) started from NAVER's Multi-HMR ViT-B, a projector into the
-teacher's width, and heads copied from Final; it learns from the same targets as Final plus the teacher's features
-and outputs, for \StudentEpochs{} epochs, \num{\StudentImages} images in all. Table~\ref{tab:student} gives its result
-against the 95\,\% rule. On the AnnyOne holdout it reaches \StudentPending\,mm PVE against the teacher's \FinalPVE{}
-(bar \BarPVE) and \StudentPending\,mm MPJPE against \FinalMPJPE{} (bar \BarMPJPE); on the 3DPW test
-\StudentPending\,mm PVE against \FinalThreeDPW{} (bar \BarThreeDPW) and \StudentPending\,mm MPJPE against
-\FinalMPJPEThreeDPW{} (bar \BarMPJPEThreeDPW). Its recall is \StudentPending\,\% on the holdout and
-\StudentPending\,\% on 3DPW. Figure~\ref{fig:student-curves} shows whether its error was still falling at the last
-epoch: \StudentPending. The cost side is measured and met.
+backbone (\StudentBackboneParams\,M parameters) started from NAVER's Multi-HMR ViT-B, a projector into the teacher's
+width and heads copied from Final, trained on Final's targets plus its features and outputs for \StudentEpochs{}
+epochs (\num{\StudentImages} images). Table~\ref{tab:student} gives the result against the 95\,\% rule. The cost side
+is met. The accuracy side is not: on the AnnyOne holdout the Student reaches \StudentPVE\,mm PVE against the
+teacher's \FinalPVE{} (bar \BarPVE), \StudentRatioPVE{} times the teacher's error, and on the 3DPW test
+\StudentThreeDPW\,mm against \FinalThreeDPW{} (bar \BarThreeDPW), \StudentRatioThreeDPW{} times. MPJPE and PA-PVE
+miss in the same way; only recall stays within the rule. Figure~\ref{fig:student-curves} shows that the holdout error
+was still falling at the last epoch, from \StudentCurveHoldFifteen\,mm at epoch 15 to \StudentCurveHoldLast\,mm at
+epoch 30, while the 3DPW validation error had flattened (\StudentCurveValTwentyFive{} to \StudentCurveValLast\,mm in
+the last five epochs). Against Multi-HMR-Anny, the Student is \StudentGainOverNAVERThreeDPW\,mm better on 3DPW
+(\StudentThreeDPW{} vs \NAVERThreeDPW) with \ParamRatioStudentNAVER$\times$ fewer parameters, which meets NAVER's 3DPW
+bar of \BarNAVERThreeDPW\,mm; it misses NAVER's AnnyOne bar of \BarNAVERAnnyOne\,mm, which rests on a most likely
+in-sample number.
 
-By the rule against Final the Student \TODO{meets / misses} the bar on the holdout and \TODO{meets / misses} it on 3DPW.
-Against Multi-HMR-Anny the bars would be \BarNAVERAnnyOne\,mm on AnnyOne, which no student of a \FinalPVE\,mm teacher
-can be expected to reach and which rests on a likely in-sample number, and \BarNAVERThreeDPW\,mm on 3DPW, which lies
-above the teacher's own error; the Student \TODO{meets / misses} it. Which reference counts, and whether a
-Multi-HMR-style network with a smaller backbone counts as ``not exactly Multi-HMR'' for requirement 1b, is the
-supervisor's decision; both references are reported.
+By the 95\,\% rule against Final, the Student fails on both sets, and by a wide margin: its error is 62\,\% above the
+teacher's on AnnyOne and 24\,\% on 3DPW, where the rule allows about 5\,\%. The curves say where more training could help: on AnnyOne the
+error still fell by about 8\,mm per five epochs, on 3DPW it did not. A longer run would therefore narrow the synthetic
+gap, but there is no sign that it would close the 3DPW one. What holds is the comparison with Multi-HMR-Anny: a
+network with about a quarter of its parameters is better on real images, although most of that lead likely comes,
+as for Final, from fine-tuning on 3DPW. Which reference sets the bar, Final or Multi-HMR-Anny, is the supervisor's decision; both are
+reported.
 
-Not shown: a second run, a longer schedule and the Student's own Relative Human numbers. The Student trains with the
-teacher's bone correction and then estimates its own on 200 training images. No data augmentation was used.
+Not shown: a second run, a longer schedule, and the Student's Relative Human numbers, fingers and necks on real
+photos. The Student estimated its own bone correction on 200 training images; it gives the same holdout error as the
+teacher's correction. No data augmentation was used.
 
 % -----------------------------------------------------------------------------
 \section{History: the ViT-S students and the schedule to Base}

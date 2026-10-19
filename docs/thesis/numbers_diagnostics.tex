@@ -44,8 +44,6 @@
 \newcommand{\DiagOverfitTrainBefore}{80.7}    % mm, V0, F "Check 6"
 \newcommand{\DiagOverfitTrainAfter}{51.8}     % mm, F "Check 6"
 \newcommand{\DiagOverfitTrainDrop}{36}        % percent, F "Check 6"
-\newcommand{\DiagOverfitHoldBefore}{87.6}     % mm, F "Check 6"
-\newcommand{\DiagOverfitHoldAfter}{127.2}     % mm, F "Check 6"
 \newcommand{\DiagOverfitHoldRise}{45}         % percent, F "Check 6"
 \newcommand{\DiagOverfitRotFirst}{44.6}       % rotmat term, mean of first 5 logged epochs, F "Check 6"; D slide 11
 \newcommand{\DiagOverfitRotLast}{40.8}        % mean of last 5, F "Check 6"
@@ -64,7 +62,6 @@
 \newcommand{\DiagDepthPredMean}{3.00}         % m, same
 \newcommand{\DiagDepthPredSd}{0.32}           % m, same
 \newcommand{\DiagDepthSlopeBase}{0.33}        % 3571596:64 (H 3.1); F
-\newcommand{\DiagDepthInterceptBase}{2.36}    % m, same
 \newcommand{\DiagDepthFartherPct}{100}        % percent of people predicted farther, F "The depth defect"
 \newcommand{\DiagDepthCorrError}{\ensuremath{-0.76}} % corr(GT depth, depth error), F "The depth defect"
 \newcommand{\DiagSkelHeightTrue}{1.409}       % m, F "The depth defect"
@@ -72,9 +69,7 @@
 \newcommand{\DiagSkelHeightCorr}{0.89}        % r, same
 \newcommand{\DiagSizeBase}{0.63}              % trace size ratio, H 3.1 (not the findings' 0.65/0.67, H 6)
 \newcommand{\DiagRootErrBase}{1.21}           % m, absolute root error, 3571596:55 (H 3.1)
-\newcommand{\DiagHeadPxBase}{64.5}            % px mean, F "Baseline numbers"; H 3.1
 \newcommand{\DiagHeadPxBaseMedian}{46}        % px median, F "Baseline numbers"
-\newcommand{\DiagPelvisPxBase}{23.4}          % px mean, F "Baseline numbers"; H 3.1
 \newcommand{\DiagPelvisPxBaseMedian}{14}      % px median, F "Baseline numbers"
 \newcommand{\DiagCorrPVEDepth}{\ensuremath{-0.03}} % corr(PVE, depth error), F "The depth defect"
 \newcommand{\DiagOffsetMin}{\ensuremath{-2}}  % cells, --debug_anchor print, 3571599:9-14 (H 3.1)
@@ -87,14 +82,6 @@
 \newcommand{\DiagSizeCtrlHigh}{0.66}          % H 3.1
 \newcommand{\DiagSizeFixLow}{0.78}            % H 3.1
 \newcommand{\DiagSizeFixHigh}{0.87}           % H 3.1
-\newcommand{\DiagFinalRootErr}{0.73}          % m (728 mm), 3611336:175 (H 3.1)
-\newcommand{\DiagControlRootErr}{1.40}        % m (1402 mm), 3611339:166 (H 3.1)
-\newcommand{\DiagFinalSize}{0.78}             % 3611336:184 (H 3.1)
-\newcommand{\DiagControlSize}{0.59}           % 3611339:175 (H 3.1)
-\newcommand{\DiagFinalSlope}{0.42}            % 3611336:184 (H 3.1)
-\newcommand{\DiagControlSlope}{0.28}          % 3611339:175 (H 3.1)
-\newcommand{\DiagOldRootErrA}{1.39}           % m, Base+3DPW(old labels) e62, 3571963 (H 3.1)
-\newcommand{\DiagOldRootErrB}{1.49}           % m, fresh-head run (v10 e290), 3571794 (H 3.1)
 \newcommand{\DiagSlopeSwitch}{0.30}           % 2-ep and 10-ep fix x1, H 3.1
 \newcommand{\DiagSlopeStrongLow}{0.38}        % 10-ep x5, H 3.1
 \newcommand{\DiagSlopeStrongHigh}{0.44}       % 2-ep x5, H 3.1
@@ -104,7 +91,6 @@
 \newcommand{\DiagFixCostRecallHigh}{2.4}      % points, same
 
 % ---------------------------------------------------------------- 5.4 neck (dump, T9)
-\newcommand{\DiagDumpNeckOne}{5.3}            % deg, 3573518:12 (H 3.2)
 \newcommand{\DiagDumpNeckTwo}{175.6}          % deg, 3573518:13
 \newcommand{\DiagDumpNeckTwoTwist}{175.7}     % deg, 3573518:13
 \newcommand{\DiagDumpNeckTwoSwing}{3.3}       % deg, 3573518:13
@@ -112,15 +98,12 @@
 \newcommand{\DiagDumpNeckThreeGlobal}{173.3}  % deg global, 3573518:14
 \newcommand{\DiagDumpHead}{177.9}             % deg, 3573518:15
 \newcommand{\DiagDumpHeadGlobal}{12.0}        % deg global, 3573518:15
-\newcommand{\DiagDumpJaw}{2.2}                % deg, 3573518:16
 \newcommand{\DiagNeckGirthBase}{0.46}         % 0.461, 3573518:69; 3579014:107
-\newcommand{\DiagNeckSkinBase}{27.3}          % mm PVE_neck, 3573518:69
 \newcommand{\DiagNeckTwoRangeLow}{175.0}      % deg, all 8 v5-line checkpoints, H 3.2
 \newcommand{\DiagNeckTwoRangeHigh}{176.0}     % deg, same
 \newcommand{\DiagGirthRangeLow}{0.46}         % H 3.2 (long_pc_dist5 0.457, 3573518:357-360)
 \newcommand{\DiagGirthRangeHigh}{0.47}        % H 3.2 (exp5 geodesic 0.468, 3573521:61)
 \newcommand{\DiagFreshGirth}{1.00}            % v10, 3573518:189 (H 3.2)
-\newcommand{\DiagFreshNeckSkin}{10.3}         % mm, v10, 3573518:191
 \newcommand{\DiagNeckTwoBase}{175.6}          % deg, 3579014:101
 \newcommand{\DiagGeodesicNeckTwo}{175.0}      % deg, exp5 geodesic, 3573521:89-91 (H 3.2)
 \newcommand{\DiagGeodesicHead}{177.1}         % deg, same
@@ -130,21 +113,12 @@
 \newcommand{\DiagCorrFinger}{179.7}           % deg, same
 \newcommand{\DiagNeckTwoNoTrain}{4.5}         % deg, 3579014:101
 \newcommand{\DiagGirthNoTrain}{1.004}         % 3579014:107
-\newcommand{\DiagNeckSkinNoTrain}{10.8}       % mm, 3579014:108
 \newcommand{\DiagHeadDirBase}{12.0}           % deg global head, 3579014:113
 \newcommand{\DiagHeadDirNoTrain}{19.1}        % deg, 3579014:113; verdict :120
 \newcommand{\DiagHeadDirFineTune}{14.4}       % deg, 3579014:113
 \newcommand{\DiagHeadDirCtrlTwo}{13.8}        % deg, exp5 L1 control, 3579014:113
-\newcommand{\DiagPVEBase}{70.5}               % mm, 3570222:40; 3579014:109
-\newcommand{\DiagPVENoTrain}{71.3}            % mm, 3579014:109
 \newcommand{\DiagPVEFineTune}{68.8}           % mm, 3579014:109
 \newcommand{\DiagPVECtrlTwo}{76.9}            % mm, 3579014:109; 3573521:98
-\newcommand{\DiagFinalNeckTwo}{4.8}           % deg, 3611336:202,206
-\newcommand{\DiagFinalHeadBone}{8.9}          % deg, 3611336:203,207
-\newcommand{\DiagFinalGirth}{0.996}           % 3611336:198
-\newcommand{\DiagFinalNeckSkin}{11.0}         % mm, 3611336:199
-\newcommand{\DiagFinalHeadDir}{13.1}          % deg, 3611336:200
-\newcommand{\DiagControlHeadDir}{13.0}        % deg, 3611339:191
 
 % ---------------------------------------------------------------- 5.5 fingers (T10)
 \newcommand{\DiagFingersBase}{17.3}           % deg, 3571960:290 (H 3.3)
@@ -155,22 +129,13 @@
 \newcommand{\DiagZoomPVE}{124.8}              % mm, body PVE on crops, 3571960:294
 \newcommand{\DiagFingersRegion}{17.5}         % deg, region-normalised loss, 3571959:316
 \newcommand{\DiagFingersRegionCtrl}{17.4}     % deg, its control, 3571960:314
-\newcommand{\DiagFingersFixNoTrain}{8.2}      % deg, 3579014:114
 \newcommand{\DiagFingersFixFT}{8.3}           % deg, 3579014:114
-\newcommand{\DiagFingersFinal}{8.3}           % deg, 3611336:201
-\newcommand{\DiagFingersControl}{17.4}        % deg, 3611339:192
 
 % ---------------------------------------------------------------- 5.6 children and shape (T18)
 \newcommand{\DiagShapeAgeBiasOld}{\ensuremath{+0.199}}    % draft tab:shape (main.tex:980-998), n = 10
 \newcommand{\DiagShapeAgeBiasNew}{\ensuremath{-0.002}}    % same
 \newcommand{\DiagShapeHeightBiasOld}{\ensuremath{-0.154}} % same
 \newcommand{\DiagShapeHeightBiasNew}{\ensuremath{-0.026}} % same
-\newcommand{\DiagAgeBiasHoldout}{\ensuremath{-0.015}}     % 3570222:75 (H 3.4)
-\newcommand{\DiagAgeAbsHoldout}{0.037}        % 3570222:75
-\newcommand{\DiagHoldoutMinAge}{0.513}        % 3569948:33 (H 3.4)
-\newcommand{\DiagTailOldPred}{0.57}           % GT 0.6-0.8, 3570222:89
-\newcommand{\DiagBabyAgeTrue}{0.015}          % youngest 50, 3569950:61
-\newcommand{\DiagBabyAgePred}{0.10}           % 3569950:61; 3571955:174-175
 \newcommand{\DiagRHKidAge}{0.61}              % 0.613, Relative Human val, 3611285_0:23-31 (H 3.4)
 \newcommand{\DiagRHBabyAge}{0.62}             % 0.624, same
 \newcommand{\DiagRHAdultAge}{0.63}            % 0.631, same
@@ -178,22 +143,11 @@
 \newcommand{\DiagRHKids}{89}                  % matched kids, same
 \newcommand{\DiagRHBabies}{38}                % matched babies, same
 \newcommand{\DiagRHBabiesBelow}{1}            % babies below 0.45, same (0.026 of 38)
-\newcommand{\DiagRHAdultHeight}{0.51}         % 0.507, same
-\newcommand{\DiagRHKidHeight}{0.45}           % 0.451, same
-\newcommand{\DiagRHBabyHeight}{0.39}          % 0.394, same
-\newcommand{\DiagRHMenGender}{0.535}          % 3611285_0:30
-\newcommand{\DiagRHWomenGender}{0.551}        % 3611285_0:30
 \newcommand{\DiagRHGenderAcc}{46.5}           % percent, 3611285_0:30
 \newcommand{\DiagDemoGenderMedian}{0.59}      % 299 [shape] lines, demo 3581312 (H 3.4; CE)
 \newcommand{\DiagDemoAgeMedian}{0.61}         % same
 \newcommand{\DiagDemoHeightMedian}{0.50}      % same
-\newcommand{\DiagTrainGenderMedian}{0.588}    % 3569948:8-18
-\newcommand{\DiagTrainAgeMedian}{0.601}       % 3569948:8-18
-\newcommand{\DiagTrainHeightMedian}{0.500}    % 3569948:8-18
-\newcommand{\DiagDemoAgeStd}{0.050}           % CE headline; H 6 "Children": NOT evidence on its own (adult sample)
-\newcommand{\DiagTrainAgeStd}{0.161}          % CE headline; same caveat
 \newcommand{\DiagChildShare}{2.53}            % percent of training people with age < 0.3, 3569948:27 (H 3.4)
-\newcommand{\DiagChildBatchShare}{2.1}        % percent of supervised people per batch, 3571955:154 (H 3.4)
 \newcommand{\DiagShoulderHeadChild}{2.24}     % shoulder/head width at age 0.1, height 0.5 (H 3.4; CE probe)
 \newcommand{\DiagShoulderHeadAdult}{3.00}     % at age 0.6 (H 3.4; CE probe)
 \newcommand{\DiagSmallestAdult}{1.22}         % m, stature at age 0.6, height 0 (H 3.4; CE probe)
@@ -201,14 +155,9 @@
 
 % ---------------------------------------------------------------- 5.7 pilot noise (T14)
 \newcommand{\DiagNoisePVE}{7.6}               % mm, 3571958:104 vs 3571960:320 (H 3.6)
-\newcommand{\DiagNoisePVEA}{76.3}             % mm, 3571958:104
-\newcommand{\DiagNoisePVEB}{68.7}             % mm, 3571960:320
 \newcommand{\DiagNoiseHead}{1.9}              % deg, 13.6 vs 11.7 (H 3.6)
 \newcommand{\DiagNoiseRecall}{0.8}            % points (H 3.6)
-\newcommand{\DiagSixArmsPVELow}{68.7}         % docs/experiments_plan.md:413-419 (H 3.6)
-\newcommand{\DiagSixArmsPVEHigh}{76.3}        % same
 \newcommand{\DiagRestartCost}{2.4}            % mm, D slide 22 "If asked" (H 1, H 3.6)
-\newcommand{\DiagControlsMean}{72.9}          % mm, mean of the 2-ep controls, D slide 22
 
 % ---------------------------------------------------------------- 5.8 what did not work
 \newcommand{\DiagSamplerBefore}{2.1}          % percent children per batch, 3571955:154 (H 3.4)
@@ -221,7 +170,4 @@
 \newcommand{\DiagGlobalHeadArm}{11.3}         % deg, global head loss, 3571957:98 (H 3.2)
 \newcommand{\DiagGlobalHeadCtrlA}{11.7}       % deg, 3571960:318
 \newcommand{\DiagGlobalHeadCtrlB}{13.6}       % deg, 3571958:99
-\newcommand{\DiagXTwentyRoot}{0.53}           % m, 2-ep x20, 3572483 (H 3.1)
 \newcommand{\DiagXFiveTenRoot}{0.54}          % m, 10-ep x5, 3572482 (H 3.1)
-\newcommand{\DiagXTwentySlope}{0.43}          % 2-ep x20 (H 3.1)
-\newcommand{\DiagXFiveTwoSlope}{0.44}         % 2-ep x5 (H 3.1)

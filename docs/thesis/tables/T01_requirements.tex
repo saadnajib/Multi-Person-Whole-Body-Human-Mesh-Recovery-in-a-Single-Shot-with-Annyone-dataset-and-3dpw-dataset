@@ -5,7 +5,7 @@
 % Job ids behind the evidence (never in the text): 3611336:224-229 (3DPW test, Final), 3611336:191-209 (holdout),
 % 3612131 (RH Final), 3612078 (demo Final), 3613616 / 3613617 (RH / demo Final-masked), 3614042 / 3616821
 % (training / RH Final-partial-mask, done 19 Oct), 3614191 (Student,
-% pending), 3613926 (Student cost), 3614192 (NAVER accuracy), 3614947 (NAVER cost), 3611284 (label check v23).
+% done 19 Oct, 95 % rule failed), 3613926 (Student cost), 3614192 (NAVER accuracy), 3614947 (NAVER cost), 3611284 (label check v23).
 % Every number is a macro (numbers_results / _data / _discussion).
 \begin{table}[tbp]
 \centering\footnotesize
@@ -37,9 +37,10 @@ Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
   \textbf{not met} &
   Final is Multi-HMR with an Anny head; \FinalParams\,M against \NAVERParams\,M parameters
   ($-$\DiscFinalSmallerPct\,\%); Multi-HMR-Anny \NAVERAnnyOne{} (likely in-sample) / \NAVERThreeDPW\,mm against
-  \FinalPVE{} / \FinalThreeDPW\,mm (Table~\ref{tab:baseline}); Student \StudentParams\,M, accuracy pending
-  (Table~\ref{tab:student}) &
-  the Student's accuracy; the supervisor's choice of the reference model and whether a smaller student counts \\
+  \FinalPVE{} / \FinalThreeDPW\,mm (Table~\ref{tab:baseline}); Student \StudentParams\,M: \StudentPVE{} / \StudentThreeDPW\,mm, misses the 95\,\% bars \BarPVE{} / \BarThreeDPW;
+  beats Multi-HMR-Anny on 3DPW (Table~\ref{tab:student}) &
+  the supervisor's choice of the reference model and whether a smaller student counts; against Final, a student that
+  meets the bar \\
 \addlinespace
 1c & Evaluation on the real-world set with Anny parameters, not only SMPL-X &
   \textbf{met with caveats} &
