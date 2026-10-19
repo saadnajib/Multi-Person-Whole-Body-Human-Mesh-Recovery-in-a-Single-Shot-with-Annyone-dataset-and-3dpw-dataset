@@ -56,13 +56,13 @@
 \newcommand{\FinalGFLOPs}{1927.4}       % 1917.2 backbone + 10.16 head; 3614947; H 0a
 \newcommand{\NAVERBackboneGFLOPs}{1917.2}% backbone only; NAVER head FLOPs not countable for its class; 3614947
 \newcommand{\StudentGFLOPs}{603.3}      % 3613926; H 0a
-\newcommand{\TeacherMsAForty}{110}      % ms, final model, A40, batch 1; 3613926; H 0a
-\newcommand{\StudentMsAForty}{51.4}     % ms, student, A40, batch 1; 3613926; H 0a
+\newcommand{\TeacherMsLFortyS}{59.7}     % ms, final model, full one-person forward, L40S, batch 1; 3614191:213-221; CA "STUDENT DONE"
+\newcommand{\StudentMsLFortyS}{28.5}     % ms, student, same L40S, same job; 3614191:213-221 (the A40 smoke pair 110 / 51.4 ms of 3613926 is no longer quoted)
 \newcommand{\TeacherMsAHundred}{77.9}   % ms median one-person forward, A100-PCIe-40GB (backbone 60.8 ms); 3614947; H 0a
 % NAVER ms: not measured (model_cost.py --bench supports model.py's Model class only); 3614947; H 0a
 \newcommand{\ParamRatioStudent}{3.14}   % 318.38 / 101.38; 3613926; H 0a
 \newcommand{\FlopRatioStudent}{3.19}    % 1927.4 / 603.3; 3613926; H 0a
-\newcommand{\SpeedRatioStudent}{2.14}   % 110 / 51.4 (A40); 3613926; H 0a
+\newcommand{\SpeedRatioStudent}{2.10}   % 59.7 / 28.5 (L40S, both models in job 3614191:213-221); was 2.14 on the A40 smoke test 3613926
 \newcommand{\ParamRatioStudentNAVER}{3.76} % 380.94 / 101.38; H 0a
 
 % --- Relative Human val (T12): 635 images, 2,130 people, IoU 0.3, child threshold 0.45
@@ -273,9 +273,27 @@
 \newcommand{\RHAdultsBase}{821}       % adults matched, Base; data/plot_stats.md
 \newcommand{\RHAdultsFinal}{1113}     % adults matched, Final; data/plot_stats.md
 
-% --- Student (T17, F19): PENDING job 3614191 ------------------------------------------------------------------
-\newcommand{\StudentPending}{\TODO{student result, job pending}}
-\newcommand{\StudentCell}{\TODO{job pending}}% short form for table cells
+% --- Student (T17, F19): job 3614191 (logs/exp8_distill_vitb_3614191.out), done 19 Oct; CA = data/CLUSTER_ANSWERS.md
+% section "STUDENT DONE". The 95% rule fails on PVE and MPJPE on both sets (final table 3614191:259-283).
+\newcommand{\StudentPVE}{119.6}          % mm, holdout V1; 3614191:195-207; CA STUDENT DONE
+\newcommand{\StudentPAPVE}{80.8}         % mm, holdout V1; 3614191:195-207
+\newcommand{\StudentMPJPE}{127.2}        % mm, holdout V1; 3614191:195-207
+\newcommand{\StudentRecall}{85.4}        % percent, holdout V1; 3614191:195-207
+\newcommand{\StudentTestHundredPVE}{122.7}  % mm, AnnyOne test-100 V0; 3614191 log (test-100 part); CA STUDENT DONE
+\newcommand{\StudentTestHundredPAPVE}{84.2} % mm; same
+\newcommand{\StudentTestHundredRecall}{85}  % percent; same
+\newcommand{\StudentThreeDPW}{110.1}     % mm, 3DPW test v23, 8,190 images; 3614191 log (3DPW part), final table 3614191:259-283
+\newcommand{\StudentPAThreeDPW}{71.8}    % mm; same
+\newcommand{\StudentMPJPEThreeDPW}{112.0}% mm; same
+\newcommand{\StudentRecallThreeDPW}{99}  % percent; same
+\newcommand{\StudentRatioPVE}{1.62}      % 119.6 / 73.7, holdout V1 (bar 1.05)
+\newcommand{\StudentRatioThreeDPW}{1.24} % 110.1 / 89.0, 3DPW test
+\newcommand{\StudentGainOverNAVERThreeDPW}{16.8} % mm, 126.9 - 110.1; CA STUDENT DONE
+\newcommand{\StudentTrainImgPerSec}{11.6}% training images per second, L40S; 3614191 (20,894 s for 240,000 images); CA STUDENT DONE
+\newcommand{\StudentCurveHoldFifteen}{139.5} % mm, in-training holdout V0 PVE, epoch 15; 3614191:59-143
+\newcommand{\StudentCurveHoldLast}{122.8}    % mm, same, epoch 30; 3614191:59-143
+\newcommand{\StudentCurveValTwentyFive}{88.0}% mm, in-training 3DPW-val PVE, epoch 25; 3614191:59-143
+\newcommand{\StudentCurveValLast}{87.7}      % mm, same, epoch 30; 3614191:59-143
 \newcommand{\BarMPJPE}{82.0}          % mm, 77.9 / 0.95, AnnyOne V1 MPJPE bar (computed here)
 \newcommand{\BarMPJPEThreeDPW}{92.9}  % mm, 88.3 / 0.95; plan T11
 \newcommand{\StudentEpochs}{30}       % epochs x 1,000 steps, batch 8; exp8 header; H 0a

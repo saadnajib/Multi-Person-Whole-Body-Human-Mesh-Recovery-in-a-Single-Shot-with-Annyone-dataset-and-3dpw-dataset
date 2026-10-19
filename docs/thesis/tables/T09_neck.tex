@@ -31,12 +31,11 @@ head direction (deg)         &  12.0 &  19.1 &  14.4 &  13.8 &  13.0 &  13.1 \\
 fingers (deg)                       &  17.3 &   8.2 &   8.3 &  17.4 &  17.4 &   8.3 \\
 \bottomrule
 \end{tabular}
-\caption[Neck: the half-turned bones and their correction]{The two half-turned neck bones and their correction. V1,
-100-image AnnyOne holdout, matched people. Bone errors are local (relative to the parent bone) medians; about 180\,deg
-means the bone is turned half a turn. Girth: radius of the neck skin, predicted over true. PVE$_\text{neck}$: vertex
-error over the 171 neck-skin vertices, centred at neck01. Corr.: one constant rotation per flipped bone
-(neck02, head, metacarpal1.L, finger4-1.R), estimated on 200 training images. FT: fine-tune. The 2-epoch columns are AnnyOne-only fine-tunes of Base; Control and Final are the 10-epoch runs with 30\% 3DPW, Final also with the depth fix. n.d.: not
-dumped on the holdout. One run per column, no seed; PVE gaps below about 10\,mm are within run-to-run variation
+\caption[Neck: the half-turned bones and their correction]{The half-turned bones and their correction. V1,
+100-image AnnyOne holdout, matched people. Bone errors: local medians (about 180\,deg = half a turn).
+PVE$_\text{neck}$ over the 171 neck-skin vertices. Corr.: the bone correction (four constants from 200 training
+images); FT: fine-tune. 2-epoch columns: AnnyOne-only fine-tunes of Base; Control and Final: 10 epochs with 30\%
+3DPW. n.d.: not dumped. One run per column, no seed; PVE gaps below about 10\,mm are within run-to-run variation
 (Table~\ref{tab:pilot-noise}).}
 \label{tab:neck-bones}
 \end{table}

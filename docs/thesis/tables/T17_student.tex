@@ -1,4 +1,7 @@
-% T17 Student result (Results 6.10). Owner: Results writer. PENDING job 3614191.
+% T17 Student result (Results 6.10). Owner: Results writer. Filled 19 Oct from job 3614191 (logs/exp8_distill_vitb_3614191.out;
+% data/CLUSTER_ANSWERS.md "STUDENT DONE"): holdout V1 :195-207, cost on an L40S :213-221, final table :259-283.
+% The job re-measured the teacher with the same values as below; ratios = student / teacher (recall: student / teacher).
+% Earlier note:
 % Fill from <RUN>/final_table.json (RUN = student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30); the job
 % re-measures the teacher, so replace the teacher column by the job's values and recompute the bars.
 % Teacher values now: V1 3611336:191-193 (PVE, PA-PVE, recall); V1 MPJPE 77.9 = mean of mpjpe over the
@@ -8,39 +11,39 @@
 % recall teacher x 0.95 (82.7, 94.1 computed here); cost: the student must be lower.
 \begin{table}[!tbp]
 \centering\footnotesize
-\begin{tabular}{@{}lrlrrc@{}}
+\begin{tabular}{@{}lrrrrc@{}}
 \toprule
 Metric & Teacher & Student & Ratio & Bar & Met? \\
 \midrule
 \multicolumn{6}{@{}l}{\emph{AnnyOne holdout, V1}} \\
-PVE (mm) & \FinalPVE & \StudentCell & & $\leq$ \BarPVE & \\
-PA-PVE (mm) & \FinalPAPVE & \StudentCell & & $\leq$ 52.9 & \\
-MPJPE (mm) & \FinalMPJPE & \StudentCell & & $\leq$ \BarMPJPE & \\
-Recall (\%) & \FinalRecall & \StudentCell & & $\geq$ 82.7 & \\
+PVE (mm) & \FinalPVE & \StudentPVE & \StudentRatioPVE & $\leq$ \BarPVE & no \\
+PA-PVE (mm) & \FinalPAPVE & \StudentPAPVE & 1.61 & $\leq$ 52.9 & no \\
+MPJPE (mm) & \FinalMPJPE & \StudentMPJPE & 1.63 & $\leq$ \BarMPJPE & no \\
+Recall (\%) & \FinalRecall & \StudentRecall & 0.98 & $\geq$ 82.7 & yes \\
 \addlinespace
 \multicolumn{6}{@{}l}{\emph{AnnyOne test-100, V0}} \\
-PVE (mm) & \FinalTestHundredPVE & \StudentCell & & $\leq$ 81.6 & \\
-PA-PVE (mm) & \FinalTestHundredPAPVE & \StudentCell & & $\leq$ 57.3 & \\
-Recall (\%) & 87 & \StudentCell & & $\geq$ 82.7 & \\
+PVE (mm) & \FinalTestHundredPVE & \StudentTestHundredPVE & 1.58 & $\leq$ 81.6 & no \\
+PA-PVE (mm) & \FinalTestHundredPAPVE & \StudentTestHundredPAPVE & 1.55 & $\leq$ 57.3 & no \\
+Recall (\%) & 87 & \StudentTestHundredRecall & 0.98 & $\geq$ 82.7 & yes \\
 \addlinespace
 \multicolumn{6}{@{}l}{\emph{3DPW test (v23 labels), V0}} \\
-PVE (mm) & \FinalThreeDPW & \StudentCell & & $\leq$ \BarThreeDPW & \\
-PA-PVE (mm) & \FinalPAThreeDPW & \StudentCell & & $\leq$ 60.6 & \\
-MPJPE (mm) & \FinalMPJPEThreeDPW & \StudentCell & & $\leq$ \BarMPJPEThreeDPW & \\
-Recall (\%) & \FinalRecallThreeDPW & \StudentCell & & $\geq$ 94.1 & \\
+PVE (mm) & \FinalThreeDPW & \StudentThreeDPW & \StudentRatioThreeDPW & $\leq$ \BarThreeDPW & no \\
+PA-PVE (mm) & \FinalPAThreeDPW & \StudentPAThreeDPW & 1.25 & $\leq$ 60.6 & no \\
+MPJPE (mm) & \FinalMPJPEThreeDPW & \StudentMPJPEThreeDPW & 1.27 & $\leq$ \BarMPJPEThreeDPW & no \\
+Recall (\%) & \FinalRecallThreeDPW & \StudentRecallThreeDPW & 1.00 & $\geq$ 94.1 & yes \\
 \addlinespace
-\multicolumn{6}{@{}l}{\emph{Cost}} \\
+\multicolumn{6}{@{}l}{\emph{Cost (L40S, batch 1, one person)}} \\
 Params (M) & \FinalParams & \StudentParams & \ParamRatioStudent$\times$ & fewer & yes \\
 GFLOPs & \FinalGFLOPs & \StudentGFLOPs & \FlopRatioStudent$\times$ & fewer & yes \\
-ms per image (A40) & \TeacherMsAForty & \StudentMsAForty & \SpeedRatioStudent$\times$ & faster & yes \\
-Training images/s & \FinalTrainImgPerSec$^{a}$ & \StudentCell & & & \\
+ms per image & \TeacherMsLFortyS & \StudentMsLFortyS & \SpeedRatioStudent$\times$ & faster & yes \\
+Training images/s & \FinalTrainImgPerSec$^{a}$ & \StudentTrainImgPerSec$^{a}$ & & & \\
 \bottomrule
 \end{tabular}
 \caption[The Student against its teacher and the 95\,\% rule]{The Student against its teacher (Final) and the
 95\,\% rule: every error of the Student at most the teacher's divided by 0.95, every recall at least 0.95 of the
-teacher's, and fewer parameters, fewer FLOPs and a faster forward pass. One run, no seed. Against Multi-HMR-Anny the
-PVE bars would be \BarNAVERAnnyOne\,mm on AnnyOne (most likely in-sample for it) and \BarNAVERThreeDPW\,mm on 3DPW.
-Cost from the end-to-end test of the distillation script on an A40 (batch 1, one person). $^{a}$Final's training
-throughput on an A100; the Student's is measured on its own GPU.}
+teacher's, and fewer parameters, fewer FLOPs and a faster forward pass. The rule fails on every error and holds on
+recall and cost. One run, no seed. Against Multi-HMR-Anny the PVE bars would be \BarNAVERAnnyOne\,mm on AnnyOne
+(most likely in-sample for it; not met) and \BarNAVERThreeDPW\,mm on 3DPW (met). Cost: both models timed in the
+Student's job on one L40S. $^{a}$Final on an A100, the Student on the L40S; not comparable.}
 \label{tab:student}
 \end{table}

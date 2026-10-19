@@ -2,7 +2,7 @@
 % Numbers from tables/T16 via numbers_results.tex: NAVER 380.94 M / >= 1917.2 GFLOPs (backbone only,
 % head FLOPs not countable for its class; job 3614947) / 126.9 mm; Final 318.38 M / 1927.4 / 89.0 mm;
 % Student 101.38 M / 603.3 GFLOPs, PVE pending (job 3614191): drawn as a dashed vertical line until known.
-% When the Student's 3DPW PVE exists: replace the \draw lines by a third \addplot coordinate.
+% 19 Oct: the Student's measured point (110.1 mm, job 3614191) replaces the dashed line.
 \begin{figure}[!tbp]
 \centering
 \begin{tikzpicture}
@@ -20,8 +20,8 @@
   \node[font=\scriptsize, anchor=north] at (axis cs:\NAVERParams,\NAVERThreeDPW-2) {Multi-HMR-Anny};
   \addplot[only marks, mark=*, color=blue!70!black] coordinates {(\FinalParams,\FinalThreeDPW)};
   \node[font=\scriptsize, anchor=north, blue!70!black] at (axis cs:\FinalParams,\FinalThreeDPW-2) {Final};
-  \draw[dashed, red!70!black] (axis cs:\StudentParams,70) -- (axis cs:\StudentParams,140);
-  \node[font=\scriptsize, red!70!black, anchor=north west, align=left] at (axis cs:\StudentParams,138) {Student:\\PVE pending};
+  \addplot[only marks, mark=triangle*, mark size=2.5pt, color=red!70!black] coordinates {(\StudentParams,\StudentThreeDPW)};
+  \node[font=\scriptsize, anchor=south, red!70!black] at (axis cs:\StudentParams,\StudentThreeDPW+2) {Student};
 \nextgroupplot[xlabel={GFLOPs}, xmin=0, xmax=2400]
   \draw[densely dotted, black!60] (axis cs:0,\BarThreeDPW) -- (axis cs:2400,\BarThreeDPW);
   \addplot[only marks, mark=square*, color=gray!70!black] coordinates {(\NAVERBackboneGFLOPs,\NAVERThreeDPW)};
@@ -29,12 +29,12 @@
   \node[font=\scriptsize, anchor=north east, align=right] at (axis cs:\NAVERBackboneGFLOPs+250,\NAVERThreeDPW-2) {Multi-HMR-Anny\\(backbone only)};
   \addplot[only marks, mark=*, color=blue!70!black] coordinates {(\FinalGFLOPs,\FinalThreeDPW)};
   \node[font=\scriptsize, anchor=north, blue!70!black] at (axis cs:\FinalGFLOPs,\FinalThreeDPW-2) {Final};
-  \draw[dashed, red!70!black] (axis cs:\StudentGFLOPs,70) -- (axis cs:\StudentGFLOPs,140);
-  \node[font=\scriptsize, red!70!black, anchor=north west, align=left] at (axis cs:\StudentGFLOPs,138) {Student:\\PVE pending};
+  \addplot[only marks, mark=triangle*, mark size=2.5pt, color=red!70!black] coordinates {(\StudentGFLOPs,\StudentThreeDPW)};
+  \node[font=\scriptsize, anchor=south, red!70!black] at (axis cs:\StudentGFLOPs,\StudentThreeDPW+2) {Student};
 \end{groupplot}
 \end{tikzpicture}
 \caption[Model size and compute against 3DPW-test PVE]{Model size and compute against 3DPW-test PVE (corrected labels, all 8,190 images; one run per model). Multi-HMR-Anny's GFLOPs count its
-backbone only (arrow: the true value is higher); the Student's error is pending, so only its cost is drawn. Dotted
+backbone only (arrow: the true value is higher). Dotted
 line: the 95\,\% bar against Final (\BarThreeDPW\,mm).}
 \label{fig:cost-pve}
 \end{figure}

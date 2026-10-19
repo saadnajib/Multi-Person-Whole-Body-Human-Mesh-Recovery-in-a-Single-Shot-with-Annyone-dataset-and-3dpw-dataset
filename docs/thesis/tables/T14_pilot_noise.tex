@@ -20,9 +20,8 @@ restart cost (controls vs.\ Base) & 72.9 vs.\ 70.5\,mm (about 2.4\,mm) & read ag
 root error & no measured floor & fix 0.53--0.73 vs.\ control 1.11--1.44\,m \\
 \bottomrule
 \end{tabular}
-\caption[Pilot noise and restart cost]{Run-to-run variation of the 2-epoch pilots. V1, 100-image AnnyOne holdout,
-matched people. All arms fine-tune Base for 2 epochs at learning rate $10^{-5}$; the training code sets no random seed,
-so two runs of the same configuration differ. The restart cost is what two more epochs of fine-tuning Base cost with
-nothing changed.}
+\caption[Pilot noise and restart cost]{Run-to-run variation of the 2-epoch pilots (fine-tunes of Base at learning
+rate $10^{-5}$, no seed). V1, 100-image AnnyOne holdout, matched people. Restart cost: what two more epochs of
+fine-tuning Base cost with nothing changed.}
 \label{tab:pilot-noise}
 \end{table}

@@ -46,11 +46,9 @@ Fresh-heads-L & 1.49 & 0.57 & 0.28 & 2.71 &  --  & 24.0 & 74.1 & 89.0 \\
 \bottomrule
 \end{tabular}
 \caption[Depth fix: pilots, final model and control]{Placement before and after building the training targets at
-the head joint. V1, 100-image AnnyOne holdout, matched people. Root error: absolute 3D distance of the pelvis; size:
-predicted over true head-to-pelvis distance in pixels (1 is right); slope and intercept: linear fit of predicted
-against true pelvis depth (1 and 0\,m are right); head and pelvis px: 2D error of those joints; PVE in mm, recall in \%. Control
-rows build the targets at the pelvis, fix rows at the head; $\times$1/5/20: weight of the distance and translation
-terms. Final also has the bone correction. One run per row, no seed. No control was run at
-$\times$5 or $\times$20; each fix row is read against the control of the same length.}
+the head joint. V1, 100-image AnnyOne holdout, matched people; metrics as in Table~\ref{tab:metrics}, head and pelvis
+px = 2D error, PVE in mm, recall in \%. Control rows build the targets at the pelvis, fix rows at the head;
+$\times$1/5/20: distance and translation weight. Final also has the bone correction. One run per row, no seed; each
+fix row is read against the control of the same length (none was run at $\times$5 or $\times$20).}
 \label{tab:depth-runs}
 \end{table}

@@ -25,7 +25,8 @@
 %     checkpoint copies from slurm/eval/run_eval_3dpw_test.sh MODELS list. --brightness/--contrast/--saturation/--hue
 %     are parsed by train.py (:1722-1725) and read nowhere (grep args.brightness: no hit), so not listed as flags.
 %     Student-S/final was evaluated as evaltest_student_v8_final.
-%   Student: slurm/experiments/exp8_distill_vitb.sh header and :319-331; job 3614191 (running).
+%   Student: slurm/experiments/exp8_distill_vitb.sh header and :319-331; job 3614191 (done 19 Oct; V1 holdout PVE 119.6
+%     3614191:195-207, 3DPW test v23 PVE 110.1, final table 3614191:259-283 FAIL; data/CLUSTER_ANSWERS.md last section).
 \begingroup
 \expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}% let \path break after _ and - here
 \scriptsize
@@ -84,6 +85,6 @@ Student-S/mixed & v7, \path{anny_distill_vits_v7_mixed}, ep.~130 & Student-S/6b,
 Student-S/final & v8, \path{anny_distill_vits_v8_final}, ep.~52 & Student-S/6c, epoch 149; teacher Mixed-L & S+p & A+P, old & 150 $\times$ 1,000 $\times$ 16, $3\cdot10^{-5}$, halved every 60 \\
 \addlinespace
 \multicolumn{6}{@{}l}{\emph{ViT-B student (requirement 1b)}} \\
-Student & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30}; job 3614191 (running on 18 Oct) & NAVER's \path{multiHMR_672_B} backbone; every head tensor from Final; teacher Final & B+p, all & A+P, v23 & 30 $\times$ 1,000 $\times$ 8, $3\cdot10^{-5}$, halved every 12; Final's targets and masks \\
+Student & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30}; job 3614191 (done 19 Oct) & NAVER's \path{multiHMR_672_B} backbone; every head tensor from Final; teacher Final & B+p, all & A+P, v23 & 30 $\times$ 1,000 $\times$ 8, $3\cdot10^{-5}$, halved every 12; Final's targets and masks; holdout 119.6, 3DPW 110.1\,mm, 95\,\% rule not met \\
 \end{longtable}
 \endgroup

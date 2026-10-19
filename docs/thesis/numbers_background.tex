@@ -43,47 +43,29 @@
 % --- AnnyOne -----------------------------------------------------------------
 \newcommand{\BgAnnyOnePublished}{780000} % "780K+" images as described by the authors; AF-README "Our other works"
 \newcommand{\BgAnnyOneImages}{579960}% images in the release copy used here; H 1
-\newcommand{\BgAnnyOneRes}{1280}        % px, render side length; H 1; D part 2
 \newcommand{\BgInputRes}{672}           % px, network input side length; H 1
 \newcommand{\BgTokenGrid}{48}           % 672 / 14 tokens per side; H 1 "Terms"
 \newcommand{\BgPatch}{14}               % px, ViT patch size; H 1 "Terms"
-\newcommand{\BgBackboneParams}{304}     % M params, DINOv2 ViT-L backbone; D slide 3
 
 % --- Multi-HMR README (released checkpoints, SMPL-X; runtime on a V100-32GB) -----
-\newcommand{\BgMhrLEightNineSixPVE}{89.9}  % PVE 3DPW-test, multiHMR_896_L; MH-README table
-\newcommand{\BgMhrLEightNineSixMs}{126}    % ms, same checkpoint; MH-README
 \newcommand{\BgMhrLPVE}{94.1}              % PVE 3DPW-test, multiHMR_672_L; MH-README
 \newcommand{\BgMhrLMs}{74}                 % ms, multiHMR_672_L; MH-README
 \newcommand{\BgMhrBPVE}{94.0}              % PVE 3DPW-test, multiHMR_672_B; MH-README
 \newcommand{\BgMhrBMs}{43}                 % ms, multiHMR_672_B; MH-README
-\newcommand{\BgMhrSPVE}{102.4}             % PVE 3DPW-test, multiHMR_672_S; MH-README
-\newcommand{\BgMhrSMs}{29}                 % ms, multiHMR_672_S; MH-README
-\newcommand{\BgMhrLBedlamPVE}{58.6}        % PVE BEDLAM-val, multiHMR_672_L; MH-README
-\newcommand{\BgMhrBBedlamPVE}{67.2}        % PVE BEDLAM-val, multiHMR_672_B; MH-README
 
 % --- 3DPW and the converted labels ---------------------------------------------
 \newcommand{\BgThreeDPWSequences}{60}   % 3DPW sequences; D part 3 (re-fit check covers all 60)
-\newcommand{\BgThreeDPWPeople}{87}      % person-sequences fitted by the converter; D part 1 item 6; H 3.5
-\newcommand{\BgFixedAge}{0.55}          % constant age in the converted labels; D part 3; run_smpl_to_anny_task.sh:95
-\newcommand{\BgFixedPhenotypes}{seven}  % muscle, weight, cupsize, firmness, african, asian, caucasian = 0.5; D part 3
-\newcommand{\BgConstPhenotypes}{eight}  % phenotypes that are constants in the labels (age + the seven); D part 7 "1c"
-\newcommand{\BgRestBones}{144}          % of 163 bones left at rest by the converter; D part 3; H 3.5
-\newcommand{\BgFitFloor}{14}            % mm, approx. conversion floor (body joints median 14.1 mm); D part 3; H 3.5
 \newcommand{\BgMixReal}{30}             % percent of each training batch from 3DPW-train in the final model; D part 3
 
 % --- Distillation and cost (exp8 smoke test; H 0a) ------------------------------
-\newcommand{\BgKDTemperature}{4}        % feature-KL temperature; REWRITE_PLAN 1.5 row 3.5; E exp8
 \newcommand{\BgProjIn}{768}             % ViT-B token width; REWRITE_PLAN 1.5; F5 caption
 \newcommand{\BgProjOut}{1024}           % ViT-L token width the projector maps to; same
 \newcommand{\BgFinalParams}{318.38}     % M params, our ViT-L model; H 0a (smoke test 3613926)
 \newcommand{\BgStudentParams}{101.38}   % M params, ViT-B student; H 0a (smoke test 3613926)
-\newcommand{\BgStudentParamRatio}{3.14} % x fewer params; H 0a
 \newcommand{\BgNinetyFive}{95}          % percent: supervisor's bar for a smaller model; P 1 "[1b-ii]"
 
 % --- Multi-HMR-Anny (NAVER) vs our head ------------------------------------------
 \newcommand{\BgNaverHeadLayers}{8}      % cross-attention blocks in NAVER's Anny head; naver/multi-hmr multi_hmr_anny/multi_hmr.py:29 (xat_depth=8)
 \newcommand{\BgOurHeadLayers}{2}        % HPH blocks in our model; model.py:222-229 (REWRITE_PLAN 1.1 row 8)
-\newcommand{\BgNaverParams}{380.94}     % M params, multiHMR_672_L_anny as built by our cost script; D part 7 "1b" (model_cost job, H 0a)
 \newcommand{\BgNaverHeadParams}{76.57}  % M params of its head; same source
 \newcommand{\BgOurHeadParams}{14.01}    % M params of our HPH head; same source
-\newcommand{\BgThreeDPWTestSeq}{24}     % 3DPW test sequences; H 1 (run_eval_3dpw_test.sh:11-12)
