@@ -27,14 +27,14 @@ Bone correction & four bones, estimated on Base & teacher's in training; own one
  & against Final & against Multi-HMR-Anny \\
 \midrule
 AnnyOne holdout PVE (V1) & \MethodTeacherHoldoutPVE{} $\to$ \textbf{\MethodBarHoldout} & \MethodNaverHoldoutPVE{} $\to$ \MethodBarNaverHoldout{} (likely in-sample) \\
-AnnyOne holdout MPJPE (V1) & \TODO{Final V1 MPJPE, re-measured in the student job} & \MethodNaverHoldoutMPJPE{} $\to$ \MethodBarNaverHoldoutMPJPE \\
+AnnyOne holdout MPJPE (V1) & 77.9 $\to$ \textbf{82.0} % 3614191:259-263 (teacher holdout V1 MPJPE re-measured in the student job; bar = /0.95) & \MethodNaverHoldoutMPJPE{} $\to$ \MethodBarNaverHoldoutMPJPE \\
 3DPW test PVE (v23) & \MethodTeacherThreeDPWPVE{} $\to$ \textbf{\MethodBarThreeDPW} & \MethodNaverThreeDPWPVE{} $\to$ \MethodBarNaverThreeDPW \\
 3DPW test MPJPE (v23) & \MethodTeacherThreeDPWMPJPE{} $\to$ \MethodBarThreeDPWMPJPE & \MethodNaverThreeDPWMPJPE{} $\to$ \MethodBarNaverThreeDPWMPJPE \\
 \bottomrule
 \end{tabular}
 \caption[The Student's recipe and the 95\,\% bars]{The Student (ViT-B) next to its teacher Final. Part A: recipe and measured cost. Part B: the error bars of
 the 95\% rule in mm; the job computes the bars from the teacher re-measured in the same job, so these values are for
-orientation. Cost at \MethodImgSize\,px, one person; ms on an A40, batch 1. The rule also asks for fewer parameters, fewer FLOPs and a faster forward pass. Read as ``error at most
+orientation. Cost at \MethodImgSize\,px, one person; ms on one L40S, batch 1, both models in the same job. The rule also asks for fewer parameters, fewer FLOPs and a faster forward pass. Read as ``error at most
 1.05 times the teacher's'', the bars against Final would be \MethodBarHoldoutAlt{} and \MethodBarThreeDPWAlt\,mm. The
 Student's own errors are in Chapter~\ref{ch:results}.}
 \label{tab:student-recipe}

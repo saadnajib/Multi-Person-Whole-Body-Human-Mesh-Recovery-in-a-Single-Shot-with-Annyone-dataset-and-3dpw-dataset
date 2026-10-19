@@ -17,35 +17,31 @@ Req. & Supervisor's wording (short) & Status & Evidence & What is missing \\
 \midrule
 1a-pose & ``Pose of all body parts must look correct'' on (a) the 3DPW test set and (b) any in-the-wild image &
   \textbf{partly} &
-  3DPW test: PVE \FinalThreeDPW\,mm, recall \FinalRecallThreeDPW\,\%, precision \FinalPrecThreeDPW\,\%
-  (Table~\ref{tab:final-3dpw}); neck and finger flips corrected on the holdout (Sections~\ref{sec:res-bone},
-  \ref{sec:res-fingers}); real photos by eye only (Figures~\ref{fig:3dpw-overlays}, \ref{fig:real-photos},
-  \ref{fig:fingers-demo}) &
+  3DPW test: PVE \FinalThreeDPW\,mm, recall \FinalRecallThreeDPW\,\% (Table~\ref{tab:final-3dpw}); neck and
+  finger flips corrected on the holdout (Sections~\ref{sec:res-bone}, \ref{sec:res-fingers}); real photos by eye
+  (Figures~\ref{fig:3dpw-overlays}, \ref{fig:fingers-demo}) &
   depth slope \FinalSlope{} (Figure~\ref{fig:depth-scatter}); a second run \\
 \addlinespace
 1a-shape & ``Mesh size, proportions, age, muscles, and other aspects of the 3D shape must visibly change according to
   the person'' &
   \textbf{partly} &
   Relative Human: gender \RHGenderFinal\,\% (Base \RHGenderBase), child AUC \RHAUCFinal{} (Base \RHAUCBase)
-  (Table~\ref{tab:relhuman}); muscle, weight, cup size, firmness nearly constant on photos (standard deviation
-  \SpreadMuscleFinal--\SpreadCupFinal); three mask arms: the full mask trades this for gender, the partial mask
-  keeps children and loses gender too (Table~\ref{tab:mask-arms}) &
+  (Table~\ref{tab:relhuman}); muscle, weight, cup size, firmness nearly constant on photos; both mask arms lose
+  gender (Table~\ref{tab:mask-arms}) &
   per-phenotype agreement on AnnyOne; variety without losing gender \\
 \addlinespace
 1b & ``Must not be exactly the same as the Multi-HMR model'': new and better on both test sets, or ``significantly
   smaller'' and $\geq$\,95\,\% as good &
   \textbf{not met} &
-  Final is Multi-HMR with an Anny head; \FinalParams\,M against \NAVERParams\,M parameters
-  ($-$\DiscFinalSmallerPct\,\%); Multi-HMR-Anny \NAVERAnnyOne{} (likely in-sample) / \NAVERThreeDPW\,mm against
-  \FinalPVE{} / \FinalThreeDPW\,mm (Table~\ref{tab:baseline}); Student \StudentParams\,M: \StudentPVE{} / \StudentThreeDPW\,mm, misses the 95\,\% bars \BarPVE{} / \BarThreeDPW;
-  beats Multi-HMR-Anny on 3DPW (Table~\ref{tab:student}) &
-  the supervisor's choice of the reference model and whether a smaller student counts; against Final, a student that
-  meets the bar \\
+  Final is Multi-HMR with an Anny head, $-$\DiscFinalSmallerPct\,\% parameters against Multi-HMR-Anny
+  (Table~\ref{tab:baseline}); Student \ParamRatioStudent$\times$ smaller, \StudentPVE{} / \StudentThreeDPW\,mm,
+  misses the bars \BarPVE{} / \BarThreeDPW; beats Multi-HMR-Anny on 3DPW (Table~\ref{tab:student}) &
+  the supervisor's choice of the reference model and whether a smaller student counts \\
 \addlinespace
 1c & Evaluation on the real-world set with Anny parameters, not only SMPL-X &
   \textbf{met with caveats} &
-  3DPW test in Anny space, \DataThreeDPWTestImages{} images / \DataThreeDPWTestPeople{} people; label check WARN
-  (old labels FAIL), body joints \DataCheckJointsNew\,mm (Table~\ref{tab:label-check}) &
+  3DPW test in Anny space, \DataThreeDPWTestImages{} images; label check WARN (old labels FAIL)
+  (Table~\ref{tab:label-check}) &
   nothing required; caveats of Section~\ref{sec:data-limits}; a body-joint MPJPE \\
 \addlinespace
 2a & Convert 3DPW train and test to Anny and include the train set in training &

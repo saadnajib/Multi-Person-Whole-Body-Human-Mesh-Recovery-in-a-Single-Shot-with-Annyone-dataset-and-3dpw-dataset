@@ -118,7 +118,7 @@ the same training without the two fixes (Table~\ref{tab:model-names}).
 \item \textbf{The baseline, measured with the same code.} Multi-HMR-Anny reaches \NAVERThreeDPW\,mm PVE on 3DPW
   against \FinalThreeDPW\,mm for Final (Section~\ref{sec:res-baseline}).
 \item \textbf{A smaller student for requirement 1b.} A ViT-B Student distilled from Final has \ParamRatioStudent$\times$
-  fewer parameters and runs \SpeedRatioStudent$\times$ faster; its accuracy was pending (Section~\ref{sec:res-student}).
+  fewer parameters and runs \SpeedRatioStudent$\times$ faster, but misses the 95\,\% bar on both test sets (\StudentPVE{} and \StudentThreeDPW\,mm); it beats Multi-HMR-Anny on 3DPW (Section~\ref{sec:res-student}).
 \end{enumerate}
 
 % -----------------------------------------------------------------------------
