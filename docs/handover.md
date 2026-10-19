@@ -1,4 +1,4 @@
-# Handover: project state on Sunday 18 October 2026
+# Handover: project state on Sunday 18 October 2026 (updated Monday 19 October, afternoon)
 
 This file replaces the chat history. It is written for an assistant that cannot see that chat, the cluster or any
 temporary files. Everything you need is either here or in this repository. **Where this file disagrees with
@@ -59,6 +59,10 @@ confirm the three. To check a copy of this file:
   30-slide deck `docs/supervisor_update_2026-10-19.pptx`, its notes `docs/supervisor_talk_notes_2026-10-19.md` and the
   explanation `docs/deck_explained_2026-10-19.md`; section 9, 0a). `0` means an older copy: it still points to the
   21-slide `docs/supervisor_update_2026-10-16.pptx`, which is removed, and uses the old slide numbers.
+- `grep -c 'Final-shape' docs/handover.md` prints a number above `0` only in the afternoon 19-Oct version and later
+  (the meeting moved to Tue 20 Oct, the phenotype correlation on the holdout, the gender AUC on Relative Human, the
+  60-epoch student, the plan to 31 Oct in section 11). `0` means an older copy: it still reads the masked arms'
+  gender as "at chance" and plans to 15 Nov.
 
 The student should attach this file to the chat directly, not rely on you browsing GitHub. Download links: section 8.
 
@@ -178,6 +182,16 @@ file were merged into `main` (section 8).
   and the four questions (today's 26); notes 1, 16, 18, 20, 21, 23, 26, 27 (section 9).
 - Evening: the deck rebuilt as 30 slides in story order (0a, "Deck rebuilt"; section 9).
 
+**What happened on the afternoon of 19 Oct** (this version; details in 0a "19 Oct afternoon", 0b, 3.4, section 11):
+- The meeting moves from Mon 19 Oct 16:00 to **Tue 20 Oct 16:00** (the student's request, to rehearse) [Certain].
+  The deck is final at 32 slides (slide 32 = 3DPW label overlays, commit `f964803`).
+- 1a-shape: phenotype correlation on the AnnyOne holdout (commit `99142ae`) [Certain]: the final model varies weight
+  (r 0.77), gender (0.73), cup size (0.69); muscle is weak (0.27) and got weaker from Base (0.41); all slopes < 1.
+- Gender on Relative Human is largely a threshold problem, not a lost skill [Certain]: AUC Base 0.562, Final 0.780,
+  Final-masked 0.705. A shape variant that keeps variety is back on the table as a second model ("Final-shape").
+- 1b: a 60-epoch ViT-B student was launched by the student (job id: pending; result expected 20 Oct morning).
+- The plan to 31 Oct replaces the 4-week plan (section 11).
+
 **Meeting date: Monday 19 October 2026, 16:00** (the student), with the deck `docs/supervisor_update_2026-10-19.pptx`
 (30 slides, rebuilt on the evening of 18 Oct in story order), its speaker notes
 `docs/supervisor_talk_notes_2026-10-19.md` and the slide-by-slide explanation `docs/deck_explained_2026-10-19.md`
@@ -188,6 +202,9 @@ metrics (7, 8, 9), the depth bug (12-14), the neck and the fingers (15-17; the r
 Human result (18; job 3612131 also on 21, 23, 26 and 27), the masked arm (19), the final model (20; notes 8, 13, 14,
 15, 17, 26, 27), the final model on real photos (21), the pilots (22), the thesis requirements (23), the plan for 1b
 and the four weeks (24, 25), the claims and questions (26) and the jobs (30).
+**Moved, 19 Oct afternoon:** the meeting is now **Tuesday 20 October 2026, 16:00** (the student asked for the extra day
+to rehearse) [Certain]. The deck is final at 32 slides (31: predicted fingers and rest pose; 32: 3DPW label overlays,
+commit `f964803`; section 9).
 
 **Citation key** (used from section 1 on):
 - `3572482:126` = line 126 of that Slurm job's `.out` log. Job index in section 8. The student has every log; ask for
@@ -267,7 +284,14 @@ Project in brief:
   inconclusive. The final model does better (job 3612131: AUC 0.72, babies 0.44 vs adults 0.54, gender 64%), not
   solved. Decision for the supervisor: a limitation (Path A) or BEV-style weak labels from RH train (Path B).
   A default-off 3DPW shape mask exists (off in the final model; a mask-on arm is running).
-Supervisor meeting: Monday 19 Oct, 16:00.
+- 19 Oct afternoon. Shape on the AnnyOne holdout (Pearson r pred vs GT, final model): weight 0.77, gender 0.73, cup
+  size 0.69, muscle 0.27 (Base 0.41); all slopes < 1. So the model expresses shape where labels vary; the flat
+  muscle/weight on real photos sits on the 3DPW converter constants. Gender on Relative Human, AUC (rank, women =
+  positive): Base 0.56, Final 0.78, Final-masked 0.71; the masked model's 49% accuracy is mostly the 0.5 cut-off,
+  not lost skill. Cut-offs only from the AnnyOne holdout; report accuracy AND AUC. A 60-epoch ViT-B student is
+  running (expected 20 Oct morning; AnnyOne may reach ~105-112 mm, not 77.6; 3DPW not expected to move from ~110).
+  Plan to 31 Oct: handover section 11.
+Supervisor meeting: Monday 19 Oct, 16:00. Moved to Tuesday 20 Oct, 16:00 (my request, to rehearse).
 Cluster: on 16 Oct the queue for the old GPUs (V100, A100, RTX3090, RTXA6000, L40S) was estimated at 22-26 Oct; in
 fact the exp7 jobs started on 18 Oct at 05:27-05:30 cluster time, on an A100 and an A40. The H100/H200
 run only the 3DPW converter, through a small venv with PyTorch 2.1.2 (PY_VENV). Training, demo and evaluation need my
@@ -483,6 +507,55 @@ one L40S, 20,894 s (5.8 h), 11.6 img/s; 77 NaN/Inf steps skipped; heads frozen i
   - Deck rebuilt 19 Oct morning: slides 1, 2, 23, 24, 25, 26, 30 and their notes (section 9);
     `docs/deck_explained_2026-10-19.md` (slides 1, 2, 23-26, 30, Part 7 1b, Part 8 Q3a);
     `docs/thesis_requirements_plan.md` (2, 3.2). `docs/thesis/` not touched by this update.
+**19 Oct afternoon: shape re-read, gender is a threshold problem, a 60-epoch student, the plan to 31 Oct.**
+- Meeting [Certain]: moved from Mon 19 Oct 16:00 to **Tue 20 Oct 16:00** (the student's request, to rehearse). The deck
+  is final at 32 slides (slide 32 = 3DPW label overlays, commit `f964803`). Slide 19 says the masked arms lose gender;
+  the deck stays as is, so say the correction below out loud at slide 19.
+- 1a-shape, phenotype correlation on the AnnyOne holdout [Certain; computed 19 Oct from
+  `docs/thesis/data/holdout_per_person_{base,control,final}.csv`, rows `variant == V1_eval_masked`, n = 222 / 219 /
+  214; table `docs/thesis/data/holdout_phenotype_corr.csv` and the last section of `docs/thesis/data/plot_stats.md`;
+  commit `99142ae`]. Final model, Pearson r pred vs GT / slope / sd of the predictions vs sd of the labels: weight
+  0.77 / 0.61 / 0.194 vs 0.247; gender 0.73 / 0.48 / 0.087 vs 0.132; cupsize 0.69 / 0.47 / 0.164 vs 0.243;
+  proportions 0.67 / 0.50; height 0.48 / 0.37; firmness 0.46 / 0.34; age 0.31 / 0.16; muscle 0.27 / 0.13 / 0.052 vs
+  0.108 (Base 0.41 / 0.21, Control 0.35 / 0.16); asian 0.62, caucasian 0.46, african 0.30. Every slope is below 1:
+  predictions are pulled to the middle. Reading: the model expresses shape where the labels vary; the flat
+  muscle/weight on real photos is the 3DPW converter constants (all at 0.5), not a model that cannot express shape.
+  Muscle got weaker from Base to Final: a real cost of the 3DPW fine-tune. (Caveat: v5, which never saw 3DPW,
+  already pulled real-photo values to the training median (3.4); the constants explain the Final's collapse onto
+  0.5, not all of the real-photo pull.)
+- Gender on Relative Human is largely a **threshold** problem, not a lost skill [Certain; computed 19 Oct from
+  `docs/thesis/data/rh_per_person_{base,final,masked}.csv`, matched people with a male/female tag; AUC rank-based,
+  women = positive; also in `docs/thesis/data/plot_stats.md`, last section]:
+
+  | model (RH job) | n | accuracy at 0.5 | AUC | mean pred women / men | best accuracy (cut-off) |
+  |---|---|---|---|---|---|
+  | Base v5 (3611285_0) | 932 | 0.465 | 0.562 | 0.55 / 0.54 | -- |
+  | Final (3612131) | 1,308 | 0.642 | 0.780 | 0.86 / 0.55 | 0.723 (0.89) |
+  | Final-masked, full mask (3612325; RH 3613616) | 1,163 | 0.493 | 0.705 | 0.86 / 0.72 | 0.685 (0.95) |
+
+  So the masked model still ranks women above men (AUC 0.71 vs chance 0.50); its predictions moved up, and the 0.5
+  cut-off calls most men women. [Likely] The partial-mask run (3614042, RH 3616821; men 0.725, women 0.888) behaves
+  the same; its per-person CSV is not in the repo yet (asked from the cluster). Consequences: (1) the slide-19
+  trade-off is smaller than stated, and the rule "RH gender accuracy >= 60%" used above (18 Oct 15:30 and 19 Oct
+  01:20) judged the masked arms on a cut-off, not on ranking; (2) a shape variant that keeps variety is back on the
+  table as a **second** model, "Final-shape", not as a replacement of Final; (3) rule from now on: any cut-off is set
+  on the AnnyOne holdout, never on Relative Human, and every model gets accuracy AND AUC. The best cut-offs above are
+  set on Relative Human itself, so they are not results, only a size of the effect.
+- 1b, a 60-epoch ViT-B student [Certain for the launch, the student's message]: launched 19 Oct afternoon by the
+  student, `cd /netscratch/najib/multi-hmr && EPOCHS=60 bash slurm/experiments/exp8_distill_vitb.sh` (new RUN name
+  ending `_e60`, its own time limit from EPOCHS, LR halved every 24 epochs = 2/5 of 60). Job id: pending. [Likely]
+  ~12 GPU-h on an L40S plus the post-steps; result expected 20 Oct morning. Expectation, honestly: the AnnyOne curve
+  was still falling at epoch 30 (~1.5 mm per epoch and slowing), so [Likely] ~105-112 mm, not the 77.6 bar; 3DPW-val
+  was flat (88.0 -> 87.7), so the 3DPW bar (93.7) is not expected to move from ~110. Levers already used (do not
+  propose them again): NAVER's HMR-trained ViT-B backbone as init, the teacher's heads copied, heads frozen 5 epochs.
+- Depth, for the record [Certain]: the anchor fix is `--gt_center_joint person_center` (label depth at the joint the
+  model anchors at, the head; `--person_center head` is unchanged) plus `--alpha_dist 5 --alpha_transl 5`. The model
+  still anchors at the head. The slope 0.42 is unexplained; [Guessing] the fixed focal-length assumption. Planned
+  diagnostic (0 GPU-h): slope per depth bin and per focal length from the holdout CSVs.
+- Open asks to the student (cluster): the e60 submit output and job id; the Relative Human per-person CSV of job
+  3616821 (`results/.../per_person.csv`); tomorrow's answer to Q1 (which reference sets the 95% bar) and the
+  submission date.
+- Plan to 31 Oct: section 11, "Plan to 31 Oct". It supersedes the 4-week plan.
 
 Paste this section with section 0. Each step names the section with the details.
 
@@ -738,6 +811,14 @@ V1 setting, 100-image AnnyOne holdout, matched people, unless noted. Sources in 
   58.9; Relative Human recall 63.0%, gender 47.4% (men 0.725, women 0.888), AUC 0.727, ages 0.532 / 0.506 / 0.465
   (adult / kid / baby), babies below 0.45 34.3%; demo spread not measured. Both fail the gender rule (>= 60%): the
   unmasked final model stays.
+- Gender AUC on Relative Human (19 Oct, from `docs/thesis/data/rh_per_person_*.csv`; women = positive) [Certain]:
+  Base 0.562 (accuracy 0.465, n 932), Final 0.780 (0.642, n 1,308), Final-masked 0.705 (0.493, n 1,163). The masked
+  arm's low accuracy is mostly the 0.5 cut-off (men 0.72): it still ranks women above men. Partial mask: per-person
+  CSV not in the repo yet. Rule: cut-offs from the AnnyOne holdout only; report accuracy and AUC (0a "19 Oct
+  afternoon").
+- Shape on the AnnyOne holdout, final model, Pearson r pred vs GT (19 Oct; `docs/thesis/data/holdout_phenotype_corr.csv`)
+  [Certain]: weight 0.77, gender 0.73, cupsize 0.69, proportions 0.67, asian 0.62, height 0.48, firmness 0.46,
+  caucasian 0.46, age 0.31, african 0.30, muscle 0.27 (Base 0.41); every slope < 1.
 - NAVER's `multiHMR_672_L_anny` (the 1b baseline; job 3614192, 18 Oct evening, 0a) [Certain, log]: the same 100 holdout
   images (helper bones masked) PVE 60.3, PA-PVE 44.6, MPJPE 63.3, PA-MPJPE 45.0, recall 89.0%, precision 82.0% (final
   model 73.7 / 50.3 / recall 87.0); 3DPW test (v23, 8,190 images) PVE 126.9, PA-PVE 68.8, MPJPE 129.4, recall 97%,
@@ -1228,6 +1309,11 @@ statistic in the findings doc and the exp1 script's "baseline(findings)" column;
 **Submitted?** `long_pc_dist20` (x20, 10 epochs): the command was given on 14 Oct (~19:07, "Run this tonight"); never
 confirmed, no job ID, no log. Check with the status block (section 4). Command and reading in 4d.
 
+**19 Oct afternoon** [Certain for the flags]: the fix in the final model is `--gt_center_joint person_center` (label
+depth at the anchored head; `--person_center head` unchanged) plus `--alpha_dist 5 --alpha_transl 5`; the model still
+anchors at the head. Slope 0.42 unexplained; [Guessing] the fixed focal-length assumption. Next: the free diagnostic
+in section 11 (slope per depth bin and per focal length from the holdout CSVs), then at most one run.
+
 **Next:** see section 5, items 6-9.
 
 ### 3.2 Neck
@@ -1519,6 +1605,9 @@ adults. This section replaces that reading. The plan is in section 5, item 12.
 - [Certain, 3612131] On the same Relative Human split the final model is better on every line: gender accuracy
   46.5 -> 64.2% (women 0.861, men 0.551), children AUC 0.61 -> 0.72 (babies 0.44 vs adults 0.54), recall 47 -> 65%.
   [Likely] Part of the age shift is the 3DPW age label 0.55. A measured improvement, not solved (next blocks).
+- [Certain, 19 Oct afternoon] On the AnnyOne holdout the final model does express shape where the labels vary (weight
+  r 0.77, gender 0.73, muscle only 0.27); and the masked arms' gender "at chance" on Relative Human is mostly the
+  0.5 cut-off (AUC 0.705). End of this section, "Shape and gender, re-read on 19 Oct".
 
 **Relative Human result (18 Oct; jobs 3611285_0 and _1)** [Certain, from the job logs `logs/eval_rh_3611285_0.out`
 and `logs/eval_rh_3611285_1.out`]:
@@ -1772,6 +1861,21 @@ women 0.861, men 0.551 (job 3612131): women recognised, men still mid-range.
   adult body; one child is not a measurement.
 - Done: the Relative Human evaluation of the final model, job 3612131 (above): gender accuracy 0.642 (v5 0.465,
   chance), above 0.5, so the direction is right on average. The pictures stay "by eye".
+
+**Shape and gender, re-read on 19 Oct (afternoon)** (numbers in 0a "19 Oct afternoon"; files in `docs/thesis/data/`):
+- [Certain] Holdout correlation (`holdout_phenotype_corr.csv`, commit `99142ae`): the final model's predictions follow
+  the labels for weight (r 0.77, slope 0.61), gender (0.73 / 0.48) and cup size (0.69 / 0.47); muscle is weak (0.27 /
+  0.13; Base 0.41 / 0.21, Control 0.35 / 0.16). Every slope < 1: pulled to the middle. So on synthetic images the
+  head can express shape; the collapse of muscle, weight, cup size and firmness on real photos in the final model
+  sits on the 3DPW converter constants (0.5). The weaker muscle is a real cost of the 3DPW fine-tune.
+- [Certain] This does not undo the earlier finding: v5 never saw 3DPW and already pulled real-photo values to the
+  training median (above). The constants explain where the final model's values land, not all of the pull.
+- [Certain] Gender on Relative Human, AUC (rank, women = positive): Base 0.562, Final 0.780, Final-masked 0.705. The
+  masked arm's accuracy 0.493 comes from predictions that moved up (men 0.72, women 0.86) under a 0.5 cut-off, not
+  from lost ranking. [Likely] the partial mask (RH 3616821) is the same; its per-person CSV is pending.
+- Consequence: a masked variant that keeps shape variety is a candidate **second** model, "Final-shape", next to the
+  final model (not a replacement), with a full evaluation if its AUC is near 0.7 (section 11, plan to 31 Oct). Any
+  cut-off comes from the AnnyOne holdout, never from Relative Human; accuracy and AUC for every model.
 
 ### 3.5 3DPW -> Anny labels
 
@@ -2477,6 +2581,8 @@ Relative Human evaluation of the final model (job 3612131; 3.4). Running: the `M
 the four weeks after the meeting is in `docs/thesis_requirements_plan.md` (section 11). Everything below that trains
 or runs the model (training, demo, trace, evaluation) needs the old GPUs; only the 3DPW converter can use the
 H100/H200 (4f). Item 6 depends on the supervisor's answer to slide 26. The label rebuild (item 5) is done.
+**Since 19 Oct afternoon the order of work is section 11, "Plan to 31 Oct"**; the items below are the background and
+the commands, not the order.
 
 1. **exp6 panels: done (early 16 Oct).** The 12 v5 compare panels show thin-stalk necks without the correction and
    normal width with it (3.2, "Visual check"; figure `docs/figures/neck_before_after_v5.jpg`, deck slide 16). So "the
@@ -3188,6 +3294,15 @@ the best on the v23 labels (v9 e62 95.5, v5 121.8; jobs 3612073-3612075); on rea
 demo job 3612078; on Relative Human gender 46.5 -> 64%, children AUC 0.61 -> 0.72, recall 47 -> 65%, job
 3612131).
 
+**19 Oct afternoon.** Commits `f964803` (deck slide 32, 3DPW label overlays; 32 slides), `99142ae` (phenotype
+correlation on the AnnyOne holdout: `docs/thesis/data/holdout_phenotype_corr.csv`, `plot_stats.md`, the 1a-shape row
+of `docs/thesis_requirements_plan.md`) and the docs commit after it (this update: the gender AUC section of
+`plot_stats.md`, 0a "19 Oct afternoon", 3.4, section 11 "Plan to 31 Oct"). New job, not yet in the index above:
+
+| job | log name | what |
+|---|---|---|
+| pending | exp8 (log name `exp8_distill_vitb`, job id pending) | the 60-epoch ViT-B student, launched 19 Oct afternoon by the student: `EPOCHS=60 bash slurm/experiments/exp8_distill_vitb.sh`, RUN ending `_e60`, LR x0.5 every 24 epochs, own time limit. [Likely] ~12 GPU-h on an L40S plus post-steps; result expected 20 Oct morning. Job id: pending (asked from the student). 0a "19 Oct afternoon" |
+
 ---
 
 ## 9. Deck
@@ -3343,6 +3458,14 @@ measurement the student proposed first is done. (2) The 3DPW shape mask: the ful
 3612325; slide 19) and not adopted; the partial mask that keeps age is queued (job 3614042). Record both answers here
 after the meeting.
 
+**19 Oct afternoon:** the meeting moved to **Tue 20 Oct, 16:00**; the deck is final at 32 slides (the "Check a copy"
+line now prints `32`, `32`, `32` for the first three counts, checked on the files in this version). No rebuild is
+planned. Two things to say out loud, because the slides do not: (1) slide 19 and the 0b mask line read the masked
+arms' gender as lost; on ranking it is not (AUC 0.705 for the full mask vs 0.780 for Final and 0.562 for Base;
+0a "19 Oct afternoon"), so the trade-off is smaller than the slide says, and a "Final-shape" second model is
+possible; (2) a 60-epoch student is running (result 20 Oct morning, before the meeting if the queue allows). Record
+the supervisor's answers (Q1 bar, Q4 date) in this section after Tuesday.
+
 Slide 32 (added 19 Oct, appendix): 3DPW labels on the image, a good case (courtyard_arguing_00 image 24, 12 / 14 mm) and the worst (outdoors_climbing_02 image 633, 57 mm); crops `docs/figures/label_check_{courtyard,climbing}.jpg` of the F14 label-check figures (job 3611284); slide 6 notes point to it.
 
 ---
@@ -3445,7 +3568,32 @@ commands, the Monday bullets, the writing and clean-up list). Read it before pla
 - Fixed/committed on 18 Oct (`a9db35c`, on `main`): the NAVER adapter now exposes nearness / img_size / patch_size /
   person_center_idx; exp8, model_cost.py and the baseline script are committed, reviewed twice, never run on the cluster.
   Still to write: a masked-eval flag; `kd_shp` masking of the 8 constants.
-- Order: Mon evening adapter fix, commit, NAVER smoke test (all done: the NAVER evaluation ran as job 3614192, 0a); the `MASK_3DPW_SHAPE=1` arm is already running (then its
+- **Superseded on 19 Oct afternoon by "Plan to 31 Oct" below; kept for the record.** Order: Mon evening adapter fix, commit, NAVER smoke test (all done: the NAVER evaluation ran as job 3614192, 0a); the `MASK_3DPW_SHAPE=1` arm is already running (then its
   own Relative Human run, with a `TAG`); the final model's Relative Human run is done (3612131); Tue 20 exp8 as one
   ~42-h job (never 5-h chunks). Student ~8 Nov, fallback 10 Nov, (1) closed 15 Nov, no buffer. Weeks 5-6 temporal
   refiner; weeks 7-8 writing, release, buffer. Write his answers to the four slide-26 questions into section 9.
+
+### Plan to 31 Oct (19 Oct afternoon; supersedes the order above and the 4-week plan of `docs/thesis_requirements_plan.md`)
+
+Twelve working days, 20-31 Oct. Every GPU run is one run, no seed; read it against the noise (3.6).
+- **Days 1-2 (Tue 20 - Wed 21 Oct).** The supervisor's answer to Q1 (which reference sets the 95% bar: our ViT-L, NAVER's
+  model or both) decides 1b. Read the e60 student (expected 20 Oct morning; 0a "19 Oct afternoon"). Get the per-person
+  CSV of Relative Human job 3616821 (the partial mask) and compute its gender AUC the same way as the other three.
+- **Days 3-6 (Thu 22 - Sun 25 Oct).**
+  - Gender cut-off set on the AnnyOne holdout, then accuracy and AUC on Relative Human for every model (0 GPU-h).
+  - Depth-slope diagnostic: slope per depth bin and per focal length from the holdout CSVs (0 GPU-h). Then at most ONE
+    run (the true focal length in training) if the slope is near 1 inside one focal length; otherwise state the slope
+    as a limitation.
+  - If the student's 3DPW stays ~110 mm: ONE recipe change (more 3DPW in the student's batches), not a series.
+  - The partial mask becomes "Final-shape", with a full evaluation (holdout, 3DPW test, Relative Human, demo spread),
+    if its AUC is near 0.7. It is a second model next to Final, not a replacement.
+- **Days 7-10 (Mon 26 - Thu 29 Oct).** The temporal refiner (2b): a two-layer transformer over 16-frame windows of the
+  frozen per-frame tokens, trained on 3DPW-train tracks; acceleration error and PVE against a moving-average
+  baseline. First number only. It does not count for 1b-i on AnnyOne.
+- **Days 11-12 (Fri 30 - Sat 31 Oct).** Writing only: thesis and deck.
+- **Dropped** (tell the supervisor it does not fit): a new architecture (1b-i), children / age labels (Path B), a
+  second student seed, the code clean-up (98 hard-coded paths).
+- Already used for the student (do not propose again): NAVER's HMR-trained ViT-B backbone as init, the teacher's heads
+  copied, heads frozen 5 epochs.
+- Open asks to the student: the e60 job id and submit output; the 3616821 per-person CSV; Tuesday's Q1 answer and the
+  submission date.

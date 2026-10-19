@@ -99,3 +99,20 @@ in the labels), cup size (0.69) and gender (0.73). Muscle is the weak one (r 0.2
 Base (0.41) through the 3DPW fine-tunes, as expected when 30% of the batches carry the converter constant 0.5. Every
 slope is below 1: the predictions are pulled towards the middle. The flat shape on real photos (handover 3.4) is
 therefore the 3DPW constants, not a model that cannot express shape.
+
+## Gender on Relative Human: accuracy and AUC (19 Oct, computed from the three rh_per_person CSVs)
+
+People matched to a labelled box with a male/female tag. Accuracy at the cut-off 0.5 (pred >= 0.5 = woman, Anny's male
+end is 0); AUC rank-based (Mann-Whitney, ties averaged), women = positive, 0.5 = chance. The "best accuracy" column
+scans cut-offs on Relative Human itself, so it only shows the size of the threshold effect; a real cut-off must come
+from the AnnyOne holdout.
+
+| model (Relative Human job) | n | accuracy at 0.5 | AUC | mean pred women / men | best accuracy (cut-off) |
+|---|---|---|---|---|---|
+| Base, v5 00099 (3611285_0) | 932 | 0.465 | 0.562 | 0.55 / 0.54 | 0.636 (0.62) |
+| Final (3612131) | 1,308 | 0.642 | 0.780 | 0.86 / 0.55 | 0.723 (0.89) |
+| Final-masked, full mask (3612325; RH 3613616) | 1,163 | 0.493 | 0.705 | 0.86 / 0.72 | 0.685 (0.95) |
+
+Reading: the masked model still ranks women above men (AUC 0.71); its predictions moved up and the 0.5 cut-off calls
+most men women. Its low accuracy is a threshold effect, not a lost skill. The partial mask (job 3614042, RH 3616821) is
+not in the table: its per-person CSV is not in the repo yet. Report accuracy and AUC for every model.
