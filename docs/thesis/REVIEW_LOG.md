@@ -235,3 +235,6 @@ caption was written, and every verdict in the captions is by eye.
 
 ## 19 Oct: long version frozen before trimming
 The full 132-page version is commit 76aa1a4 (main) and docs/thesis/thesis_long_2026-10-19.pdf. Every paragraph cut in the trimming pass can be recovered with `git show 76aa1a4:docs/thesis/<file>`.
+
+## 19 Oct: trimming pass done
+Main text 86 -> 60 pages (chapters 1-8 on printed pages 1-60), appendices 30 -> 16, total 132 -> 92. Clean build: 0 errors, 0 undefined references, 0 overfull boxes. Student result (job 3614191) filled in: 6.10, T16, T17, F18, F19, 7.1, T01, 8.x, abstract, chapter 1. Fixed after the trim: a comment that broke a T11 row; the T11 cost row moved from the A40 smoke-test timings to the L40S pair of the student job (59.7 / 28.5 ms, 2.10x).

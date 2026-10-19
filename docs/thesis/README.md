@@ -37,9 +37,10 @@ figures/RPTU-*.pdf       title-page logos
 data/                    CSVs behind the plots; plot_stats.md = the statistics computed from them; data/README.md
 ```
 
-Pages per part (19 Oct): front matter 8, ch. 1: 6, ch. 2: 10, ch. 3: 12, ch. 4: 16, ch. 5: 10, ch. 6: 22, ch. 7: 8,
-ch. 8: 2, lists 4, App. A: 14, B: 2, C: 4, D: 6, E: 4, bibliography 4. The main text (chapters 1-8) is 86 pages,
-against the plan's 60-80; `REVIEW_LOG.md` lists the trimming candidates.
+Pages per part (19 Oct, after the trimming pass): front matter 8, ch. 1: 4, ch. 2: 6, ch. 3: 8, ch. 4: 12, ch. 5: 8,
+ch. 6: 16, ch. 7: 4, ch. 8: 2 (printed pages 1-60; chapters open on odd pages, so some spans include one blank page),
+lists 4, App. A: 6, B: 2, C: 2, D: 4, E: 2, bibliography; 92 pages in all. The long 132-page version is commit
+76aa1a4 and `thesis_long_2026-10-19.pdf`; scripts and commands cut from Appendix A are in `REPRODUCE.md`.
 
 ## The naming rule
 
