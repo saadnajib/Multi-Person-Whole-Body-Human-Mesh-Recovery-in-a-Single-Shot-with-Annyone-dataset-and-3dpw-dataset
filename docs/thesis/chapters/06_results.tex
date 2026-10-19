@@ -151,14 +151,15 @@ fresh heads (Section~\ref{sec:diag-neck}), need a two-sided correction, which I 
 \label{sec:res-fingers}
 
 % F11: crops of the render panels of F11_hands_photo_party.jpg (2700 x 944, panels 675 px), F11_hands_3dpw_guitar.jpg
-% and F11_hands_3dpw_bar.jpg (2024 x 944, panels 506 px); trim = {left bottom right top} in px. Demo with
+% and F11_hands_3dpw_bar.jpg (2024 x 944, panels 506 px); trim = {left bottom right top} in px of the files AS STORED
+% (19 Oct: montages wider than 2400 px were downscaled to 2400 px for the PDF size; the trims below are scaled to match). Demo with
 % --relax_hands 0; Base without, Final with the bone correction (demo log data/demo_compare_3615018_hands.log).
 \begin{figure}[tbp]
 \centering
 \begin{tabular}{@{}c@{\hspace{4pt}}c@{}}
 \small Base, predicted fingers & \small Final, predicted fingers \\[2pt]
-\includegraphics[trim={880 324 1350 170},clip,width=0.40\linewidth]{F11_hands_photo_party} &
-\includegraphics[trim={2230 324 0 170},clip,width=0.40\linewidth]{F11_hands_photo_party} \\
+\includegraphics[trim={782 288 1200 151},clip,width=0.40\linewidth]{F11_hands_photo_party} &
+\includegraphics[trim={1982 288 0 151},clip,width=0.40\linewidth]{F11_hands_photo_party} \\
 \multicolumn{2}{c}{\small (a) party photo: the hand at the face and the hand over the armrest} \\[4pt]
 \includegraphics[trim={580 354 1124 330},clip,width=0.40\linewidth]{F11_hands_3dpw_guitar} &
 \includegraphics[trim={1592 354 112 330},clip,width=0.40\linewidth]{F11_hands_3dpw_guitar} \\
@@ -374,17 +375,17 @@ Figure~\ref{fig:rest-more}.
 \centering
 \begin{tabular}{@{}c@{\hspace{3pt}}c@{\hspace{3pt}}c@{}}
 \small Base & \small Final & \small Final-masked \\[2pt]
-\includegraphics[trim={1349 0 5396 44},clip,width=0.325\linewidth]{F17_rest_photo_tennis} &
-\includegraphics[trim={4047 0 2698 44},clip,width=0.325\linewidth]{F17_rest_photo_tennis} &
-\includegraphics[trim={6745 0 0 44},clip,width=0.325\linewidth]{F17_rest_photo_tennis} \\
+\includegraphics[trim={400 0 1600 13},clip,width=0.325\linewidth]{F17_rest_photo_tennis} &
+\includegraphics[trim={1200 0 800 13},clip,width=0.325\linewidth]{F17_rest_photo_tennis} &
+\includegraphics[trim={2000 0 0 13},clip,width=0.325\linewidth]{F17_rest_photo_tennis} \\
 \multicolumn{3}{c}{\small (a) tennis photo: five men in a line} \\[4pt]
-\includegraphics[trim={1349 0 5396 44},clip,width=0.325\linewidth]{F17_rest_photo_stage} &
-\includegraphics[trim={4047 0 2698 44},clip,width=0.325\linewidth]{F17_rest_photo_stage} &
-\includegraphics[trim={6745 0 0 44},clip,width=0.325\linewidth]{F17_rest_photo_stage} \\
+\includegraphics[trim={400 0 1600 13},clip,width=0.325\linewidth]{F17_rest_photo_stage} &
+\includegraphics[trim={1200 0 800 13},clip,width=0.325\linewidth]{F17_rest_photo_stage} &
+\includegraphics[trim={2000 0 0 13},clip,width=0.325\linewidth]{F17_rest_photo_stage} \\
 \multicolumn{3}{c}{\small (b) stage photo: three singers} \\[4pt]
-\includegraphics[trim={506 0 2024 44},clip,height=4.2cm]{F17_rest_3dpw_bar} &
-\includegraphics[trim={1518 0 1012 44},clip,height=4.2cm]{F17_rest_3dpw_bar} &
-\includegraphics[trim={2530 0 0 44},clip,height=4.2cm]{F17_rest_3dpw_bar} \\
+\includegraphics[trim={400 0 1600 35},clip,height=4.2cm]{F17_rest_3dpw_bar} &
+\includegraphics[trim={1200 0 800 35},clip,height=4.2cm]{F17_rest_3dpw_bar} &
+\includegraphics[trim={2000 0 0 35},clip,height=4.2cm]{F17_rest_3dpw_bar} \\
 \multicolumn{3}{c}{\small (c) 3DPW test frame \texttt{downtown\_bar}: two men} \\
 \end{tabular}
 \caption[Rest-pose line-up: Base, Final, Final-masked]{Rest-pose line-up on three demo images (the tennis and stage
