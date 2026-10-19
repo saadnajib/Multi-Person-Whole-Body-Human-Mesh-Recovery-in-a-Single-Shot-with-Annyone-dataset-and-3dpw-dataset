@@ -3,7 +3,7 @@
 This file replaces the chat history. It is written for an assistant that cannot see that chat, the cluster or any
 temporary files. Everything you need is either here or in this repository. **Where this file disagrees with
 `README.md`, `docs/diagnostics_findings.md`, `docs/experiments_plan.md` or `docs/experiments/exp2_children.md`, trust
-this file** (section 7 lists the outdated lines). The deck `docs/supervisor_update_2026-10-19.pptx` (30 slides since
+this file** (section 7 lists the outdated lines). The deck `docs/supervisor_update_2026-10-19.pptx` (32 slides since 19 Oct, 30 since
 the evening of 18 Oct), the speaker notes `docs/supervisor_talk_notes_2026-10-19.md` and the slide-by-slide
 explanation `docs/deck_explained_2026-10-19.md` match this file. Section 9 lists the slides and the lines that will go
 stale when the pending results arrive.
@@ -56,7 +56,7 @@ confirm the three. To check a copy of this file:
   23; 3.4, section 9, section 11). `0` means an older copy: it still calls the final model's Relative Human run
   pending, says children are unchanged in the final model and has a 20-slide deck.
 - `grep -c deck_explained docs/handover.md` prints a number above `0` only in this version (evening of 18 Oct: the
-  30-slide deck `docs/supervisor_update_2026-10-19.pptx`, its notes `docs/supervisor_talk_notes_2026-10-19.md` and the
+  32-slide deck `docs/supervisor_update_2026-10-19.pptx`, its notes `docs/supervisor_talk_notes_2026-10-19.md` and the
   explanation `docs/deck_explained_2026-10-19.md`; section 9, 0a). `0` means an older copy: it still points to the
   21-slide `docs/supervisor_update_2026-10-16.pptx`, which is removed, and uses the old slide numbers.
 - `grep -c 'Final-shape' docs/handover.md` prints a number above `0` only in the afternoon 19-Oct version and later
@@ -193,7 +193,7 @@ file were merged into `main` (section 8).
 - The plan to 31 Oct replaces the 4-week plan (section 11).
 
 **Meeting date: Monday 19 October 2026, 16:00** (the student), with the deck `docs/supervisor_update_2026-10-19.pptx`
-(30 slides, rebuilt on the evening of 18 Oct in story order), its speaker notes
+(32 slides: 30 rebuilt on the evening of 18 Oct in story order, plus appendix slides 31-32 on 19 Oct), its speaker notes
 `docs/supervisor_talk_notes_2026-10-19.md` and the slide-by-slide explanation `docs/deck_explained_2026-10-19.md`
 (section 9). It replaces the 21-slide deck of 16-18 Oct, whose rebuilds are described in section 9 of this file as of
 commit `a2d236d`. In the deck: the goal and the requirements (slide 2), the model (3), the datasets (4), the 3DPW
@@ -210,7 +210,7 @@ commit `f964803`; section 9).
 - `3572482:126` = line 126 of that Slurm job's `.out` log. Job index in section 8. The student has every log; ask for
   one when you need to check a number.
 - `README :L` = `README.md`; `plan :L` = `docs/experiments_plan.md`; `findings` = `docs/diagnostics_findings.md`.
-- `notes, slide N` = the speaker notes of slide N in `docs/supervisor_talk_notes_2026-10-19.md` (30 slides);
+- `notes, slide N` = the speaker notes of slide N in `docs/supervisor_talk_notes_2026-10-19.md` (32 slides; slides 1-30 unchanged since 18 Oct);
   "If asked" = that slide's second part. The notes are cited by slide, not by line: their line numbers moved with
   every rebuild. This file uses the 30-slide numbers, also for history. A 21-slide copy (16-18 Oct) maps to them as
   (old -> new, `docs/deck_src/README.md`): 2 -> 10, 3 + 4 -> 11, 5 -> 5, 6 -> 6, 7 -> 15, 8 -> 16, 9 -> 17, 10 -> 18,
@@ -717,7 +717,7 @@ Paste this section with section 0. Each step names the section with the details.
    - New on the evening of 17 Oct: `MASK_3DPW_SHAPE` (default `0` = old behaviour; `1` passes `--mask_3dpw_shape 1`
      to both arms and adds `_shpmask` to the run names). Leave it at `0` until the supervisor decides (step 8; 3.4;
      section 5, item 7).
-7. Before the meeting: check that the deck is the 30-slide version, `docs/supervisor_update_2026-10-19.pptx`
+7. Before the meeting: check that the deck is the 32-slide version (slides 31-32 are appendix, added 19 Oct), `docs/supervisor_update_2026-10-19.pptx`
    (section 9, "Check a copy"). Open the pptx once in PowerPoint and check slides 9, 13, 24 and 30 first (the tightest
    in the LibreOffice render), then the table slides 7, 8, 23 and 25 and the claims slide 26, for text that wraps one
    line longer (section 9, "Slides", says what to look at on each). The

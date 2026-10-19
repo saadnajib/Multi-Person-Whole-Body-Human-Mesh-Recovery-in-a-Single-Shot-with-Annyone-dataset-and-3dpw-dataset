@@ -98,7 +98,9 @@ Reading: on synthetic images, where the labels vary, the final model does vary w
 in the labels), cup size (0.69) and gender (0.73). Muscle is the weak one (r 0.27, slope 0.13) and it got weaker from
 Base (0.41) through the 3DPW fine-tunes, as expected when 30% of the batches carry the converter constant 0.5. Every
 slope is below 1: the predictions are pulled towards the middle. The flat shape on real photos (handover 3.4) is
-therefore the 3DPW constants, not a model that cannot express shape.
+therefore not a model that cannot express shape. The 3DPW constants explain WHERE the final model's real-photo values
+land (muscle and weight at about 0.48, the converter constant); the narrow spread itself was already there in Base, which
+never saw 3DPW (handover 3.4), so part of it is the synthetic-to-real gap.
 
 ## Gender on Relative Human: accuracy and AUC (19 Oct, computed from the three rh_per_person CSVs)
 
