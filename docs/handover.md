@@ -557,6 +557,8 @@ one L40S, 20,894 s (5.8 h), 11.6 img/s; 77 NaN/Inf steps skipped; heads frozen i
   submission date.
 - Plan to 31 Oct: section 11, "Plan to 31 Oct". It supersedes the 4-week plan.
 
+  **20 Oct morning, measured** (`docs/thesis/data/rh_per_person_partialmask.csv` = job 3616821; `plot_stats.md`, last section) [Certain]: Final-partial-mask gender AUC 0.752 (Final 0.780, full mask 0.705, Base 0.562), acc@0.5 0.474, mean pred women 0.89 / men 0.72; weight spread on RH 0.120 (Final 0.058, full mask 0.146), muscle spread 0.055 (Final 0.053); children (official) AUC 0.727 vs 0.719. So the partial mask keeps gender ranking and children and doubles the weight variety; muscle does not come back. It is the candidate for 'Final-shape' (a second model next to Final, not a replacement). Cut-off: the AnnyOne holdout cannot set one (its gender labels run 0.38-0.82, 85% above 0.5: no real men); use AUC as the main gender number, and if a threshold is needed set it on 3DPW validation (binary metadata gender).
+
 Paste this section with section 0. Each step names the section with the details.
 
 1. Ask the student: the thesis submission date and the draft's chapters (section 10); and the job id and state of

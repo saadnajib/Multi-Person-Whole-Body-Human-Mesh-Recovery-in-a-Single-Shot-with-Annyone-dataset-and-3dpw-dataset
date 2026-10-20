@@ -118,3 +118,30 @@ from the AnnyOne holdout.
 Reading: the masked model still ranks women above men (AUC 0.71); its predictions moved up and the 0.5 cut-off calls
 most men women. Its low accuracy is a threshold effect, not a lost skill. The partial mask (job 3614042, RH 3616821) is
 not in the table: its per-person CSV is not in the repo yet. Report accuracy and AUC for every model.
+
+## Partial-mask model on Relative Human, and where a gender cut-off can come from (20 Oct)
+
+`rh_per_person_partialmask.csv` = job 3616821 (model 3614042, `v5_pc_dist5_bonefix_v23_e10_shpmask_noage`), the same
+columns as the other three RH files. Same computation as the section above (people with a male/female tag; AUC
+rank-based, women positive; children AUC here = adult-vs-not-adult by predicted age, a quick consistency check, NOT the
+official children AUC of the eval logs, which is 0.719 Final / 0.727 partial mask).
+
+| model | n | acc@0.5 | gender AUC | mean pred women / men | best acc (cut-off, set on RH itself) | pred sd muscle | pred sd weight |
+|---|---|---|---|---|---|---|---|
+| Base | 932 | 0.465 | 0.562 | 0.55 / 0.54 | 0.636 (0.62) | 0.084 | 0.101 |
+| Final | 1,308 | 0.642 | 0.780 | 0.86 / 0.55 | 0.723 (0.89) | 0.053 | 0.058 |
+| Final-masked (full mask) | 1,163 | 0.493 | 0.705 | 0.86 / 0.72 | 0.685 (0.95) | 0.084 | 0.146 |
+| Final-partial-mask | 1,271 | 0.474 | 0.752 | 0.89 / 0.72 | 0.707 (0.93) | 0.055 | 0.120 |
+
+Reading: the partial mask keeps the gender ranking almost intact (AUC 0.75 vs 0.78), keeps the children (official AUC
+0.727 vs 0.719), and doubles the weight spread on real photos (0.120 vs 0.058); muscle spread does not come back (0.055).
+Its accuracy at the 0.5 cut-off (47%) is a calibration effect: both sexes moved up (men 0.72). The full mask gives more
+weight and muscle spread but loses more ranking (0.705).
+
+Where a cut-off can be set: NOT on the AnnyOne holdout. Its gender labels run only from 0.38 to 0.82 (quantiles 0.38 /
+0.53 / 0.65 / 0.74 / 0.82 over 214 people; 85% above 0.5), i.e. AnnyOne has no fully male or fully female bodies and almost
+no men, so a men/women threshold fitted there is meaningless (job 3569948 gave the training median 0.588, same picture).
+The only training labels at exactly 0 and 1 are the 3DPW ones (metadata gender). Consequences: (1) report the
+threshold-free AUC as the main gender number and accuracy@0.5 as the secondary one; (2) if a cut-off is wanted, set it on
+3DPW validation (binary metadata gender, held out), never on Relative Human; (3) the men-in-the-middle effect (0.55-0.72)
+is expected from the labels: the model hardly ever saw a man labelled 0 outside 3DPW.
