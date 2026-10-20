@@ -10,23 +10,36 @@ cross-references and a few titles. Every number on a slide comes from `docs/hand
 or `scripts/analysis/model_cost.py`; slide 30 lists the jobs and logs. The script runs outside the machine it was first
 built on (line 2 loads `./apply_theme.js`; the figures are found through `__dirname`).
 
-Slides (section, number, title):
-- Overview: 1 Multi-HMR with Anny: what we changed and what we measured (title, DARK); 2 The goal and your requirements;
-  3 The model in one picture.
-- Data: 4 The datasets; 5 3DPW to Anny: how the labels are made; 6 3DPW labels: three defects found and fixed.
-- Training: 7 What the model learns: the losses in plain words; 8 What we changed in training: v5 -> final model;
-  9 How we measure.
-- Findings and fixes: 10 Where we started: three visible failures; 11 Checked first: what is NOT the cause;
-  12 The hidden depth bug: anchor vs target; 13 Depth fix: before and after; 14 Depth fix: the numbers;
-  15 Neck: two half-turned bones, and a pilot fix; 16 Neck: before and after the fix; 17 Fingers: about half the
-  error was two flipped bones; 18 Children and gender on real photos; 19 Masked shape labels: a trade-off.
-- Final model: 20 Final model: all fixes together, with a control; 21 Final model on real photos: v5 vs final (by eye).
-- Requirements and plan: 22 Pilots: four results and the noise floor; 23 Thesis requirements: where we stand;
-  24 Plan for 1b: a smaller model by distillation; 25 Plan: the next four weeks; 26 What I claim, what I do not,
-  and my questions (DARK_CLOSE).
-- Appendix: 27 Still open, and what I test next; 28 Corrections to the draft and the repo; 29 Backup: before and
-  after, holdout image 579860; 30 Jobs and checkpoints; 31 Real photos: predicted fingers and rest-pose line-up;
-  32 3DPW labels on the image: a good case and the worst case.
+Slides (section, number, title; titles as since 20 Oct; **hidden** = a backup slide, see below):
+- Overview: 1 Multi-HMR with Anny: bugs found, fixed and measured (title, DARK); 2 The goal, and your requirements: two
+  of six met; 3 The model: Multi-HMR's design plus our fixes.
+- Data: 4 The datasets (hidden); 5 3DPW to Anny: how the labels are made (hidden); 6 3DPW labels: three defects fixed,
+  now safe to train on.
+- Training: 7 What the model learns: the losses in plain words (hidden); 8 What we changed in training: v5 -> final
+  model (hidden); 9 How we measure (hidden).
+- Findings and fixes: 10 Three failures, each explained by an untested guess; 11 Checked first: what is NOT the cause
+  (hidden); 12 Depth bug: model uses the head, training the pelvis; 13 Depth fix: before and after (hidden); 14 Depth
+  fix: placement error almost halved; 15 Neck: two bones were half a turn off; now fixed; 16 Neck: before and after the
+  fix (hidden); 17 Fingers: turning two flipped bones back halves the error; 18 Real photos: gender and children
+  improve, but not solved; 19 Masked shape labels: a trade-off (hidden).
+- Final model: 20 Final model: all fixes hold together against a control; 21 Real photos by eye: men look male,
+  children still adult.
+- Requirements and plan: 22 Pilots: four results and the noise floor (hidden); 23 Requirements: data done, pose and
+  shape partly, 1b open; 24 Student: three times smaller, but misses the 95% bar; 25 Plan: part 1 by 15 Nov, then
+  video and writing; 26 The fixes are measured; four questions decide what is next (DARK_CLOSE).
+- Appendix (all hidden): 27 Still open, and what I test next; 28 Corrections to the draft and the repo; 29 Backup:
+  before and after, holdout image 579860; 30 Jobs and checkpoints; 31 Real photos: predicted fingers and rest-pose
+  line-up; 32 3DPW labels on the image: a good case and the worst case.
+
+Changed on 20 Oct: the 16 presented slides (1, 2, 3, 6, 10, 12, 14, 15, 17, 18, 20, 21, 23, 24, 25, 26) were simplified
+on the slide face: a plain-words takeaway title, one compact table (at most 4 columns and 5 rows) or one picture, at most
+three short bullets and one "What this means" line; the thesis model names (Base, Control, Final, Student,
+Multi-HMR-Anny; `docs/model_names.md`). Columns and numbers that left a slide were added to that slide's "If asked" notes;
+nothing was deleted from the notes, and the `N(...)` titles (the headings of the talk-notes `.md`) keep the 19 Oct
+titles. The other 16 slides (4-5, 7-9, 11, 13, 16, 19, 22 and 27-32) are unchanged but **hidden** (`s.hidden = true`,
+`show="0"` in the slide XML): they keep their numbers, content and notes, are skipped in the slide show, and open by
+typing the number + Enter. Slide 2 says so in a small line. LibreOffice's PDF export also skips hidden slides, so the
+render check below gives 16 pages, one per presented slide.
 
 New on 19 Oct: slides 1-4, 7-9, 11 (merges the old slides 3 and 4), 18, 19, 24, 25 and 30. Old -> new numbering of
 the reused slides: 2->10, 5->5, 6->6, 7->15, 8->16, 9->17, 11->12, 12->13, 13->14, 14->22, 15->28, 16->20, 17->21,
@@ -91,7 +104,8 @@ pdftoppm -jpeg -r 80 supervisor_update.pdf slide
 ```
 
 LibreOffice wraps text slightly differently from PowerPoint. The table slides 7, 8, 9, 23, 24, 25 and 30, slide 13's
-footnote and slide 26 (the claims slide) are the tightest; check them in PowerPoint before the meeting.
+footnote and slide 26 (the claims slide) are the tightest; check them in PowerPoint before the meeting. Since 20 Oct the tightest
+presented slides are 20 (table and three bullets above the source line) and 24 (two-line source line).
 
 ## Publish
 
