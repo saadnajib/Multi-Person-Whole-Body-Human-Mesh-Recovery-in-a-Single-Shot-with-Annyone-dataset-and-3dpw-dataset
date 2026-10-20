@@ -189,7 +189,7 @@ file were merged into `main` (section 8).
   (r 0.77), gender (0.73), cup size (0.69); muscle is weak (0.27) and got weaker from Base (0.41); all slopes < 1.
 - Gender on Relative Human is largely a threshold problem, not a lost skill [Certain]: AUC Base 0.562, Final 0.780,
   Final-masked 0.705. A shape variant that keeps variety is back on the table as a second model ("Final-shape").
-- 1b: a 60-epoch ViT-B student was launched by the student (job id: pending; result expected 20 Oct morning).
+- 1b: a 60-epoch ViT-B student was launched by the student (job 3623342, still PENDING (Priority) on the morning of 20 Oct; result not before the Tuesday meeting).
 - The plan to 31 Oct replaces the 4-week plan (section 11).
 
 **Meeting date: Monday 19 October 2026, 16:00** (the student), with the deck `docs/supervisor_update_2026-10-19.pptx`
@@ -3301,7 +3301,7 @@ of `docs/thesis_requirements_plan.md`) and the docs commit after it (this update
 
 | job | log name | what |
 |---|---|---|
-| pending | exp8 (log name `exp8_distill_vitb`, job id pending) | the 60-epoch ViT-B student, launched 19 Oct afternoon by the student: `EPOCHS=60 bash slurm/experiments/exp8_distill_vitb.sh`, RUN ending `_e60`, LR x0.5 every 24 epochs, own time limit. [Likely] ~12 GPU-h on an L40S plus post-steps; result expected 20 Oct morning. Job id: pending (asked from the student). 0a "19 Oct afternoon" |
+| 3623342 | exp8 (log `logs/exp8_distill_vitb_3623342.out`) | the 60-epoch ViT-B student, launched 19 Oct afternoon by the student: `EPOCHS=60 bash slurm/experiments/exp8_distill_vitb.sh`, RUN ending `_e60`, LR x0.5 every 24 epochs, own time limit. [Likely] ~12 GPU-h on an L40S plus post-steps; still PENDING (Priority) at 20 Oct morning, so the result comes after the Tuesday meeting; present the 30-epoch curve (3614191). Both RH runs (3612131 Final, 3616821 partial mask) ran with BONE_FIX='' in the env; the fix is in the checkpoints' saved args, so they compare. 0a "19 Oct afternoon" |
 
 ---
 
