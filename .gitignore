@@ -36,6 +36,9 @@ threedpw_anny_full/*
 # generated reports
 shape_report.txt
 
+# Local video overlays and per-frame prediction dumps.
+results/video_compare/
+
 # experiment outputs: keep only the summaries (*.json) and notes (*.md); logs, images, checkpoints, npz stay local
 results/experiments/**
 !results/experiments/**/

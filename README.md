@@ -20,6 +20,7 @@ It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** 
   - [Known defects](#known-defects)
 - [Installation](#installation)
 - [Quick start: demo](#quick-start-demo)
+- [Student video inference and comparison](docs/video_inference.md)
 - [Pipeline 1: converting 3DPW to Anny](#pipeline-1-converting-3dpw-to-anny)
 - [Pipeline 2: training the ViT-L teacher](#pipeline-2-training-the-vit-l-teacher)
 - [Pipeline 3: distilling the ViT-S student](#pipeline-3-distilling-the-vit-s-student)
@@ -38,6 +39,7 @@ It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** 
 .
 ├── train.py                 # training / evaluation entry point (Anny + SMPL-X, distillation, mixed data)
 ├── demo.py                  # inference + rendering on a folder of images
+├── demo_video.py            # Student / original Multi-HMR video overlays and stability measurements
 ├── model.py                 # Multi-HMR model (Anny output, optional head_dim projector for students)
 ├── loss.py                  # training losses
 ├── distill.py               # knowledge-distillation loss (temperature-softmax KL on backbone tokens)
