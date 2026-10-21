@@ -198,7 +198,13 @@ class MeshRenderer:
         try:
             self.renderer = pyrender.OffscreenRenderer(size, size)
         except Exception as exc:
-            raise RuntimeError('Cannot initialize offscreen rendering. Check EGL libraries and PYOPENGL_PLATFORM=egl.') from exc
+            raise RuntimeError(
+                'Cannot initialize offscreen rendering: {}: {}. '
+                'PYOPENGL_PLATFORM={}, EGL_DEVICE_ID={}, __EGL_VENDOR_LIBRARY_FILENAMES={}. '
+                'Run python scripts/video/check_renderer.py inside the GPU container for diagnostics.'.format(
+                    type(exc).__name__, exc, os.environ.get('PYOPENGL_PLATFORM', '<unset>'),
+                    os.environ.get('EGL_DEVICE_ID', '<unset>'),
+                    os.environ.get('__EGL_VENDOR_LIBRARY_FILENAMES', '<unset>'))) from exc
 
     def render(self, rgb, vertices):
         import numpy as np

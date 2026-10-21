@@ -8,8 +8,11 @@ import csv
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -247,6 +250,14 @@ class VideoIntegrationTests(unittest.TestCase):
         yy, xx = np.where(rendered.max(axis=2) > 0)
         self.assertAlmostEqual(float(xx.mean()), 63.5, delta=1)
         self.assertAlmostEqual(float(yy.mean()), 63.5, delta=1)
+
+    def test_renderer_initialization_reports_original_failure(self):
+        original = RuntimeError('EGL_NOT_INITIALIZED: test vendor unavailable')
+        renderer_module = SimpleNamespace(OffscreenRenderer=mock.Mock(side_effect=original))
+        with mock.patch.dict(sys.modules, {'pyrender': renderer_module}):
+            with self.assertRaisesRegex(RuntimeError, 'EGL_NOT_INITIALIZED: test vendor unavailable') as caught:
+                demo_video.MeshRenderer(128, demo_video.camera_matrix(128, 55), np.array([[0, 1, 2]]))
+        self.assertIs(caught.exception.__cause__, original)
 
 
 if __name__ == '__main__':

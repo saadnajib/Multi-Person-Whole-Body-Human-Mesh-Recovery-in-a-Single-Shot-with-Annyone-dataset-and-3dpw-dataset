@@ -1,6 +1,7 @@
 #!/bin/bash
 # Frame-by-frame video inference: input | ViT-B Student | NAVER Multi-HMR-Anny.
-# Uses the regular multihmr environment and existing graphics libraries; installs nothing.
+# Uses regular multihmr and the same native EGL setup as the image demos.
+# Python packages are not installed or upgraded inside the job.
 # CHECK_ONLY=1 validates paths/options on the login node without Python, a GPU or submission.
 #SBATCH --partition=A100-40GB,A100-80GB,A100-PCI,A100-RP,L40S,L40S-AV,RTXA6000,RTXA6000-AV
 #SBATCH --gpus=1
@@ -26,7 +27,15 @@ if [ "${1:-}" = --inside ]; then
   source "$PROJECT_ROOT/slurm/env.sh"
   set -u
   export PYOPENGL_PLATFORM=egl EGL_DEVICE_ID=0 NVIDIA_DRIVER_CAPABILITIES=all
-  # slurm/egl.sh runs apt/pip installs, so it is deliberately not sourced here.
+  # The image demos provision native EGL libraries AND register the NVIDIA
+  # vendor. Environment flags alone do not perform that graphics setup.
+  export EGL_VENDOR_DIR
+  EGL_VENDOR_DIR="$(mktemp -d /tmp/multihmr-video-egl.XXXXXX)"
+  export EGL_INSTALL_PYTHON=0
+  source "$PROJECT_ROOT/slurm/egl.sh"
+  export __EGL_VENDOR_LIBRARY_FILENAMES="$EGL_VENDOR_DIR/10_nvidia.json"
+  # Fail with the actual graphics error before spending time loading weights.
+  python -u "$PROJECT_ROOT/scripts/video/check_renderer.py"
   exec python -u "$PROJECT_ROOT/demo_video.py" "$@"
 fi
 
@@ -73,6 +82,8 @@ require_file VIDEO "$VIDEO"
 require_file STUDENT "$STUDENT"
 require_file entrypoint "$REPO/demo_video.py"
 require_file environment "$REPO/slurm/env.sh"
+require_file "EGL setup" "$REPO/slurm/egl.sh"
+require_file "renderer preflight" "$REPO/scripts/video/check_renderer.py"
 nonnegative MAX_FRAMES "$MAX_FRAMES"
 nonnegative START_FRAME "$START_FRAME"
 positive STRIDE "$STRIDE"

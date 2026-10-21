@@ -32,10 +32,17 @@ not a successful inference run.
 The wrapper uses the regular `multihmr` conda environment inside the existing
 container, through `slurm/env.sh`. It targets the A100, L40S and RTX A6000 queues.
 Unset `PY_VENV`; CUDA venv overlays and other conda environments are refused.
-Existing EGL libraries are used with `PYOPENGL_PLATFORM=egl`. The wrapper does
-not source `slurm/egl.sh`, because that script runs package installations. If
-graphics dependencies are missing, provision them separately in the normal
-environment before retrying; this job does not install packages.
+The wrapper sources `slurm/egl.sh`, as the working image demos do, to provision
+native EGL libraries inside the job container and register NVIDIA's graphics
+driver. The vendor JSON is written to a job-local directory under `/tmp`, so
+registration does not require writing to `/usr/share`. `EGL_INSTALL_PYTHON=0`
+skips the helper's Python package installation; the conda environment is kept
+unchanged.
+
+Before loading any checkpoint, `scripts/video/check_renderer.py` draws a tiny
+test mesh and prints graphics diagnostics. A failed check stops the job with
+the original exception. Model inference starts only after rendering succeeds.
+`CHECK_ONLY=1` remains a login-node file check and does not perform this test.
 
 The video decoder/writer uses OpenCV. If it is missing from the activated normal
 environment, the optional video prerequisite can be installed manually once:
