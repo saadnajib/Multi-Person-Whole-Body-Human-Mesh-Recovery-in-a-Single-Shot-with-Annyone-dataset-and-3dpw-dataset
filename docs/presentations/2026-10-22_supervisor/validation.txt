@@ -1,0 +1,8 @@
+23 slides; 20 main + 3 backup.
+All slides contain detailed speaker notes.
+No shape extends outside the slide canvas.
+PDF export: 23 pages.
+Slide 18 contains the requested video placeholder.
+Visual review completed for all slides; revised dense card layouts.
+Numeric results traced to thesis commit 3e2f21e.
+No student meshes or video FPS results fabricated.
