@@ -110,6 +110,7 @@ arguments safely as a Bash array, including paths containing spaces.
 | `OUTPUT` | `results/video_compare/$RUN` | New output directory; an existing path is refused. |
 | `FOV` | `55` | Assumed field of view along the longer image side, in degrees. |
 | `MAX_FRAMES` | `0` | Limit processed frames; zero means all selected frames. |
+| `WARMUP_FRAMES` | `10` | Exclude the first N processed frames from speed averages; keep every frame in the videos and motion measurements. |
 | `STRIDE` | `1` | Process every Nth source frame. |
 | `START_FRAME` | `0` | First source frame to consider. |
 | `PANEL_SIZE` | `672` | Size of each square comparison panel; even and at least 128. |
@@ -157,6 +158,7 @@ Each run writes into the new `OUTPUT` directory:
 | `student.mp4`, `baseline.mp4` | Each model's overlay video. |
 | `teacher.mp4` | Teacher overlay, only when requested. |
 | `run.json` | Checkpoints, camera/frame options, correction selection, run status and other provenance. |
+| `timing.csv` | Student/baseline speed comparison: inference FPS and latency, preprocessing, transfers, mesh rendering, hardware and input size. |
 | `student/frames.csv`, `baseline/frames.csv` | Selected source-frame indices/timestamps, tracking and per-frame measurements. |
 | `student/predictions.npz`, `baseline/predictions.npz` | Saved prediction arrays for later analysis. |
 | `student/summary.json`, `baseline/summary.json` | Per-model tracking and raw temporal summaries. |
@@ -176,6 +178,44 @@ The videos contain no audio. Keep `run.json` and the per-model files with
 the videos when sharing a result; the montage alone cannot establish the
 tracking coverage or exact settings. Inspect `run.json` for completion status
 before using a partially written run.
+
+## Inference speed and playback speed
+
+`comparison.mp4` shows each model's **final average inference FPS** on every
+frame. The input panel separately labels **playback FPS**. The individual
+`student.mp4` and `baseline.mp4` show a running inference average, with the first
+`WARMUP_FRAMES` frames marked as timing warm-up. For a clip with no frames left
+after warm-up, inference FPS is `N/A` rather than an estimate from startup time.
+
+Inference timing uses batch size one and a wall clock synchronized with the
+selected CUDA device before and after the model call. It includes detection,
+pose/shape prediction and Anny mesh decoding. It excludes image preprocessing,
+input/output transfers outside the model, mesh rendering and video I/O. Both
+models run sequentially on the same selected device and selected source frames;
+each uses its checkpoint's input resolution, which is recorded along with the
+GPU name, precision and PyTorch/CUDA versions in `run.json`. Report those settings
+with the FPS: different model input sizes affect the comparison.
+
+FPS is `measured frames / total inference seconds`, equivalently
+`1000 / mean inference_ms`. All inference calls after warm-up count, including
+missing detections. Detection count can affect runtime. Mesh-rendering latency
+is measured separately, only for frames where a mesh is drawn. These are
+sequential, batch-one timings from this clip; they do not measure complete
+application throughput or maximum batched throughput.
+
+`timing.csv` summarizes average, median and 95th-percentile inference latency
+(the slower end of the distribution), plus the other timed stages. Each
+model's `summary.json` contains the timing statistics and sample counts.
+`frames.csv` records `timing_included`, `preprocess_ms`, `inference_ms`,
+`output_transfer_ms` and `render_ms` for every frame, including warm-up frames.
+The older `forward_ms` column retains preprocessing + forward + output-transfer
+latency; use `inference_ms` for the model-speed comparison. Rendering is included
+in neither column. Preprocessing timing includes the model-image resize,
+normalization and input transfer; output-transfer timing includes conversion
+to NumPy. Video decoding/encoding and comparison assembly are outside these
+stage measurements.
+
+## Movement and shape measurements
 
 Start with `comparison.mp4`, then use the CSV timestamps to inspect moments
 where the predicted body jumps, trembles or changes proportions. The summaries

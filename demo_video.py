@@ -31,6 +31,8 @@ def parse_args(argv=None):
     p.add_argument('--start-frame', type=int, default=0)
     p.add_argument('--stride', type=int, default=1)
     p.add_argument('--max-frames', type=int, default=0, help='Maximum processed frames; 0 means all')
+    p.add_argument('--warmup-frames', type=int, default=10,
+                   help='Exclude the first N processed frames from timing statistics; keep them in the videos')
     p.add_argument('--panel-size', type=int, default=672)
     p.add_argument('--amp', action='store_true', help='Opt into CUDA mixed precision for all models')
     return p.parse_args(argv)
@@ -65,6 +67,8 @@ def validate_args(args):
         raise ValueError('--fov must be between 0 and 180 degrees')
     if args.stride < 1 or args.start_frame < 0 or args.max_frames < 0:
         raise ValueError('stride must be positive; start-frame and max-frames must be nonnegative')
+    if args.warmup_frames < 0:
+        raise ValueError('--warmup-frames must be nonnegative')
     if args.panel_size < 128 or args.panel_size % 2:
         raise ValueError('--panel-size must be an even integer of at least 128 (video codec requirement)')
     if args.student_only and args.teacher_checkpoint:
@@ -151,13 +155,29 @@ def camera_matrix(size, fov):
     return np.array([[f, 0, size / 2], [0, f, size / 2], [0, 0, 1]], dtype=np.float32)
 
 
+def draw_title(panel, title):
+    """Replace only the top title line; preserve image pixels and frame status."""
+    import cv2
+    panel[:32] = 24
+    scale = min(0.65, panel.shape[1] / 650)
+    width = cv2.getTextSize(title, cv2.FONT_HERSHEY_SIMPLEX, scale, 1)[0][0]
+    scale *= min(1.0, (panel.shape[1] - 16) / max(width, 1))
+    cv2.putText(panel, title, (8, 24), cv2.FONT_HERSHEY_SIMPLEX, scale,
+                (255, 255, 255), 1, cv2.LINE_AA)
+    return panel
+
+
+def fps_title(title, fps, running=False):
+    label = 'running inference' if running else 'inference avg'
+    return '{} | {}: {}'.format(title, label, 'N/A' if fps is None else '{:.1f} FPS'.format(fps))
+
+
 def annotate(rgb, title, frame, timestamp, status):
     import cv2
     import numpy as np
     header = np.full((64, rgb.shape[1], 3), 24, dtype=np.uint8)
     scale = min(0.65, rgb.shape[1] / 650)
-    cv2.putText(header, title, (8, 24), cv2.FONT_HERSHEY_SIMPLEX, scale,
-                (255, 255, 255), 1, cv2.LINE_AA)
+    draw_title(header, title)
     cv2.putText(header, 'frame {} | {:.2f}s | {}'.format(frame, timestamp, status),
                 (8, 49), cv2.FONT_HERSHEY_SIMPLEX, scale * 0.8,
                 (220, 220, 220), 1, cv2.LINE_AA)
@@ -245,16 +265,31 @@ class TorchPredictor:
         self.phenotype_names = list(model.body_model.phenotype_labels)
         self.joint_names = list(model.body_model.bone_labels)
         self.metadata = metadata
+        self.last_timings = {}
+
+    def synchronize(self):
+        import torch
+        if self.device.type == 'cuda':
+            torch.cuda.synchronize(self.device)
 
     def predict(self, rgb, K):
         import numpy as np
         import torch
+        self.last_timings = {}
+        self.synchronize()
+        preprocessing_started = time.perf_counter()
         x = (rgb.astype(np.float32) / 255 - np.array([.485, .456, .406], np.float32))
         x /= np.array([.229, .224, .225], np.float32)
         x = torch.from_numpy(x.transpose(2, 0, 1).copy()).unsqueeze(0).to(self.device)
         camera = torch.from_numpy(K).unsqueeze(0).to(self.device)
+        self.synchronize()  # Input transfers finish before the model timer starts.
+        preprocessing_ms = (time.perf_counter() - preprocessing_started) * 1000
         with torch.inference_mode(), torch.autocast(device_type=self.device.type, enabled=self.amp):
+            inference_started = time.perf_counter()
             predictions = self.model(x, K=camera, is_training=False, det_thresh=0.3, nms_kernel_size=3)
+            self.synchronize()  # Measure completed GPU work, not just kernel submission.
+            inference_ms = (time.perf_counter() - inference_started) * 1000
+        transfer_started = time.perf_counter()
         if isinstance(predictions, tuple) and len(predictions) == 2 and predictions[0] == {}:
             predictions = predictions[1]  # Original Multi_HMR's empty-detection return.
         if not isinstance(predictions, list):
@@ -265,6 +300,8 @@ class TorchPredictor:
                                shape=as_numpy(person['shape']).reshape(-1),
                                rotvec=as_numpy(person['rotvec']),
                                confidence=float(as_numpy(person.get('scores', person.get('score'))).reshape(()))))
+        self.last_timings = dict(preprocess_ms=preprocessing_ms, inference_ms=inference_ms,
+                                 output_transfer_ms=(time.perf_counter() - transfer_started) * 1000)
         return result
 
 
@@ -330,6 +367,9 @@ def load_predictor(checkpoint, kind, fix, device, amp):
     metadata = dict(checkpoint=str(checkpoint), checkpoint_bytes=checkpoint.stat().st_size,
                     checkpoint_mtime_ns=checkpoint.stat().st_mtime_ns, model_class=type(model).__name__,
                     backbone=kwargs.get('backbone'), input_size=int(model.img_size),
+                    device=str(device), device_name=torch.cuda.get_device_name(device) if device.type == 'cuda' else 'CPU',
+                    torch_version=str(torch.__version__), cuda_version=torch.version.cuda,
+                    timing_method='perf_counter wall latency with CUDA synchronization before and after model forward' if device.type == 'cuda' else 'perf_counter wall latency on CPU',
                     loaded_state_fraction=coverage, parameter_count=sum(p.numel() for p in model.parameters()),
                     precision='amp' if amp else ('fp32_with_tf32' if device.type == 'cuda' else 'fp32'),
                     checkpoint_pose_label=pose_label,
@@ -363,9 +403,9 @@ def visible_detections(people, K, size):
     return detections
 
 
-def save_measurements(directory, records, predictor, stride):
+def save_measurements(directory, records, predictor, stride, warmup_frames, playback_fps):
     import numpy as np
-    from scripts.video.video_utils import summarize_stability
+    from scripts.video.video_utils import summarize_stability, summarize_timing
     directory.mkdir()
     summary = summarize_stability(records, predictor.phenotype_names, expected_frame_step=stride)
     # Compare the resulting Cartesian joint motion. Raw per-bone rotations and
@@ -375,6 +415,7 @@ def save_measurements(directory, records, predictor, stride):
     summary['joint_names'] = predictor.joint_names
     summary['phenotype_names'] = predictor.phenotype_names
     summary['rotation_note'] = 'Raw rotvec saved for reproduction; comparison uses Cartesian joint motion.'
+    summary['timing'] = summarize_timing(records, warmup_frames, playback_fps)
     write_json(directory / 'summary.json', summary)
     n, nj, ns = len(records), len(predictor.joint_names), len(predictor.phenotype_names)
     arrays = {key: np.full((n,) + shape, np.nan, np.float32)
@@ -390,7 +431,8 @@ def save_measurements(directory, records, predictor, stride):
                         segment_id=np.array([r['segment_id'] or -1 for r in records]),
                         joint_names=np.array(predictor.joint_names), phenotype_names=np.array(predictor.phenotype_names))
     fields = ['frame_index', 'timestamp_s', 'status', 'segment_id', 'selected_index', 'detections',
-              'valid_detections', 'confidence', 'forward_ms', 'root_step_m', 'root_speed_m_per_s',
+              'valid_detections', 'confidence', 'forward_ms', 'timing_included',
+              'preprocess_ms', 'inference_ms', 'output_transfer_ms', 'render_ms', 'root_step_m', 'root_speed_m_per_s',
               'mean_joint_speed_m_per_s', 'mean_joint_acceleration_m_per_s2']
     fields += ['shape_' + name for name in predictor.phenotype_names]
     with (directory / 'frames.csv').open('w', newline='') as f:
@@ -426,6 +468,7 @@ def process_model(args, kind, title, predictor, info, renderer_factory):
     input_K = camera_matrix(predictor.input_size, args.fov)
     renderer = writer = input_writer = None
     records = []
+    measured_count, inference_total_ms = 0, 0.0
     try:
         renderer = renderer_factory(size, K, predictor.faces)
         writer = VideoWriter(args.output / (kind + '.mp4'), fps / args.stride, size, size + 64)
@@ -435,22 +478,39 @@ def process_model(args, kind, title, predictor, info, renderer_factory):
             timestamp = frame_index / fps
             panel = letterbox(rgb, size)
             started = time.perf_counter()
-            people = predictor.predict(letterbox(rgb, predictor.input_size), input_K)
+            model_image = letterbox(rgb, predictor.input_size)
+            resize_ms = (time.perf_counter() - started) * 1000
+            people = predictor.predict(model_image, input_K)
             forward_ms = (time.perf_counter() - started) * 1000
+            stages = dict(getattr(predictor, 'last_timings', {}))
+            if stages.get('preprocess_ms') is not None:
+                stages['preprocess_ms'] += resize_ms
             detections = visible_detections(people, K, size)
             tracking = tracker.update(detections)
             record = dict(tracking, frame_index=frame_index, timestamp_s=timestamp,
-                          detections=len(people), valid_detections=len(detections), forward_ms=forward_ms)
+                          detections=len(people), valid_detections=len(detections), forward_ms=forward_ms,
+                          timing_included=len(records) >= args.warmup_frames, **stages)
             status = 'NO MATCH ({} detections)'.format(len(people))
             if tracking['selected_index'] is not None:
                 person = detections[tracking['selected_index']]
+                render_started = time.perf_counter()
                 panel = renderer.render(panel, person['vertices'])
+                record['render_ms'] = (time.perf_counter() - render_started) * 1000
                 record.update({key: person[key] for key in ('shape', 'joints', 'rotvec', 'bbox', 'confidence')})
                 record['root'] = person['joints'][0].copy()
                 status = '{} | track {} | {:.2f}'.format(tracking['status'], tracking['segment_id'], person['confidence'])
-            writer.write(annotate(panel, title, frame_index, timestamp, status))
+            latency = record.get('inference_ms')
+            if record['timing_included'] and latency is not None and math.isfinite(latency) and latency > 0:
+                measured_count += 1
+                inference_total_ms += latency
+            running_fps = 1000 * measured_count / inference_total_ms if measured_count else None
+            timed_title = fps_title(title, running_fps, running=True)
+            if not record['timing_included']:
+                timed_title = title + ' | timing warm-up'
+            writer.write(annotate(panel, timed_title, frame_index, timestamp, status))
             if input_writer:
-                input_writer.write(annotate(letterbox(rgb, size), 'Input', frame_index, timestamp, 'original frame'))
+                input_writer.write(annotate(letterbox(rgb, size), 'Input | playback: {:.2f} FPS'.format(fps / args.stride),
+                                            frame_index, timestamp, 'original frame'))
             records.append(record)
             if len(records) % 25 == 0:
                 print('[{}] {} frames; source frame {}'.format(kind, len(records), frame_index), flush=True)
@@ -460,13 +520,18 @@ def process_model(args, kind, title, predictor, info, renderer_factory):
         for resource in (input_writer, writer, renderer):
             if resource is not None:
                 resource.close()
-    summary = save_measurements(args.output / kind, records, predictor, args.stride)
+    summary = save_measurements(args.output / kind, records, predictor, args.stride, args.warmup_frames,
+                                 fps / args.stride)
     print('[{}] {} frames, {} with a matched person, {} missing'.format(
         kind, summary['frames'], summary['selected_frames'], summary['missing_frames']), flush=True)
+    timing = summary['timing']
+    print('[{}] {}; {} measured frames, {} warm-up frames excluded; render mean: {} ms'.format(
+        kind, fps_title(title, timing['inference_fps']), timing['measured_frames'],
+        timing['warmup_frames_excluded'], timing['render_ms']['mean']), flush=True)
     return [r['frame_index'] for r in records], summary
 
 
-def compose_comparison(output, kinds, frame_count, fps, size):
+def compose_comparison(output, kinds, frame_count, fps, size, benchmark_titles=None):
     import cv2
     import numpy as np
     captures = []
@@ -482,6 +547,11 @@ def compose_comparison(output, kinds, frame_count, fps, size):
             panels = [cap.read() for cap in captures]
             if not all(ok for ok, _ in panels):
                 raise RuntimeError('Encoded video has missing frames; comparison is incomplete')
+            # The comparison displays the final clip averages on every frame.
+            # Individual overlay videos retain their running averages.
+            if benchmark_titles:
+                for kind, (_, panel) in zip(kinds, panels[1:]):
+                    draw_title(panel, benchmark_titles[kind])
             writer.write(cv2.cvtColor(np.concatenate([p for _, p in panels], axis=1), cv2.COLOR_BGR2RGB))
         if any(cap.read()[0] for cap in captures):
             raise RuntimeError('Comparison panels contain different frame counts')
@@ -490,6 +560,25 @@ def compose_comparison(output, kinds, frame_count, fps, size):
             writer.close()
         for cap in captures:
             cap.release()
+
+
+def save_timing_comparison(output, models):
+    fields = ['model', 'device_name', 'input_size', 'precision', 'measured_frames', 'warmup_frames_excluded',
+              'inference_fps', 'playback_fps', 'inference_mean_ms', 'inference_median_ms', 'inference_p95_ms',
+              'preprocess_mean_ms', 'output_transfer_mean_ms', 'render_mean_ms', 'rendered_frames_measured']
+    with (output / 'timing.csv').open('w', newline='') as stream:
+        writer = csv.DictWriter(stream, fieldnames=fields)
+        writer.writeheader()
+        for kind, model in models.items():
+            timing = model['summary']['timing']
+            row = dict(model=kind, **{k: model.get(k) for k in ('device_name', 'input_size', 'precision')})
+            row.update({k: timing[k] for k in ('measured_frames', 'warmup_frames_excluded', 'inference_fps', 'playback_fps')})
+            row.update(inference_mean_ms=timing['inference_ms']['mean'],
+                       inference_median_ms=timing['inference_ms']['median'], inference_p95_ms=timing['inference_ms']['p95'],
+                       preprocess_mean_ms=timing['preprocess_ms']['mean'],
+                       output_transfer_mean_ms=timing['output_transfer_ms']['mean'], render_mean_ms=timing['render_ms']['mean'],
+                       rendered_frames_measured=timing['render_ms']['count'])
+            writer.writerow(row)
 
 
 def run(args, predictor_factory=load_predictor, renderer_factory=MeshRenderer):
@@ -506,9 +595,9 @@ def run(args, predictor_factory=load_predictor, renderer_factory=MeshRenderer):
                     video_bytes=args.video.stat().st_size, video_mtime_ns=args.video.stat().st_mtime_ns,
                     settings={k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
                     smoothing=False, placement='raw camera-space prediction, no box anchoring',
-                    timing_note='forward_ms includes input preprocessing and prediction transfers; no warm-up exclusion, not a throughput benchmark',
+                    timing_note='Inference FPS = measured frames / summed synchronized forward seconds after warm-up; batch size 1. Model forward includes detection and Anny decoding. Preprocessing, transfers, rendering and video I/O excluded; forward_ms retains inclusive preprocessing+forward+transfer latency.',
                     tracking='One primary person per model, selected independently; inspect identity in comparison',
-                    models={}, outputs=['input.mp4', 'comparison.mp4'])
+                    models={}, outputs=['input.mp4', 'comparison.mp4', 'timing.csv'])
     write_json(args.output / 'run.json', manifest)
     jobs = [('student', 'Student', args.student_checkpoint, args.resolved_student_fix)]
     if not args.student_only:
@@ -534,8 +623,11 @@ def run(args, predictor_factory=load_predictor, renderer_factory=MeshRenderer):
             if 'torch' in sys.modules:
                 sys.modules['torch'].cuda.empty_cache()
             write_json(args.output / 'run.json', manifest)
+        save_timing_comparison(args.output, manifest['models'])
+        benchmark_titles = {kind: fps_title(title, manifest['models'][kind]['summary']['timing']['inference_fps'])
+                            for kind, title, _, _ in jobs}
         compose_comparison(args.output, [job[0] for job in jobs], len(reference), info['fps'] / args.stride,
-                           args.panel_size)
+                           args.panel_size, benchmark_titles)
         manifest.update(status='completed', processed_frames=len(reference), output_fps=info['fps'] / args.stride)
     except BaseException as exc:
         manifest.update(status='failed', error='{}: {}'.format(type(exc).__name__, exc))

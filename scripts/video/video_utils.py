@@ -141,6 +141,33 @@ def _stats(values):
     }
 
 
+def summarize_timing(records, warmup_frames, playback_fps):
+    """Batch-one latency statistics; FPS is frames / total inference seconds.
+
+    Warm-up frames remain in the videos and motion metrics. All subsequent
+    inference calls count, including frames with no person. Rendering statistics
+    only include frames where a mesh was actually drawn.
+    """
+    if int(warmup_frames) != warmup_frames or warmup_frames < 0:
+        raise ValueError('warmup_frames must be a nonnegative integer')
+    measured = records[int(warmup_frames):]
+    stages = {}
+    for key in ('preprocess_ms', 'inference_ms', 'output_transfer_ms', 'render_ms'):
+        values = [float(r[key]) for r in measured
+                  if r.get(key) is not None and math.isfinite(float(r[key])) and float(r[key]) > 0]
+        stages[key] = dict(_stats(values), median=float(np.median(values)) if values else None)
+    mean_ms = stages['inference_ms']['mean']
+    return dict(warmup_frames_requested=int(warmup_frames),
+                warmup_frames_excluded=min(int(warmup_frames), len(records)),
+                measured_frames=stages['inference_ms']['count'],
+                frames_after_warmup=len(measured),
+                inference_fps=1000.0 / mean_ms if mean_ms is not None else None,
+                playback_fps=float(playback_fps), batch_size=1,
+                fps_definition='1000 / mean inference_ms; includes detection and Anny decoding; excludes preprocessing, transfers, rendering and video I/O',
+                render_definition='Wall time for mesh rendering/compositing, only on frames with a matched person',
+                **stages)
+
+
 def _selected(record):
     return record.get("selected_index") is not None and record.get("segment_id") is not None
 

@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 
-from scripts.video.video_utils import SinglePersonTracker, summarize_stability
+from scripts.video.video_utils import SinglePersonTracker, summarize_stability, summarize_timing
 
 
 def detection(x, confidence=0.9):
@@ -17,6 +17,30 @@ def record(frame, time, shape=(0.2, 0.8), root=(0, 0, 0), relative_joint=(1, 0, 
     return {"frame_index": frame, "timestamp_s": time, "selected_index": 0,
             "segment_id": segment, "shape": list(shape), "root": root,
             "joints": np.stack([root, root + relative_joint])}
+
+
+class TimingTests(unittest.TestCase):
+    def test_warmup_excluded_and_missed_detection_still_timed(self):
+        rows = [dict(inference_ms=1000, render_ms=500, selected_index=0),
+                dict(inference_ms=10, render_ms=8, selected_index=0),
+                dict(inference_ms=30, selected_index=None)]
+        result = summarize_timing(rows, 1, 24)
+        self.assertEqual(result['inference_fps'], 50)  # 2 / .040, not (100 + 33.3) / 2.
+        self.assertEqual(result['measured_frames'], 2)
+        self.assertEqual(result['render_ms']['count'], 1)
+        self.assertEqual(result['render_ms']['mean'], 8)
+        self.assertEqual(result['inference_ms']['median'], 20)
+        self.assertEqual(result['playback_fps'], 24)
+
+    def test_short_clip_and_invalid_timings_do_not_invent_fps(self):
+        for rows, warmup in [([dict(inference_ms=5)], 10),
+                             ([dict(inference_ms=float('nan')), dict(inference_ms=0), {}], 0)]:
+            result = summarize_timing(rows, warmup, 30)
+            self.assertIsNone(result['inference_fps'])
+            self.assertEqual(result['measured_frames'], 0)
+            json.dumps(result, allow_nan=False)
+        with self.assertRaises(ValueError):
+            summarize_timing([], -1, 30)
 
 
 class TrackingTests(unittest.TestCase):

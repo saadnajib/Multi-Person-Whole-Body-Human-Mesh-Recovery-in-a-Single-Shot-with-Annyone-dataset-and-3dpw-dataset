@@ -39,6 +39,8 @@ class FakePredictor:
     def predict(self, rgb, camera):
         index = self.calls
         self.calls += 1
+        self.last_timings = dict(preprocess_ms=2.0, inference_ms=[1000., 10., 30., 20., 40.][index % 5],
+                                 output_transfer_ms=1.0)
         self.seen[self.kind].append((rgb.copy(), camera.copy()))
         # Misses deliberately differ between passes. Neither may shorten video.
         if index == (2 if self.kind == 'student' else 3):
@@ -100,7 +102,7 @@ class VideoIntegrationTests(unittest.TestCase):
             '--video', str(self.video), '--student-checkpoint', str(self.student),
             '--baseline-checkpoint', str(self.baseline), '--output', str(self.output),
             '--device', 'cpu', '--panel-size', '128', '--start-frame', '1',
-            '--stride', '2', '--max-frames', '5', *extra])
+            '--stride', '2', '--max-frames', '5', '--warmup-frames', '1', *extra])
 
     def predictor_factory(self, checkpoint, kind, fix, device, amp):
         self.loaded.append((checkpoint, kind, fix, device, amp))
@@ -176,6 +178,22 @@ class VideoIntegrationTests(unittest.TestCase):
             summary = json.loads((self.output / kind / 'summary.json').read_text())
             self.assertEqual(summary['missing_frames'], 1)
             self.assertEqual(summary['consecutive_selected_pairs'], 2)
+            timing = summary['timing']
+            self.assertEqual(timing['measured_frames'], 4)  # Includes the missed detection.
+            self.assertEqual(timing['warmup_frames_excluded'], 1)
+            self.assertAlmostEqual(timing['inference_fps'], 40.)  # 4 frames / .100s, not mean instantaneous FPS.
+            self.assertEqual(timing['render_ms']['count'], 3)
+            self.assertEqual(rows[0]['timing_included'], 'False')
+            self.assertEqual(rows[missing]['timing_included'], 'True')
+            self.assertEqual(rows[missing]['render_ms'], '')
+        with (self.output / 'timing.csv').open(newline='') as stream:
+            timing_rows = list(csv.DictReader(stream))
+        self.assertEqual([r['model'] for r in timing_rows], ['student', 'baseline'])
+        self.assertTrue(all(float(r['inference_fps']) == 40 for r in timing_rows))
+        self.assertTrue(all(float(r['playback_fps']) == 6 for r in timing_rows))
+        # The final comparison stamps clip-average FPS even onto warm-up frames.
+        _, student_frames = self.decode(self.output / 'student.mp4')
+        self.assertFalse(np.array_equal(comparison[0][:32, 128:256], student_frames[0][:32]))
         # A completed output must not be reused or partly overwritten.
         before = (self.output / 'run.json').read_bytes()
         with self.assertRaises(FileExistsError):
@@ -191,6 +209,8 @@ class VideoIntegrationTests(unittest.TestCase):
         self.assertEqual(len(frames), 1)
         self.assertEqual(frames[0].shape, (192, 256, 3))
         self.assertFalse((self.output / 'baseline.mp4').exists())
+        self.assertIsNone(result['models']['student']['summary']['timing']['inference_fps'])
+        self.assertEqual(result['models']['student']['summary']['timing']['measured_frames'], 0)
 
     def test_failed_prediction_marks_run_failed_and_releases_resources(self):
         def broken_factory(checkpoint, kind, fix, device, amp):
