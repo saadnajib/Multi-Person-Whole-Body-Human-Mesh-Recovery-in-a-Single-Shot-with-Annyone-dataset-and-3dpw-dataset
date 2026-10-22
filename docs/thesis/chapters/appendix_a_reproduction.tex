@@ -44,7 +44,7 @@ Every job runs inside the container image \path{ubuntu+20.04_v4.sqsh} (in \path{
 \texttt{multihmr} (Python 3.9, PyTorch 2.0.1 with CUDA 11.7, xformers 0.0.20, torchvision 0.15.2), moves the
 Hugging Face, Torch and Anny caches to \path{/netscratch/najib}, sets one thread per data-loader worker, and strips the
 \texttt{X | None} type hints from the downloaded DINOv2 hub code, which Python 3.9 rejects. \path{slurm/egl.sh} then
-installs the EGL libraries for the headless renderer; a failure there only disables the mesh overlays.
+installs the EGL libraries for the headless renderer; the video launcher additionally tests a real render and stops before checkpoint loading if it fails.
 
 That PyTorch build has GPU kernels up to compute capability 8.6, so the training and evaluation scripts ask for A100,
 A40, L40S and RTX A6000 nodes and refuse an H100 or H200 (compute capability 9.0). The V100 nodes \texttt{gifu} and
@@ -82,4 +82,25 @@ Three further limits apply. The history scripts of the L line and of Student-S w
 recipes in Table~\ref{tab:names} are as recorded there, not re-run. \path{train.py} keeps only the last two or three
 checkpoints of a run, so intermediate epochs are gone. The checkpoints, the AnnyOne and 3DPW data and the Relative
 Human annotations are not in the repository; 3DPW and Relative Human come with their own licences.
+
+\section{Video Execution Evidence}
+\label{sec:app-video}
+
+The author supplied \path{video-compare-3642415.out} and its corresponding error log. The run used the
+30-epoch student checkpoint
+\path{results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/train/checkpoints/00029.pt}
+and the correction selected by that run's \path{student_fix_arg.txt}. The baseline was
+\path{models/multiHMR/multiHMR_672_L_anny.pt}; the input was \path{man_walking.mp4}. Both checkpoints loaded
+with 100\% state coverage. The renderer reported an NVIDIA L40S and passed its test mesh.
+
+The final log lines report \VideoFrames{} processed frames for each model, \VideoStudentMatched{} student
+matches and \VideoBaselineMatched{} baseline matches. The completed output is
+\path{results/video_compare/video_3642415/comparison.mp4}. The log contains no synchronized inference-FPS
+result from the later timing implementation and supplies no numerical pose/shape stability summary.
+
+The video implementation and EGL correction are recorded in commits \texttt{1d5621b} and \texttt{7b0b5e1};
+the revised FPS implementation is \texttt{a0fa59f}. It is launched through
+\path{slurm/demo/run_video_compare.sh}. Its usage, timing boundaries and outputs are documented in
+\path{docs/video_inference.md}.
+
 \endgroup

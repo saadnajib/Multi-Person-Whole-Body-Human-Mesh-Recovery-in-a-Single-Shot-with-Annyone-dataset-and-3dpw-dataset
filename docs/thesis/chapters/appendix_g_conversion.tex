@@ -1,0 +1,110 @@
+\chapter{Supporting Conversion Experiments}
+\label{app:conversion}
+
+This appendix preserves the converter development and label-integrity checks that support the final procedure of Chapter~\ref{ch:data}. Historical versions are not the labels used for the main results.
+
+\section{Development of the converter}
+\label{sec:conversion-history}
+
+The first converter (v1) chose the Anny bones by name. It gave \DataVOneBarMean\,mm on \texttt{downtown\_bar\_00};
+on four test scenes the error was \DataVOneFloorMin{} to \DataVOneFloorMax\,mm on every frame, and all four actors
+came out with the same body. A residual independent of the pose and a shape independent of the person mean
+that the shape absorbed a fixed mismatch between the skeletons. Placing both models in their rest poses showed two
+wrong choices that no name reveals. Anny's rig numbers the spine top-down, SMPL bottom-up, so SMPL's lumbar
+\texttt{spine1} had been mapped to a bone \DataSpineMapError\,cm above it; and SMPL's hips had been mapped to
+\texttt{pelvis.L/R}, \DataHipMapError\,cm from the hip joint, instead of \texttt{upperleg01.L/R}. Version 2 picks the
+spine bones by height along the body axis and the hip bones by distance from the pelvis (Appendix~\ref{app:joints}).
+Limbs and head fell to \DataVTwoLimbMin{} to \DataVTwoLimbMax\,mm, but the torso stayed at \DataVTwoTorsoMin{} to
+\DataVTwoTorsoMax\,mm (Table~\ref{tab:fit-versions}).
+
+The reason is that the rigs define their torso joints at different anatomical points: SMPL's pelvis joint sits
+\DataSmplPelvisAboveHips\,cm above its hips, Anny's root at hip height and \DataAnnyRootFront\,cm in front. For
+\DataVirtualJoints{} torso joints I therefore measure once, in the rest pose, the offset $\boldsymbol{\delta}_b$ from
+the Anny bone head to the SMPL joint in the bone's own frame, and the fit moves the \emph{virtual joint}
+$\mathbf{p}_b = \mathbf{h}_b + \mathbf{R}_b\boldsymbol{\delta}_b$ onto the SMPL joint, with $\mathbf{h}_b$ and
+$\mathbf{R}_b$ the posed bone head and frame. The offsets are \DataOffsetPelvis\,cm (pelvis), \DataOffsetHip\,cm
+(hips), \DataOffsetSpineMin{} to \DataOffsetSpineMax\,cm (spine) and \DataOffsetCollar\,cm (collars). With them
+(v2.1) the torso fell to \DataVTwoOneTorsoMin{} to \DataVTwoOneTorsoMax\,mm and four varied test scenes to
+\DataScenesMin{} to \DataScenesMax\,mm (one occluded frame \DataScenesWorstFrame\,mm). Age, however, came out at exactly \DataFreeAge{} for every actor in every
+version: joints cannot tell one adult age from another. Version 2.2 fixes age at \DataFixedAge; on all
+\DataThreeDPWPersonSeq{} person-sequences it fitted \DataOldFrames{} frames with a median error of
+\DataOldFitMedian\,mm. By every measure the converter prints, these fits looked clean. They still held two of the
+three defects of the next section.
+
+\begin{table}[htbp]
+\centering\small
+% Draft main.tex:861-875 (tab:fit_versions), measured; jobs named in smpl_to_anny.py docstring. Cells kept literal.
+% Correction: the draft's "fixed gender" for v2 hid that the fixed value was reversed until v2.3.
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{5.2cm}rr>{\raggedright\arraybackslash}p{3.7cm}@{}}
+\toprule
+converter & mean (mm) & max & worst joints (mm) \\
+\midrule
+v1: correspondence by name, neutral SMPL targets & \DataVOneFencing & 37 & all joints, common floor \\
+v2: correspondence by geometry, 3DPW joints, gender from metadata (reversed until v2.3) & \DataVTwoFencing & 30 & spine1 73, collars 55--59, spine3 58, pelvis 53 \\
+v2.1: + virtual torso joints, bone mask, warm start & \DataVTwoOneFencing & 18.8 & shoulder 36, wrists 25--27 \\
+\bottomrule
+\end{tabular}
+\caption[Converter versions on the fencing scene]{Mean joint error over all 24 joints on
+\texttt{outdoors\_fencing\_01} (\DataFencingFrames{} frames, including full lunges) for three converter versions.
+The geometric correspondence is worth about \DataGainCorrespondence\,mm, the virtual joints a further
+\DataGainVirtual\,mm.}
+\label{tab:fit-versions}
+\end{table}
+
+% -----------------------------------------------------------------------------
+\section{Three label defects and the v2.3 re-fit}
+\label{sec:data-defects}
+
+The converter grades its own fit, so it cannot see errors in what it is asked to fit or in what happens to the fits
+afterwards. I therefore wrote an independent check that reads the finished label files. On sampled images from every
+sequence it compares the labels with 3DPW's joints, surface and 2D keypoints, confirms that the loader passes them on
+unchanged, and tests gender, a label for every valid actor and the head turn. On the first label set (``old labels'',
+v2.2 fits, about \DataOldCheckImages{} images) its grade was FAIL, with three defects (Table~\ref{tab:label-check}).
+
+\paragraph{Defect 1: gender reversed.} The converter wrote 1.0 for men and 0.0 for women, MakeHuman's convention and
+the reverse of Anny's, so every 3DPW man was labelled with a female body. Refitting with the flipped value lowered the
+joint error for \DataGenderFlipMen{} of \DataGenderFlipMenOf{} men (median \DataGenderFlipMenBefore{} to
+\DataGenderFlipMenAfter\,mm); for women it raised the joint error (\DataGenderFlipWomenBefore{} to
+\DataGenderFlipWomenAfter\,mm) but brought the surface closer for \DataGenderFlipWomenSurface{} of
+\DataGenderFlipWomenOf.
+
+\paragraph{Defect 2: missing actor.} In \DataMissingActor{} of \DataTwoPersonChecked{} sampled two-person images,
+one valid actor had no label. Each person's every-third-frame grid started at that person's own first valid frame, so
+after an invalid gap the two actors sat on different phases. The detection loss then treats a visible, real person as
+background.
+
+\paragraph{Defect 3: missing labels.} The training split had \DataOldTrainImages{} label images where the fits implied
+\DataRebuiltTrainImages{} (\DataOldTrainMissingPct\% missing). The image files of \DataMissingImageSeq{} sequences
+were incomplete on the cluster (\texttt{courtyard\_captureSelfies\_00}: \DataSelfiesFilesBefore{} of
+\DataSelfiesFilesAfter{} files), and the builder skipped frames without an image file without counting them. A
+rebuild after re-extracting the images recovered every label (Table~\ref{tab:label-sets}, ``rebuilt''), but still
+had defects 1 and 2, so I never trained on it.
+
+\paragraph{The re-fit.} Version 2.3 adds the two switches named above; their defaults reproduce v2.2 exactly. I
+re-fitted all \DataThreeDPWPersonSeq{} people with both switches on, and the post-check passed on all \DataRefitSeq{}
+sequences (Table~\ref{tab:label-check}, middle block). \DataRefitWorseSeq{} single-person outdoor sequences became
+\DataRefitWorseMin{} to \DataRefitWorseMax\,mm worse, likely from a different warm start, which I did not test.
+
+\paragraph{The v23 labels.} I call the labels built from the v2.3 fits the v23 labels: \DataThreeDPWTotalImages{}
+images and \DataThreeDPWTotalPeople{} people (Table~\ref{tab:label-sets}). They have fewer images than the rebuilt set
+but the same people, because both actors now share each frame. No person was dropped for fit error or box size.
+\DataCrossCountryFramesNew{} frames were dropped for visibility, all from \texttt{outdoors\_crosscountry\_00}: with
+3DPW's own camera, its ground-truth joints sit at a depth of $\DataCrossCountryDepth$\,m, behind the camera. The 3D
+fit is fine; image labels for this sequence cannot exist with this camera, and no label set ever contained it.
+
+
+
+\paragraph{The check on the v23 labels.} The same check on the v23 labels (\DataCheckPeople{} people in
+\DataCheckImages{} images, \DataCheckSeq{} sequences) moved the grade from FAIL to WARN
+(Table~\ref{tab:label-check}). The median body-joint error fell from \DataCheckJointsOld{} to
+\DataCheckJointsNew\,mm, flipping the gender now makes the fit worse, and no sampled two-person image misses an actor.
+The head turn relative to the chest is now kept; in the old test labels it was mostly lost
+(\DataCheckHeadTestLabelOld$^\circ$ against \DataCheckHeadTestSmplOld$^\circ$ in SMPL). Two rows stay at WARN, the
+limb-length ratios and the people with a joint more than \DataCheckFarMm\,mm off, mostly at the hip, likely because
+Anny's and SMPL's limb proportions and hip joints differ (Table~\ref{tab:label-check}).
+
+
+
+
+
+% -----------------------------------------------------------------------------

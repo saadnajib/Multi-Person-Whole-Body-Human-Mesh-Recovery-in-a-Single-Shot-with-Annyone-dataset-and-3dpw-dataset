@@ -1,76 +1,54 @@
-% 08_conclusion.tex -- Chapter 8 Conclusion and future work (2 pages). Written last (plan section 6, step 4).
-% Plan: REWRITE_PLAN.md 1.8 (verdict: rewrite), section 2 ("8 Conclusion and future work"), section 5 (rules).
-% Future work and its state on 18 Oct 2026: docs/thesis_requirements_plan.md section 4 (weeks 1-8, "What to drop")
-% and 6.2 (code and release); docs/deck_explained_2026-10-19.md part 7. Only steps that plan contains are promised;
-% items the plan drops (depth-slope study, two-sided bone fix, children sampler) are named as open, not planned.
-% Every number repeats a cell of a Chapter 6 table (T15 tab:final, T12 tab:relhuman, T16 tab:baseline) through the
-% macros of numbers_results.tex.
-
+% Revised 22 October 2026: completed final system and bounded future work.
 \chapter{Conclusion and Future Work}
 \label{ch:conclusion}
 
-% -----------------------------------------------------------------------------
 \section{Conclusion}
 \label{sec:concl}
 
-I moved Multi-HMR to the Anny body model and trained it on synthetic AnnyOne images and on real 3DPW images that I
-converted to Anny. The model I started from had three visible failures. I first tested what was not their cause and
-then traced each one to a mechanism: training targets built at the pelvis while the network anchors each person at
-the head, and four bones turned by half a turn at the output. The fixes are small, and their effect is large where it
-can be measured. Against a control with the same training, Final cut the root error from \num{\ControlRootErr} to
-\FinalRootErr\,mm, the neck02 error from \ControlNeckTwo{} to \FinalNeckTwo\,degrees and the finger error from
-\ControlFingers{} to \FinalFingers\,degrees, while the holdout PVE (\FinalPVE{} against \ControlPVE\,mm) stayed within
-run-to-run variation. The main lesson is about measurement: the standard error measure could not see the worst
-defect, and each failure became tractable only once a number for it existed.
+This thesis presents and evaluates a compact student for multi-person human mesh recovery with Anny. The model
+combines a ViT-B encoder, a learned feature projector and prediction heads initialized from a ViT-L teacher.
+Training combines AnnyOne and converted 3DPW supervision with feature and output distillation. At inference
+time only the student and Anny decoding layer are required.
 
-In the order of the supervisor's requirements: for the pose (1a), Final has \FinalThreeDPW\,mm PVE on the 3DPW test
-set against our labels, with necks and fingers corrected on the holdout; on real photos the pose is judged by eye,
-and predicted fingers, shown in Figure~\ref{fig:fingers-demo}, look like hands in Final and are splayed and stiff
-in Base on the images where the hands are large enough to judge. For the shape (1a), Final recognises gender in
-\RHGenderFinal\,\% of the Relative Human people (Base \RHGenderBase\,\%) and separates children from adults with an
-AUC of \RHAUCFinal{} (Base \RHAUCBase); children are a measured improvement, not solved, and muscle and weight barely
-vary between people on real photos. For 1b, the Student has \ParamRatioStudent$\times$ fewer parameters and
-\FlopRatioStudent$\times$ fewer FLOPs than Final, but its error is \StudentRatioPVE{} times the teacher's on AnnyOne
-and \StudentRatioThreeDPW{} times on 3DPW, so 1b is not met against Final; on 3DPW it is still better than NAVER's
-Multi-HMR-Anny (\StudentThreeDPW{} against \NAVERThreeDPW\,mm). For 1c and 2a, the
-converted 3DPW labels exist with three defects fixed and an independent check, and training on them brought the 3DPW
-error from \BaseThreeDPW{} (Base) to \ControlThreeDPW\,mm (Control) before any fix. Motion in video (2b) was not
-started. For 3, every number traces to a run, a log and a checkpoint (Appendix~\ref{app:reproduction}); the code is not
-yet cleaned up or released. Every model was trained once without a fixed seed, and the 3DPW numbers are not comparable
-with published 3DPW results; Section~\ref{sec:disc-limitations} lists the limitations.
+The conversion pipeline bridges SMPL-annotated real images and Anny-space supervision through geometric
+joint correspondence, virtual torso joints and a shared shape per actor. Independent checks document its
+accuracy and annotation limits. Consistent head anchors and fixed output corrections form part of the
+teacher/student configuration, with supporting analyses provided in the appendices.
 
-% -----------------------------------------------------------------------------
-\section{Future work}
+The student has \StudentParams\,M parameters and \StudentGFLOPs\,GFLOPs in the recorded configuration,
+compared with \FinalParams\,M and \FinalGFLOPs\,GFLOPs for the teacher. Paired L40S forward latency is
+\StudentMsLFortyS\,ms versus \TeacherMsLFortyS\,ms. Student PVE is \StudentPVE\,mm on AnnyOne and
+\StudentThreeDPW\,mm on converted 3DPW. The teacher remains more accurate on both sets. The student improves
+over the released baseline's \NAVERThreeDPW\,mm 3DPW PVE, although real-image training exposure differs.
+These results establish a compactness and speed advantage with an accuracy trade-off.
+
+The video application processes identical source frames with the student and baseline and saves their meshes
+beside the input. In the completed \VideoFrames{}-frame walking example the student has \VideoStudentMatched{}
+tracked predictions and the baseline \VideoBaselineMatched{}. This provides an initial video demonstration;
+a temporal-quality claim requires inspection of the saved videos and measurements. The implementation remains
+a frame-wise image model with tracking, rather than a learned temporal predictor.
+
+\section{Future Work}
 \label{sec:future}
 
-The steps below are planned, each with its state on 19 October 2026.
+\paragraph{Accuracy at reduced cost.}
+Longer training, distillation-weight ablations and alternative feature transfer strategies could reduce the
+student's error while retaining its lower cost. They need matched evaluation against the current student,
+teacher and a baseline adapted to the same real-image data. This report uses the verified 30-epoch student;
+a later run should replace it only after its checkpoint and complete evaluation are available.
 
-\paragraph{The reference for 1b.} The next step is the supervisor's decision on which model sets the 95\,\% bar.
-If it is Final, the planned option is to train the Student longer from its last checkpoint, since its AnnyOne error
-was still falling; this needs a resume mode that is not yet written, and the ratio will be reported as measured. A
-ViT-L cut to its first 12 blocks would be only about two times smaller and is not planned. If it is Multi-HMR-Anny,
-the Student meets the 3DPW bar, and the AnnyOne bar rests on a likely in-sample number; I would then report both
-ratios with that caveat.
+\paragraph{Temporal evaluation and modelling.}
+The next step is to inspect the walking overlays and parameter variation, then examine clips with occlusion
+and camera motion. Synchronized inference FPS should be reported with GPU, precision and resolution.
+If substantial jitter is observed, track-wise shape aggregation, smoothing or learned temporal refinement can
+be evaluated against the unsmoothed baseline. Stability and reconstruction accuracy should be measured together.
 
-\paragraph{Evidence that shape follows the person (1a).} The rest-pose line-up (Figure~\ref{fig:rest-lineup}) is
-a by-eye reading. Still planned is a number: per-phenotype correlation, slope and $R^2$ between prediction and label on the AnnyOne holdout, from per-person files
-that already exist.
+\paragraph{Real-image shape.}
+Age-group labels, body measurements or additional real-image Anny fits could improve supervision beyond
+constant converter values. Evaluation should include children and distinguish the body model's ability to
+generate child proportions from the network's ability to infer them reliably from real photographs.
 
-\paragraph{A measured spread for Final.} A second run of Final with the same recipe would replace ``within run-to-run
-variation'' by a measured spread. The training code sets no seed, so this is a repeat, not a seeded run. It takes
-about two GPU hours and is planned for the fourth week if a slot is free.
-
-\paragraph{Motion in video (2b).} In the second month I plan a small temporal refiner on the frozen per-frame model.
-It reads the per-person tokens of Final over windows of 16 frames (1.6\,s at the 10 frames per second of the labels)
-with a two-layer transformer and pools the body shape over each track. It is trained on the 3DPW training tracks and
-judged by acceleration error and PVE against the per-frame model, shape averaging and temporal smoothing. If it does
-not beat smoothing, the thesis will say so.
-
-\paragraph{Code and model release (3).} The code will get one script that reproduces the evaluations, paths set by
-environment variables, an environment file and a rewritten README. Final, Final-masked, Control, Base and the Student
-will be released with checksums, subject to the licence terms of AnnyOne, NAVER's checkpoints and 3DPW.
-
-\paragraph{Open beyond this plan.} Two problems have no plan inside this thesis. Children still receive adult-shaped
-bodies too often; weak age labels from the Relative Human training split or child-rich synthetic data are candidates.
-The depth slope of \FinalSlope{} means that near and far people still get similar depths; the likely reason, a pull
-toward the typical training distance, was not tested.
+\paragraph{Reliability and reproducibility.}
+Repeated runs, uncertainty estimates and a larger held-out evaluation would strengthen comparisons.
+Portable configuration and a documented release process would make the system easier to verify.
+These are possible extensions, rather than completed experiments.

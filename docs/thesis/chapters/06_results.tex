@@ -28,11 +28,11 @@
 \chapter{Experiments and Results}
 \label{ch:results}
 
-This chapter reports what the models built on the diagnostics of Chapter~\ref{ch:diagnostics} achieve, in the order
-the fixes were made. Each section opens with its figure or table, reads it, interprets it and says what it does not
-show.
+The primary evaluation compares the deployed Student with its larger teacher (Final) and the released
+Multi-HMR-Anny baseline. It reports reconstruction and computational cost before examining the video application.
+Additional sections analyse the teacher's supervision and output corrections. Historical training schedules and
+early student variants are retained in Appendix~\ref{app:pilots}.
 
-% -----------------------------------------------------------------------------
 \section{Evaluation sets and settings}
 \label{sec:res-setup}
 
@@ -46,16 +46,194 @@ Human validation split gives real photos with an age group, a gender and a box p
 demo images (4 photos and 8 3DPW test frames) have no labels; they are judged by eye, with bodies placed from the
 detection box.
 
-The models are those of Table~\ref{tab:model-names}. The central comparison is Final against Control: the two runs
-share the start point (Base), the schedule, the real-image share and the hand mask, and differ only by the depth fix
-and the bone correction. Every model was trained once, without a fixed seed. Two identical runs differed by
-\NoisePVE\,mm PVE, \NoiseHeadDeg\,deg head direction and about \NoiseRecall{} recall points
-(Section~\ref{sec:diag-noise}); I call gaps below these ``within run-to-run variation'' and compare every fine-tune
-with its own control, because restarting a fine-tune of Base already costs about \RestartCost\,mm PVE. Setting V0
-reads about \MethodVzeroGap\,mm higher than V1.
+Model roles are defined in Table~\ref{tab:model-names}. The Student is the deployed model; Final is its
+larger teacher. The teacher/control ablations use the same start point, schedule, real-image share and hand
+mask, with consistent head-anchor supervision and bone correction added in Final. Every model was trained
+once. Two identical short pilots differed by \NoisePVE\,mm PVE and \NoiseHeadDeg\,degrees of head direction;
+these are observations about those pilots, rather than a statistical threshold for all experiments.
+Setting V0 is reported separately from V1 because helper-joint masking changes the metric.
+
+
+\section{Compact Student and Reference Models}
+\label{sec:res-baseline}
+
+\input{tables/T16_baseline_cost}
+\input{figures/plots/F18_cost_pve}
+
+The Student has \StudentParams\,M parameters, compared with \FinalParams\,M for its teacher and
+\NAVERParams\,M for the released baseline (Table~\ref{tab:model-cost}). Relative to the teacher it uses
+\FlopRatioStudent{} times fewer FLOPs in the recorded configuration. The paired L40S benchmark gives
+\StudentMsLFortyS\,ms per student forward pass and \TeacherMsLFortyS\,ms per teacher pass. The A100 and L40S
+columns are different measurements; latencies are compared only within the same hardware/protocol.
+
+On converted 3DPW, Student PVE is \StudentThreeDPW\,mm, between the teacher's \FinalThreeDPW\,mm and the
+released baseline's \NAVERThreeDPW\,mm. On the synthetic holdout, the teacher also has lower error than
+the student. The released baseline's \NAVERAnnyOne\,mm synthetic result is potentially in-sample because
+the AnnyOne release includes this thesis's selected holdout images.
+
+The external 3DPW comparison includes a training-data difference. Both student and teacher use converted
+3DPW training images; the released baseline is evaluated without that adaptation. The result demonstrates
+the behaviour of the complete trained systems, rather than isolating network architecture. The measured
+cost/accuracy relation is visualized in Figure~\ref{fig:cost-pve}.
+
+The historical cost benchmark uses median forward latency at batch one and a specified one-person
+configuration. The later per-video application measures mean synchronized latency over actual frames.
+Those protocols must remain separate; a video FPS result cannot be inferred from playback speed.
+
+
+\section{Reconstruction Accuracy and Distillation}
+\label{sec:res-student}
+
+\input{tables/T17_student}
+\input{figures/plots/F19_student}
+
+The Student follows the recipe of Table~\ref{tab:student-recipe}: a ViT-B backbone started from NAVER's
+Multi-HMR ViT-B and heads copied from Final, distilled from Final for \StudentEpochs{} epochs. Table~\ref{tab:student} quantifies the resulting reconstruction trade-off: on the AnnyOne holdout the Student reaches \StudentPVE\,mm PVE against the
+teacher's \FinalPVE{} (bar \BarPVE), \StudentRatioPVE{} times the teacher's error, and on the 3DPW test
+\StudentThreeDPW\,mm against \FinalThreeDPW{} (bar \BarThreeDPW), \StudentRatioThreeDPW{} times. MPJPE and PA-PVE
+miss too; recall stays within the rule. Figure~\ref{fig:student-curves} shows that the holdout error
+was still falling at the last epoch, from \StudentCurveHoldFifteen\,mm at epoch 15 to \StudentCurveHoldLast\,mm at
+epoch 30, while the 3DPW validation error had flattened (\StudentCurveValTwentyFive{} to \StudentCurveValLast\,mm in
+the last five epochs). Against Multi-HMR-Anny, the Student is \StudentGainOverNAVERThreeDPW\,mm better on 3DPW
+(\StudentThreeDPW{} vs \NAVERThreeDPW), which meets NAVER's 3DPW
+bar of \BarNAVERThreeDPW\,mm; it misses NAVER's AnnyOne bar of \BarNAVERAnnyOne\,mm, which rests on a most likely
+in-sample number.
+
+By the 95\,\% rule against Final, the Student fails on both sets: its error is 62\,\% above the
+teacher's on AnnyOne and 24\,\% on 3DPW, where the rule allows about 5\,\%. The curves suggest that a longer run would narrow the AnnyOne gap,
+where the error still fell by about 8\,mm per five epochs, but not the 3DPW gap, where it had flattened. What holds is the comparison with Multi-HMR-Anny: a
+network with \ParamRatioStudentNAVER$\times$ fewer parameters is better on real images, although most of that lead likely comes,
+as for Final, from fine-tuning on 3DPW. The teacher and external-baseline comparisons answer different questions and are therefore both reported.
+
+This evaluation does not include a repeated run, a verified longer-schedule result or a labelled real-image benchmark of the student's fine hand and head articulation.
 
 % -----------------------------------------------------------------------------
-\section{Depth: the anchor fix on the holdout}
+
+\section{Video Application}
+\label{sec:res-video}
+
+The Student and released baseline were run on the same \texttt{man\_walking.mp4} sequence using the procedure
+of Section~\ref{sec:method-video}. Both checkpoints loaded with full state coverage. The NVIDIA L40S
+renderer passed a test render before inference. All \VideoFrames{} source frames were processed by both
+models with unsmoothed camera-space placement.
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Recorded quantity & Student & Released baseline \\
+\midrule
+Processed frames & \VideoFrames & \VideoFrames \\
+Frames with a matched person & \VideoStudentMatched & \VideoBaselineMatched \\
+Frames without a matched person & 0 & \VideoBaselineMissing \\
+New synchronized video FPS & not yet reported & not yet reported \\
+\bottomrule
+\end{tabular}
+\caption[Completed walking-sequence execution]{Completed walking-video execution from the supplied run log.
+Matched frames measure tracker output coverage on one clip, not detection recall against labelled people.
+The sequence has no supplied ground-truth mesh or pose. The log predates the revised inference-FPS timing
+implementation; its playback speed is not a model-speed measurement.}
+\label{tab:video-run}
+\end{table}
+
+The application creates a comparison with input, student and baseline panels, as well as separate overlay
+videos and frame-wise prediction files. Its summaries support inspection of pose acceleration proxies and
+phenotype variation. The completed run establishes end-to-end execution and the coverage counts in
+Table~\ref{tab:video-run}. A review of the rendered sequence and saved motion statistics is still required
+before describing the predictions as stable or assigning an improvement over the baseline.
+
+The revised application separately records synchronized model latency, preprocessing, transfers and rendering,
+excluding its first ten processed frames from speed averages. This evaluation does not yet include a completed timing report from that revision.
+The paired benchmark in Table~\ref{tab:model-cost} remains the available
+student/teacher latency evidence; numerical student/baseline video FPS is left unreported.
+
+
+\section{Teacher Supervision Ablations}
+\label{sec:res-teacher-ablations}
+
+The following comparisons analyse the larger teacher used for distillation. They do not independently
+measure the same anatomical improvements in the deployed student.
+
+\subsection{Reconstruction on AnnyOne}
+\label{sec:res-final}
+
+\input{tables/T15_final_results}
+
+% F12: F12_holdout_<idx>_img_gt_base_final.jpg (2700 x 672): image | GT | Base | Final, setting V1 (both model panels
+% are labelled "V1_eval_masked" in the image; Base = v5 trace, Final = exp7 holdout trace).
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=0.72\linewidth]{F12_holdout_579860_img_gt_base_final}\\[2pt]
+\includegraphics[width=0.72\linewidth]{F12_holdout_579862_img_gt_base_final}\\[2pt]
+\includegraphics[width=0.72\linewidth]{F12_holdout_579865_img_gt_base_final}\\[2pt]
+\includegraphics[width=0.72\linewidth]{F12_holdout_579871_img_gt_base_final}
+\caption[Four holdout images: image, ground truth, Base, Final (V1)]{Four AnnyOne holdout images (index in the first
+panel), each as image | ground truth | Base | Final. Ground truth drawn with the dataset camera; Base and Final in
+setting V1 (panels labelled ``V1\_eval\_masked''), each body at its model's own predicted depth. By eye, Base draws
+its bodies smaller and further back than the ground truth, Final close to its size and place. Mesh colours mark
+detections, not identities. People without a ground-truth mesh (the foreground arm in 579862) are not counted;
+people a model misses (the two lying in the foreground of 579865) have no mesh. Synthetic images, one run per model.}
+\label{fig:holdout-montage}
+\end{figure}
+
+Table~\ref{tab:final-annyone} puts Final next to Control, Base and the two pilots. Final has the lowest PA-PVE of
+every model, \GapPAPVE\,mm below Control. Its PVE is \GapPVE\,mm below Control's, a smaller gap than observed between the short pilot repeats, and
+Base keeps the lowest PVE, as it did against every fine-tune. Recall is \GapRecallControl{} points below Control, at
+the limit of the variation, and \GapRecallBase{} below Base. Figure~\ref{fig:holdout-montage} shows Base's bodies
+small and off their people and Final's close to the ground truth. The in-training curves (Figure~\ref{fig:val-curves},
+Appendix~\ref{app:figures}) put Final below Control at all ten epochs on 3DPW validation, while on the in-training
+holdout (V0) the order changes from epoch to epoch.
+
+The fixes cost nothing in body error that one run can resolve, and they bring the largest PA-PVE gain of the project.
+PVE aligns the pelvis, so it cannot see the depth gain, and the neck and fingers are few vertices of a whole body
+(Section~\ref{sec:disc-pve}). The recall cost against Base is larger than the variation and is real. A likely reason
+is that the detection cell moved from the pelvis to the head, so people with a hidden head are found less often; this
+was not tested.
+
+Not shown: PVE paired on the same people (the matched sets differ: \FinalMatched, \ControlMatched{} and
+\BaseMatched{} people), recall on people with a visible head, bootstrap intervals, and a second run of Final.
+
+% -----------------------------------------------------------------------------
+
+\subsection{Real-Image Supervision}
+\label{sec:res-3dpw}
+
+\begin{figure}[!tbp]
+\centering
+\begin{subfigure}{0.45\linewidth}\centering
+  \includegraphics[width=\linewidth]{F10_3dpw_bar_v5_vs_final}\caption{\texttt{downtown\_bar}}\end{subfigure}\hfill
+\begin{subfigure}{0.45\linewidth}\centering
+  \includegraphics[width=\linewidth]{F10_3dpw_market_v5_vs_final}\caption{weekly market}\end{subfigure}\\[4pt]
+\begin{subfigure}{0.45\linewidth}\centering
+  \includegraphics[width=\linewidth]{F10_3dpw_office_v5_vs_final}\caption{\texttt{office\_phoneCall}}\end{subfigure}\hfill
+\begin{subfigure}{0.45\linewidth}\centering
+  \includegraphics[width=\linewidth]{F10_3dpw_guitar_v5_vs_final}\caption{guitar}\end{subfigure}
+\caption[3DPW test frames, Base against Final]{Four 3DPW test frames, each shown as photo and Base (left half), then
+photo and Final (right half; the labels in the image name the two checkpoints). Bodies placed from the detector box,
+fingers at rest pose; judged by eye, no metric. The other four demo frames are in Figure~\ref{fig:3dpw-overlays-more}
+(Appendix~\ref{app:figures}).}
+\label{fig:3dpw-overlays}
+\end{figure}
+
+Table~\ref{tab:final-3dpw} scores every model on all \num{\ThreeDPWTestImages} test images with the same script.
+Final has the lowest error on our 3DPW-Anny labels, \FinalThreeDPW\,mm PVE, ahead of Control, Mixed-L (the previous
+best), Base and Multi-HMR-Anny, and finds \FinalRecallThreeDPW\,\% of the labelled people. Precision is low for every
+model. By eye (Figure~\ref{fig:3dpw-overlays}), most men get male bodies in Final and female-looking ones in Base,
+Final's bodies are a little larger, and the seated guitar player is poor in both.
+
+Most of the gain over Base comes from training on 3DPW at all: Control, without either fix, is
+\GainBaseToControlThreeDPW\,mm better than Base. The fixes add \GainFixesThreeDPW\,mm PVE and
+\GainFixesPAThreeDPW\,mm PA-PVE on top. Repeat variability on 3DPW was not measured, so these small single-run differences do not establish statistical significance. Final is \GainOverOldThreeDPW\,mm better
+than Mixed-L, which saw the old labels; whether the corrected labels cause part of this was not tested, since Mixed-L
+also differs in schedule. Precision is low because 3DPW labels only one or two actors per sequence, so every detected
+bystander counts as a false positive, as do ghost bodies on half-visible people.
+
+Not shown: a comparison with published 3DPW results, which these numbers against converted Anny labels do not allow;
+a breakdown by sequence; and more than 8 frames by eye.
+
+% -----------------------------------------------------------------------------
+
+\subsection{Camera-Space Placement}
 \label{sec:res-depth}
 
 \begin{figure}[!tbp]
@@ -98,7 +276,8 @@ pilot's (\num{\DepthPilotRootErr}\,mm); the real images or the bone correction m
 All depth numbers are synthetic, and Figure~\ref{fig:depth-579862} shows the pilot, not Final.
 
 % -----------------------------------------------------------------------------
-\section{The bone correction}
+
+\subsection{Bone Correction}
 \label{sec:res-bone}
 
 \begin{figure}[!tbp]
@@ -129,7 +308,8 @@ girth \BaseGirth{} (Table~\ref{tab:neck-bones}), so the correction is the likely
 compensate each other in a chain (Section~\ref{sec:diag-neck}) need a two-sided correction, which I did not implement.
 
 % -----------------------------------------------------------------------------
-\section{Fingers}
+
+\subsection{Hand Articulation}
 \label{sec:res-fingers}
 
 % F11: crops of the render panels of F11_hands_photo_party.jpg (2700 x 944, panels 675 px), F11_hands_3dpw_guitar.jpg
@@ -176,84 +356,10 @@ Not shown: a finger number on real images. The 3DPW labels carry rest-pose hands
 so the real-image evidence is three images by eye, showing the correction and the fine-tune together.
 
 % -----------------------------------------------------------------------------
-\section{Final against Control and Base on AnnyOne}
-\label{sec:res-final}
 
-\input{tables/T15_final_results}
-
-% F12: F12_holdout_<idx>_img_gt_base_final.jpg (2700 x 672): image | GT | Base | Final, setting V1 (both model panels
-% are labelled "V1_eval_masked" in the image; Base = v5 trace, Final = exp7 holdout trace).
-\begin{figure}[!tbp]
-\centering
-\includegraphics[width=0.72\linewidth]{F12_holdout_579860_img_gt_base_final}\\[2pt]
-\includegraphics[width=0.72\linewidth]{F12_holdout_579862_img_gt_base_final}\\[2pt]
-\includegraphics[width=0.72\linewidth]{F12_holdout_579865_img_gt_base_final}\\[2pt]
-\includegraphics[width=0.72\linewidth]{F12_holdout_579871_img_gt_base_final}
-\caption[Four holdout images: image, ground truth, Base, Final (V1)]{Four AnnyOne holdout images (index in the first
-panel), each as image | ground truth | Base | Final. Ground truth drawn with the dataset camera; Base and Final in
-setting V1 (panels labelled ``V1\_eval\_masked''), each body at its model's own predicted depth. By eye, Base draws
-its bodies smaller and further back than the ground truth, Final close to its size and place. Mesh colours mark
-detections, not identities. People without a ground-truth mesh (the foreground arm in 579862) are not counted;
-people a model misses (the two lying in the foreground of 579865) have no mesh. Synthetic images, one run per model.}
-\label{fig:holdout-montage}
-\end{figure}
-
-Table~\ref{tab:final-annyone} puts Final next to Control, Base and the two pilots. Final has the lowest PA-PVE of
-every model, \GapPAPVE\,mm below Control. Its PVE is \GapPVE\,mm below Control's, within run-to-run variation, and
-Base keeps the lowest PVE, as it did against every fine-tune. Recall is \GapRecallControl{} points below Control, at
-the limit of the variation, and \GapRecallBase{} below Base. Figure~\ref{fig:holdout-montage} shows Base's bodies
-small and off their people and Final's close to the ground truth. The in-training curves (Figure~\ref{fig:val-curves},
-Appendix~\ref{app:figures}) put Final below Control at all ten epochs on 3DPW validation, while on the in-training
-holdout (V0) the order changes from epoch to epoch.
-
-The fixes cost nothing in body error that one run can resolve, and they bring the largest PA-PVE gain of the project.
-PVE aligns the pelvis, so it cannot see the depth gain, and the neck and fingers are few vertices of a whole body
-(Section~\ref{sec:disc-pve}). The recall cost against Base is larger than the variation and is real. A likely reason
-is that the detection cell moved from the pelvis to the head, so people with a hidden head are found less often; this
-was not tested.
-
-Not shown: PVE paired on the same people (the matched sets differ: \FinalMatched, \ControlMatched{} and
-\BaseMatched{} people), recall on people with a visible head, bootstrap intervals, and a second run of Final.
-
-% -----------------------------------------------------------------------------
-\section{3DPW test on the corrected labels}
-\label{sec:res-3dpw}
-
-\begin{figure}[!tbp]
-\centering
-\begin{subfigure}{0.45\linewidth}\centering
-  \includegraphics[width=\linewidth]{F10_3dpw_bar_v5_vs_final}\caption{\texttt{downtown\_bar}}\end{subfigure}\hfill
-\begin{subfigure}{0.45\linewidth}\centering
-  \includegraphics[width=\linewidth]{F10_3dpw_market_v5_vs_final}\caption{weekly market}\end{subfigure}\\[4pt]
-\begin{subfigure}{0.45\linewidth}\centering
-  \includegraphics[width=\linewidth]{F10_3dpw_office_v5_vs_final}\caption{\texttt{office\_phoneCall}}\end{subfigure}\hfill
-\begin{subfigure}{0.45\linewidth}\centering
-  \includegraphics[width=\linewidth]{F10_3dpw_guitar_v5_vs_final}\caption{guitar}\end{subfigure}
-\caption[3DPW test frames, Base against Final]{Four 3DPW test frames, each shown as photo and Base (left half), then
-photo and Final (right half; the labels in the image name the two checkpoints). Bodies placed from the detector box,
-fingers at rest pose; judged by eye, no metric. The other four demo frames are in Figure~\ref{fig:3dpw-overlays-more}
-(Appendix~\ref{app:figures}).}
-\label{fig:3dpw-overlays}
-\end{figure}
-
-Table~\ref{tab:final-3dpw} scores every model on all \num{\ThreeDPWTestImages} test images with the same script.
-Final has the lowest error on our 3DPW-Anny labels, \FinalThreeDPW\,mm PVE, ahead of Control, Mixed-L (the previous
-best), Base and Multi-HMR-Anny, and finds \FinalRecallThreeDPW\,\% of the labelled people. Precision is low for every
-model. By eye (Figure~\ref{fig:3dpw-overlays}), most men get male bodies in Final and female-looking ones in Base,
-Final's bodies are a little larger, and the seated guitar player is poor in both.
-
-Most of the gain over Base comes from training on 3DPW at all: Control, without either fix, is
-\GainBaseToControlThreeDPW\,mm better than Base. The fixes add \GainFixesThreeDPW\,mm PVE and
-\GainFixesPAThreeDPW\,mm PA-PVE on top, within run-to-run variation for PVE. Final is \GainOverOldThreeDPW\,mm better
-than Mixed-L, which saw the old labels; whether the corrected labels cause part of this was not tested, since Mixed-L
-also differs in schedule. Precision is low because 3DPW labels only one or two actors per sequence, so every detected
-bystander counts as a false positive, as do ghost bodies on half-visible people.
-
-Not shown: a comparison with published 3DPW results, which these numbers against converted Anny labels do not allow;
-a breakdown by sequence; and more than 8 frames by eye.
-
-% -----------------------------------------------------------------------------
-\section{Real photos: children and gender}
+\section{Shape Generalization of the Teacher}
+\label{sec:res-teacher-shape}
+\subsection{Children and Gender on Real Images}
 \label{sec:res-rh}
 
 \input{tables/T12_relative_human}
@@ -329,7 +435,8 @@ Figure~\ref{fig:rest-more}.}
 \end{figure}
 
 % -----------------------------------------------------------------------------
-\section{The shape-mask trade-off}
+
+\subsection{Shape-Supervision Masking}
 \label{sec:res-mask}
 
 \input{tables/T21_mask_arms}
@@ -344,7 +451,7 @@ demo images it brings back variety: the spread of weight, cup size and firmness 
 child-shaped) and loses gender as the full mask does, with both sexes on the female side (men \RHMenGenderPartial,
 women \RHWomenGenderPartial).
 
-The body errors of both arms stay within run-to-run variation of Final, since the 3DPW meshes keep the neutral body;
+The body errors of both arms remain close to Final; repeated runs would be needed to interpret small differences. The 3DPW mesh targets keep the neutral body;
 the trade-off is in the shape head. Without
 the mask, Final learned the seven constants and predicts nearly the same muscle, weight, cup size and firmness for
 everyone on real photos. The partial mask separates the two parts of the loss: with age supervised the children's gain
@@ -359,64 +466,3 @@ Not shown: whether the varied values are right (no real data set I have gives mu
 Final-partial-mask brings the variety back (it had no demo run), and why gender falls.
 
 % -----------------------------------------------------------------------------
-\section{Baseline comparison and model cost}
-\label{sec:res-baseline}
-
-\input{tables/T16_baseline_cost}
-\input{figures/plots/F18_cost_pve}
-
-Table~\ref{tab:baseline} sets NAVER's released Anny model, run with our code, labels and settings, next to ours. On
-the AnnyOne holdout it reads \NAVERAnnyOne\,mm PVE against \FinalPVE{} for Final. NAVER's model was trained on the
-AnnyOne release, which includes the 100 images we hold out, so its \NAVERAnnyOne\,mm is most likely an in-sample
-number; ours are held out. On 3DPW, which neither model saw before our fine-tune, the final model is
-\FinalGainOverNAVERThreeDPW\,mm better (\FinalThreeDPW{} vs \NAVERThreeDPW). Both networks use the same ViT-L backbone;
-the difference is the head, NAVER's 8-layer cross-attention decoder with \NAVERHeadParams\,M parameters against
-\FinalHeadParams\,M in ours. Figure~\ref{fig:cost-pve} sets size and compute against the 3DPW error,
-the Student included.
-
-The fair comparison is 3DPW, but most of Final's lead there comes from fine-tuning on 3DPW, which NAVER's model never
-had: Control, without our fixes, is already at \ControlThreeDPW\,mm. The comparison shows what the real-image
-fine-tune buys, not a better network. Final is about one sixth smaller than NAVER's model; that is not the
-``significantly smaller'' model of requirement 1b, which is why the Student exists.
-
-Not shown: NAVER's model fine-tuned on our labels, which would separate the network from the data, and its latency
-and total FLOPs; its published SMPL-X numbers are not comparable.
-
-% -----------------------------------------------------------------------------
-\section{The ViT-B student}
-\label{sec:res-student}
-
-\input{tables/T17_student}
-\input{figures/plots/F19_student}
-
-The Student follows the recipe of Table~\ref{tab:student-recipe}: a ViT-B backbone started from NAVER's
-Multi-HMR ViT-B and heads copied from Final, distilled from Final for \StudentEpochs{} epochs. The cost side of Table~\ref{tab:student} is met. The accuracy side is not: on the AnnyOne holdout the Student reaches \StudentPVE\,mm PVE against the
-teacher's \FinalPVE{} (bar \BarPVE), \StudentRatioPVE{} times the teacher's error, and on the 3DPW test
-\StudentThreeDPW\,mm against \FinalThreeDPW{} (bar \BarThreeDPW), \StudentRatioThreeDPW{} times. MPJPE and PA-PVE
-miss too; recall stays within the rule. Figure~\ref{fig:student-curves} shows that the holdout error
-was still falling at the last epoch, from \StudentCurveHoldFifteen\,mm at epoch 15 to \StudentCurveHoldLast\,mm at
-epoch 30, while the 3DPW validation error had flattened (\StudentCurveValTwentyFive{} to \StudentCurveValLast\,mm in
-the last five epochs). Against Multi-HMR-Anny, the Student is \StudentGainOverNAVERThreeDPW\,mm better on 3DPW
-(\StudentThreeDPW{} vs \NAVERThreeDPW), which meets NAVER's 3DPW
-bar of \BarNAVERThreeDPW\,mm; it misses NAVER's AnnyOne bar of \BarNAVERAnnyOne\,mm, which rests on a most likely
-in-sample number.
-
-By the 95\,\% rule against Final, the Student fails on both sets: its error is 62\,\% above the
-teacher's on AnnyOne and 24\,\% on 3DPW, where the rule allows about 5\,\%. The curves suggest that a longer run would narrow the AnnyOne gap,
-where the error still fell by about 8\,mm per five epochs, but not the 3DPW gap, where it had flattened. What holds is the comparison with Multi-HMR-Anny: a
-network with \ParamRatioStudentNAVER$\times$ fewer parameters is better on real images, although most of that lead likely comes,
-as for Final, from fine-tuning on 3DPW. Which reference sets the bar is the supervisor's decision.
-
-Not shown: a second run, a longer schedule, and the Student's shape, fingers and necks on real photos.
-
-% -----------------------------------------------------------------------------
-\section{History: the ViT-S students and the schedule to Base}
-\label{sec:res-history}
-
-\input{tables/T20_history}
-
-Table~\ref{tab:history} keeps the draft's V0 measurements from before both fixes: the schedule to Base
-(Table~\ref{tab:history-stages}) and the ViT-S students (Table~\ref{tab:history-students}), at best
-\StudentSixcRatio{} times their teacher's error. Three lessons followed: a backbone trained for mesh recovery gave the
-largest gain, so the Student starts from NAVER's ViT-B; heads at the teacher's width beat narrower ones, so it keeps
-Final's heads; and data limited the students, so it sees six times more images.

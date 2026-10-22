@@ -220,12 +220,11 @@ Kaiserslautern, den \the\day.\the\month.\the\year
 \vspace{1.5cm}
 \section*{Use of AI tools}
 
-An AI coding assistant (Claude, Anthropic) was used in this work under my direction: for writing and debugging
-code, for the analysis scripts that read the training logs and produce the tables and plots, and for drafting and
-revising the text of this thesis. Every number reported here was checked by me against the logs, scripts and
-checkpoints named in Appendix~\ref{app:reproduction}, and the repository history records the assistant's
-contributions. I take full responsibility for the content of this thesis and can explain every component of it.
-\TODO{Student: confirm the wording against RPTU's current rules on AI disclosure and sign off.}
+AI assistants (Claude, Anthropic, and Codex, OpenAI) were used under the author's direction for code
+development, debugging, analysis scripts and assistance with drafting and revising the report. Numerical
+provenance is recorded in the repository and in Appendix~\ref{app:reproduction}.
+\TODO{Author review required: confirm the exact tools and uses, verify the report and numerical claims personally,
+and approve the disclosure wording against the applicable university rules before submission.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Abstract
@@ -247,7 +246,6 @@ contributions. I take full responsibility for the content of this thesis and can
 \InputIfExists{chapters/02_background}{Background and Related Work}
 \InputIfExists{chapters/03_data}{Data}
 \InputIfExists{chapters/04_method}{Method}
-\InputIfExists{chapters/05_diagnostics}{Diagnostics: How Each Failure Was Isolated}
 \input{chapters/06_results}
 \input{chapters/07_discussion}
 \input{chapters/08_conclusion}
@@ -267,6 +265,8 @@ contributions. I take full responsibility for the content of this thesis and can
 \input{chapters/appendix_c_flags}
 \input{chapters/appendix_d_figures}
 \input{chapters/appendix_e_pilots}
+\input{chapters/05_diagnostics}
+\input{chapters/appendix_g_conversion}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Biliography %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

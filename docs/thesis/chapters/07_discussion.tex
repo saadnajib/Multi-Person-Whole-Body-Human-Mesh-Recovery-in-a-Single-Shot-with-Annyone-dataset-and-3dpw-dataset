@@ -1,136 +1,100 @@
-% =============================================================================
-% 07_discussion.tex  --  Chapter 7, Discussion (target 5 pages after the 19 Oct trimming pass). Owner: Discussion writer.
-% Plan: docs/thesis/REWRITE_PLAN.md sections 1.8, 2 ("7 Discussion"), 4 (T1), 5 (writing rules).
-% Sources: docs/thesis_requirements_plan.md sections 1-3 (status of 18 Oct evening); docs/handover.md 0a, 0b, 5
-% (item 7), 6 (corrections log); docs/deck_explained_2026-10-19.md parts 7-8; chapters 3-6 and their tables;
-% data/plot_stats.md.
-% Numbers: macros of numbers_results / _diagnostics / _method / _data; the few numbers first quoted here are in
-% numbers_discussion.tex. Table owned here: tables/T01_requirements.tex (tab:requirements).
-% Trimming pass 19 Oct: Table 7.1 carries status and evidence, the requirement paragraphs keep only what is missing;
-% the long version is in commit 76aa1a4.
-% =============================================================================
-
+% Revised 22 October 2026: scientific interpretation in place of a grading checklist.
 \chapter{Discussion}
 \label{ch:discussion}
 
-This chapter reads the results against the requirements, explains why the headline error barely moved, states the
-limits of each claim and records what the work taught about building such a pipeline.
+The evaluation concerns three outcomes: real-image Anny supervision, compact reconstruction and frame-wise video
+application. Their interpretation depends on the data, model roles and measurement conventions.
 
-% -----------------------------------------------------------------------------
-\section{The requirements, one by one}
+\section{Answers to the Research Questions}
 \label{sec:disc-requirements}
 
-The supervisor set three tiers (Section~\ref{sec:intro-requirements}): requirements without which he would not
-consider the thesis ready for submission (1a, 1b, 1c), requirements for an acceptable grade (2a, 2b), and a
-well-written report with verifiable code for the best grade (3). Table~\ref{tab:requirements} gives the status of
-each on \DiscStatusDate{} and its evidence. I split 1a into pose and shape, because their evidence differs. The
-paragraphs below name only what is missing and where Chapter~\ref{ch:conclusion} plans it.
+\paragraph{Real-image supervision.}
+Converted 3DPW labels make it possible to train and compare Anny-based models on real images. The independent
+check gives a median body-joint discrepancy of \DataCheckJointsNew\,mm. Conversion constrains articulated pose
+and some shape properties, but does not create evidence absent from the source data: \DataConstantCount{}
+phenotypes are fixed, and many hand/head rotations remain rest-pose placeholders. The result is a practical
+benchmark with explicit annotation limits.
 
-\input{tables/T01_requirements}
+Control reaches \ControlThreeDPW\,mm PVE on converted 3DPW, compared with \BaseThreeDPW\,mm for the synthetic-only
+Base. Final reaches \FinalThreeDPW\,mm with the anchor and bone corrections. The large synthetic-to-real gain
+is therefore associated primarily with mixed training. It cannot be attributed entirely to the corrections
+or a network architecture change.
 
-\paragraph{1a-pose (partly).} Missing are correct near and far depth (slope \FinalSlope;
-Figure~\ref{fig:depth-scatter}), a pose number on real photos, where placement offsets, ghost bodies and hard poses
-such as the seated guitar player remain, and a second run. Section~\ref{sec:future} plans a repeat of Final; the slope
-stays an open limitation.
+\paragraph{Compact reconstruction.}
+The student reduces parameters by \ParamRatioStudent{} times and FLOPs by \FlopRatioStudent{} times relative
+to its teacher. The paired L40S benchmark gives a \SpeedRatioStudent{}-fold latency improvement. PVE also rises
+from \FinalPVE{} to \StudentPVE\,mm on AnnyOne and from \FinalThreeDPW{} to \StudentThreeDPW\,mm on converted
+3DPW. The result demonstrates an efficiency--accuracy trade-off rather than teacher-equivalent reconstruction.
 
-\paragraph{1a-shape (partly).} Gender and age change with the person; muscle, weight, cup size and firmness do not,
-because Final learned the constants the converter writes for every 3DPW person, and neither mask arm freed them
-without losing gender (Section~\ref{sec:res-mask}). Missing are a measure of how well each phenotype follows its label
-on AnnyOne, which Section~\ref{sec:future} plans, and a recipe for that variety.
+Against the released baseline the student is \ParamRatioStudentNAVER{} times smaller and has lower 3DPW PVE
+(\StudentThreeDPW{} versus \NAVERThreeDPW\,mm). However, the student uses converted 3DPW training images and
+the released baseline has not received that adaptation. A baseline fine-tuned on the same data is needed to
+isolate architecture and distillation effects from training exposure.
 
-\paragraph{1b (not met).} Final is Multi-HMR with its output resized to Anny, and only \DiscFinalSmallerPct\,\%
-smaller than NAVER's model. The Student is \ParamRatioStudent$\times$ smaller than Final but misses the 95\,\% bar on
-both sets (Section~\ref{sec:res-student}); read against Multi-HMR-Anny instead, it meets the 3DPW bar and misses the
-AnnyOne bar, which rests on a likely in-sample number. Missing are the supervisor's choice of the reference model and
-his view on whether a Multi-HMR-style network with a smaller backbone counts; Section~\ref{sec:future} plans the next
-step for each answer.
+\paragraph{Video application.}
+The completed walking run processes the same frames with both models and NVIDIA mesh rendering. The student
+has \VideoStudentMatched{} matched predictions in \VideoFrames{} frames; the baseline has \VideoBaselineMatched{}.
+These are tracking-coverage counts, not ground-truth detection recall. They establish execution on one clip,
+but do not establish pose accuracy or temporal smoothness. The application saves comparison videos and frame-wise
+pose/shape changes for inspection. The revised timing procedure separates synchronized inference latency from
+rendering and playback. The evaluation does not yet include numerical FPS and stability results from the revised video application.
 
-\paragraph{1c (met with caveats).} The caveats are those of Section~\ref{sec:data-limits}: the labels test pose,
-gender, height and proportions but not body build, and no number compares with published 3DPW results. A body-joint
-MPJPE next to the \MethodNumBones-joint one would help, but is not written.
-
-\paragraph{2a (met).} His expectation held: the real images, not the fixes, brought the large 3DPW gain. Nothing is
-missing.
-
-\paragraph{2b (not started).} No temporal code exists. Section~\ref{sec:future} plans a small refiner on the frozen
-Final model; whether a refiner on frozen features counts as the temporal model he means is a question for him.
-
-\paragraph{3 (partly).} No checkpoint is released, the scripts still carry the cluster's paths, and the licences have
-not been checked (Section~\ref{sec:disc-limitations}). Section~\ref{sec:future} lists the release steps.
-
-% -----------------------------------------------------------------------------
-\section{Why PVE barely moved while everything else did}
+\section{Interpreting Geometry and Placement}
 \label{sec:disc-pve}
 
-From Control to Final the root error fell by \RootErrDropPct\,\%, neck02 from \ControlNeckTwo{} to
-\FinalNeckTwo\,deg and the finger error from \ControlFingers{} to \FinalFingers\,deg, while PVE fell only from
-\ControlPVE{} to \FinalPVE\,mm, within run-to-run variation, and Base keeps the lowest PVE
-(Table~\ref{tab:final-annyone}). Three facts explain most of this.
+PVE aligns the predicted and reference pelvises before measuring vertex differences. Whole-body translation
+is removed, so low PVE can coexist with incorrect camera-space placement. The teacher ablations illustrate this:
+root error changes from \num{\ControlRootErr} to \FinalRootErr\,mm while PVE changes from \ControlPVE{} to
+\FinalPVE\,mm. Placement and depth diagnostics are therefore reported alongside aligned reconstruction errors.
 
-\paragraph{PVE cannot see placement.} PVE aligns the pelvises before it measures, so root error, depth and drawn size
-are removed by construction; on Base the correlation between a person's PVE and their depth error was
-\DiagCorrPVEDepth{} (Table~\ref{tab:diag-placement}).
+A small anatomical region can also contribute little to a whole-body average. The neck contains redundant
+rotations, and per-bone errors can differ from global head-direction errors. The output correction is assessed
+through bone angles and neck geometry as well as PVE. Appendix~\ref{ch:diagnostics} retains the supporting tests.
 
-\paragraph{The bone flips cancelled.} The half-turns of neck02 and the head bone cancel, so Base's head pointed the
-right way and only the neck skin between them was twisted: \DiscNeckVerts{} of \num{\MethodNumVerts} vertices. Its
-error fell from \ControlNeckSkin{} to \FinalNeckSkin\,mm, about \DiscNeckPVEShare\,mm spread over the whole mesh (an
-estimate, not a measurement).
+Two identical short pilot configurations differ by \NoisePVE\,mm PVE. This demonstrates sensitivity to training
+variation, but two pilot runs do not establish a universal significance threshold for other schedules or datasets.
+Small differences between single runs are interpreted cautiously. Repeated training and uncertainty estimates
+are needed for statistical conclusions.
 
-\paragraph{Noise floor and restart cost.} One run resolves about \MethodResolvePVE\,mm PVE
-(Section~\ref{sec:diag-noise}), so the gap of \GapPVE\,mm supports neither a gain nor a cost. Restarting a fine-tune
-of Base already cost about \RestartCost\,mm, and Control sits \DiscBaseControlGapPVE\,mm above Base, likely because
-every fine-tune moves away from the synthetic domain of the holdout; this was not tested.
-
-What did move is PA-PVE, which also removes global rotation and scale: Final is \GapPAPVE\,mm below Control and
-\DiscPAPVEBelowBase\,mm below Base, and the pilots tie part of this to the bone correction (Table~\ref{tab:neck-bones}).
-The likely reason is that the error in global rotation dominates PVE and hides the articulated part where the flips
-sit; a per-region breakdown would test this. I therefore report each fix with the measure that can see it, and keep
-PVE in every table as the check that a fix costs nothing a single run can resolve.
-
-% -----------------------------------------------------------------------------
 \section{Limitations}
 \label{sec:disc-limitations}
 
-\paragraph{Children: a measured improvement, not solved.} Only \RHBabiesBelowFinal\,\% of the babies and
-\RHKidsBelowFinal\,\% of the kids fall below the child line, and the boy of the demo photos gets an adult body.
-Children are rare in AnnyOne and absent from the holdout, and the 3DPW labels pin every real person's age at
-\DataFixedAge. Whether the domain gap or an L1 loss through a sigmoid on a rare value dominates, the evidence cannot
-rank.
+\paragraph{Shape and children.}
+The teacher's Relative Human evaluation improves age-group separation and gender ranking, but children can
+still receive adult-like bodies. The synthetic holdout has no children, and converted real-image labels contain
+constant age and body-build values. The shape-mask variants do not isolate a general solution: parameter spread
+and gender behaviour change together. These findings concern evaluated teacher variants; equivalent student
+shape benchmarks are required before assigning the same conclusions to the student.
 
-\paragraph{Depth: the slope did not move.} The fix moved the offset and the size, not the slope (\FinalSlope):
-\FinalTooFarPct\,\% of all people, the near ones most, are still placed too far. The cause is unknown, and all depth
-numbers are synthetic.
+\paragraph{Depth and detection.}
+The teacher's predicted-versus-reference depth slope remains \FinalSlope, with substantial residual placement
+error. Consistent anchors improve supervision without solving monocular depth ambiguity. Occlusion, truncation
+and multiple-person interactions also complicate detection and tracking. A clear single-person video offers
+limited evidence for these conditions.
 
-\paragraph{One run per arm, no seed.} The claims rest on gaps far above the run-to-run variation (root error, bone
-angles, girth, fingers, PA-PVE); the PVE gap, the 3DPW gain of the fixes and the recall cost lie within or at its edge.
-There are no bootstrap intervals, and the holdout holds \DataHoldoutImages{} images with \DiagHoldoutPeople{} people.
-The finger gain, likewise, is measured on the synthetic holdout only; on real images it rests on three images by eye.
+\paragraph{Evaluation conventions.}
+3DPW errors use fitted Anny labels, and MPJPE averages \MethodNumBones{} Anny joints rather than a published
+SMPL-space joint set. The median conversion discrepancy is a label-quality indicator, not a constant that can
+be subtracted from network error. Unlabelled bystanders complicate precision estimates. The synthetic holdout
+was excluded from this thesis's training but may have been seen by the released baseline.
 
-\paragraph{The recall cost.} Final finds \GapRecallBase{} points fewer people than Base, beyond the variation, and every
-depth-fix pilot lost recall against its control. I state it as a real cost; the head-anchored detection cell is the
-likely reason, not yet tested.
+\paragraph{Experimental coverage and efficiency.}
+Each model is represented by one training run. The existing experiments do not separately quantify every
+student loss component. The walking example has no ground-truth mesh: natural movement, camera motion and
+tracking errors all affect movement statistics. Latency depends on hardware, precision, input resolution and
+person count. The historical paired benchmark and the new per-video benchmark are different protocols and
+must be reported separately.
 
-\paragraph{What the 3DPW labels can teach and test.} The labels carry a neutral body, with \DataConstantCount{} of
-\DataPhenotypes{} phenotypes constant and the neck, head and hand bones at rest (Section~\ref{sec:data-limits}). They
-cannot supervise body build or fingers or test the neck correction, they put a floor of about \DataFloor\,mm under
-every number, and precision is a lower bound because bystanders count as false positives.
+\paragraph{Reproduction and release.}
+The repository records model settings and numerical provenance, but cluster scripts retain site-specific paths.
+Redistributing weights or converted annotations requires checking the terms of the datasets, body-model assets
+and source checkpoints. This report does not establish permission to release every derived artifact.
 
-\paragraph{The comparison with NAVER's model.} Its AnnyOne number is most likely in-sample
-(Section~\ref{sec:res-baseline}). On 3DPW, Final was fine-tuned on 3DPW-train and NAVER's model was not; NAVER's model
-fine-tuned on our labels would separate network from data and was not run.
-
-\paragraph{Licences.} SMPL and 3DPW are licensed for non-commercial research, Relative Human ships without a licence
-file (I used only its validation split, for evaluation), and AnnyOne and NAVER's checkpoints carry their own terms. I
-have not yet checked whether these allow releasing derived weights.
-
-% -----------------------------------------------------------------------------
-\section{Engineering lessons}
+\section{Practical Implications}
 \label{sec:disc-engineering}
 
-The costly faults were silent: each gave plausible output and showed only when one stage was measured on its own.
-Four habits found them. I measured each stage alone; only an independent check of the finished label files found the
-three label defects (Section~\ref{sec:data-defects}). I read every change against a control, which kept the neck
-pilot's PVE and the 3DPW gain from being credited to the fixes. I checked by geometry, not by names: the reversed
-spine, the reversed gender value, the pelvis targets and the half-turned neck bones all hid behind plausible names or
-group means. And every change entered the code as a switch whose default keeps the old behaviour
-(Appendix~\ref{app:flags}).
+Whether a person receives a prediction, whether the reconstructed body is accurate, and whether it remains
+stable over time are separate questions. Tracking counts address the first, labelled-image metrics the second,
+and video inspection with frame-wise measurements the third. Inference FPS adds computational cost as another
+dimension. Reporting these quantities together provides a clearer assessment of the compact model than a
+single reconstruction error or visually pleasing example.

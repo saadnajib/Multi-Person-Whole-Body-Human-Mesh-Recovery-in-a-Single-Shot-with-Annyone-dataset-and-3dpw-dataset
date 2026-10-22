@@ -13,7 +13,7 @@
 \providecommand{\DiagPending}[2][0.6\linewidth]{%
   \fbox{\parbox[c][2.6cm][c]{#1}{\centering\small\textbf{Figure pending}\\[2pt] #2}}}
 
-\chapter{Diagnostics: How Each Failure Was Isolated}
+\chapter{Supporting Diagnostic Experiments}
 \label{ch:diagnostics}
 
 Base showed three failures in its renders: thin, twisted necks, claw-like fingers and adult bodies on children.
@@ -243,8 +243,9 @@ Not shown: which mechanism dominates, and ages in years (the code uses three age
 
 \input{tables/T14_pilot_noise}
 
-By Table~\ref{tab:pilot-noise} one pilot resolves about 10\,mm PVE, 3\,deg and 2 recall points, and is read against
-its own control because of the restart cost. That suffices for every change this chapter relies on (root error, bone
+Table~\ref{tab:pilot-noise} records the differences between two identical pilot configurations. These
+observations motivate matched controls and caution with small single-run differences; they are not a
+statistically estimated significance threshold for all experiments. That suffices for every change this chapter relies on (root error, bone
 angles 175 to 5\,deg, girth 0.46 to 1.00, fingers 17.3 to 8.3\,deg), but not for a PVE change of a few millimetres, so
 the PVE costs of the depth fix and the neck pilot stay unresolved; no bootstrap intervals were computed.
 

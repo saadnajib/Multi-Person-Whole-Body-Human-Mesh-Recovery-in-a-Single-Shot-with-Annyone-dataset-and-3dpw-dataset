@@ -1,5 +1,34 @@
 # Master thesis: Multi-Person Human Mesh Recovery with the Anny Body Model
 
+## Current revision: 22 October 2026
+
+The report now presents **Student (ViT-B)** as the deployed model, **Final** as
+its larger teacher, and **Multi-HMR-Anny** as the released baseline. It follows
+the supervisor's meeting guidance and the supplied sample thesis's research
+structure. The original draft is preserved on `main`; this revision is in
+`codex/thesis-report`.
+
+Read [SUPERVISOR_REVISION_2026-10-22.md](SUPERVISOR_REVISION_2026-10-22.md) for
+the changes and remaining author checks. There are seven main chapters:
+introduction, background/related work, data, methodology, experiments/results,
+discussion and conclusion. Source filenames remain stable. Diagnostics are
+Appendix F; converter history is Appendix G; early student history is in E.
+
+Build with `latexmk -pdf -interaction=nonstopmode -halt-on-error thesis.tex`
+from this directory. Requires pdflatex, biber, biblatex, TikZ/pgfplots, siunitx
+and the other declared packages. Check for undefined references/citations.
+
+`numbers_video.tex` records the completed walking-run counts. Unknown video
+FPS and stability results are left unreported. Existing reconstruction and
+paired benchmark values retain their source-backed macros. The AI disclosure,
+production body-model configuration and bibliographic metadata need author
+review before submission.
+
+## Historical notes from the 19 October draft
+
+The dated notes below describe the previous report structure and status;
+the current revision guide above takes precedence.
+
 LaTeX source of the rewritten thesis (full draft since 18 Oct 2026; 132 pages with appendices on 19 Oct, after the partial-mask result). The plan behind it
 (what each chapter, table and figure holds, the writing rules) is `REWRITE_PLAN.md`; the review pass that made the
 chapters one document is logged in `REVIEW_LOG.md`; the old draft is kept read-only in `draft_2026-10_original/`.

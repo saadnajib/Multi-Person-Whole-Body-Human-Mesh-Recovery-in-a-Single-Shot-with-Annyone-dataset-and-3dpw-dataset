@@ -17,9 +17,9 @@
   \draw[densely dotted, black!60] (axis cs:0,\BarThreeDPW) -- (axis cs:450,\BarThreeDPW);
   \node[font=\scriptsize, anchor=south east, black!70] at (axis cs:445,\BarThreeDPW) {95\,\% bar};
   \addplot[only marks, mark=square*, color=gray!70!black] coordinates {(\NAVERParams,\NAVERThreeDPW)};
-  \node[font=\scriptsize, anchor=north] at (axis cs:\NAVERParams,\NAVERThreeDPW-2) {Multi-HMR-Anny};
+  \node[font=\scriptsize, anchor=north east] at (axis cs:\NAVERParams,\NAVERThreeDPW-2) {Multi-HMR-Anny};
   \addplot[only marks, mark=*, color=blue!70!black] coordinates {(\FinalParams,\FinalThreeDPW)};
-  \node[font=\scriptsize, anchor=north, blue!70!black] at (axis cs:\FinalParams,\FinalThreeDPW-2) {Final};
+  \node[font=\scriptsize, anchor=north, blue!70!black] at (axis cs:\FinalParams,\FinalThreeDPW-2) {Teacher};
   \addplot[only marks, mark=triangle*, mark size=2.5pt, color=red!70!black] coordinates {(\StudentParams,\StudentThreeDPW)};
   \node[font=\scriptsize, anchor=south, red!70!black] at (axis cs:\StudentParams,\StudentThreeDPW+2) {Student};
 \nextgroupplot[xlabel={GFLOPs}, xmin=0, xmax=2400]
@@ -28,13 +28,13 @@
   \draw[->, gray!70!black] (axis cs:\NAVERBackboneGFLOPs,\NAVERThreeDPW) -- (axis cs:\NAVERBackboneGFLOPs+300,\NAVERThreeDPW);
   \node[font=\scriptsize, anchor=north east, align=right] at (axis cs:\NAVERBackboneGFLOPs+250,\NAVERThreeDPW-2) {Multi-HMR-Anny\\(backbone only)};
   \addplot[only marks, mark=*, color=blue!70!black] coordinates {(\FinalGFLOPs,\FinalThreeDPW)};
-  \node[font=\scriptsize, anchor=north, blue!70!black] at (axis cs:\FinalGFLOPs,\FinalThreeDPW-2) {Final};
+  \node[font=\scriptsize, anchor=north, blue!70!black] at (axis cs:\FinalGFLOPs,\FinalThreeDPW-2) {Teacher};
   \addplot[only marks, mark=triangle*, mark size=2.5pt, color=red!70!black] coordinates {(\StudentGFLOPs,\StudentThreeDPW)};
   \node[font=\scriptsize, anchor=south, red!70!black] at (axis cs:\StudentGFLOPs,\StudentThreeDPW+2) {Student};
 \end{groupplot}
 \end{tikzpicture}
 \caption[Model size and compute against 3DPW-test PVE]{Model size and compute against 3DPW-test PVE (corrected labels, all 8,190 images; one run per model). Multi-HMR-Anny's GFLOPs count its
 backbone only (arrow: the true value is higher). Dotted
-line: the 95\,\% bar against Final (\BarThreeDPW\,mm).}
+line: the retention threshold against the teacher (\BarThreeDPW\,mm).}
 \label{fig:cost-pve}
 \end{figure}

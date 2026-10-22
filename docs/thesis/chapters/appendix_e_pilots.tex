@@ -23,7 +23,7 @@ gives, for each, what it changed, the success rule written into its script befor
 All pilots fine-tune Base on AnnyOne only, at learning rate $10^{-5}$ and batch 4, for 2 epochs (8,000 images) unless
 noted, and are read on the 100-image AnnyOne holdout in setting V1. Each is one run without a seed, so every result
 must be read against the run-to-run variation of Section~\ref{sec:diag-noise}, summarised below the table.
-Chapter~\ref{ch:diagnostics} explains what each result means; the full depth runs are Table~\ref{tab:depth-runs}.
+Appendix~\ref{ch:diagnostics} explains what each result means; the full depth runs are Table~\ref{tab:depth-runs}.
 
 \begingroup
 \footnotesize
@@ -81,10 +81,31 @@ the geodesic pilot's L1 control \\
 \end{longtable}
 \endgroup
 
-\paragraph{Pilot noise.} Table~\ref{tab:pilot-noise} in Chapter~\ref{ch:diagnostics} gives the yardstick for all of
+\paragraph{Pilot noise.} Table~\ref{tab:pilot-noise} in Appendix~\ref{ch:diagnostics} gives the yardstick for all of
 the above. Two runs of one configuration differed by \DiagNoisePVE\,mm PVE, \DiagNoiseHead\,deg head direction and
 \DiagNoiseRecall{} recall points, and restarting a fine-tune of Base cost about \DiagRestartCost\,mm. One pilot
 therefore resolves about 10\,mm PVE, 3\,deg and 2 recall points. The root error, the bone angles, the girth and the
 finger error moved far beyond that; the PVE and recall differences of every pilot did not. That is why each pilot is
 read against its own control, and why the two changes that entered Final were chosen for what the diagnostics showed,
 not for a PVE gain.
+
+\section{History: the ViT-S students}
+\label{sec:method-kd-history}
+
+The first answer to the size requirement was a line of ViT-S students of Base, Student-S/1 to Student-S/final, trained
+before both fixes and the label correction (numbers in Section~\ref{sec:res-history}). They taught three lessons.
+Feature distillation alone leaves the student's heads unsupervised, so heads must be copied from the teacher. Copied
+heads need projector-fed inputs, not random input layers. And the start matters most: a backbone already trained for
+mesh recovery gave the largest gain, and the student was limited by the images it had seen, not by its size.
+
+
+\section{History: the ViT-S students and the schedule to Base}
+\label{sec:res-history}
+
+\input{tables/T20_history}
+
+Table~\ref{tab:history} keeps the draft's V0 measurements from before both fixes: the schedule to Base
+(Table~\ref{tab:history-stages}) and the ViT-S students (Table~\ref{tab:history-students}), at best
+\StudentSixcRatio{} times their teacher's error. Three lessons followed: a backbone trained for mesh recovery gave the
+largest gain, so the Student starts from NAVER's ViT-B; heads at the teacher's width beat narrower ones, so it keeps
+Final's heads; and data limited the students, so it sees six times more images.

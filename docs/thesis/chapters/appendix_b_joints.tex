@@ -1,58 +1,47 @@
-% appendix_b_joints.tex -- Appendix B SMPL-Anny joint correspondence.
-% Skeleton from REWRITE_PLAN.md section 2 (Appendices) and 1.8 (verdict: keep).
-% absorbs draft_2026-10_original/appendix.tex lines 36-64 (chapter text and tab:mapping, copied and corrected)
-% needs: draft tab:mapping + the virtual-joint offsets (plan section 2, Appendix B); the v2.3 facts of
-%   Data 3.3 / T6 (H 3.5: only the root and 18 bones move, 144 of 163 bones stay at rest).
-% Corrections against the draft (plan 1.1 #9-11, T6; scripts/data/smpl_to_anny.py):
-%   * the caption now states which bones the fit rotates (root + 18 bones; 144 of 163 at rest incl. neck02,
-%     neck03, head, jaw and every finger bone; H 3.5 / handover.md:1695, :1854);
-%   * the "first converter" note adds that the hips sat on pelvis.L/R, whose heads lie 4 cm from the hip
-%     joint (draft main.tex:491-501);
-%   * section reference updated to the Data chapter (the converter moved there, plan 1.5 3.6).
-% TODO verify before submission (could not be checked from the repo alone):
-%   * spine rows: the static name list in smpl_to_anny.py:239-262 gives spine1/2/3 -> spine04/spine03/spine02;
-%     the geometry step (refine_mapping_by_geometry, :477-490) re-picks them by height at run time and prints
-%     "AUTO-MAPPING ... changed"; the draft's spine03/spine02/spine01 must be confirmed from a converter log;
-%   * the neck row: the default --offset_joints list (smpl_to_anny.py:957-958) includes neck, so its offset
-%     may not be exactly 0; confirm from the "VIRTUAL-JOINT OFFSETS" table of a converter log;
-%   * the scale factor 0.864 and the offsets themselves (same log table).
-
 \chapter{SMPL--Anny Joint Correspondence}
 \label{app:joints}
 
-\TODO{One paragraph: how the correspondence was chosen (rest skeletons compared by geometry) and how the virtual-joint offsets were measured; point to Chapter~3.}
+The converter compares the rest skeletons geometrically before fitting posed frames. Hip targets are associated
+with Anny's proximal upper-leg bones by proximity to the hip midpoint. For the spine, candidate Anny bones are
+ordered by normalized height and the ordered triple nearest the SMPL spine heights is selected. Limb and head
+candidates start from the anatomical correspondence in the converter. The final per-run choices are saved
+with the fits.
 
-The correspondence used by the final converter (v2.3), with the rest-pose offset of each virtual joint.
-Offsets are measured on the two rest skeletons after aligning them at the hip midpoint and scaling SMPL to Anny's
-hip--neck length (factor 0.864); limb joints use the bone head.
+Let $\mathbf o_A,\mathbf o_S$ be hip midpoints, $s$ the ratio of hip-to-neck lengths and $\mathbf Q_{S\to A}$
+the rest-frame axis alignment. The target location expressed in Anny's rest frame is
+\begin{equation}
+ \mathbf j^{S\to A}_k=\mathbf o_A+s\mathbf Q_{S\to A}(\mathbf j^S_k-\mathbf o_S),\qquad
+ \boldsymbol\delta_k=(\mathbf Q^0_b)^\top(\mathbf j^{S\to A}_k-\mathbf h^0_b),
+ \label{eq:rest-offset}
+\end{equation}
+for the associated bone $b$. The posed virtual joint then follows Equation~\eqref{eq:virtual-joint}.
+The offset is fixed after rest-pose construction; it is not an extra joint learned independently in each frame.
 
 \begin{table}[htbp]
 \centering\small
-\begin{tabular}{@{}llr@{}}
+\begin{tabular}{@{}>{\raggedright}p{3.4cm}>{\raggedright\arraybackslash}p{8.7cm}@{}}
 \toprule
-SMPL joint & Anny bone & virtual-joint offset (cm) \\
+SMPL target & Anny correspondence and fitting point \\
 \midrule
-pelvis & \texttt{root} & 11.6 \\
-left / right hip & \texttt{upperleg01.L/R} & 4.3 \\
-spine1 & \texttt{spine03} & 3--7 \\
-spine2 & \texttt{spine02} & 3--7 \\
-spine3 & \texttt{spine01} & 3--7 \\
-neck & \texttt{neck01} & 0 (reference) \\
-left / right collar & \texttt{clavicle.L/R} & 5 \\
-head & \texttt{head} & --- \\
-shoulder & \texttt{upperarm01.L/R} & --- \\
-elbow & \texttt{lowerarm01.L/R} & --- \\
-wrist & \texttt{wrist.L/R} & --- \\
-hand & \texttt{finger2-1.L/R} & --- \\
-knee & \texttt{lowerleg01.L/R} & --- \\
-ankle & \texttt{foot.L/R} & --- \\
-foot & \texttt{toe1-1.L/R} & --- \\
+Pelvis & root bone with a measured torso offset \\
+Left/right hip & proximal upper-leg bone selected geometrically, with an offset \\
+Spine1, spine2, spine3 & ordered rest-height correspondence among spine bones, with offsets \\
+Neck & neck candidate with a measured rest-frame offset \\
+Left/right collar & clavicle bone with an offset \\
+Shoulder, elbow, wrist & corresponding upper-arm, lower-arm and wrist bone heads \\
+Knee, ankle, foot & corresponding lower-leg, foot and toe bone heads \\
+Head and hand targets & corresponding candidate bone heads; pose determined by the permitted parent rotations \\
 \bottomrule
 \end{tabular}
-\caption[SMPL--Anny joint correspondence]{SMPL$\rightarrow$Anny correspondence of the final converter. The fit rotates only the root and 18 bones;
-the other 144 of Anny's 163 bones stay at their rest rotation, including \texttt{neck02}, \texttt{neck03},
-\texttt{head}, the jaw and every finger bone, so the head, hand and foot targets are reached through their parent
-bones. The first converter mapped \texttt{spine1} to \texttt{spine01}, 25\,cm too high, and the hips to
-\texttt{pelvis.L/R}, whose heads lie 4\,cm from the hip joints.}
+\caption[Construction of the SMPL--Anny correspondence]{Correspondence construction used by the converter.
+Exact resolved bone names and offset vectors are metadata of the fit, rather than universal constants shared
+by every Anny rig version. The fit rotates the root and \DataFittedBones{} mapped body bones; remaining
+bones, including most fingers and fine head/neck articulation, retain their rest rotation.}
 \label{tab:mapping}
 \end{table}
+
+The fitting output stores \texttt{anny\_bone\_names}, \texttt{joint\_offsets\_local} and
+\texttt{offset\_joints}. These arrays are the authoritative correspondence for reproducing a particular fit.
+The code-level construction
+is in \path{scripts/data/smpl_to_anny.py}; the effect of geometric matching and virtual joints is evaluated
+in Appendix~\ref{app:conversion}.

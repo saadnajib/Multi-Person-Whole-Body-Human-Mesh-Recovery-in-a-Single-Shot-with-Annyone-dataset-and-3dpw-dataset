@@ -12,11 +12,11 @@
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}>{\raggedright}p{2.7cm}>{\raggedright}p{5.25cm}cccc@{}}
 \toprule
-Term (log name) & What it compares, in plain words & Default & Final & Control & Student \tabularnewline
+Term (log name) & Supervised quantity & Default & Final & Control & Student \tabularnewline
 \midrule
 Detection (\texttt{bce}) & focal loss on the per-token score ``an anchor lies here'' & \MethodWDet & \MethodWDet & \MethodWDet & \MethodWDet \tabularnewline
 Offset (\texttt{offset}) & L1 on the anchor's position inside its token & \MethodWOffset & \MethodWOffset & \MethodWOffset & \MethodWOffset \tabularnewline
-Rotations (\texttt{rotmat}) & L1 over the 9 entries of each parent-relative rotation & \MethodWRot & \MethodWRot & \MethodWRot & \MethodWRot \tabularnewline
+Rotations (\texttt{rotmat}) & L1 over the 9 entries of each predicted/target bone rotation & \MethodWRot & \MethodWRot & \MethodWRot & \MethodWRot \tabularnewline
 \quad neck and hand boost & renormalised: $\times$\MethodBoostOn{} neck, head, hands; $\times$\MethodBoostOff{} rest & 1 & \MethodBoost & \MethodBoost & \MethodBoost \tabularnewline
 Shape (\texttt{shape}) & L1 on the \MethodNumPheno{} phenotypes after the sigmoid & \MethodWShapeDefault & \MethodWShape & \MethodWShape & \MethodWShape \tabularnewline
 Distance (\texttt{dist}) & L1 on the anchor's focal-normalised log-depth & \MethodWDistDefault & \MethodWDist & \MethodWDistDefault & \MethodWDist \tabularnewline
