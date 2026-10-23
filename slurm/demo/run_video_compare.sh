@@ -1,5 +1,5 @@
 #!/bin/bash
-# Frame-by-frame video inference: input | ViT-B Student | NAVER Multi-HMR-Anny.
+# Video comparison with optional causal temporal stabilization of the Student.
 # Uses regular multihmr and the same native EGL setup as the image demos.
 # Python packages are not installed or upgraded inside the job.
 # CHECK_ONLY=1 validates paths/options on the login node without Python, a GPU or submission.
@@ -50,6 +50,11 @@ require_file() { [ -r "$2" ] && [ -f "$2" ] || fail "$1 is not a readable file: 
 nonnegative() { [[ "$2" =~ ^[0-9]+$ ]] || fail "$1 must be a non-negative integer: $2"; }
 positive() { [[ "$2" =~ ^[0-9]+$ ]] && (( 10#$2 > 0 )) || fail "$1 must be a positive integer: $2"; }
 toggle() { [[ "$2" = 0 || "$2" = 1 ]] || fail "$1 must be 0 or 1: $2"; }
+seconds() {
+  [[ "$2" =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]] || fail "$1 must be finite non-negative seconds: $2"
+  LC_ALL=C awk -v value="$2" 'BEGIN { exit !(sprintf("%g", value + 0) !~ /[Ii][Nn][Ff]|[Nn][Aa][Nn]/) }' \
+    || fail "$1 must be finite non-negative seconds: $2"
+}
 
 [ "$#" -eq 0 ] || fail "configure this wrapper with environment variables; see docs/video_inference.md"
 REPO="${REPO:-/netscratch/najib/multi-hmr}"
@@ -74,6 +79,11 @@ DEVICE="${DEVICE:-cuda}"
 AMP="${AMP:-0}"
 STUDENT_ONLY="${STUDENT_ONLY:-0}"
 CHECK_ONLY="${CHECK_ONLY:-0}"
+TEMPORAL="${TEMPORAL:-off}"
+TEMPORAL_POSE_TAU="${TEMPORAL_POSE_TAU:-0.08}"
+TEMPORAL_TRANSLATION_TAU="${TEMPORAL_TRANSLATION_TAU:-0.12}"
+TEMPORAL_SHAPE_TAU="${TEMPORAL_SHAPE_TAU:-1.0}"
+TEMPORAL_MAX_GAP="${TEMPORAL_MAX_GAP:-0.25}"
 CONTAINER_IMAGE="${CONTAINER_IMAGE:-/netscratch/najib/ContainerImages/ubuntu+20.04_v4.sqsh}"
 RUN="${RUN:-video_${SLURM_JOB_ID:-$(date -u +%Y%m%dT%H%M%S)_$$}}"
 [[ "$RUN" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || fail "RUN must contain letters, digits, underscores, dots or hyphens"
@@ -94,10 +104,17 @@ positive PANEL_SIZE "$PANEL_SIZE"
 toggle AMP "$AMP"
 toggle STUDENT_ONLY "$STUDENT_ONLY"
 toggle CHECK_ONLY "$CHECK_ONLY"
+[[ "$TEMPORAL" = off || "$TEMPORAL" = ema ]] || fail "TEMPORAL must be off or ema: $TEMPORAL"
+seconds TEMPORAL_POSE_TAU "$TEMPORAL_POSE_TAU"
+seconds TEMPORAL_TRANSLATION_TAU "$TEMPORAL_TRANSLATION_TAU"
+seconds TEMPORAL_SHAPE_TAU "$TEMPORAL_SHAPE_TAU"
+seconds TEMPORAL_MAX_GAP "$TEMPORAL_MAX_GAP"
+awk -v value="$TEMPORAL_MAX_GAP" 'BEGIN { exit !(value > 0) }' || fail "TEMPORAL_MAX_GAP must be positive"
 [[ "$FOV" =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]] || fail "FOV must be a number between 0 and 180"
 awk -v fov="$FOV" 'BEGIN { exit !(fov > 0 && fov < 180) }' || fail "FOV must be between 0 and 180"
 [[ "$DEVICE" = cuda || "$DEVICE" = cpu || "$DEVICE" =~ ^cuda:[0-9]+$ ]] || fail "DEVICE must be cuda, cuda:N or cpu"
 [ "$AMP" = 0 ] || [ "$DEVICE" != cpu ] || fail "AMP=1 requires a CUDA device"
+[ "$TEMPORAL" = off ] || [ "$AMP" = 0 ] || fail "TEMPORAL=ema requires AMP=0: mixed-precision temporal re-decoding has not been validated"
 [ "${CONDA_ENV:-multihmr}" = multihmr ] || fail "use the regular multihmr environment: unset CONDA_ENV or set it to multihmr"
 [ -z "${PY_VENV:-}" ] || fail "unset PY_VENV: this wrapper uses regular multihmr without a CUDA venv overlay"
 [ ! -e "$OUTPUT" ] || fail "OUTPUT already exists; choose a new RUN or OUTPUT: $OUTPUT"
@@ -131,7 +148,11 @@ ARGS=(--video "$VIDEO" --student-checkpoint "$STUDENT"
       --baseline-checkpoint "$BASELINE" --student-bone-fix "$STUDENT_BONE_FIX"
       --output "$OUTPUT" --fov "$FOV" --max-frames "$MAX_FRAMES" --warmup-frames "$WARMUP_FRAMES"
       --stride "$STRIDE" --start-frame "$START_FRAME" --panel-size "$PANEL_SIZE"
-      --device "$DEVICE")
+      --device "$DEVICE" --temporal "$TEMPORAL"
+      --temporal-pose-tau "$TEMPORAL_POSE_TAU"
+      --temporal-translation-tau "$TEMPORAL_TRANSLATION_TAU"
+      --temporal-shape-tau "$TEMPORAL_SHAPE_TAU"
+      --temporal-max-gap "$TEMPORAL_MAX_GAP")
 [ -z "$TEACHER" ] || ARGS+=(--teacher-checkpoint "$TEACHER")
 [ "$AMP" = 0 ] || ARGS+=(--amp)
 [ "$STUDENT_ONLY" = 0 ] || ARGS+=(--student-only)

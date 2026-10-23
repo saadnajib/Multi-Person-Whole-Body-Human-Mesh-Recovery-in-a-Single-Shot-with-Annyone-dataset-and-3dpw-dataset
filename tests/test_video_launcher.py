@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -38,7 +39,9 @@ class VideoLauncherTests(unittest.TestCase):
         self.env = os.environ.copy()
         for name in ('PY_VENV', 'CONDA_ENV', 'EGL_INSTALL_PYTHON', 'EGL_VENDOR_DIR',
                      '__EGL_VENDOR_LIBRARY_DIRS', '__EGL_VENDOR_LIBRARY_FILENAMES',
-                     'STUDENT_ONLY', 'TEACHER', 'AMP', 'OUTPUT', 'RUN', 'SLURM_JOB_ID'):
+                     'STUDENT_ONLY', 'TEACHER', 'AMP', 'OUTPUT', 'RUN', 'SLURM_JOB_ID',
+                     'TEMPORAL', 'TEMPORAL_POSE_TAU', 'TEMPORAL_TRANSLATION_TAU',
+                     'TEMPORAL_SHAPE_TAU', 'TEMPORAL_MAX_GAP'):
             self.env.pop(name, None)
         self.env.update(PATH=str(self.bin) + os.pathsep + self.env.get('PATH', ''),
                         VIDEO_TEST_CALL_LOG=str(self.log), VIDEO_TEST_PROBE_EXIT='0')
@@ -135,7 +138,7 @@ if tool == 'python' and any(arg.endswith('/check_renderer.py') for arg in sys.ar
         vendor = json.loads((Path(self.env['EGL_VENDOR_DIR']) / '10_nvidia.json').read_text())
         self.assertEqual(vendor['ICD']['library_path'], 'libEGL_nvidia.so.0')
 
-    def test_check_only_never_provisions_or_runs_python(self):
+    def prepare_check_only(self):
         video = self.repo / 'man walking.mp4'
         student = self.repo / 'student run/train/checkpoints/00029.pt'
         baseline = self.repo / 'baseline.pt'
@@ -146,12 +149,63 @@ if tool == 'python' and any(arg.endswith('/check_renderer.py') for arg in sys.ar
         self.env.update(REPO=str(self.repo), VIDEO=str(video), STUDENT=str(student),
                         BASELINE=str(baseline), OUTPUT=str(self.repo / 'new result'),
                         CHECK_ONLY='1', CONDA_ENV='multihmr')
-        result = subprocess.run(['bash', str(self.repo / 'slurm/demo/run_video_compare.sh')],
-                                env=self.env, capture_output=True, text=True, timeout=10)
+    def check_only(self):
+        return subprocess.run(['bash', str(self.repo / 'slurm/demo/run_video_compare.sh')],
+                              env=self.env, capture_output=True, text=True, timeout=10)
+
+    def test_check_only_never_provisions_or_runs_python(self):
+        self.prepare_check_only()
+        result = self.check_only()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('paths and options passed', result.stdout)
         self.assertEqual(self.calls(), [])
         self.assertFalse((self.repo / 'new result').exists())
+        command = shlex.split(next(line[9:] for line in result.stdout.splitlines()
+                                   if line.startswith('Command: ')))
+        self.assertEqual(command[command.index('--temporal') + 1], 'off')
+
+    def test_temporal_options_forwarded_without_python_or_gpu(self):
+        self.prepare_check_only()
+        self.env.update(TEMPORAL='ema', TEMPORAL_POSE_TAU='0',
+                        TEMPORAL_TRANSLATION_TAU='.18', TEMPORAL_SHAPE_TAU='2.5',
+                        TEMPORAL_MAX_GAP='0.5', STUDENT_ONLY='1')
+        result = self.check_only()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        command = shlex.split(next(line[9:] for line in result.stdout.splitlines()
+                                   if line.startswith('Command: ')))
+        expected = {'--temporal': 'ema', '--temporal-pose-tau': '0',
+                    '--temporal-translation-tau': '.18', '--temporal-shape-tau': '2.5',
+                    '--temporal-max-gap': '0.5'}
+        for flag, value in expected.items():
+            self.assertEqual(command[command.index(flag) + 1], value)
+        self.assertIn('--student-only', command)
+        self.assertEqual(self.calls(), [])
+        self.assertFalse((self.repo / 'new result').exists())
+
+    def test_temporal_rejects_unvalidated_mixed_precision(self):
+        self.prepare_check_only()
+        self.env.update(TEMPORAL='ema', AMP='1', DEVICE='cuda')
+        result = self.check_only()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('TEMPORAL=ema requires AMP=0', result.stderr)
+        self.assertEqual(self.calls(), [])
+        self.assertFalse((self.repo / 'new result').exists())
+
+    def test_invalid_temporal_options_rejected_before_launch(self):
+        self.prepare_check_only()
+        bad = [('TEMPORAL', 'learned'), ('TEMPORAL_POSE_TAU', '-0.1'),
+               ('TEMPORAL_TRANSLATION_TAU', 'nan'), ('TEMPORAL_SHAPE_TAU', 'inf'),
+               ('TEMPORAL_SHAPE_TAU', '9' * 400), ('TEMPORAL_MAX_GAP', '0'),
+               ('TEMPORAL_MAX_GAP', '0; echo unsafe')]
+        for name, value in bad:
+            with self.subTest(name=name, value=value):
+                self.env[name] = value
+                result = self.check_only()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(name, result.stderr)
+                self.assertEqual(self.calls(), [])
+                self.assertFalse((self.repo / 'new result').exists())
+                self.env.pop(name)
 
 
 if __name__ == '__main__':

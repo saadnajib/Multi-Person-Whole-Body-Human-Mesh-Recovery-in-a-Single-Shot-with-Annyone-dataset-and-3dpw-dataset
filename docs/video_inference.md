@@ -1,15 +1,32 @@
 # Video inference with the thesis Student and Multi-HMR-Anny
 
-`demo_video.py` applies the existing image models to a video frame by frame. The
-default comparison has three panels: **input | Student (ViT-B) | NAVER's released
-Multi-HMR-Anny**. Set `TEACHER` to add Final (ViT-L) as a fourth panel. This is an
-inference comparison; it does not train a temporal model or change the thesis
-choice of student.
+`demo_video.py` runs the thesis Student and optional reference models on the
+same video. With `TEMPORAL=off` (the default), the comparison is **input | raw
+Student (ViT-B) | NAVER's released Multi-HMR-Anny**. Set `TEACHER` to add Final
+(ViT-L). With `TEMPORAL=ema`, an additional Student output combines information
+across past frames to stabilize pose, shape and placement.
 
-The script accepts any clear single-person video; no particular clip is built
-in, and none has been supplied yet. The commands below use `VIDEO`, which must
-identify a real local file on the cluster. No download or sample clip is
-assumed.
+This is **inference-time temporal filtering** of the existing Student. Its
+image encoder still processes one frame at a time; no learned video network is
+trained, and the checkpoint is unchanged. The filter gives the final output
+memory of previous predictions. Both raw and filtered results are retained so
+the effect can be inspected separately from network accuracy.
+
+The script accepts any clear single-person video. For the existing
+`man_walking.mp4` in the checkout root, the recommended temporal comparison is:
+
+```bash
+cd /netscratch/najib/multi-hmr
+VIDEO="$PWD/man_walking.mp4" TEMPORAL=ema STUDENT_ONLY=1 \
+  sbatch slurm/demo/run_video_compare.sh
+```
+
+This writes input, raw Student and temporally filtered Student panels. Omit
+`STUDENT_ONLY=1` to also include the raw released baseline. Keep its raw label
+when presenting the comparison: a filtering benefit is not evidence that the
+Student network is more accurate than that baseline. The dedicated
+`temporal_comparison.mp4` always compares the raw and filtered Student on the
+same selected frames.
 
 ## Check the inputs, then submit
 
@@ -111,11 +128,16 @@ arguments safely as a Bash array, including paths containing spaces.
 | `FOV` | `55` | Assumed field of view along the longer image side, in degrees. |
 | `MAX_FRAMES` | `0` | Limit processed frames; zero means all selected frames. |
 | `WARMUP_FRAMES` | `10` | Exclude the first N processed frames from speed averages; keep every frame in the videos and motion measurements. |
+| `TEMPORAL` | `off` | `ema` enables causal Student filtering and extra raw/filtered comparison outputs. |
+| `TEMPORAL_POSE_TAU` | `0.08` | Pose smoothing time constant in seconds; `0` passes rotations through. |
+| `TEMPORAL_TRANSLATION_TAU` | `0.12` | Camera-space head-anchor smoothing time constant in seconds; `0` passes placement through. |
+| `TEMPORAL_SHAPE_TAU` | `1.0` | Shape smoothing time constant in seconds; `0` passes shape through. |
+| `TEMPORAL_MAX_GAP` | `0.25` | Reset filter when consecutive selected timestamps are farther apart than this many seconds; must be positive. |
 | `STRIDE` | `1` | Process every Nth source frame. |
 | `START_FRAME` | `0` | First source frame to consider. |
 | `PANEL_SIZE` | `672` | Size of each square comparison panel; even and at least 128. |
 | `DEVICE` | `cuda` | PyTorch device. |
-| `AMP` | `0` | Set `1` to opt into mixed precision; requires CUDA. |
+| `AMP` | `0` | Set `1` to opt into mixed precision for raw inference; requires CUDA and `TEMPORAL=off`. |
 | `STUDENT_ONLY` | `0` | Set `1` for input and Student only; cannot combine with `TEACHER`. |
 | `CHECK_ONLY` | `0` | Set `1` for login-node path/option checks. |
 | `REPO` | `/netscratch/najib/multi-hmr` | Checkout root. |
@@ -147,15 +169,67 @@ PYOPENGL_PLATFORM=egl python demo_video.py \
   --output results/video_compare/direct_student_baseline
 ```
 
+## How temporal filtering works
+
+With `TEMPORAL=ema`, use `AMP=0` (the default): temporal Anny re-decoding is
+validated in fp32, with TF32 enabled on CUDA as in the raw default. Mixed
+precision is rejected for temporal runs until equivalent decoding is verified.
+The tracker selects the person from the raw Student predictions. The filter updates three kinds of state for that person:
+
+- **Pose:** interpolate each bone rotation toward the new prediction using
+  shortest-arc quaternion interpolation. This keeps rotations valid and avoids
+  averaging a +179-degree rotation with a -179-degree rotation into zero.
+- **Shape:** average the already predicted Anny phenotype values, using a
+  slower time constant so the same person's proportions vary less rapidly.
+- **Placement:** average the camera-space **head anchor**, which is the point
+  used by the model to position the mesh. Smoothing a pelvis while placing by a
+  head would introduce a mismatch.
+
+For translation and shape, the update is
+`filtered = (1 - alpha) * previous_filtered + alpha * current_prediction`, with
+`alpha = 1 - exp(-dt / tau)`. Pose uses the same alpha in spherical rotation
+interpolation. `dt` comes from the selected source-frame timestamps, so the
+strength is expressed in seconds rather than a fixed number of frames. A zero
+time constant disables smoothing of that component. Larger constants give
+stronger smoothing and more lag, and may suppress genuine rapid movement.
+They are initial settings to inspect on the video, not tuned performance claims.
+
+The filtered rotations, shape and head anchor are decoded again through the
+loaded Anny body model, producing one geometrically consistent mesh and joint
+set. The implementation does not average mesh vertices independently. It does
+not reapply sigmoid, helper masking or the checkpoint's rotation correction to
+the already corrected outputs. Raw and filtered panels reuse **one Student
+network forward pass** per image; the filtered branch adds filtering and Anny
+decoding work.
+
+State resets on a missing detection, a new track segment, a discontinuity in
+processed frame indices, non-increasing timestamps, or a timestamp gap greater
+than `TEMPORAL_MAX_GAP`. After a reset, the first valid prediction initializes
+the new state. Missing detections remain missing; the previous mesh is never
+held over an empty frame. If a filtered mesh fails the geometry/visibility
+checks, that frame falls back to its actual raw prediction and clears the
+filter history; `temporal_state` and `fallback_raw_frames` identify these
+cases. A decoder-convention mismatch fails the run instead of presenting an
+unverified filtered body. If `STRIDE / source_fps` exceeds the maximum gap, every
+selected frame resets the filter, so choose a suitable gap when using a large
+stride. Geometric tracking still cannot guarantee identity through crossings or
+scene cuts. Prefer one clear person and inspect resets and identity in the clip.
+
+Temporal filtering can reduce visible jitter, but cannot recover missing image
+information, guarantee correct pose, or correct a consistently wrong body
+shape. It uses past frames only and requires no future-frame look-ahead; the
+smoothing itself can still produce motion lag. A learned temporal model that
+extracts motion from multiple images would be a separate training project.
+
 ## Outputs
 
 Each run writes into the new `OUTPUT` directory:
 
 | File or directory | Contents |
 |---|---|
-| `comparison.mp4` | Input, Student, NAVER baseline; optional Final teacher as the fourth panel. |
+| `comparison.mp4` | Input, raw Student, optional temporal Student, raw NAVER baseline; optional raw Final teacher. |
 | `input.mp4` | The selected input frames on their own. |
-| `student.mp4`, `baseline.mp4` | Each model's overlay video. |
+| `student.mp4`, `baseline.mp4` | Each model's raw overlay video. |
 | `teacher.mp4` | Teacher overlay, only when requested. |
 | `run.json` | Checkpoints, camera/frame options, correction selection, run status and other provenance. |
 | `timing.csv` | Student/baseline speed comparison: inference FPS and latency, preprocessing, transfers, mesh rendering, hardware and input size. |
@@ -163,9 +237,13 @@ Each run writes into the new `OUTPUT` directory:
 | `student/predictions.npz`, `baseline/predictions.npz` | Saved prediction arrays for later analysis. |
 | `student/summary.json`, `baseline/summary.json` | Per-model tracking and raw temporal summaries. |
 | `teacher/` | The same CSV, NPZ and summary outputs for the optional teacher. |
+| `student_temporal.mp4` | Filtered Student overlay, only with `TEMPORAL=ema`. |
+| `student_temporal/` | Filtered `frames.csv`, `predictions.npz`, and `summary.json`, separate from raw Student records. |
+| `temporal_comparison.mp4` | Input, raw Student and filtered Student, only with `TEMPORAL=ema`. |
+| `temporal_comparison.json` | Raw/filtered Student motion and shape summaries; these are stability proxies, not ground-truth accuracy. |
 
-In `STUDENT_ONLY=1` mode, the comparison is input and Student, and baseline and
-teacher outputs are omitted. A title/status strip sits **above** each square
+In `STUDENT_ONLY=1` mode, baseline and teacher outputs are omitted; the
+comparison is input and raw Student, plus filtered Student if requested. A title/status strip sits **above** each square
 image: each individual video is `PANEL_SIZE` wide and `PANEL_SIZE + 64` high.
 Missing or lost detections appear in the status rather than being concealed by
 holding the last mesh.
@@ -181,8 +259,10 @@ before using a partially written run.
 
 ## Inference speed and playback speed
 
-`comparison.mp4` shows each model's **final average inference FPS** on every
-frame. The input panel separately labels **playback FPS**. The individual
+`comparison.mp4` shows each raw model's **final average inference FPS** on every
+frame. The filtered Student panel instead shows **model + filter/decode FPS**,
+including the added temporal work. The input panel separately labels
+**playback FPS**. The individual
 `student.mp4` and `baseline.mp4` show a running inference average, with the first
 `WARMUP_FRAMES` frames marked as timing warm-up. For a clip with no frames left
 after warm-up, inference FPS is `N/A` rather than an estimate from startup time.
@@ -215,6 +295,16 @@ normalization and input transfer; output-transfer timing includes conversion
 to NumPy. Video decoding/encoding and comparison assembly are outside these
 stage measurements.
 
+For `TEMPORAL=ema`, `temporal_ms` records the added filter, Anny decode and
+validation time. The temporal branch's `processing_fps` includes model
+inference plus that temporal work, while the raw model `inference_fps` keeps
+its original definition. Both exclude image preprocessing, rendering and video
+I/O, so neither is end-to-end video throughput. Do not quote the raw model FPS
+as the speed of the temporal pipeline. Inspect the saved per-frame values and
+stage counts, including misses and warm-up exclusion. The completed historical
+job 3642415 predates both this temporal feature and the FPS update; it cannot
+provide measured temporal gains or new FPS results.
+
 ## Movement and shape measurements
 
 Start with `comparison.mp4`, then use the CSV timestamps to inspect moments
@@ -241,18 +331,21 @@ frames to inspect; they do not automatically classify motion as an error.
 ## What the comparison can establish
 
 Each model sees the same selected source frames with the same full-frame
-letterbox and camera assumption. The overlays use predicted placement. There is
-no detector-guided crop, detection-box placement, temporal smoothing or forced
-rest-pose hands. Finger poses therefore show the models' predictions. A
-single-person tracker associates detections across frames; missing detections
-and track breaks must remain visible in the measurements.
+letterbox and camera assumption. Raw overlays use the model's predicted
+placement; temporal Student overlays use the filtered head-anchor placement.
+There is no detector-guided crop, detection-box placement or forced rest-pose
+hands. The raw finger poses are the network predictions; the temporal branch
+filters bone rotations including the fingers. A single-person tracker
+associates detections across frames; missing detections and track breaks remain
+visible in the measurements.
 
 Without calibrated camera information, `FOV=55` is an assumption rather than
 ground truth. Single-view size and distance remain ambiguous. Person tracking
-helps compare a sequence but adds no motion understanding to the image models.
+helps compare a sequence. The optional temporal filter adds persistent output
+state, but does not teach the image network to understand motion.
 Large camera motion, cuts, occlusion and multiple people can affect association.
 
-Raw frame-to-frame changes are temporal proxies, not reconstruction accuracy.
+Raw and filtered frame-to-frame changes are temporal proxies, not reconstruction accuracy.
 A model can produce a very steady wrong body. Without video ground-truth meshes
 and cameras, the run cannot report PVE, MPJPE or prove that either model is more
 accurate. Do not compare a smoothed output against an unsmoothed baseline and
