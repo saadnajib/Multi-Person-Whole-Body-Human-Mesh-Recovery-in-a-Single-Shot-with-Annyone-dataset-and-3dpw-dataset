@@ -1,5 +1,5 @@
 #!/bin/bash
-# Video comparison with optional causal temporal stabilization of the Student.
+# Video comparison with optional temporal stabilization and landmark alignment.
 # Uses regular multihmr and the same native EGL setup as the image demos.
 # Python packages are not installed or upgraded inside the job.
 # CHECK_ONLY=1 validates paths/options on the login node without Python, a GPU or submission.
@@ -55,6 +55,11 @@ seconds() {
   LC_ALL=C awk -v value="$2" 'BEGIN { exit !(sprintf("%g", value + 0) !~ /[Ii][Nn][Ff]|[Nn][Aa][Nn]/) }' \
     || fail "$1 must be finite non-negative seconds: $2"
 }
+probability() {
+  [[ "$2" =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]] || fail "$1 must be a finite number between 0 and 1: $2"
+  LC_ALL=C awk -v value="$2" 'BEGIN { exit !(value >= 0 && value <= 1) }' \
+    || fail "$1 must be a finite number between 0 and 1: $2"
+}
 
 [ "$#" -eq 0 ] || fail "configure this wrapper with environment variables; see docs/video_inference.md"
 REPO="${REPO:-/netscratch/najib/multi-hmr}"
@@ -84,6 +89,10 @@ TEMPORAL_POSE_TAU="${TEMPORAL_POSE_TAU:-0.08}"
 TEMPORAL_TRANSLATION_TAU="${TEMPORAL_TRANSLATION_TAU:-0.12}"
 TEMPORAL_SHAPE_TAU="${TEMPORAL_SHAPE_TAU:-1.0}"
 TEMPORAL_MAX_GAP="${TEMPORAL_MAX_GAP:-0.25}"
+ALIGNMENT="${ALIGNMENT:-off}"
+LANDMARKS="${LANDMARKS:-}"
+[ -z "$LANDMARKS" ] || LANDMARKS="$(absolute "$LANDMARKS")"
+ALIGNMENT_MIN_CONFIDENCE="${ALIGNMENT_MIN_CONFIDENCE:-0.5}"
 CONTAINER_IMAGE="${CONTAINER_IMAGE:-/netscratch/najib/ContainerImages/ubuntu+20.04_v4.sqsh}"
 RUN="${RUN:-video_${SLURM_JOB_ID:-$(date -u +%Y%m%dT%H%M%S)_$$}}"
 [[ "$RUN" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || fail "RUN must contain letters, digits, underscores, dots or hyphens"
@@ -110,6 +119,12 @@ seconds TEMPORAL_TRANSLATION_TAU "$TEMPORAL_TRANSLATION_TAU"
 seconds TEMPORAL_SHAPE_TAU "$TEMPORAL_SHAPE_TAU"
 seconds TEMPORAL_MAX_GAP "$TEMPORAL_MAX_GAP"
 awk -v value="$TEMPORAL_MAX_GAP" 'BEGIN { exit !(value > 0) }' || fail "TEMPORAL_MAX_GAP must be positive"
+[[ "$ALIGNMENT" = off || "$ALIGNMENT" = landmarks ]] || fail "ALIGNMENT must be off or landmarks: $ALIGNMENT"
+probability ALIGNMENT_MIN_CONFIDENCE "$ALIGNMENT_MIN_CONFIDENCE"
+if [ "$ALIGNMENT" = landmarks ]; then
+  [ -n "$LANDMARKS" ] || fail "LANDMARKS is required with ALIGNMENT=landmarks: extract landmarks from the original video first"
+  require_file LANDMARKS "$LANDMARKS"
+fi
 [[ "$FOV" =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]] || fail "FOV must be a number between 0 and 180"
 awk -v fov="$FOV" 'BEGIN { exit !(fov > 0 && fov < 180) }' || fail "FOV must be between 0 and 180"
 [[ "$DEVICE" = cuda || "$DEVICE" = cpu || "$DEVICE" =~ ^cuda:[0-9]+$ ]] || fail "DEVICE must be cuda, cuda:N or cpu"
@@ -152,7 +167,9 @@ ARGS=(--video "$VIDEO" --student-checkpoint "$STUDENT"
       --temporal-pose-tau "$TEMPORAL_POSE_TAU"
       --temporal-translation-tau "$TEMPORAL_TRANSLATION_TAU"
       --temporal-shape-tau "$TEMPORAL_SHAPE_TAU"
-      --temporal-max-gap "$TEMPORAL_MAX_GAP")
+      --temporal-max-gap "$TEMPORAL_MAX_GAP"
+      --alignment "$ALIGNMENT" --alignment-min-confidence "$ALIGNMENT_MIN_CONFIDENCE")
+[ "$ALIGNMENT" = off ] || ARGS+=(--landmarks "$LANDMARKS")
 [ -z "$TEACHER" ] || ARGS+=(--teacher-checkpoint "$TEACHER")
 [ "$AMP" = 0 ] || ARGS+=(--amp)
 [ "$STUDENT_ONLY" = 0 ] || ARGS+=(--student-only)

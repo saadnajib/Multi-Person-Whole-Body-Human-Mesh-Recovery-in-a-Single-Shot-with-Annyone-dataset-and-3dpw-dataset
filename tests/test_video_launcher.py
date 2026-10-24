@@ -41,7 +41,8 @@ class VideoLauncherTests(unittest.TestCase):
                      '__EGL_VENDOR_LIBRARY_DIRS', '__EGL_VENDOR_LIBRARY_FILENAMES',
                      'STUDENT_ONLY', 'TEACHER', 'AMP', 'OUTPUT', 'RUN', 'SLURM_JOB_ID',
                      'TEMPORAL', 'TEMPORAL_POSE_TAU', 'TEMPORAL_TRANSLATION_TAU',
-                     'TEMPORAL_SHAPE_TAU', 'TEMPORAL_MAX_GAP'):
+                     'TEMPORAL_SHAPE_TAU', 'TEMPORAL_MAX_GAP',
+                     'ALIGNMENT', 'LANDMARKS', 'ALIGNMENT_MIN_CONFIDENCE'):
             self.env.pop(name, None)
         self.env.update(PATH=str(self.bin) + os.pathsep + self.env.get('PATH', ''),
                         VIDEO_TEST_CALL_LOG=str(self.log), VIDEO_TEST_PROBE_EXIT='0')
@@ -163,6 +164,8 @@ if tool == 'python' and any(arg.endswith('/check_renderer.py') for arg in sys.ar
         command = shlex.split(next(line[9:] for line in result.stdout.splitlines()
                                    if line.startswith('Command: ')))
         self.assertEqual(command[command.index('--temporal') + 1], 'off')
+        self.assertEqual(command[command.index('--alignment') + 1], 'off')
+        self.assertNotIn('--landmarks', command)
 
     def test_temporal_options_forwarded_without_python_or_gpu(self):
         self.prepare_check_only()
@@ -206,6 +209,57 @@ if tool == 'python' and any(arg.endswith('/check_renderer.py') for arg in sys.ar
                 self.assertEqual(self.calls(), [])
                 self.assertFalse((self.repo / 'new result').exists())
                 self.env.pop(name)
+
+    def test_alignment_forwards_relative_landmark_path_without_python_or_gpu(self):
+        self.prepare_check_only()
+        landmarks = self.repo / 'landmark files' / 'man walking.json'
+        landmarks.parent.mkdir()
+        landmarks.write_text('{"schema_version": 1}\n')
+        self.env.update(ALIGNMENT='landmarks', LANDMARKS='landmark files/man walking.json',
+                        ALIGNMENT_MIN_CONFIDENCE='.65', TEMPORAL='ema', STUDENT_ONLY='1')
+        result = self.check_only()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        command = shlex.split(next(line[9:] for line in result.stdout.splitlines()
+                                   if line.startswith('Command: ')))
+        expected = {'--alignment': 'landmarks', '--landmarks': str(landmarks),
+                    '--alignment-min-confidence': '.65', '--temporal': 'ema'}
+        for flag, value in expected.items():
+            self.assertEqual(command[command.index(flag) + 1], value)
+        self.assertEqual(self.calls(), [])
+        self.assertFalse((self.repo / 'new result').exists())
+
+    def test_alignment_requires_readable_landmark_file_before_launch(self):
+        self.prepare_check_only()
+        self.env['ALIGNMENT'] = 'landmarks'
+        for value in ('', str(self.root / 'absent.json'), str(self.repo)):
+            with self.subTest(value=value):
+                self.env['LANDMARKS'] = value
+                result = self.check_only()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('LANDMARKS', result.stderr)
+                self.assertEqual(self.calls(), [])
+        self.assertFalse((self.repo / 'new result').exists())
+
+    def test_invalid_alignment_options_rejected_before_launch(self):
+        self.prepare_check_only()
+        bad = [('ALIGNMENT', 'bounding-box'), ('ALIGNMENT_MIN_CONFIDENCE', '-0.1'),
+               ('ALIGNMENT_MIN_CONFIDENCE', '1.01'), ('ALIGNMENT_MIN_CONFIDENCE', 'nan'),
+               ('ALIGNMENT_MIN_CONFIDENCE', 'inf'), ('ALIGNMENT_MIN_CONFIDENCE', '9' * 400),
+               ('ALIGNMENT_MIN_CONFIDENCE', '0.5; echo unsafe')]
+        for name, value in bad:
+            with self.subTest(name=name, value=value):
+                self.env[name] = value
+                result = self.check_only()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(name, result.stderr)
+                self.assertEqual(self.calls(), [])
+                self.env.pop(name)
+        # Both inclusive endpoints are valid; no detector is invoked by the check.
+        for value in ('0', '1'):
+            self.env['ALIGNMENT_MIN_CONFIDENCE'] = value
+            result = self.check_only()
+            self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.calls(), [])
 
 
 if __name__ == '__main__':

@@ -5,6 +5,9 @@ same video. With `TEMPORAL=off` (the default), the comparison is **input | raw
 Student (ViT-B) | NAVER's released Multi-HMR-Anny**. Set `TEACHER` to add Final
 (ViT-L). With `TEMPORAL=ema`, an additional Student output combines information
 across past frames to stabilize pose, shape and placement.
+`ALIGNMENT=landmarks` adds a further Student output whose camera-space position
+and depth are fitted to independently detected image landmarks. It can be used
+with either raw or temporally filtered predictions.
 
 This is **inference-time temporal filtering** of the existing Student. Its
 image encoder still processes one frame at a time; no learned video network is
@@ -27,6 +30,59 @@ when presenting the comparison: a filtering benefit is not evidence that the
 Student network is more accurate than that baseline. The dedicated
 `temporal_comparison.mp4` always compares the raw and filtered Student on the
 same selected frames.
+
+## Improve image alignment with detected landmarks
+
+Alignment uses a separate CPU landmark detector before the GPU inference run.
+Install its dependencies in a **separate Python 3.10 environment**, keeping the
+regular `multihmr` environment used for training and mesh inference unchanged:
+
+```bash
+cd /netscratch/najib/multi-hmr
+python3.10 -m venv /netscratch/najib/venvs/video-landmarks
+/netscratch/najib/venvs/video-landmarks/bin/python -m pip install \
+  -r requirements-video-landmarks.txt
+```
+
+The optional requirements pin MediaPipe 0.10.14, NumPy 1.26.4 and OpenCV contrib
+4.11.0.86. The default MediaPipe Solutions backend uses the full pose and person
+detection models included in its wheel; no separate model download is needed.
+It is intended for one clear person. Run the detector on the **original source
+video**, before adding mesh overlays, title strips or comparison panels:
+
+```bash
+mkdir -p results/video_landmarks
+/netscratch/najib/venvs/video-landmarks/bin/python \
+  scripts/video/extract_pose_landmarks.py \
+  --video "$PWD/man_walking.mp4" \
+  --output "$PWD/results/video_landmarks/man_walking.json"
+```
+
+The JSON contains original frame indices, image-pixel landmarks, confidence,
+detector metadata and the source video's SHA-256 digest. It refuses to overwrite
+an existing file; choose another output name when extracting again. Inference
+checks the digest and video dimensions/timing, so use the exact same source
+file for extraction and inference. A re-encoded or cropped copy is a different
+input. Extract all frames needed by the inference run, including any chosen
+start frame or stride.
+
+Then submit the stabilized and aligned Student comparison:
+
+```bash
+VIDEO="$PWD/man_walking.mp4" TEMPORAL=ema ALIGNMENT=landmarks \
+LANDMARKS="$PWD/results/video_landmarks/man_walking.json" STUDENT_ONLY=1 \
+  sbatch slurm/demo/run_video_compare.sh
+```
+
+Add `CHECK_ONLY=1` and replace `sbatch` with `bash` for the login-node file and
+option checks. This check reads no landmark JSON and runs no detector; schema
+and source-video validation happen when Python starts. No package installation
+or landmark extraction occurs inside the GPU job.
+
+Inspect `alignment_comparison.mp4`: **input | before alignment | aligned
+Student**. The middle panel is the temporal Student when `TEMPORAL=ema`, or the
+raw Student when temporal filtering is off. The main comparison also retains
+the raw and optional temporal panels.
 
 ## Check the inputs, then submit
 
@@ -133,6 +189,9 @@ arguments safely as a Bash array, including paths containing spaces.
 | `TEMPORAL_TRANSLATION_TAU` | `0.12` | Camera-space head-anchor smoothing time constant in seconds; `0` passes placement through. |
 | `TEMPORAL_SHAPE_TAU` | `1.0` | Shape smoothing time constant in seconds; `0` passes shape through. |
 | `TEMPORAL_MAX_GAP` | `0.25` | Reset filter when consecutive selected timestamps are farther apart than this many seconds; must be positive. |
+| `ALIGNMENT` | `off` | `landmarks` enables Student position/depth fitting to independent 2D landmarks. |
+| `LANDMARKS` | empty | Existing landmark JSON from the exact original video; required with `ALIGNMENT=landmarks`. Relative paths resolve against `REPO`. |
+| `ALIGNMENT_MIN_CONFIDENCE` | `0.5` | Minimum accepted landmark confidence, from `0` to `1` inclusive. |
 | `STRIDE` | `1` | Process every Nth source frame. |
 | `START_FRAME` | `0` | First source frame to consider. |
 | `PANEL_SIZE` | `672` | Size of each square comparison panel; even and at least 128. |
@@ -221,13 +280,41 @@ shape. It uses past frames only and requires no future-frame look-ahead; the
 smoothing itself can still produce motion lag. A learned temporal model that
 extracts motion from multiple images would be a separate training project.
 
+## How landmark alignment works
+
+The independent detector supplies shoulders, elbows, wrists, hips, knees and
+ankles in original-image pixels. The video pipeline transforms those points
+into the same letterboxed image coordinates used for rendering and associates
+them with the tracked Student person. The fitter then adjusts one rigid 3D
+translation: horizontal position, vertical position and depth. Moving a body
+farther from the camera reduces its projected size. All vertices and joints
+receive the same translation, preserving the predicted body shape, limb pose,
+bone lengths and inter-point distances.
+
+The fit uses confident landmarks spanning the torso and lower body, a robust
+reprojection objective and bounded translation. Missing or weak observations,
+inconsistent landmarks, invalid geometry and unsuccessful fits leave that
+frame's pre-alignment prediction unchanged. The per-frame diagnostics record
+whether a correction was accepted, the reason for skipping, the translation
+and the landmark residuals. If temporal filtering is enabled, alignment acts
+on its output using the current frame's landmarks; the raw and temporal
+branches are still saved separately.
+
+These points are detector estimates, not ground truth. Lower landmark residuals
+show closer agreement with that detector in the image, not proven improvement
+in 3D reconstruction accuracy. Camera calibration and body proportions remain
+ambiguous. Position/depth correction can improve an oversized or shifted mesh,
+but cannot repair a wrongly bent arm or leg, recover occluded body details, or
+make an incorrect shape estimate anatomically correct. Inspect the before/after
+video and skipped-frame diagnostics before using the result in a presentation.
+
 ## Outputs
 
 Each run writes into the new `OUTPUT` directory:
 
 | File or directory | Contents |
 |---|---|
-| `comparison.mp4` | Input, raw Student, optional temporal Student, raw NAVER baseline; optional raw Final teacher. |
+| `comparison.mp4` | Input, raw Student, optional temporal/aligned Student, raw NAVER baseline; optional raw Final teacher. |
 | `input.mp4` | The selected input frames on their own. |
 | `student.mp4`, `baseline.mp4` | Each model's raw overlay video. |
 | `teacher.mp4` | Teacher overlay, only when requested. |
@@ -241,9 +328,12 @@ Each run writes into the new `OUTPUT` directory:
 | `student_temporal/` | Filtered `frames.csv`, `predictions.npz`, and `summary.json`, separate from raw Student records. |
 | `temporal_comparison.mp4` | Input, raw Student and filtered Student, only with `TEMPORAL=ema`. |
 | `temporal_comparison.json` | Raw/filtered Student motion and shape summaries; these are stability proxies, not ground-truth accuracy. |
+| `student_aligned.mp4` | Position/depth-corrected Student overlay, only with `ALIGNMENT=landmarks`. |
+| `student_aligned/` | Aligned `frames.csv`, `predictions.npz`, `summary.json`, and per-frame fitting diagnostics in `alignment.json`. |
+| `alignment_comparison.mp4` | Input, pre-alignment Student and aligned Student, only with `ALIGNMENT=landmarks`. |
 
 In `STUDENT_ONLY=1` mode, baseline and teacher outputs are omitted; the
-comparison is input and raw Student, plus filtered Student if requested. A title/status strip sits **above** each square
+comparison is input and raw Student, plus filtered/aligned Student if requested. A title/status strip sits **above** each square
 image: each individual video is `PANEL_SIZE` wide and `PANEL_SIZE + 64` high.
 Missing or lost detections appear in the status rather than being concealed by
 holding the last mesh.
@@ -305,6 +395,15 @@ stage counts, including misses and warm-up exclusion. The completed historical
 job 3642415 predates both this temporal feature and the FPS update; it cannot
 provide measured temporal gains or new FPS results.
 
+For `ALIGNMENT=landmarks`, the aligned branch's `processing_fps` includes the
+Student forward pass, optional temporal work, and the alignment fit/geometry
+checks. **Offline landmark extraction is excluded** from that FPS, as are
+preprocessing, rendering and video I/O. The extraction JSON separately records
+CPU detector time per frame and its environment metadata. The detector may run
+on different hardware, so neither its earlier timing nor the refinement FPS
+alone describes complete online video throughput. Keep that distinction when
+comparing the raw and corrected panels.
+
 ## Movement and shape measurements
 
 Start with `comparison.mp4`, then use the CSV timestamps to inspect moments
@@ -332,7 +431,8 @@ frames to inspect; they do not automatically classify motion as an error.
 
 Each model sees the same selected source frames with the same full-frame
 letterbox and camera assumption. Raw overlays use the model's predicted
-placement; temporal Student overlays use the filtered head-anchor placement.
+placement; temporal Student overlays use the filtered head-anchor placement;
+aligned Student overlays additionally use the landmark-fitted translation.
 There is no detector-guided crop, detection-box placement or forced rest-pose
 hands. The raw finger poses are the network predictions; the temporal branch
 filters bone rotations including the fingers. A single-person tracker
@@ -351,7 +451,9 @@ and cameras, the run cannot report PVE, MPJPE or prove that either model is more
 accurate. Do not compare a smoothed output against an unsmoothed baseline and
 attribute the difference to the network. Report the clip, frame selection,
 camera assumption, checkpoint/correction choices and any missing-track counts
-alongside qualitative examples.
+alongside qualitative examples. An aligned overlay also depends on an external
+landmark detector; attribute any visual improvement to that refinement rather
+than to a newly trained Student network.
 
 The confirmed 30-epoch Student is smaller and faster than Final but missed the
 95% PVE/MPJPE retention bars on both existing test sets. A plausible-looking

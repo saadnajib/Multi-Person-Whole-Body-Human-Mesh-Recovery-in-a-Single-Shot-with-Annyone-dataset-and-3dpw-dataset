@@ -152,10 +152,10 @@ def summarize_timing(records, warmup_frames, playback_fps):
         raise ValueError('warmup_frames must be a nonnegative integer')
     measured = records[int(warmup_frames):]
     stages = {}
-    for key in ('preprocess_ms', 'inference_ms', 'output_transfer_ms', 'render_ms', 'temporal_ms', 'processing_ms'):
+    for key in ('preprocess_ms', 'inference_ms', 'output_transfer_ms', 'render_ms', 'temporal_ms', 'alignment_ms', 'processing_ms'):
         values = [float(r[key]) for r in measured
                   if r.get(key) is not None and math.isfinite(float(r[key]))
-                  and (float(r[key]) >= 0 if key == 'temporal_ms' else float(r[key]) > 0)]
+                  and (float(r[key]) >= 0 if key in ('temporal_ms', 'alignment_ms') else float(r[key]) > 0)]
         stages[key] = dict(_stats(values), median=float(np.median(values)) if values else None)
     mean_ms = stages['inference_ms']['mean']
     return dict(warmup_frames_requested=int(warmup_frames),
@@ -164,7 +164,7 @@ def summarize_timing(records, warmup_frames, playback_fps):
                 frames_after_warmup=len(measured),
                 inference_fps=1000.0 / mean_ms if mean_ms is not None else None,
                 processing_fps=1000.0 / stages['processing_ms']['mean'] if stages['processing_ms']['mean'] else None,
-                processing_definition='Student model forward + temporal filtering/Anny re-decode/geometry checks; excludes preprocessing, rendering and video I/O; reuses raw inference',
+                processing_definition='Student forward + enabled temporal filtering/Anny re-decode and alignment fit/checks; excludes preprocessing, offline landmark detector, rendering and video I/O; reuses raw inference',
                 playback_fps=float(playback_fps), batch_size=1,
                 fps_definition='1000 / mean inference_ms; includes detection and Anny decoding; excludes preprocessing, transfers, rendering and video I/O',
                 render_definition='Wall time for mesh rendering/compositing, only on frames with a matched person',

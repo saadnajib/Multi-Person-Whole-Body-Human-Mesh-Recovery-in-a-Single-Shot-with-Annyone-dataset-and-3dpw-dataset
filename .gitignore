@@ -38,6 +38,7 @@ shape_report.txt
 
 # Local video overlays and per-frame prediction dumps.
 results/video_compare/
+results/video_landmarks/
 
 # experiment outputs: keep only the summaries (*.json) and notes (*.md); logs, images, checkpoints, npz stay local
 results/experiments/**
