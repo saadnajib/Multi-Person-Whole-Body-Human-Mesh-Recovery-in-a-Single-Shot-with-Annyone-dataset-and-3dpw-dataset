@@ -45,6 +45,7 @@ def parse_args(argv=None):
                    help='landmarks: refine Student placement/depth using independent 2D observations')
     p.add_argument('--landmarks', type=Path, help='JSON from scripts/video/extract_pose_landmarks.py for this original video')
     p.add_argument('--alignment-min-confidence', type=float, default=0.5)
+    p.add_argument('--alignment-depth-tau', type=float, default=0.35, help='Alignment depth smoothing seconds; 0 disables')
     return p.parse_args(argv)
 
 
@@ -88,6 +89,8 @@ def validate_args(args):
         raise ValueError('Temporal Anny re-decoding currently requires fp32: omit --amp')
     if not math.isfinite(args.alignment_min_confidence) or not 0 <= args.alignment_min_confidence <= 1:
         raise ValueError('--alignment-min-confidence must be in [0, 1]')
+    if not math.isfinite(args.alignment_depth_tau) or args.alignment_depth_tau < 0:
+        raise ValueError('--alignment-depth-tau must be finite and nonnegative')
     if args.alignment == 'landmarks':
         if args.landmarks is None:
             raise ValueError('--alignment landmarks requires --landmarks JSON for the original video')
@@ -576,6 +579,8 @@ def process_model(args, kind, title, predictor, info, renderer_factory, landmark
     use_alignment = kind == 'student' and args.alignment == 'landmarks'
     if use_alignment:
         from scripts.video.landmark_alignment import align_to_landmarks
+        from scripts.video.alignment_depth_filter import AlignmentDepthFilter
+        alignment_filter = AlignmentDepthFilter(args.alignment_depth_tau, args.temporal_max_gap)
         if landmark_sequence is None:
             raise ValueError('Alignment requires validated landmark observations')
     temporal_filter = None
@@ -650,6 +655,11 @@ def process_model(args, kind, title, predictor, info, renderer_factory, landmark
                     observations, association = landmark_sequence.observation(frame_index, size, person['bbox'])
                     aligned, report = align_to_landmarks(alignment_source, predictor.joint_names,
                                                          observations, K, size, args.alignment_min_confidence)
+                    if records and frame_index - records[-1]['frame_index'] != args.stride:
+                        alignment_filter.reset()
+                    aligned, report = alignment_filter.apply(
+                        alignment_source, aligned, report, predictor.joint_names, K, size,
+                        timestamp, tracking['segment_id'])
                     aligned_record['alignment_ms'] = (time.perf_counter() - align_started) * 1000
                     aligned_record.update({key: aligned[key] for key in ('shape', 'joints', 'rotvec', 'bbox', 'confidence')})
                     aligned_record['root'] = aligned['joints'][0].copy()
@@ -670,6 +680,7 @@ def process_model(args, kind, title, predictor, info, renderer_factory, landmark
                 temporal_filter.reset()
                 filtered_record.update(temporal_ms=0.0, temporal_state='reset_missing')
             if use_alignment and tracking['selected_index'] is None:
+                alignment_filter.reset()
                 aligned_record.update(alignment_ms=0.0, alignment_status='missing_student', alignment_accepted=False)
                 alignment_reports.append(dict(frame_index=frame_index, timestamp_s=timestamp,
                                                accepted=False, status='missing_student'))
@@ -755,6 +766,9 @@ def alignment_settings(args, sequence):
     return dict(method='independent_2d_landmark_translation_fit',
                 source='student_temporal' if args.temporal != 'off' else 'student',
                 min_confidence=args.alignment_min_confidence, landmarks=sequence.metadata,
+                depth_tau_s=args.alignment_depth_tau, depth_max_log_rate_per_s=0.5,
+                depth_max_gap_s=args.temporal_max_gap,
+                depth_filter='Absolute pelvis log-depth EMA, camera-ray compensation; 0 tau disables; may add lag',
                 note='Only camera translation/depth fitted; pose/shape retained. Reprojection is not ground-truth 3D error.',
                 timing='processing FPS includes forward, optional temporal filter/decode and fit; excludes offline detector, rendering and I/O')
 

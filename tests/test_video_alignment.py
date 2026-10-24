@@ -110,6 +110,28 @@ class VideoAlignmentTests(unittest.TestCase):
         return self.args('--alignment', 'landmarks', '--landmarks', str(self.landmarks),
                          '--student-only', *extra)
 
+    def test_saved_video_predictions_use_stabilized_depth(self):
+        reference = self.observation(1)
+        camera = demo_video.camera_matrix(128, 55)
+        def project(points):
+            xy = points @ camera.T
+            return (xy[:, :2] / xy[:, 2:] - [0, 25]) / [128 / 160, 77 / 96]
+        points = project(reference['joints'][2:] + [.08, -.06, 1.2])
+        vertices = project(reference['vertices'] + [.08, -.06, 1.2])
+        person = self.data['frames'][1]['people'][0]
+        person['landmarks'] = {name: [*point.tolist(), .95] for name, point in zip(ANNY_LANDMARK_BONES, points)}
+        person['bbox'] = np.r_[vertices.min(0), vertices.max(0)].tolist()
+        self.write_observations()
+        demo_video.run(self.aligned_args(), self.predictor_factory, self.renderer_factory)
+        rows = json.loads((self.output / 'student_aligned/alignment.json').read_text())['frames']
+        self.assertEqual(rows[1]['depth_filter_state'], 'smoothed')
+        self.assertLess(rows[1]['rendered_depth_m'], rows[1]['fitted_depth_m'] - .1)
+        saved = self.arrays('student_aligned')
+        self.assertAlmostEqual(float(saved['joints'][1, 0, 2]), rows[1]['rendered_depth_m'], places=5)
+        np.testing.assert_allclose(saved['joints'][1] - reference['joints'],
+                                   np.broadcast_to(rows[1]['delta_xyz_m'], reference['joints'].shape), atol=1e-6)
+        self.assertEqual(rows[4]['depth_filter_state'], 'initialized')
+
     def test_alignment_refines_only_translation_keeps_gaps_and_counts_added_time(self):
         with mock.patch('demo_video.time.perf_counter', side_effect=itertools.count(0., .001).__next__):
             manifest = demo_video.run(self.aligned_args(), self.predictor_factory, self.renderer_factory)

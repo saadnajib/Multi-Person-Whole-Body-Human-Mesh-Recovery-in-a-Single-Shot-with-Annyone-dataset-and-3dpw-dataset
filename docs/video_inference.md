@@ -191,6 +191,7 @@ arguments safely as a Bash array, including paths containing spaces.
 | `TEMPORAL_MAX_GAP` | `0.25` | Reset filter when consecutive selected timestamps are farther apart than this many seconds; must be positive. |
 | `ALIGNMENT` | `off` | `landmarks` enables Student position/depth fitting to independent 2D landmarks. |
 | `LANDMARKS` | empty | Existing landmark JSON from the exact original video; required with `ALIGNMENT=landmarks`. Relative paths resolve against `REPO`. |
+| `ALIGNMENT_DEPTH_TAU` | `0.35` | Alignment depth smoothing time constant, seconds; `0` restores independent per-frame fits. |
 | `ALIGNMENT_MIN_CONFIDENCE` | `0.5` | Minimum accepted landmark confidence, from `0` to `1` inclusive. |
 | `STRIDE` | `1` | Process every Nth source frame. |
 | `START_FRAME` | `0` | First source frame to consider. |
@@ -299,6 +300,23 @@ whether a correction was accepted, the reason for skipping, the translation
 and the landmark residuals. If temporal filtering is enabled, alignment acts
 on its output using the current frame's landmarks; the raw and temporal
 branches are still saved separately.
+
+The final aligned pelvis depth is now smoothed across frames (default
+`ALIGNMENT_DEPTH_TAU=0.35` seconds). It uses an exponential average of log depth
+and limits changes to 0.5 log-depth units per second. This reduces visible
+size fluctuations while allowing gradual movement toward or away from the
+camera. The pelvis keeps its current image position, and the entire body is
+translated rigidly; pose and shape remain unchanged. `ALIGNMENT_DEPTH_TAU=0`
+disables both smoothing and the rate limit for comparison.
+
+Depth history resets on a missing student, rejected landmark fit, track change,
+frame discontinuity, non-increasing timestamp, or gap above `TEMPORAL_MAX_GAP`
+(default 0.25 seconds, also used when pose filtering is off). Unsafe smoothed
+geometry falls back to the current accepted unsmoothed fit and resets history.
+Resets can still cause a visible size change. Smoothing may introduce lag or
+increase individual-frame landmark error. `alignment.json` records the filter
+state, fitted/rendered depth, original fit translation/error, and updated
+residuals for the actual rendered body. The alignment timing includes this work.
 
 These points are detector estimates, not ground truth. Lower landmark residuals
 show closer agreement with that detector in the image, not proven improvement

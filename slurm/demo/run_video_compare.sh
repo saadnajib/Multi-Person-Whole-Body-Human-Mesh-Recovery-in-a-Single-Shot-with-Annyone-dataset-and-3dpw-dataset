@@ -93,6 +93,7 @@ ALIGNMENT="${ALIGNMENT:-off}"
 LANDMARKS="${LANDMARKS:-}"
 [ -z "$LANDMARKS" ] || LANDMARKS="$(absolute "$LANDMARKS")"
 ALIGNMENT_MIN_CONFIDENCE="${ALIGNMENT_MIN_CONFIDENCE:-0.5}"
+ALIGNMENT_DEPTH_TAU="${ALIGNMENT_DEPTH_TAU:-0.35}"
 CONTAINER_IMAGE="${CONTAINER_IMAGE:-/netscratch/najib/ContainerImages/ubuntu+20.04_v4.sqsh}"
 RUN="${RUN:-video_${SLURM_JOB_ID:-$(date -u +%Y%m%dT%H%M%S)_$$}}"
 [[ "$RUN" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || fail "RUN must contain letters, digits, underscores, dots or hyphens"
@@ -121,6 +122,7 @@ seconds TEMPORAL_MAX_GAP "$TEMPORAL_MAX_GAP"
 awk -v value="$TEMPORAL_MAX_GAP" 'BEGIN { exit !(value > 0) }' || fail "TEMPORAL_MAX_GAP must be positive"
 [[ "$ALIGNMENT" = off || "$ALIGNMENT" = landmarks ]] || fail "ALIGNMENT must be off or landmarks: $ALIGNMENT"
 probability ALIGNMENT_MIN_CONFIDENCE "$ALIGNMENT_MIN_CONFIDENCE"
+seconds ALIGNMENT_DEPTH_TAU "$ALIGNMENT_DEPTH_TAU"
 if [ "$ALIGNMENT" = landmarks ]; then
   [ -n "$LANDMARKS" ] || fail "LANDMARKS is required with ALIGNMENT=landmarks: extract landmarks from the original video first"
   require_file LANDMARKS "$LANDMARKS"
@@ -168,7 +170,8 @@ ARGS=(--video "$VIDEO" --student-checkpoint "$STUDENT"
       --temporal-translation-tau "$TEMPORAL_TRANSLATION_TAU"
       --temporal-shape-tau "$TEMPORAL_SHAPE_TAU"
       --temporal-max-gap "$TEMPORAL_MAX_GAP"
-      --alignment "$ALIGNMENT" --alignment-min-confidence "$ALIGNMENT_MIN_CONFIDENCE")
+      --alignment "$ALIGNMENT" --alignment-min-confidence "$ALIGNMENT_MIN_CONFIDENCE"
+      --alignment-depth-tau "$ALIGNMENT_DEPTH_TAU")
 [ "$ALIGNMENT" = off ] || ARGS+=(--landmarks "$LANDMARKS")
 [ -z "$TEACHER" ] || ARGS+=(--teacher-checkpoint "$TEACHER")
 [ "$AMP" = 0 ] || ARGS+=(--amp)

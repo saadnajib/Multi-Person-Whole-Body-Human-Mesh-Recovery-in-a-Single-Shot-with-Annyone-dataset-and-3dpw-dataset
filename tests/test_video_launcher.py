@@ -42,7 +42,7 @@ class VideoLauncherTests(unittest.TestCase):
                      'STUDENT_ONLY', 'TEACHER', 'AMP', 'OUTPUT', 'RUN', 'SLURM_JOB_ID',
                      'TEMPORAL', 'TEMPORAL_POSE_TAU', 'TEMPORAL_TRANSLATION_TAU',
                      'TEMPORAL_SHAPE_TAU', 'TEMPORAL_MAX_GAP',
-                     'ALIGNMENT', 'LANDMARKS', 'ALIGNMENT_MIN_CONFIDENCE'):
+                     'ALIGNMENT', 'LANDMARKS', 'ALIGNMENT_MIN_CONFIDENCE', 'ALIGNMENT_DEPTH_TAU'):
             self.env.pop(name, None)
         self.env.update(PATH=str(self.bin) + os.pathsep + self.env.get('PATH', ''),
                         VIDEO_TEST_CALL_LOG=str(self.log), VIDEO_TEST_PROBE_EXIT='0')
@@ -216,13 +216,13 @@ if tool == 'python' and any(arg.endswith('/check_renderer.py') for arg in sys.ar
         landmarks.parent.mkdir()
         landmarks.write_text('{"schema_version": 1}\n')
         self.env.update(ALIGNMENT='landmarks', LANDMARKS='landmark files/man walking.json',
-                        ALIGNMENT_MIN_CONFIDENCE='.65', TEMPORAL='ema', STUDENT_ONLY='1')
+                        ALIGNMENT_MIN_CONFIDENCE='.65', ALIGNMENT_DEPTH_TAU='.4', TEMPORAL='ema', STUDENT_ONLY='1')
         result = self.check_only()
         self.assertEqual(result.returncode, 0, result.stderr)
         command = shlex.split(next(line[9:] for line in result.stdout.splitlines()
                                    if line.startswith('Command: ')))
         expected = {'--alignment': 'landmarks', '--landmarks': str(landmarks),
-                    '--alignment-min-confidence': '.65', '--temporal': 'ema'}
+                    '--alignment-min-confidence': '.65', '--alignment-depth-tau': '.4', '--temporal': 'ema'}
         for flag, value in expected.items():
             self.assertEqual(command[command.index(flag) + 1], value)
         self.assertEqual(self.calls(), [])
@@ -242,7 +242,8 @@ if tool == 'python' and any(arg.endswith('/check_renderer.py') for arg in sys.ar
 
     def test_invalid_alignment_options_rejected_before_launch(self):
         self.prepare_check_only()
-        bad = [('ALIGNMENT', 'bounding-box'), ('ALIGNMENT_MIN_CONFIDENCE', '-0.1'),
+        bad = [('ALIGNMENT_DEPTH_TAU', '-1'), ('ALIGNMENT_DEPTH_TAU', 'nan'),
+               ('ALIGNMENT_DEPTH_TAU', 'inf'), ('ALIGNMENT', 'bounding-box'), ('ALIGNMENT_MIN_CONFIDENCE', '-0.1'),
                ('ALIGNMENT_MIN_CONFIDENCE', '1.01'), ('ALIGNMENT_MIN_CONFIDENCE', 'nan'),
                ('ALIGNMENT_MIN_CONFIDENCE', 'inf'), ('ALIGNMENT_MIN_CONFIDENCE', '9' * 400),
                ('ALIGNMENT_MIN_CONFIDENCE', '0.5; echo unsafe')]
