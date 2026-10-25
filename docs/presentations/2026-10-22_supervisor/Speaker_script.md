@@ -104,15 +104,15 @@ The teacher is the strongest of our two trained models on these reconstruction m
 
 **Source:** Sources: thesis Tables T16–T17; jobs 3614191, 3611336, 3614192
 
-## Slide 11 — The student is smaller and faster
+## Slide 11 — The student is smaller and faster than its teacher
 
-This slide compares the student with its teacher under the same recorded L40S benchmark. The student has about one hundred and one million parameters, compared with about three hundred and eighteen million for the teacher. It also uses roughly one third of the counted computation. The median model forward time falls from 59.7 to 28.5 milliseconds, giving a speedup of about 2.1 times. These measurements support the claim that the student reduces model cost. They do not prove that a complete video application runs at the reciprocal frame rate, because loading frames, preprocessing, rendering and encoding take additional time. The final conclusion combines this slide with the previous one: the student achieves substantial efficiency gains, with a measurable reconstruction-accuracy cost.
+This slide includes the original released NAVER Multi-HMR-Anny baseline, our larger teacher, and our smaller student. The original baseline has 380.94 million parameters, compared with 318.38 million for the teacher and 101.38 million for the student. The student therefore has 3.76 times fewer parameters than the original baseline. The baseline count comes from job 3614947. That benchmark counted 1,917.2 GFLOPs for its backbone only; its prediction head was not counted, so we must not present that value as full-model computation. Comparable baseline forward latency was also not measured. The teacher and student have a paired L40S benchmark at 672-pixel input, one person, batch size one, and fp32 with TF32. For this pair, the student uses roughly one third of the parameters and counted computation. Median forward time falls from 59.7 to 28.5 milliseconds, a speedup of about 2.1 times. The three large ratios refer specifically to the teacher comparison. We cannot claim that same speedup against the original baseline without measuring it under matching conditions. These are model-forward timings, not complete video throughput: preprocessing, rendering and video I/O add work. The previous accuracy slide and this efficiency slide together show the student’s measured speed–accuracy trade-off.
 
-**Point / demo cue:** Use the paired measurements only; do not mix L40S and A100 timings.
+**Point / demo cue:** Distinguish the original NAVER baseline from our teacher. Only compare timings from the paired L40S benchmark; the baseline full-model compute and latency are unmeasured.
 
 **Transition:** Now I will explain the data used to train these models.
 
-**Source:** Source: thesis Table T16; paired L40S measurements, job 3614191
+**Source:** Sources: thesis Table T16; L40S job 3614191; NAVER parameter count, job 3614947
 
 ## Slide 12 — Two data sources with one common body format
 

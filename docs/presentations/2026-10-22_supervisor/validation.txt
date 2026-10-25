@@ -6,3 +6,9 @@ Slide 18 contains the requested video placeholder.
 Visual review completed for all slides; revised dense card layouts.
 Numeric results traced to thesis commit 3e2f21e.
 No student meshes or video FPS results fabricated.
+
+25 October 2026 update: original NAVER Anny baseline added to slide 11.
+380.94 M parameters traced to cluster evidence; full-model compute and comparable latency marked not measured.
+Teacher/student speedup labels explicitly identify their reference.
+Slide 11 PDF visually reviewed; no clipping. All shapes within canvas.
+Other 22 slide XMLs and speaker notes unchanged; scripts and PDF regenerated.

@@ -21,7 +21,7 @@ Built from the seven topic slides in the supplied template. Dense architecture, 
 - Slide 8: Sources: thesis Table T11; exp8_distill_vitb.sh; job 3614191
 - Slide 9: Sources: thesis §4.10; Table T07
 - Slide 10: Sources: thesis Tables T16–T17; jobs 3614191, 3611336, 3614192
-- Slide 11: Source: thesis Table T16; paired L40S measurements, job 3614191
+- Slide 11: Sources: thesis Table T16; L40S job 3614191; NAVER parameter count, job 3614947
 - Slide 12: Sources: thesis Chapter 3; numbers_data.tex
 - Slide 13: Sources: thesis §3.3–3.5; smpl_to_anny.py, converter v2.3
 - Slide 14: Sources: thesis §3.4 and Appendix B
