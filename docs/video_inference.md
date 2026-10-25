@@ -1,5 +1,7 @@
 # Video inference with the thesis Student and Multi-HMR-Anny
 
+For still photos, see [Student versus original baseline image comparisons](image_comparison.md).
+
 `demo_video.py` runs the thesis Student and optional reference models on the
 same video. With `TEMPORAL=off` (the default), the comparison is **input | raw
 Student (ViT-B) | NAVER's released Multi-HMR-Anny**. Set `TEACHER` to add Final

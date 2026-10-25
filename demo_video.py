@@ -255,14 +255,19 @@ class MeshRenderer:
                     os.environ.get('__EGL_VENDOR_LIBRARY_FILENAMES', '<unset>'))) from exc
 
     def render(self, rgb, vertices):
+        return self.render_many(rgb, [vertices])
+
+    def render_many(self, rgb, bodies):
+        """Render all people in one scene, sharing the depth buffer."""
         import numpy as np
         import trimesh
         p = self.pyrender
         scene = p.Scene(bg_color=[0, 0, 0, 0], ambient_light=[0.5, 0.5, 0.5])
-        mesh = trimesh.Trimesh(vertices=vertices, faces=self.faces, process=False)
         material = p.MetallicRoughnessMaterial(baseColorFactor=(0.25, 0.85, 0.95, 1),
                                                metallicFactor=0, roughnessFactor=0.7, doubleSided=True)
-        scene.add(p.Mesh.from_trimesh(mesh, material=material, smooth=False))
+        for vertices in bodies:
+            mesh = trimesh.Trimesh(vertices=vertices, faces=self.faces, process=False)
+            scene.add(p.Mesh.from_trimesh(mesh, material=material, smooth=False))
         camera = p.IntrinsicsCamera(self.K[0, 0], self.K[1, 1], self.K[0, 2], self.K[1, 2],
                                     znear=0.01, zfar=1000)
         pose = np.diag([1., -1., -1., 1.])  # CV: x right/y down/z forward -> OpenGL camera.

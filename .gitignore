@@ -48,3 +48,5 @@ results/experiments/**
 
 # thesis plot data (small CSVs) is tracked although dataset folders named data/ are not
 !docs/thesis/data/
+
+results/image_compare/
