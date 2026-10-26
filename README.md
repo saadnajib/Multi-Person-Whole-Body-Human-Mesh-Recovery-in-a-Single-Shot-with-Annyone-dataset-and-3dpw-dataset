@@ -1,11 +1,13 @@
 # Multi-HMR × Anny — multi-person human mesh recovery with the Anny body model, AnnyOne and 3DPW
 
 This repository builds on **[Multi-HMR](https://github.com/naver/multi-hmr)** (Baradel et al., ECCV'24).
-It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** parametric body model and adds:
+It studies human mesh recovery with the **[Anny](https://github.com/naver/anny)** body model, using synthetic AnnyOne images and real 3DPW images converted from SMPL labels.
 
-1. **Anny training on AnnyOne.** A ViT-L *teacher* is trained on the synthetic AnnyOne dataset (~580k images), with the 88 helper bones masked and a stronger body-shape (phenotype) loss. Neck, finger and child reconstruction are still open, and the training targets carry a depth defect: see [Known defects](#known-defects).
-2. **3DPW → Anny conversion.** 3DPW's SMPL ground truth is fitted to Anny so that real images can be used for training and evaluation in Anny space.
-3. **Knowledge distillation.** A ViT-S *student* is distilled from the ViT-L teacher using a feature-level KL loss on backbone tokens, with teacher-initialised heads, and is trained on mixed synthetic and real data.
+The completed thesis system uses a **ViT-B student**, distilled from our **Final ViT-L teacher** with supervised losses, feature distillation and output distillation. NAVER's released **Multi-HMR-Anny** checkpoint is the original external baseline. Earlier ViT-S students and Base/v5 are historical experiments, not the current student or the external baseline.
+
+The repository includes label conversion, training and evaluation, image comparisons, and video comparisons with optional temporal filtering and landmark-guided alignment. The network still processes individual frames; temporal filtering combines predictions across time during inference, without retraining.
+
+**Current entry points:** [image comparisons](docs/image_comparison.md), [video comparisons](docs/video_inference.md), [model names](docs/model_names.md), [thesis](docs/thesis/thesis.tex), and [presentation with speaker scripts](docs/presentations/README.md).
 
 <div align="center">
 <img width="49%" alt="Multi-HMR illustration 1" src="assets/visu1.gif">
@@ -20,10 +22,10 @@ It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** 
   - [Known defects](#known-defects)
 - [Installation](#installation)
 - [Quick start: demo](#quick-start-demo)
-- [Student video inference and comparison](docs/video_inference.md)
+- [Student image and video comparisons](#student-image-and-video-comparisons)
 - [Pipeline 1: converting 3DPW to Anny](#pipeline-1-converting-3dpw-to-anny)
 - [Pipeline 2: training the ViT-L teacher](#pipeline-2-training-the-vit-l-teacher)
-- [Pipeline 3: distilling the ViT-S student](#pipeline-3-distilling-the-vit-s-student)
+- [Pipeline 3: distilling the student](#pipeline-3-distilling-the-student)
 - [Evaluation](#evaluation)
 - [Results recorded so far](#results-recorded-so-far)
 - [Utility scripts](#utility-scripts)
@@ -39,7 +41,8 @@ It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** 
 .
 ├── train.py                 # training / evaluation entry point (Anny + SMPL-X, distillation, mixed data)
 ├── demo.py                  # inference + rendering on a folder of images
-├── demo_video.py            # Student / original Multi-HMR video overlays and stability measurements
+├── demo_video.py            # video overlays, temporal filtering, optional landmark alignment
+├── demo_image_compare.py    # input / current Student / original NAVER baseline PNG comparisons
 ├── model.py                 # Multi-HMR model (Anny output, optional head_dim projector for students)
 ├── loss.py                  # training losses
 ├── distill.py               # knowledge-distillation loss (temperature-softmax KL on backbone tokens)
@@ -53,11 +56,13 @@ It moves the model from SMPL-X to the **[Anny](https://github.com/naver/anny)** 
 ├── scripts/
 │   ├── data/                # dataset conversion and export (SMPL→Anny fitting, label building, image export)
 │   ├── analysis/            # diagnostics: fit checks, shape/phenotype analysis, checkpoint inspection, montages
+│   ├── video/               # rendering checks, tracking, temporal filters, landmark extraction/fitting
 │   └── patches/             # historical apply_*.py patches (already applied to train.py / model.py)
 │
 ├── slurm/
 │   ├── env.sh               # shared job setup (conda, caches, cd, DINOv2 patch) — edit paths here
-│   ├── train/               # current runs: teacher v9, final student v8, v10 ablation
+│   ├── train/               # earlier teacher/student training scripts
+│   ├── experiments/         # Final teacher (exp7), ViT-B student (exp8), diagnostic experiments
 │   ├── eval/                # evaluation jobs (AnnyOne holdout, 3DPW val/test, dataloader test)
 │   ├── demo/                # demo / visual comparison jobs
 │   ├── data/                # 3DPW→Anny conversion pipeline + fit check
@@ -99,35 +104,24 @@ Read this before trying to reproduce anything.
 | Gap | Impact | Fix |
 |---|---|---|
 | **Cluster paths.** Conda, caches and the project root are set once in `slurm/env.sh`, but job scripts still name `/netscratch/najib/...` for checkpoints, data, logs and the container image. | The scripts only run on the original cluster as-is. | Edit `slurm/env.sh`, then search-and-replace `/netscratch/najib` in the job you want to run. |
-| **Checkpoints are not versioned** (`*.pt` is git-ignored). | Final teacher/student weights must be obtained separately. | Expected location: `models/multiHMR/<name>.pt`. |
+| **Checkpoints are not versioned** (`*.pt` is git-ignored). | Final teacher/student weights must be obtained separately. | Use the checkpoint paths and correction metadata in [image/video comparisons](#student-image-and-video-comparisons). |
 | `scripts/patches/apply_*.py` are historical. | All six patches are already applied to `train.py` / `model.py`. The guard checks in the training scripts pass. | Do not re-run them. They refuse to patch twice anyway. |
 
 ### Known defects
 
-Measured on the production teacher `anny_s2_shape_v5` (epoch 99) with the diagnostic suite in `scripts/diagnostics/`.
-The evidence, the scripts and the confidence of each statement are in [`docs/diagnostics_findings.md`](docs/diagnostics_findings.md); the numbers below are copied from it.
+The earlier v5 depth-target mismatch and bone-rotation investigation are documented in
+[diagnostics findings](docs/diagnostics_findings.md) and the [handover](docs/handover.md).
+Final incorporates the head-anchor target correction and bone correction; old v5 numbers
+must not be presented as current Final or Student results.
 
-**What is not the cause.** Ground-truth parameters decode onto the people in the images. All 16 single-joint perturbations of the body model move the intended part (pose parameters act in the bone's rest frame, forward kinematics is exact). Every active pose bone receives gradient (the 88 zero-gradient bones are exactly the masked helper bones).
-No joint-mapping, rotation-convention or decoding error was demonstrated, so none of the failures below is attributed to the rig or to decoding.
-The first compiled diagnostics `REPORT.md` printed "decoding defect" for check 1. That verdict came from a fixed 95% threshold that misread truncation at the image border; the rule is now truncation-aware.
+Current limitations:
 
-| Defect | Measured | Diagnosed origin |
-|---|---|---|
-| **Depth** (the largest error) | On the 100-image holdout, predicted root depth = 0.33·GT + 2.36 m (≈ 0.3·GT + 2.4 m): mean 3.00 m vs 1.92 m GT, and 100% of people are placed too far. Skeletal height is right (1.405 vs 1.409 m), so the body is drawn about 35% too small (head-to-root 82 px vs 127 px). The same slope appears on training images. | Target mismatch in the code. The model anchors and reports the **head** joint (`--person_center head`, `model.py`), while `train.py prepare_gt` builds the `transl`, `dist`, heatmap-cell and offset targets at joint 0, the **root**. Pelvis-centred PVE, PA-PVE and MPJPE cannot see this (corr(PVE, depth error) = −0.03). That is why the numbers in the results table look normal while the overlays look wrong. |
-| **Neck** | In-domain neck length is 99.3% of GT. Local rotation error is 62.7° (neck) and 89.5° (head), but the global head orientation error is 12.0° on the holdout and 19.9° on the hard neck poses. | Weak per-bone rotation supervision on a redundant 4-bone chain. Many decompositions give the same head pose, so the per-bone loss carries little consistent signal, which would also explain why the v4 ×4 neck boost had no measurable effect. The long-neck look in the overlays is likely the depth defect (body drawn too small, head placed where the root target pulls it) plus normal skinning. |
-| **Fingers** | Finger rotation error is 17.3° as predicted and 15.1° with the fingers set to the rest pose. | Under-trained: the predictions are worse than the rest pose. Fingers get the smallest gradients of any bone group (4.7 vs 598 at the root) and the worst 6D conditioning. Perturbing a finger bone moves only that finger. The demos therefore ship with `--relax_hands 1`. |
-| **Children** | The 50 youngest training people (GT age 0.015) are predicted at age 0.10 with head/height at 101% of GT. On real photos, small people come out as small adults (age 0.56–0.66, size carried by the `height` phenotype). | Representation works in-sample; generalisation fails. Only 2.53% of training people have age < 0.3 (about 11 years on Anny's scale), and the 3DPW labels pin age at 0.55 (about 20 years), so mixing in 3DPW adds no child signal. The detector-crop camera bug in `demo.py` changes placement only. |
+- The completed 30-epoch Student reduces model cost but misses the teacher-based 95% accuracy-retention criteria on both evaluation sets.
+- Children, fingers and real-photo body-shape generalization remain limitations. The synthetic holdout contains adults and cannot establish child performance.
+- Converted 3DPW labels include fixed shape values and unavailable finger rotations. Label fitting does not remove differences between the SMPL and Anny body models.
+- Video filtering can reduce jitter but introduces lag. Landmark alignment uses an external detector and improves image agreement, which does not establish better ground-truth 3D accuracy. Rejected observations and tracking resets can still cause visible changes.
+- All model weights and cluster-only outputs must be obtained separately. Completed comparison commands and defaults are documented below.
 
-The depth fix (build the targets at the joint the model anchors, then fine-tune briefly from epoch 99) is a separate experiment. No improvement is claimed until its holdout trace has been re-run.
-
-**Caveats.**
-- Child numbers are in-sample. The holdout contains no children, so these numbers test representation, not generalisation.
-- The "hands" category of the diagnostic manifest is confounded by truncation. Its people fill the frame (63% of joints inside the image), so its PVE (156.8 mm) measures truncation and depth, not hands.
-- The 51.8 mm PVE from the capped overfit run is an optimisation check on 40 memorised training images. It is not a validation number. In the same run, the holdout PVE rose from 87.6 to 127.2 mm.
-
-**Future work (not measured).** A global head-orientation loss for the neck chain (`--alpha_global_rot`), and a region-normalised rotation loss for the fingers. The implemented change is `--rotmat_region_norm`: it gives the hands region one third of the rotation loss, down from its ~40% bone share, so it is not an upweighting of the finger bones and a null result there says nothing about upweighting.
-
-The flag-gated experiments for the four defects are described in [`docs/experiments_plan.md`](docs/experiments_plan.md) and implemented in [`slurm/experiments/`](slurm/experiments/). Nothing from them has been measured yet.
 
 ---
 
@@ -158,6 +152,8 @@ Extra setup:
 
 ## Quick start: demo
 
+This section describes the legacy `demo.py` workflow. For comparisons of the completed ViT-B Student and original NAVER baseline, use the [image/video tools below](#student-image-and-video-comparisons).
+
 The official NAVER Anny checkpoint downloads automatically to `$HOME/models/multiHMR`:
 
 ```bash
@@ -181,14 +177,87 @@ Recommended flags depend on the input domain (see `slurm/demo/run_demo.sh` for t
 | `--mask_helper_joints 1` | ✔ forces the 88 untrained helper bones to identity (the V1 evaluation setting) | ✔ |
 | `--relax_hands 1` | ✔ sets the finger poses to the rest pose (see below) | ✔ |
 
-**Finger poses in the demo renders are the rest pose, not predictions.**
-Every `slurm/demo/run_demo*.sh` passes `--relax_hands 1`, which sets the finger and thumb phalanges to identity.
+**Legacy rest-hand demo renders use the rest pose for fingers.** The newer `run_image_compare.sh` and `run_video_compare.sh` retain predicted finger poses (optionally temporally filtered in video).
+The legacy rest-hand demo jobs pass `--relax_hands 1`, which sets the finger and thumb phalanges to identity.
 This is deliberate: the predicted fingers are worse than the rest pose (rotation error 17.3° vs 15.1° on the AnnyOne holdout; see [Known defects](#known-defects)).
 
 Do **not** use `--neutral_phenotypes`.
 Measured against AnnyOne ground truth, forcing phenotypes to 0.5 moved them *away* from the truth and made necks worse (see `docs/anny_shape_report.txt` and the comments in `run_demo.sh`).
 
 Side-by-side comparison of several models: `slurm/demo/run_demo_compare.sh`, then `scripts/analysis/make_montage.py`.
+
+---
+
+## Student image and video comparisons
+
+Run from the checkout root on the configured cluster. Both launchers use the regular
+`multihmr` environment, the existing container and an EGL rendering check before
+loading weights. They load one model at a time. The required defaults are:
+
+| Model | Checkpoint / metadata |
+|---|---|
+| Student (ViT-B, 30 epochs) | `results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/train/checkpoints/00029.pt` |
+| Original NAVER baseline | `models/multiHMR/multiHMR_672_L_anny.pt` |
+| Student correction | Run-local `student_fix_arg.txt`, resolved automatically; keep it and its referenced correction JSON with the checkpoint. |
+
+Override `STUDENT`, `BASELINE` and `STUDENT_BONE_FIX` when using different verified
+paths. A copied checkpoint alone may lack the student's post-training correction.
+
+### Compare photos
+
+```bash
+cd /netscratch/najib/multi-hmr
+conda activate multihmr
+mkdir -p logs
+IMAGES="$PWD/example_data" sbatch slurm/demo/run_image_compare.sh
+```
+
+`IMAGES` accepts one photo or a folder of original photos. Results are labelled
+**Input | Student | Original Multi-HMR-Anny** PNGs in
+`results/image_compare/images_JOBID/comparison/`. All visible detections are rendered.
+See [image comparison options and outputs](docs/image_comparison.md).
+
+### Compare video without alignment
+
+```bash
+VIDEO="$PWD/man_walking.mp4" TEMPORAL=ema ALIGNMENT=off LANDMARKS="" STUDENT_ONLY=0 \
+  sbatch slurm/demo/run_video_compare.sh
+```
+
+This saves input, raw Student, temporally filtered Student and original baseline
+panels. Set `TEMPORAL=off` for frame-by-frame predictions only, or `STUDENT_ONLY=1`
+to omit the baseline. The temporal filter blends pose rotations, body shape and
+head-anchor position using previous predictions, then rebuilds the mesh through
+Anny. It resets when detections are missing or tracking is discontinuous.
+
+### Add landmark alignment
+
+First extract landmarks from the **original video** in a separate CPU environment;
+follow [landmark setup and extraction](docs/video_inference.md#improve-image-alignment-with-detected-landmarks).
+Then reuse that JSON for the same source video:
+
+```bash
+VIDEO="$PWD/man_walking.mp4" TEMPORAL=ema ALIGNMENT=landmarks \
+ALIGNMENT_DEPTH_TAU=0.35 LANDMARKS="$PWD/results/video_landmarks/man_walking.json" \
+STUDENT_ONLY=0 sbatch slurm/demo/run_video_compare.sh
+```
+
+Alignment uses detected body landmarks to adjust camera-space position and depth,
+retaining the predicted pose and shape. The final depth estimate is smoothed to
+reduce apparent size fluctuations. Larger `ALIGNMENT_DEPTH_TAU` values add smoothing
+and lag; `0` disables depth smoothing. Unreliable landmark fits keep the unaligned
+prediction and reset alignment depth history.
+
+Video results are in `results/video_compare/video_JOBID/`. `comparison.mp4` contains
+all requested panels; `alignment_comparison.mp4` shows input, pre-alignment Student
+and aligned Student. `run.json`, per-frame CSVs and summaries record settings,
+tracking, corrections and timings. The original baseline remains unfiltered.
+Aligned-panel FPS excludes offline landmark detection; displayed FPS is not
+end-to-end video throughput. Visual fit and smoothness do not establish PVE accuracy.
+
+Both launchers support `CHECK_ONLY=1` with `bash` instead of `sbatch` for file/option
+checks without submitting. Each run requires a new output directory. Full
+[video documentation](docs/video_inference.md) describes defaults, timing and limitations.
 
 ---
 
@@ -226,11 +295,13 @@ The camera convention `X_cam = R·X_world + t` was checked against the OpenPose 
 - `scripts/data/smpl_to_anny_v3_frozen.py`: an experimental variant with a frozen-shape second pass.
 - `scripts/data/npz_to_annyone.py` (+ `run_npz_to_annyone.sh`): the first single-sequence adapter, which `build_threedpw_anny_labels.py` replaced.
 
-Current label set: **4,451 train / 2,458 validation / 9,722 test** images.
+The earlier v2.2 paths above describe the historical conversion workflow. The evaluated **v2.3** label set contains **5,882 train / 2,622 validation / 8,190 test** images. See the [thesis data records](docs/thesis/numbers_data.tex) and [reproduction guide](docs/thesis/REPRODUCE.md) for the corrected split and conversion protocol.
 
 ---
 
 ## Pipeline 2: training the ViT-L teacher
+
+The completed **Final teacher** is recorded by [`slurm/experiments/exp7_final_model.sh`](slurm/experiments/exp7_final_model.sh), combining head-anchor targets, bone correction and mixed-data fine-tuning. The table below is the **earlier training lineage**; v9 is not the Final teacher used by exp8.
 
 All runs start from NAVER's `multiHMR_672_L_anny.pt` backbone (`--pretrained_remap 1 --load_only_backbone 1`) at 672 px on AnnyOne, unless noted.
 Each training script is the full, self-documenting record of a run. Its header explains the reasoning and quotes the previous run's numbers.
@@ -245,7 +316,7 @@ Scripts of finished runs live in `slurm/history/` (unchanged); the runs still in
 | 4 | `train_s2_boosted_v4.sh` | anny_s2_boosted_v4 | ×4 loss weight on neck/hand bones (no visible gain) |
 | 5 | `train_s2_shape_v5.sh` | **anny_s2_shape_v5** | `--alpha_shape 20` fixes the age/height bias. **Teacher for distillation v1–v7** (epoch 99) |
 | – | `train_v7_scratch.sh`, `train_v8_partial_freeze.sh` (+ `train_v8_resume.sh`) | anny_v7_scratch, anny_partial_freeze | Clean re-runs from the base with all fixes (ablations) |
-| 6 | `train_teacher_v9_mixed.sh` | **anny_teacher_v9_mixed** | v5 recipe + 30% real 3DPW-train, evaluated on 3DPW-val. **Teacher for the final student** (epoch 62) |
+| 6 | `train_teacher_v9_mixed.sh` | **anny_teacher_v9_mixed** | v5 recipe + 30% real 3DPW-train, evaluated on 3DPW-val. **Teacher for the historical ViT-S v8 student** (epoch 62) |
 | – | `train_v10_scratch_mixed.sh` | anny_v10_scratch_mixed | Ablation: mixed data from the start |
 
 Key flags introduced along the way:
@@ -259,8 +330,18 @@ Key flags introduced along the way:
 
 ---
 
-## Pipeline 3: distilling the ViT-S student
+## Pipeline 3: distilling the student
 
+The completed student is **ViT-B**, recorded in
+[`slurm/experiments/exp8_distill_vitb.sh`](slurm/experiments/exp8_distill_vitb.sh).
+It uses a 768 → 1024 feature projector, teacher-initialized heads, supervised
+losses, feature KL distillation and output distillation from the frozen Final
+teacher. The confirmed run trained for 30 epochs of 1,000 steps at batch size 8,
+with heads frozen for the first 5 epochs and approximately 70% AnnyOne / 30% 3DPW
+image sampling. See [model identities](docs/model_names.md) and
+[the training recipe](docs/thesis/tables/T11_student_recipe.tex).
+
+The following **historical ViT-S experiments** explain the earlier development.
 Student: `dinov2_vits14` (384-d). Teacher: frozen ViT-L (1024-d).
 
 **Loss (`distill.py`).**
@@ -280,7 +361,7 @@ Student: `dinov2_vits14` (384-d). Teacher: frozen ViT-L (1024-d).
 | v6 | `train_distill_vits_v6.sh` | **`--head_dim 1024`**: projector before the heads, so all 67/67 head tensors transfer | 152 / 105 |
 | v6b → v6c | `train_distill_vits_v6b.sh`, `_v6c.sh` | Continue training; `--teacher_bf16`, batch 16 | **114.5 / 84.6** on the AnnyOne holdout (best synthetic-only) |
 | v7 | `train_distill_vits_v7_mixed.sh` | + 30% real 3DPW | **3DPW-val 107.0 / 77.1**; holdout 120.1 / 89.4 |
-| **v8 (final)** | `train_distill_vits_v8_final.sh` | v6c weights + v7 mixed data at batch 16, teacher v9 | 3DPW-test is evaluated once at the end |
+| **v8 (historical ViT-S final)** | `train_distill_vits_v8_final.sh` | v6c weights + v7 mixed data at batch 16, teacher v9 | 3DPW-test is evaluated once at the end |
 
 Numbers are PVE / PA-PVE in mm, copied from the script headers.
 They come from `train.py evaluate()`, which does not mask the helper bones (V0, see [Results recorded so far](#results-recorded-so-far)).
@@ -311,26 +392,41 @@ The AnnyOne holdout (`--val_anny_n`) and 3DPW (`--val_3dpw_split`, `--val_3dpw_n
 
 ## Results recorded so far
 
-| Model | Backbone | AnnyOne holdout PVE / PA-PVE | 3DPW-val PVE / PA-PVE |
-|---|---|---|---|
-| **Teacher anny_s2_shape_v5 (epoch 99), V1: helper bones masked, as in the demos** | ViT-L | **70.5 / 53.3** (recall 90.2%) | – |
-| Teacher anny_s2_shape_v5 (epoch 99), V0: `train.py evaluate()`, helper bones unmasked (the 74 mm quoted in the thesis) | ViT-L | 73.6–74.3 / – | 127.1 / – |
-| Student v6c | ViT-S | 114.5 / 84.6 | – |
-| Student v7 (mixed) | ViT-S | 120.1 / 89.4 | 107.0 / 77.1 |
-| Teacher v9 (mixed), student v8 final | ViT-L / ViT-S | *not yet recorded* | *not yet recorded* |
+Completed results for the Final teacher, 30-epoch Student and original NAVER baseline:
 
-**V1 is the headline.**
-`train.py evaluate()` reports 74.3 mm because it does not mask the 88 helper bones, while every demo masks them: on the people matched under both settings, unmasked vs masked is +3.8 mm PVE (paired).
-The thesis's 74 mm is therefore 70.5 mm under the settings the demos use.
-V1 comes from `scripts/diagnostics/diag_holdout_trace.py` on the 100 holdout images that `--val_anny_n 100` reserves (indices 579860–579959), the images `train.py` evaluates on during training.
-The student rows and the 3DPW column were also measured with `train.py evaluate()`, so they are unmasked: compare them with the V0 row, not with the V1 headline.
-All of these metrics are pelvis-centred and do not see the depth defect described in [Known defects](#known-defects).
+| Dataset | Model | PVE ↓ (mm) | PA-PVE ↓ (mm) | MPJPE ↓ (mm) | Recall ↑ |
+|---|---|---:|---:|---:|---:|
+| AnnyOne holdout (V1) | Teacher (Final, ViT-L) | 73.7 | 50.3 | 77.9 | 87.0% |
+| AnnyOne holdout (V1) | Student (ViT-B) | 119.6 | 80.8 | 127.2 | 85.4% |
+| AnnyOne holdout (V1) | Original NAVER baseline* | 60.3 | 44.6 | 63.3 | 89.0% |
+| 3DPW test (v23 Anny labels) | Teacher (Final, ViT-L) | 89.0 | 57.6 | 88.3 | 99.0% |
+| 3DPW test (v23 Anny labels) | Student (ViT-B) | 110.1 | 71.8 | 112.0 | 99.0% |
+| 3DPW test (v23 Anny labels) | Original NAVER baseline | 126.9 | 68.8 | 129.4 | 97.0% |
 
-Qualitative ablations on real photos are in `results/demos/`:
-- `A_base`: baseline.
-- `B_neckshape`: neck/shape flags tried at the time (historical; the neck is not fixed, see [Known defects](#known-defects)).
-- `C_hands`: hand relaxation (`--relax_hands 1`).
-- `v4_restpose`: rest-pose check. A long neck that persisted in these renders was read as a body-model property; the diagnostics do not support that reading (in-domain neck length is within 1% of GT, and the body-model probe passes).
+*The baseline's synthetic holdout is potentially in-sample. Teacher and Student
+received converted 3DPW training supervision; the baseline did not. These 3DPW
+numbers use Anny labels and cannot be directly compared with published SMPL-space
+scores. PVE and MPJPE are pelvis-centred; PA-PVE additionally aligns rotation,
+translation and scale. Errors describe matched predictions, while recall captures
+missed people. Lower errors and higher recall are better.
+
+| Model | Parameters | Full-model compute | Median forward latency (L40S) |
+|---|---:|---:|---:|
+| Original NAVER baseline | 380.94 M | Not measured; backbone alone 1,917.2 GFLOPs | Not measured |
+| Teacher (Final) | 318.38 M | 1,927.4 GFLOPs | 59.7 ms |
+| Student (ViT-B) | 101.38 M | 603.3 GFLOPs | 28.5 ms |
+
+Teacher/Student cost uses the paired L40S benchmark: 672-pixel input, one person,
+batch one, fp32 with TF32. The Student has 3.14× fewer parameters, 3.19× less counted
+computation and 2.10× faster forward time than its teacher, but higher reconstruction
+error. Against the original baseline, it has 3.76× fewer parameters and lower 3DPW
+PVE/MPJPE, while PA-PVE is higher. Model-forward timings exclude rendering and video I/O.
+
+Sources: [thesis results](docs/thesis/numbers_results.tex),
+[baseline handover record](docs/handover.md), and [student comparison table](docs/thesis/tables/T17_student.tex).
+Earlier v5/ViT-S results and legacy qualitative ablations remain in the handover
+and `results/demos/`. Images in `docs/thesis/figures/img/` mainly compare Base/v5
+with Final; they must not be relabelled as current Student-versus-NAVER results.
 
 ---
 
@@ -385,8 +481,9 @@ sbatch slurm/train/train_teacher_v9_mixed.sh
 sbatch slurm/demo/run_demo.sh
 ```
 
-Checkpoints are written to `logs/anny_model/<run>/checkpoints/<epoch>.pt`, and only the 10 most recent are kept.
-**Copy the final checkpoint to `models/multiHMR/<run>_<epoch>.pt` before launching anything that resumes from it.**
+Legacy training checkpoints are written to `logs/anny_model/<run>/checkpoints/<epoch>.pt`, and only the 10 most recent are kept.
+For exp8, use the `results/experiments/` checkpoint and correction metadata listed in the comparison section above.
+**For legacy resume workflows, copy the final checkpoint to `models/multiHMR/<run>_<epoch>.pt` before launching anything that resumes from it.**
 `docs/cluster_commands.txt` contains example copy commands.
 
 ---

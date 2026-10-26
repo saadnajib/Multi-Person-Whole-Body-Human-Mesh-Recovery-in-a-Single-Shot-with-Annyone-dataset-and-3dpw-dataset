@@ -41,7 +41,7 @@ regular `multihmr` environment used for training and mesh inference unchanged:
 
 ```bash
 cd /netscratch/najib/multi-hmr
-python3.10 -m venv /netscratch/najib/venvs/video-landmarks
+conda create -y --prefix /netscratch/najib/venvs/video-landmarks python=3.10 pip
 /netscratch/najib/venvs/video-landmarks/bin/python -m pip install \
   -r requirements-video-landmarks.txt
 ```
@@ -59,6 +59,21 @@ mkdir -p results/video_landmarks
   --video "$PWD/man_walking.mp4" \
   --output "$PWD/results/video_landmarks/man_walking.json"
 ```
+
+If OpenCV fails to import with `libGL.so.1` missing on a headless login node,
+replace its GUI package in this separate environment:
+
+```bash
+/netscratch/najib/venvs/video-landmarks/bin/python -m pip uninstall -y opencv-contrib-python opencv-python
+/netscratch/najib/venvs/video-landmarks/bin/python -m pip install opencv-contrib-python-headless==4.11.0.86
+/netscratch/najib/venvs/video-landmarks/bin/python -c "import cv2, mediapipe; print('Imports OK')"
+```
+
+Then rerun extraction. Reinstalling the requirements file restores the GUI package.
+MediaPipe's dependency metadata requests that GUI package, so `pip check` may flag
+it as missing after this headless substitution; do not install both OpenCV variants
+into the same environment. To activate this prefix environment interactively, use
+`conda activate /netscratch/najib/venvs/video-landmarks` (the full path).
 
 The JSON contains original frame indices, image-pixel landmarks, confidence,
 detector metadata and the source video's SHA-256 digest. It refuses to overwrite
