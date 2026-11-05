@@ -1,8 +1,12 @@
-23 slides; 20 main + 3 backup.
-All slides contain detailed speaker notes.
-No shape extends outside the slide canvas.
-PDF export: 23 pages.
-Slide 18 contains the requested video placeholder.
-Visual review completed for all slides; revised dense card layouts.
+24 slides; 21 main + 3 backup.
+Order revised after supervisor feedback: body models (4) and the dataset block (5-8) before the method (9-16).
+All slides contain detailed speaker notes; cross-references and transitions renumbered (video placeholder now slide 19).
+No shape extends outside the slide canvas (python-pptx bounds check).
+PDF export (LibreOffice): 24 pages.
+Slide 19 contains the requested video placeholder.
+Visual review at 60 dpi of all 24 pages and at 110 dpi of slide 4: no overflow, overlap or cut text.
+Fixed two box labels that overflowed in the moved slides 9 and 13.
+Slide 4 checked both without and with figures/smpl_vs_anny_render.png (the latter with a test image only).
+Slide 4 Anny bone and phenotype counts read from figures/anny_rest_skeleton.json (anny 0.6.2 package, 163 bones); Anny vertex count not stated (no verified number in the repository).
 Numeric results traced to thesis commit 3e2f21e.
 No student meshes or video FPS results fabricated.

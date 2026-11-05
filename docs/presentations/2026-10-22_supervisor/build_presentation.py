@@ -98,12 +98,16 @@ RENDER=FIG/'smpl_vs_anny_render.png'
 F14=IMG/'F14_label_check_basketball_00570.jpg'
 def mesh_crops():
  im=Image.open(F14).convert('RGB')
- im.crop((572,88,872,772)).save(FIG/'smpl_mesh_crop.png');im.crop((1115,88,1415,772)).save(FIG/'anny_mesh_crop.png')
- return FIG/'smpl_mesh_crop.png',FIG/'anny_mesh_crop.png'
+ im.crop((572,88,872,772)).save(FIG/'smpl_mesh_crop.jpg',quality=92);im.crop((1115,88,1415,772)).save(FIG/'anny_mesh_crop.jpg',quality=92)
+ return FIG/'smpl_mesh_crop.jpg',FIG/'anny_mesh_crop.jpg'
+RENDER_TEXT_BAND=170  # = TEXT_BAND in render_smpl_vs_anny.py: titles/legend above the two body panels
 def render_halves():
- im=Image.open(RENDER).convert('RGB');w,h=im.size
- im.crop((0,0,w//2,h)).save(AS/'render_smpl.png');im.crop((w//2,0,w,h)).save(AS/'render_anny.png')
- return AS/'render_smpl.png',AS/'render_anny.png'
+ from PIL import ImageChops
+ im=Image.open(RENDER).convert('RGB');w,h=im.size;out=[]
+ for name,box_ in [('render_smpl.png',(0,RENDER_TEXT_BAND,w//2,h)),('render_anny.png',(w//2,RENDER_TEXT_BAND,w,h))]:
+  half=im.crop(box_);bb=ImageChops.difference(half,Image.new('RGB',half.size,'white')).getbbox() or (0,0)+half.size
+  bb=(max(bb[0]-20,0),max(bb[1]-20,0),min(bb[2]+20,half.width),min(bb[3]+20,half.height));half.crop(bb).save(AS/name);out.append(AS/name)
+ return out
 # Schematic SMPL rest skeleton (T-pose, front view, metres from the pelvis; not measured from the model file).
 SMPL_SCHEMATIC={'pelvis':(0,0),'left_hip':(.06,-.09),'right_hip':(-.06,-.09),'spine1':(0,.11),'left_knee':(.11,-.47),'right_knee':(-.11,-.47),
  'spine2':(0,.24),'left_ankle':(.08,-.87),'right_ankle':(-.08,-.87),'spine3':(0,.30),'left_foot':(.12,-.94),'right_foot':(-.12,-.94),
@@ -118,7 +122,7 @@ def smpl_skeleton_png():
  ax.add_patch(plt.Circle((0,.72),.1,fill=False,ec='#'+MUTED,lw=1.5,ls='--'))
  for x,y in P:ax.scatter(x,y,s=46,color='#'+GOLD,edgecolor='#'+NAVY,linewidth=1.3,zorder=3)
  lab={'head':(-.06,.64,'right'),'neck':(-.06,.52,'right'),'spine3':(-.05,.31,'right'),'spine2':(-.05,.22,'right'),'spine1':(-.05,.11,'right'),'pelvis':(-.05,-.01,'right'),
-  'left_collar':(.05,.36,'left'),'left_shoulder':(.19,.53,'center'),'left_elbow':(.47,.36,'center'),'left_wrist':(.67,.53,'center'),'left_hand':(.80,.36,'center'),
+  'left_collar':(.05,.36,'left'),'left_shoulder':(.25,.53,'center'),'left_elbow':(.47,.36,'center'),'left_wrist':(.67,.53,'center'),'left_hand':(.80,.36,'center'),
   'left_hip':(.11,-.12,'left'),'left_knee':(.16,-.47,'left'),'left_ankle':(.14,-.84,'left'),'left_foot':(.18,-.97,'left')}
  for n,(x,y,ha) in lab.items():ax.text(x,y,n.replace('left_','').replace('_',' '),fontsize=9.5,ha=ha,va='center',color='#'+INK)
  ax.text(-.80,-.62,'right side:\nsame 9 joints',fontsize=9,color='#'+MUTED,ha='left')

@@ -6,6 +6,7 @@ WHAT IT MAKES
 -------------
 --mode render (default; cluster: needs smplx + models/smpl/SMPL_NEUTRAL.pkl, anny, pyrender with EGL)
     One PNG, two panels of equal width:
+    Titles and the region legend sit in a TEXT_BAND-pixel band above the panels.
       left   SMPL neutral, zero pose, zero betas: the mesh (pyrender) + its 24 joints, joined along the SMPL
              kinematic tree (smpl.parents), every joint named.
       right  Anny full rig (create_fullbody_model(remove_unattached_vertices=False, all_phenotypes=True), as
@@ -63,6 +64,7 @@ for _p in (os.path.join(ROOT, 'scripts', 'analysis'), os.path.join(ROOT, 'script
 os.environ.setdefault('PYOPENGL_PLATFORM', 'egl')
 
 DEFAULT_PNG = os.path.join('docs', 'presentations', '2026-10-22_supervisor', 'figures', 'smpl_vs_anny_render.png')
+TEXT_BAND = 170   # px of titles/legend above the body panels; the presentation generator crops it off
 DEFAULT_JSON = os.path.join('docs', 'presentations', '2026-10-22_supervisor', 'figures', 'anny_rest_skeleton.json')
 
 # Standard SMPL kinematic tree for the 24 joints (used only if the loaded model exposes no `parents`).
@@ -253,9 +255,6 @@ def render(args):
         if not name.startswith('right_'):          # centre + left side named; the right side mirrors the left
             d.text((u + 8, v + (4 if name.startswith('left_') and i % 2 else -18)), name.replace('left_', ''),
                    fill=(32, 55, 75), font=font)
-    d.text((16, 48), 'centre joints and the left side are named; the right side has the same 9 joints',
-           fill=(82, 103, 121), font=font)
-    d.text((16, 12), f"SMPL: {len(S['verts'])} vertices, 24 joints", fill=(20, 45, 69), font=big)
 
     im_r = Image.fromarray(right)
     d = ImageDraw.Draw(im_r)
@@ -271,17 +270,20 @@ def render(args):
     counts = {}
     for i, n in enumerate(names):
         counts[anny_region(i, n)] = counts.get(anny_region(i, n), 0) + 1
-    d.text((16, 12), f"Anny: {len(names)} bones ({len(matched)} matched to SMPL joints: large dots)",
+    # all text goes into a band of TEXT_BAND px above the two body panels, so the generator can cut it off
+    out = Image.new('RGB', (2 * W, H + TEXT_BAND), (255, 255, 255))
+    out.paste(im_l, (0, TEXT_BAND))
+    out.paste(im_r, (W, TEXT_BAND))
+    d = ImageDraw.Draw(out)
+    d.text((16, 12), f"SMPL: {len(S['verts'])} vertices, 24 joints", fill=(20, 45, 69), font=big)
+    d.text((16, 48), 'centre joints and the left side are named;', fill=(82, 103, 121), font=font)
+    d.text((16, 70), 'the right side has the same 9 joints', fill=(82, 103, 121), font=font)
+    d.text((W + 16, 12), f"Anny: {len(names)} bones ({len(matched)} matched to SMPL joints: large dots)",
            fill=(20, 45, 69), font=big)
-    y = 48
-    for k, label, c in REGIONS:
-        d.rectangle([16, y + 3, 30, y + 17], fill=rgb(c))
-        d.text((38, y), f"{label}: {counts.get(k, 0)}", fill=(32, 55, 75), font=font)
-        y += 22
-
-    out = Image.new('RGB', (2 * W, H), (255, 255, 255))
-    out.paste(im_l, (0, 0))
-    out.paste(im_r, (W, 0))
+    for j, (k, label, c) in enumerate(REGIONS):
+        x, y = W + 16 + (j // 5) * 430, 48 + (j % 5) * 22
+        d.rectangle([x, y + 3, x + 14, y + 17], fill=rgb(c))
+        d.text((x + 22, y), f"{label}: {counts.get(k, 0)}", fill=(32, 55, 75), font=font)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     out.save(args.out)
     print(f"SMPL {len(S['verts'])} vertices / 24 joints; anny {A['version']} {len(names)} bones, "
