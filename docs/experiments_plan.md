@@ -920,6 +920,58 @@ says nothing about other datasets, and the 3DPW numbers hold only against our co
 - Throughput is a guess (~10 images/s on an A100: the ViT-L teacher still runs every step), so the 14:00 limit assumes
   6 images/s. Read the smoke test's `[throughput]` line.
 
+### exp9: KD temperature sweep and loss curves (supervisor, 22 Oct) (not yet run)
+
+**Purpose.** Two requests on the ViT-B student, "without changing other parts of the setup": (1) sweep the
+knowledge-distillation temperature (x = temperature, y = error) and report the value that minimises the errors;
+(2) training AND validation loss curves, to decide whether training longer helps (both still falling -> train more;
+train falling, validation flat or rising -> over-fitting, stop; both flat -> converged).
+
+**What is varied.** `KD_T` = `train.py --kd_temperature` only (distill.py: KL on the temperature-softened projected
+backbone tokens, softmax over channels, loss x T^2; the output KD `--lambda_kd_out` is an L1 without temperature).
+Default arms `TEMPS="1 2 4 8 16"`; T 4 = the reported recipe is re-run too, so the sweep has its own T 4 point and
+its difference to the reported run (job 3614191) is the run-to-run noise. **Fixed:** every other exp8 default (same
+teacher, seed 0, 30 x 1000 x batch 8, lr 3e-5, lambda_kd / lambda_kd_out 1.0, the post-steps), through exp8 itself
+(one sbatch per arm). Two measurement-only settings differ in every arm: `EVAL_FREQ=1` (in-training evaluation every
+epoch) and `VAL_LOSS=1` (new `train.py --val_loss 1`: the training criterion on the validation images at every
+evaluation, eval mode, `no_grad`, including the kd / kd_out terms because the teacher is loaded; logged as
+`val_loss/<dataset>/<term>` in tensorboard and `[val_loss] epoch=... ds=...` lines in train.log). Default 0 leaves
+train.py unchanged. Run names `student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT<t>_sweep`; exp8's own
+naming now adds `_T<KD_T>` for any KD_T other than 4, so no sweep value can land in the reported folder.
+
+**Cost.** [Likely] ~6.5 h training per arm on an L40S incl. the per-epoch evaluations (5.8 h measured for 3614191 with
+6 evaluations; ~1-2 min per evaluation of 100 + 300 images with the extra student + teacher forward [Guessing]) plus
+~1 h of post-steps; `--time 16:00:00`; 5 arms = ~33-38 GPU-h, in parallel if the queue allows.
+
+**Commands** (repo root on the cluster, after `git pull` and `conda activate multihmr`):
+
+```
+CHECK_ONLY=1 bash slurm/experiments/exp9_kd_temperature.sh     # exp8's guards for all 5 arms, submits nothing
+bash slurm/experiments/exp9_kd_temperature.sh                  # submits 5 jobs (exp8-<RUN>); record logs/exp9_kd_temperature_<date>.txt
+squeue -u $USER -o '%i %j %T %M %L %R' | grep exp8-student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT
+# after the jobs end (login node, CPU):
+python scripts/analysis/kd_temperature_sweep.py --runs "results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT*_sweep" --reported results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30 --out results/experiments/exp9_kd_temperature
+python scripts/analysis/plot_loss_curves.py results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30 results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60 --out results/experiments/exp9_kd_temperature/loss_curves
+python scripts/analysis/plot_loss_curves.py results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT*_sweep --out results/experiments/exp9_kd_temperature/loss_curves
+```
+
+The second loss-curve command works today on the finished runs (3614191: 30 epochs; 3623342: 60 epochs,
+RUN `..._e60`) from their train.log alone: those have the train loss per epoch and the holdout / 3DPW-validation PVE
+every 5 epochs, no validation loss, so the validation PVE stands in for it in the verdict. `kd_temperature_sweep.py`
+reads `holdout_student/summary.json` (V1) and `eval_3dpw_test_student.log` (3DPW test, v23) of each arm, writes
+`kd_temperature_sweep.csv` and `.png/.pdf` (log2 temperature axis, teacher PVE 73.7 / 89.0 dashed, 95% bars 77.6 /
+93.7 dotted, the reported run as a star), prints the best temperature per metric, an overall pick (smallest holdout
+PVE / 77.6 + 3DPW PVE / 93.7) and the T 4 run-to-run noise. `plot_loss_curves.py` writes one two-panel figure
+(losses, log scale; validation PVE) and one CSV per run and prints the slope over the last 20% of the epochs for
+train and validation with the verdict. Tests: `python -m pytest -q tests/test_exp9_kd_temperature.py` (CPU).
+
+**Risks.** The validation loss needs one more student + teacher forward per validation image (400 per epoch): if
+an epoch's evaluation takes much longer than ~3 min, raise `TIME`. The 3DPW-validation loader is not wrapped in
+`HandLabelFlag`, so `val_loss_step` tags its people with `has_hand_labels 0` itself (3DPW-Anny origin, as the
+training wrapper does) and says so in a note line; `kd_out` is skipped on a batch only when the student / teacher
+rotmat shapes differ (then a `skipped` line). Nothing of this was run: the first job log must show
+`[val_loss] epoch=000 ds=annyone-holdout-1 ...` and `... ds=threedpw_anny-validation-1 ...` after the first epoch.
+
 ## 3. Verified in code
 
 Readers' facts. Line numbers refer to `89db760`, whose `.py` files are identical to `0d8ef72`. The experiment

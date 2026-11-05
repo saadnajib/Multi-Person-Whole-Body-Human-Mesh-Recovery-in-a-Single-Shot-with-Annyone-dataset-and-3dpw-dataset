@@ -130,15 +130,20 @@
 #   STUDENT_BACKBONE=dinov2_vits14 bash slurm/experiments/exp8_distill_vitb.sh   # a ViT-S student, same recipe
 #   TABLE_ONLY=1 bash slurm/experiments/exp8_distill_vitb.sh          # rebuild the final table (same env as the run)
 #   LOCAL_CHECK=1 bash slurm/experiments/exp8_distill_vitb.sh         # anywhere: print what would run
+#   KD_T=8 VAL_LOSS=1 EVAL_FREQ=1 bash slurm/experiments/exp8_distill_vitb.sh   # one KD-temperature arm with a validation
+#                                                                     # loss every epoch (RUN ..._e30_T8); exp9 submits these
 # ENV (defaults): TEACHER (exp7 fix arm 00009), STUDENT_BACKBONE (dinov2_vitb14 | dinov2_vits14), STUDENT_INIT
 #   (models/multiHMR/multiHMR_672_B.pt; _S for ViT-S | dinov2), HEAD_DIM (1024), INIT_HEADS (1), STUDENT_TRAIN_FIX
 #   (teacher | none), EPOCHS (30), N_ITERS (1000), BATCH (8), LR (3e-5), LR_DECAY_EVERY (2/5 of EPOCHS), LAMBDA_KD (1.0),
 #   LAMBDA_KD_OUT (1.0), KD_T (4.0), FREEZE_HEADS_EPOCHS (5, at most EPOCHS-1), START_2D_EPOCH (0), ALPHA_DIST /
 #   ALPHA_TRANSL (5), MIX_RATIO (0.3), LABELS (threedpw_anny_v23/labels), FITS (parent of LABELS), MASK_3DPW_HANDS (1),
-#   MASK_3DPW_SHAPE (0), VAL_3DPW_N (300), EVAL_FREQ (5), NB_MAX_CKPT (3), NUM_WORKERS (12), N_EST (200), SEED (0),
+#   MASK_3DPW_SHAPE (0), VAL_3DPW_N (300), EVAL_FREQ (5), VAL_LOSS (0; 1 = train.py --val_loss 1: the training criterion
+#   on the validation images at every evaluation, '[val_loss]' lines in train.log and val_loss/* in tensorboard; exp9),
+#   NB_MAX_CKPT (3), NUM_WORKERS (12), N_EST (200), SEED (0),
 #   BONES (auto), ON_GLOBAL_RISE (continue | safe), N_VIS (12), EVAL_TEST (1), EVAL_3DPW_N (0 = all), TEACHER_REMEASURE (1;
 #   0 = reuse TEACHER_TRACE_DIR / TEACHER_EVAL_LOG, default the teacher run's holdout_ft/ and eval_3dpw_test.log), BENCH
-#   (1), RUN (student_<vitb|vits>_from_<teacher tag>_e<EPOCHS>[_it<N_ITERS>][_b<BATCH>][_shpmask][_nofix][_dinov2][_smoke]),
+#   (1), RUN (student_<vitb|vits>_from_<teacher tag>_e<EPOCHS>[_it<N_ITERS>][_b<BATCH>][_T<KD_T>][_shpmask][_nofix][_dinov2][_smoke];
+#   _T<KD_T> only when KD_T is not 4, so the reported T 4 runs keep their names and a KD_T sweep never lands in them),
 #   TIME (from EPOCHS, see above), SMOKE (0; 1 = EPOCHS 1, N_ITERS 20, VAL_3DPW_N 20, N_VIS 2, N_EST 20, EVAL_3DPW_N 50,
 #   EVAL_FREQ 1 unless set), PARTITIONS, TORCH_CACHE (/netscratch/najib/torch_cache), MANIFEST, TASKS, N_LABEL_CHECK (300),
 #   ALLOW_RECIPE_MISMATCH (0), CHECK_ONLY, DRY_RUN, OVERWRITE, TABLE_ONLY, LOCAL_CHECK, IGNORE_PLAIN_SBATCH.
@@ -245,6 +250,7 @@ if [ "${MASK_3DPW_SHAPE}" = 1 ] && [ -n "${MASK_3DPW_SHAPE_NAMES}" ]; then
 fi
 VAL_3DPW_N="${VAL_3DPW_N:-300}"; nonneg VAL_3DPW_N "${VAL_3DPW_N}"
 EVAL_FREQ="${EVAL_FREQ:-5}"; posint EVAL_FREQ "${EVAL_FREQ}"
+VAL_LOSS="${VAL_LOSS:-0}"; onezero VAL_LOSS "${VAL_LOSS}"
 NB_MAX_CKPT="${NB_MAX_CKPT:-3}"; posint NB_MAX_CKPT "${NB_MAX_CKPT}"
 NUM_WORKERS="${NUM_WORKERS:-12}"; nonneg NUM_WORKERS "${NUM_WORKERS}"
 N_EST="${N_EST:-200}"; posint N_EST "${N_EST}"
@@ -278,6 +284,9 @@ TEACHER_EVAL_LOG="${TEACHER_EVAL_LOG:-${TEACHER_RUN_DIR:+${TEACHER_RUN_DIR}/eval
 SUFFIX=""
 [ "${N_ITERS}" = 1000 ] || SUFFIX="${SUFFIX}_it${N_ITERS}"
 [ "${BATCH}" = 8 ] || SUFFIX="${SUFFIX}_b${BATCH}"
+# KD_T in the name only when it is not the recipe's 4 (numeric compare: "4", "4.0", "4e0" all mean the default), so the
+# reported T 4 runs (jobs 3614191, 3623342) keep their folder names and a sweep value never overwrites them
+[ "$(awk -v t="${KD_T}" 'BEGIN { print (t + 0 == 4) ? 1 : 0 }')" = 1 ] || SUFFIX="${SUFFIX}_T${KD_T}"
 [ "${MASK_3DPW_SHAPE}" = 1 ] && SUFFIX="${SUFFIX}${SHAPE_TAG}"
 [ "${STUDENT_TRAIN_FIX}" = none ] && SUFFIX="${SUFFIX}_nofix"
 [ "${STUDENT_INIT}" = dinov2 ] && SUFFIX="${SUFFIX}_dinov2"
@@ -329,7 +338,7 @@ ${TRAIN_FIX_ARG} --mask_helper_joints_train 1 --use_anny_shape 1 \
 --brightness 0.2 --contrast 0.2 --saturation 0.2 --hue 0.05 \
 --batch_size ${BATCH} --num_workers ${NUM_WORKERS} --n_iters_per_epoch ${N_ITERS} --max_iter ${MAX_ITER} \
 --learning_rate ${LR} --lr_decay_every ${LR_DECAY_EVERY} --lr_decay_gamma 0.5 --amp 0 --tf32 1 \
---eval_freq ${EVAL_FREQ} --nb_max_ckpt ${NB_MAX_CKPT} --log_freq 50 \
+--eval_freq ${EVAL_FREQ} --val_loss ${VAL_LOSS} --nb_max_ckpt ${NB_MAX_CKPT} --log_freq 50 \
 --save_dir ${OUT_ABS} --name train"
 TRAIN_CMD="$(printf '%s' "${TRAIN_CMD}" | tr -s ' ')"
 pretty () { printf '%s\n' "$1" | sed 's/ --/ \\\n    --/g'; }
@@ -751,7 +760,7 @@ bash_checks () {
       fail=1 ;;
   esac
   for s in init_heads_from_teacher head_dim freeze_heads_epochs teacher_bf16 lambda_kd_out gt_center_joint \
-           exclude_indices_file mask_3dpw_hands bone_fix; do
+           exclude_indices_file mask_3dpw_hands bone_fix val_loss; do
     grep -q -- "--${s}" "${REPO}/train.py" || { echo "REFUSED: train.py has no --${s} (old copy: git pull)"; fail=1; }
   done
   [ "${MASK_3DPW_SHAPE}" = 1 ] && ! grep -q -- "--mask_3dpw_shape" "${REPO}/loss.py" \
@@ -876,6 +885,8 @@ print_settings () {
        "mask shape ${MASK_3DPW_SHAPE}"
   echo "    ${EPOCHS} epochs x ${N_ITERS} iterations x batch ${BATCH} = $(( MAX_ITER * BATCH )) images, lr ${LR} (x0.5 every"\
        "${LR_DECAY_EVERY} epochs); time limit ${TIME} (allowance ${NEED_MIN} min at 6 images/s)"
+  echo "    in-training evaluation every ${EVAL_FREQ} epoch(s) (holdout + ${VAL_3DPW_N} 3DPW-validation images);"\
+       "validation loss (--val_loss) ${VAL_LOSS}"
   echo "    post: bone fix on ${N_EST} training images (seed ${SEED}, BONES ${BONES}, ON_GLOBAL_RISE ${ON_GLOBAL_RISE});"\
        "3DPW test ${EVAL_TEST} (${EVAL_3DPW_N} images, 0 = all); teacher re-measured ${TEACHER_REMEASURE}; bench ${BENCH}"
   [ "${SMOKE}" = 1 ] && echo "    SMOKE=1: a start-up / pipeline test, not a result"
@@ -1069,6 +1080,7 @@ TRAIN_CMD="${TRAIN_CMD}"
   echo "LAMBDA_KD=${LAMBDA_KD} LAMBDA_KD_OUT=${LAMBDA_KD_OUT} KD_T=${KD_T} FREEZE_HEADS_EPOCHS=${FREEZE_HEADS_EPOCHS} START_2D_EPOCH=${START_2D_EPOCH}"
   echo "ALPHA_DIST=${ALPHA_DIST} ALPHA_TRANSL=${ALPHA_TRANSL} LABELS=${LABELS} MIX_RATIO=${MIX_RATIO} MASK_3DPW_HANDS=${MASK_3DPW_HANDS} MASK_3DPW_SHAPE=${MASK_3DPW_SHAPE}"
   echo "N_EST=${N_EST} SEED=${SEED} BONES=${BONES} ON_GLOBAL_RISE=${ON_GLOBAL_RISE} EVAL_TEST=${EVAL_TEST} EVAL_3DPW_N=${EVAL_3DPW_N} TEACHER_REMEASURE=${TEACHER_REMEASURE} SMOKE=${SMOKE} TIME=${TIME}"
+  echo "EVAL_FREQ=${EVAL_FREQ} VAL_LOSS=${VAL_LOSS} VAL_3DPW_N=${VAL_3DPW_N}"
   echo "\${TRAIN_CMD}"
 } > "${OUT}/settings.txt"
 
@@ -1080,7 +1092,7 @@ echo "training wall time: \$(( \$(date +%s) - T0 )) s"
 tr '\r' '\n' < "${OUT}/train.log" > "${OUT}/train_lines.log"
 grep -E "^\[distill\]|^\[pretrained\]|^\[bone_fix\]|^\[mixed\]|^\[age_balance\]|^\[loss\] mask_3dpw|^\[speed\]|^Loaded .*3DPW-Anny|^3DPW-Anny val" "${OUT}/train_lines.log" || true
 echo "--- throughput and in-training evaluation (V0; student with its training fix)"
-grep -E "\[throughput\]|EVAL METRICS| - (pve|pa_pve|mpjpe|recall): |Error|Traceback" "${OUT}/train_lines.log" || true
+grep -E "\[throughput\]|EVAL METRICS| - (pve|pa_pve|mpjpe|recall): |^\[val_loss\]|Error|Traceback" "${OUT}/train_lines.log" || true
 echo "NaN/Inf gradient steps skipped: \$(grep -c 'NaN/Inf GRADIENTS' "${OUT}/train_lines.log" || true)"
 MISSING=""
 grep -qE "^\[distill\] teacher loaded from" "${OUT}/train_lines.log" || MISSING="\${MISSING} '[distill] teacher loaded from';"

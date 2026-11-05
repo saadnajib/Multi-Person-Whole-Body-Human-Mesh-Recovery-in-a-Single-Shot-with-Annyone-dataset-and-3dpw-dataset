@@ -607,13 +607,15 @@ class Trainer(object):
                                                'mpjpe', 'pa_mpjpe'
                                                ]}
         count, miss, fp = 0, 0, 0
+        # --val_loss: the training criterion on the same validation batches (see val_loss_step); {} = off
+        val_loss_meters = {} if int(getattr(self.args, 'val_loss', 0)) else None
 
         for i, (x,y) in enumerate(tqdm(data)):
             if x is None or y is None:
                 continue
             # move tensor to device
             y = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in y.items()}
-            
+
             # preprare gt by computing mesh and 3d/2d joints
             gt = self.prepare_gt(y=y)
             if gt is None:
@@ -622,8 +624,13 @@ class Trainer(object):
             # forward
             with torch.cuda.amp.autocast(enabled=bool(args.amp)):
                 x = x.to(self.device) # [bs,3,w,h]
-                pred = self.model(x, is_training=False, K=gt['K'], 
+                pred = self.model(x, is_training=False, K=gt['K'],
                                   det_thresh=self.args.det_thresh, nms_kernel_size=self.args.nms_kernel_size)
+
+            # --val_loss: a second, training-style forward at the GT locations, before the detection
+            # matching below can `continue` past this image
+            if val_loss_meters is not None:
+                self.val_loss_step(x, gt, ds_name, val_loss_meters)
 
             # match pred to gt - based on 2d bbox
             kp2d_gts = gt['j2d'].cpu().numpy()
@@ -764,9 +771,86 @@ class Trainer(object):
         for k, v in meters.items():
             self.writer.add_scalar(f"{ds_name}-{ds_split}-{ds_subsample}/{k}", v.avg, self.current_iter)
             print(f"    - {k}: {v.avg:.1f}")
+        if val_loss_meters is not None:
+            self.val_loss_report(f"{ds_name}-{ds_split}-{ds_subsample}", val_loss_meters)
         self.writer.flush() # https://github.com/pytorch/pytorch/issues/24234
         sys.stdout.flush()
         return meters['pve'].avg
+
+    # --------------------------------------------------------------------- #
+    # --val_loss: the training criterion on the validation images
+    # --------------------------------------------------------------------- #
+    def val_loss_step(self, x, gt, ds_name, meters):
+        """One validation batch through the TRAINING path: the same forward as train_n_iters (is_training=True
+        at the GT query locations, so loss.py sees per-person outputs that line up with the targets), the
+        same Loss(...) call with the current epoch (so --start_2d_epoch acts as in training) and, when a
+        teacher is loaded, the same kd / kd_out distillation terms. Runs inside evaluate(): model in eval
+        mode, under its @torch.no_grad(). Updates `meters` (one AverageMeter per term, keyed as the training
+        dict_loss: total, bce, ..., kd, kd_out); the terms that cannot be computed on a batch are recorded in
+        meters['_skipped'] (a dict term -> reason) and reported once by val_loss_report."""
+        gt = dict(gt)
+        # The validation loaders are not wrapped in HandLabelFlag (train.py tags the TRAINING sets only), so a
+        # configured hand / shape label mask would not find has_hand_labels. Tag the batch as the wrapper would:
+        # 1 = AnnyOne (fitted finger rotations and phenotypes), 0 = 3DPW-Anny (converter placeholders).
+        if 'has_hand_labels' not in gt and (getattr(self.loss, 'hand_label_mask', None) is not None
+                                            or getattr(self.loss, 'shape_label_mask', None) is not None):
+            flag = 0.0 if ds_name == 'threedpw_anny' else 1.0
+            gt['has_hand_labels'] = torch.full((gt['rotmat'].shape[0],), flag, device=self.device)
+            meters.setdefault('_notes', {})['has_hand_labels'] = (
+                f"not in the batch: set to {flag:.0f} for every person (label origin {ds_name}), as the "
+                f"HandLabelFlag wrapper does in training")
+        with torch.cuda.amp.autocast(enabled=bool(self.args.amp)):
+            pred = self.model(x, is_training=True, idx=gt['idx'], K=gt['K'])
+            pred['transl_pelvis'] = pred['transl_pelvis'].reshape(-1, 3)
+            pred['transl'] = pred['transl'].reshape(-1, 3)
+            loss, dict_loss = self.loss(pred, gt, epoch=self.current_epoch, img_size=self.args.img_size)
+            if self.teacher is not None and self.kd_loss is not None:
+                t_out = self.teacher(x, is_training=True, idx=gt['idx'], K=gt['K'])
+                kd = self.kd_loss(pred['backbone_feat'], t_out['backbone_feat'])
+                kd = torch.nan_to_num(kd, nan=0.0, posinf=0.0, neginf=0.0)
+                loss = loss + self.args.lambda_kd * kd
+                dict_loss['kd'] = kd
+                lko = float(getattr(self.args, 'lambda_kd_out', 0.0))
+                if lko > 0:
+                    if pred['rotmat'].shape == t_out['rotmat'].shape:
+                        a = self.args
+                        kd_rot = self.loss.rotation_distill_term(pred['rotmat'], t_out['rotmat'].detach())
+                        kd_shp = (pred['shape'] - t_out['shape'].detach()).abs().sum(-1).mean()
+                        kd_dst = (pred['dist_postprocessed'].reshape(-1)
+                                  - t_out['dist_postprocessed'].detach().reshape(-1)).abs().mean()
+                        kd_out = (a.alpha_rotmat * kd_rot + a.alpha_shape * kd_shp
+                                  + a.alpha_dist * kd_dst)
+                        kd_out = torch.nan_to_num(kd_out, nan=0.0, posinf=0.0, neginf=0.0)
+                        loss = loss + lko * kd_out
+                        dict_loss['kd_out'] = kd_out
+                    else:
+                        meters.setdefault('_skipped', {})['kd_out'] = 'student / teacher rotmat shapes differ'
+            dict_loss['total'] = loss
+        for k, v in dict_loss.items():
+            if k not in meters:
+                meters[k] = AverageMeter(f"val_loss/{k}")
+            meters[k].update(float(v.item()))
+
+    def val_loss_report(self, ds_tag, meters):
+        """End of one evaluate() pass: val_loss/<dataset>/<term> to tensorboard (x = current_iter, like the
+        metrics) and one stdout line '[val_loss] epoch=### ds=<dataset> n=<batches> total=... <term>=...',
+        followed by the notes / skipped terms, if any."""
+        terms = [k for k in meters if not k.startswith('_')]
+        if 'total' in terms:
+            terms.remove('total')
+            terms.insert(0, 'total')
+        n = meters['total'].count if 'total' in meters else 0
+        for k in terms:
+            self.writer.add_scalar(f"val_loss/{ds_tag}/{k}", meters[k].avg, self.current_iter)
+        vals = " ".join(f"{k}={meters[k].avg:.4f}" for k in terms)
+        print(f"[val_loss] epoch={self.current_epoch:03d} ds={ds_tag} n={n} {vals}", flush=True)
+        if self.teacher is None:
+            print(f"[val_loss] epoch={self.current_epoch:03d} ds={ds_tag} no teacher loaded: supervised terms only "
+                  f"(no kd / kd_out, as in training)", flush=True)
+        for k, why in sorted((meters.get('_skipped') or {}).items()):
+            print(f"[val_loss] epoch={self.current_epoch:03d} ds={ds_tag} skipped {k}: {why}", flush=True)
+        for k, why in sorted((meters.get('_notes') or {}).items()):
+            print(f"[val_loss] epoch={self.current_epoch:03d} ds={ds_tag} note {k}: {why}", flush=True)
 
 
 # --------------------------------------------------------------------------- #
@@ -1715,6 +1799,14 @@ if __name__ == "__main__":
                              "--pretrained checkpoint's own fix when it has one and load_only_backbone is 0; "
                              "'none' = off even then.")
     parser.add_argument('--eval_freq', type=int, default=1, help='run evaluation every N epochs')
+    parser.add_argument('--val_loss', type=int, default=0, choices=[0, 1],
+                        help='1: every evaluate() pass also computes the TRAINING criterion (the supervised terms, '
+                             'plus the kd / kd_out distillation terms when a teacher is loaded) on the validation '
+                             'images, in eval mode under no_grad, averaged over the batches, and logs it as '
+                             'val_loss/<dataset>/<term> (tensorboard) and one "[val_loss] epoch=... ds=..." stdout '
+                             'line per dataset: a validation loss next to the training loss for the over-fitting '
+                             'read. Costs one extra student (+ teacher) forward per validation image. 0 = off '
+                             '(evaluate() unchanged).')
     parser.add_argument('--det_thresh', type=float, default=0.2)
     parser.add_argument('--nms_kernel_size', type=int, default=3)
     parser.add_argument('--crops', type=int, nargs='+', default=[0])

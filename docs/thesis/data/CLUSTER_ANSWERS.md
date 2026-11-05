@@ -109,3 +109,20 @@ stairs (downtown_sitOnStairs), downtown_walkBridge/walking pair, weekly market (
 - Final table (lines 259-283): bars AnnyOne PVE <= 77.6, MPJPE <= 82.0; 3DPW PVE <= 93.7, MPJPE <= 92.9. VERDICT: FAIL on all four.
 - Against Multi-HMR-Anny (NAVER): 3DPW 110.1 vs 126.9 mm (student better), 101.38 vs 380.94 M params (3.76x fewer);
   AnnyOne 119.6 vs 60.3 (NAVER likely in-sample). Against NAVER's bars (63.5 / 133.6): 3DPW met, AnnyOne not met.
+
+## PENDING exp9 (supervisor 22 Oct: KD temperature sweep + loss curves; `slurm/experiments/exp9_kd_temperature.sh`, not yet submitted)
+Launch: `CHECK_ONLY=1 bash slurm/experiments/exp9_kd_temperature.sh`, then `bash slurm/experiments/exp9_kd_temperature.sh`
+(5 jobs: T 1, 2, 4, 8, 16; RUN `student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT<t>_sweep`; ~7.5 h wall each on an L40S).
+Send back, when the jobs are done:
+- the launcher's output (the five `submitted: job <id>` lines) or `logs/exp9_kd_temperature_<date>.txt` (temperature, RUN, job id);
+- per job: `logs/exp8_distill_vitb_<jobid>.out` (its `=== 6. FINAL TABLE` block and VERDICT) and, from
+  `results/experiments/exp8_distill_vitb/<RUN>/`: `final_table.json`, `settings.txt`, `train_lines.log` (or `train.log`),
+  `holdout_student/summary.json`, `eval_3dpw_test_student.log`;
+- the collector's outputs: `results/experiments/exp9_kd_temperature/kd_temperature_sweep.csv`, `.png`, `.pdf` and the stdout of
+  `python scripts/analysis/kd_temperature_sweep.py --runs "results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT*_sweep" --reported results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30 --out results/experiments/exp9_kd_temperature`
+  (the per-metric minima, the PICK line, the T 4 run-to-run noise line);
+- the loss curves: `results/experiments/exp9_kd_temperature/loss_curves/<RUN>_loss_curves.{png,pdf,csv}` and the printed slopes +
+  VERDICT lines of `python scripts/analysis/plot_loss_curves.py <run folders> --out results/experiments/exp9_kd_temperature/loss_curves`,
+  run on the five sweep folders AND, already now, on the two finished runs
+  `results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30` (job 3614191) and
+  `..._e60` (job 3623342): train loss + validation PVE every 5 epochs, no validation loss (the old runs predate `--val_loss`).
