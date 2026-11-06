@@ -1,4 +1,4 @@
-"""Unsmoothed, frame-by-frame Student / original Multi-HMR video comparison.
+"""Student / original Multi-HMR video comparison with optional temporal filtering.
 
 See docs/video_inference.md. Model/graphics imports are lazy so --help and file
 validation work without initializing CUDA or EGL. Only load trusted checkpoints.
@@ -35,6 +35,17 @@ def parse_args(argv=None):
                    help='Exclude the first N processed frames from timing statistics; keep them in the videos')
     p.add_argument('--panel-size', type=int, default=672)
     p.add_argument('--amp', action='store_true', help='Opt into CUDA mixed precision for all models')
+    p.add_argument('--temporal', choices=('off', 'ema'), default='off',
+                   help='ema: add a causal filtered student alongside raw outputs; no retraining')
+    p.add_argument('--temporal-pose-tau', type=float, default=0.08, help='Rotation smoothing time constant, seconds')
+    p.add_argument('--temporal-translation-tau', type=float, default=0.12, help='Head-anchor smoothing time constant, seconds')
+    p.add_argument('--temporal-shape-tau', type=float, default=1.0, help='Shape smoothing time constant, seconds')
+    p.add_argument('--temporal-max-gap', type=float, default=0.25, help='Reset temporal state above this time gap, seconds')
+    p.add_argument('--alignment', choices=('off', 'landmarks'), default='off',
+                   help='landmarks: refine Student placement/depth using independent 2D observations')
+    p.add_argument('--landmarks', type=Path, help='JSON from scripts/video/extract_pose_landmarks.py for this original video')
+    p.add_argument('--alignment-min-confidence', type=float, default=0.5)
+    p.add_argument('--alignment-depth-tau', type=float, default=0.35, help='Alignment depth smoothing seconds; 0 disables')
     return p.parse_args(argv)
 
 
@@ -69,6 +80,23 @@ def validate_args(args):
         raise ValueError('stride must be positive; start-frame and max-frames must be nonnegative')
     if args.warmup_frames < 0:
         raise ValueError('--warmup-frames must be nonnegative')
+    for name in ('temporal_pose_tau', 'temporal_translation_tau', 'temporal_shape_tau'):
+        if not math.isfinite(getattr(args, name)) or getattr(args, name) < 0:
+            raise ValueError('--{} must be finite and nonnegative'.format(name.replace('_', '-')))
+    if not math.isfinite(args.temporal_max_gap) or args.temporal_max_gap <= 0:
+        raise ValueError('--temporal-max-gap must be finite and positive')
+    if args.temporal != 'off' and args.amp:
+        raise ValueError('Temporal Anny re-decoding currently requires fp32: omit --amp')
+    if not math.isfinite(args.alignment_min_confidence) or not 0 <= args.alignment_min_confidence <= 1:
+        raise ValueError('--alignment-min-confidence must be in [0, 1]')
+    if not math.isfinite(args.alignment_depth_tau) or args.alignment_depth_tau < 0:
+        raise ValueError('--alignment-depth-tau must be finite and nonnegative')
+    if args.alignment == 'landmarks':
+        if args.landmarks is None:
+            raise ValueError('--alignment landmarks requires --landmarks JSON for the original video')
+        args.landmarks = require_file(args.landmarks)
+    elif args.landmarks is not None:
+        raise ValueError('--landmarks requires --alignment landmarks')
     if args.panel_size < 128 or args.panel_size % 2:
         raise ValueError('--panel-size must be an even integer of at least 128 (video codec requirement)')
     if args.student_only and args.teacher_checkpoint:
@@ -227,14 +255,19 @@ class MeshRenderer:
                     os.environ.get('__EGL_VENDOR_LIBRARY_FILENAMES', '<unset>'))) from exc
 
     def render(self, rgb, vertices):
+        return self.render_many(rgb, [vertices])
+
+    def render_many(self, rgb, bodies):
+        """Render all people in one scene, sharing the depth buffer."""
         import numpy as np
         import trimesh
         p = self.pyrender
         scene = p.Scene(bg_color=[0, 0, 0, 0], ambient_light=[0.5, 0.5, 0.5])
-        mesh = trimesh.Trimesh(vertices=vertices, faces=self.faces, process=False)
         material = p.MetallicRoughnessMaterial(baseColorFactor=(0.25, 0.85, 0.95, 1),
                                                metallicFactor=0, roughnessFactor=0.7, doubleSided=True)
-        scene.add(p.Mesh.from_trimesh(mesh, material=material, smooth=False))
+        for vertices in bodies:
+            mesh = trimesh.Trimesh(vertices=vertices, faces=self.faces, process=False)
+            scene.add(p.Mesh.from_trimesh(mesh, material=material, smooth=False))
         camera = p.IntrinsicsCamera(self.K[0, 0], self.K[1, 1], self.K[0, 2], self.K[1, 2],
                                     znear=0.01, zfar=1000)
         pose = np.diag([1., -1., -1., 1.])  # CV: x right/y down/z forward -> OpenGL camera.
@@ -266,6 +299,38 @@ class TorchPredictor:
         self.joint_names = list(model.body_model.bone_labels)
         self.metadata = metadata
         self.last_timings = {}
+
+    @property
+    def anchor_index(self):
+        return self.model.person_center_idx
+
+    def decode_temporal(self, rotvec, shape, anchor):
+        """Decode already-corrected parameters; never reapply sigmoid or bone fixes.
+
+        Match the image model's Anny convention and skinning. A changed shape or
+        pose changes the head location, so recenter on the newly decoded head.
+        """
+        import torch
+        import roma
+        from utils import rotation_to_homogeneous
+        with torch.inference_mode():
+            rotations = roma.rotvec_to_rotmat(torch.as_tensor(
+                rotvec, dtype=torch.float32, device=self.device)).unsqueeze(0)
+            phenotypes = torch.as_tensor(shape, dtype=torch.float32, device=self.device).unsqueeze(0)
+            translation = torch.as_tensor(anchor, dtype=torch.float32, device=self.device).reshape(1, 1, 3)
+            kwargs = dict(pose_parameters=rotation_to_homogeneous(rotations),
+                          phenotype_kwargs={name: phenotypes[:, i] for i, name in enumerate(self.phenotype_names)})
+            convention = self.metadata.get('decode_pose_parameterization')
+            if convention is not None:
+                kwargs['pose_parameterization'] = convention
+            decoded = self.model.body_model(**kwargs)
+            joints = decoded['bone_poses'][:, :, :3, -1]
+            offset = translation - joints[:, [self.anchor_index]]
+            vertices = decoded['vertices'] + offset
+            joints = joints + offset
+            # CPU copies complete this work before the outer temporal timer ends.
+            return dict(vertices=as_numpy(vertices[0]), joints=as_numpy(joints[0]),
+                        shape=as_numpy(phenotypes[0]), rotvec=as_numpy(rotvec), anchor=as_numpy(anchor))
 
     def synchronize(self):
         import torch
@@ -334,7 +399,7 @@ def load_predictor(checkpoint, kind, fix, device, amp):
     correction = None
     correction_origin = 'not supported by original Multi-HMR'
     if kind == 'baseline':
-        from multi_hmr_anny.multi_hmr import Multi_HMR
+        from multi_hmr_anny.multi_hmr import Multi_HMR, POSE_PARAMETERIZATION
         # Read architecture from actual tensors: released NAVER checkpoint uses 1024/2048.
         kwargs['xat_dim'] = int(sd['dec_to_token.weight'].shape[0])
         kwargs['xat_mlp_dim'] = int(sd['decoder.transformer.layers.0.2.fn.net.0.weight'].shape[0])
@@ -374,6 +439,7 @@ def load_predictor(checkpoint, kind, fix, device, amp):
                     precision='amp' if amp else ('fp32_with_tf32' if device.type == 'cuda' else 'fp32'),
                     checkpoint_pose_label=pose_label,
                     body_model_default_pose_parameterization=getattr(model.body_model, 'default_pose_parameterization', None),
+                    decode_pose_parameterization=POSE_PARAMETERIZATION if kind == 'baseline' else None,
                     bone_fix_source=correction_origin, bone_fix_spec=correction,
                     helper_joint_mask=True, relax_hands=False, detection_threshold=0.3)
     print('[{}] loaded {} ({:.1%} state coverage), correction: {}'.format(
@@ -403,7 +469,7 @@ def visible_detections(people, K, size):
     return detections
 
 
-def save_measurements(directory, records, predictor, stride, warmup_frames, playback_fps):
+def save_measurements(directory, records, predictor, stride, warmup_frames, playback_fps, temporal=None, alignment=None):
     import numpy as np
     from scripts.video.video_utils import summarize_stability, summarize_timing
     directory.mkdir()
@@ -414,12 +480,24 @@ def save_measurements(directory, records, predictor, stride, warmup_frames, play
     summary.pop('bone_rotation_speed_degrees_per_s')
     summary['joint_names'] = predictor.joint_names
     summary['phenotype_names'] = predictor.phenotype_names
-    summary['rotation_note'] = 'Raw rotvec saved for reproduction; comparison uses Cartesian joint motion.'
+    summary['rotation_note'] = 'Output rotvec saved for reproduction; comparison uses Cartesian joint motion.'
+    summary['processing'] = temporal or {'method': 'none', 'source': 'raw image-model predictions'}
+    if temporal:
+        summary['caveat'] = ('Causally filtered predictions; filtering can reduce real motion and introduce lag. '
+                             'Lower motion proxies do not establish better reconstruction accuracy. '
+                             'Missing frames and track boundaries break temporal differences.')
+    if alignment:
+        summary['processing'] = alignment
+        summary['caveat'] = ('Camera placement fitted to independent detected 2D landmarks; pose and shape are retained. '
+                             'Better reprojection does not establish better 3D accuracy. '
+                             'Missing or unreliable observations keep the unaligned prediction.')
     summary['timing'] = summarize_timing(records, warmup_frames, playback_fps)
     write_json(directory / 'summary.json', summary)
     n, nj, ns = len(records), len(predictor.joint_names), len(predictor.phenotype_names)
     arrays = {key: np.full((n,) + shape, np.nan, np.float32)
               for key, shape in dict(shape=(ns,), root=(3,), joints=(nj, 3), rotvec=(nj, 3), bbox=(4,)).items()}
+    if any('anchor' in record for record in records):
+        arrays['anchor'] = np.full((n, 3), np.nan, np.float32)
     for index, record in enumerate(records):
         if record['selected_index'] is not None:
             for key in arrays:
@@ -432,8 +510,11 @@ def save_measurements(directory, records, predictor, stride, warmup_frames, play
                         joint_names=np.array(predictor.joint_names), phenotype_names=np.array(predictor.phenotype_names))
     fields = ['frame_index', 'timestamp_s', 'status', 'segment_id', 'selected_index', 'detections',
               'valid_detections', 'confidence', 'forward_ms', 'timing_included',
-              'preprocess_ms', 'inference_ms', 'output_transfer_ms', 'render_ms', 'root_step_m', 'root_speed_m_per_s',
-              'mean_joint_speed_m_per_s', 'mean_joint_acceleration_m_per_s2']
+              'preprocess_ms', 'inference_ms', 'output_transfer_ms', 'render_ms', 'temporal_ms', 'temporal_state',
+              'processing_ms', 'root_step_m', 'root_speed_m_per_s',
+              'mean_joint_speed_m_per_s', 'mean_joint_acceleration_m_per_s2',
+              'alignment_ms', 'alignment_status', 'alignment_accepted',
+              'landmark_error_before_px', 'landmark_error_after_px', 'landmark_count', 'landmark_detector_ms']
     fields += ['shape_' + name for name in predictor.phenotype_names]
     with (directory / 'frames.csv').open('w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=fields)
@@ -460,18 +541,71 @@ def save_measurements(directory, records, predictor, stride, warmup_frames, play
     return summary
 
 
-def process_model(args, kind, title, predictor, info, renderer_factory):
+def temporal_settings(args):
+    return dict(method='causal_exponential_parameter_filter', learned=False,
+                pose_tau_s=args.temporal_pose_tau, translation_tau_s=args.temporal_translation_tau,
+                shape_tau_s=args.temporal_shape_tau, max_gap_s=args.temporal_max_gap,
+                rotations='shortest-arc quaternion interpolation',
+                placement='filtered camera-space head anchor; re-decoded Anny geometry',
+                missing='no interpolation; reset on missing detections, track or time discontinuity')
+
+
+def temporal_person(person, predictor, state, timestamp, segment, K, size):
+    """Rebuild a valid body from filtered parameters, retaining raw provenance."""
+    import numpy as np
+    params = state.update(person['rotvec'], person['shape'], person['joints'][predictor.anchor_index],
+                          timestamp, segment)
+    decoded = predictor.decode_temporal(params['rotvec'], params['shape'], params['anchor'])
+    if params['state'] != 'filtered':
+        # The first body in each segment should be unchanged. This catches a
+        # wrong decoder convention or accidentally applied correction early.
+        for key in ('vertices', 'joints'):
+            if not np.allclose(decoded[key], person[key], atol=1e-4, rtol=1e-4):
+                raise RuntimeError('Temporal Anny re-decode does not reproduce raw {}. Check body convention/correction.'.format(key))
+    decoded['confidence'] = person['confidence']
+    valid = visible_detections([decoded], K, size)
+    if not valid:
+        # Do not render invalid/behind-camera interpolation. Retain a real raw
+        # observation, mark the fallback, and discard filter history.
+        state.reset()
+        return dict(person), 'fallback_raw_invalid_geometry'
+    return valid[0], params['state']
+
+
+def process_model(args, kind, title, predictor, info, renderer_factory, landmark_sequence=None):
     from scripts.video.video_utils import SinglePersonTracker
     tracker = SinglePersonTracker()
     size, fps = args.panel_size, info['fps']
     K = camera_matrix(size, args.fov)
     input_K = camera_matrix(predictor.input_size, args.fov)
-    renderer = writer = input_writer = None
-    records = []
+    renderer = writer = input_writer = temporal_writer = aligned_writer = None
+    records, temporal_records, aligned_records, alignment_reports = [], [], [], []
+    use_temporal = kind == 'student' and args.temporal == 'ema'
+    use_alignment = kind == 'student' and args.alignment == 'landmarks'
+    if use_alignment:
+        from scripts.video.landmark_alignment import align_to_landmarks
+        from scripts.video.alignment_depth_filter import AlignmentDepthFilter
+        alignment_filter = AlignmentDepthFilter(args.alignment_depth_tau, args.temporal_max_gap)
+        if landmark_sequence is None:
+            raise ValueError('Alignment requires validated landmark observations')
+    temporal_filter = None
+    if use_temporal:
+        from scripts.video.temporal_filter import TemporalBodyFilter
+        temporal_filter = TemporalBodyFilter(pose_tau=args.temporal_pose_tau,
+                                              translation_tau=args.temporal_translation_tau,
+                                              shape_tau=args.temporal_shape_tau,
+                                              max_gap_s=args.temporal_max_gap)
+        if not callable(getattr(predictor, 'decode_temporal', None)):
+            raise ValueError('Temporal processing requires an Anny parameter decoder')
     measured_count, inference_total_ms = 0, 0.0
+    processing_total_ms = aligned_total_ms = 0.0
     try:
         renderer = renderer_factory(size, K, predictor.faces)
         writer = VideoWriter(args.output / (kind + '.mp4'), fps / args.stride, size, size + 64)
+        if use_temporal:
+            temporal_writer = VideoWriter(args.output / 'student_temporal.mp4', fps / args.stride, size, size + 64)
+        if use_alignment:
+            aligned_writer = VideoWriter(args.output / 'student_aligned.mp4', fps / args.stride, size, size + 64)
         if kind == 'student':
             input_writer = VideoWriter(args.output / 'input.mp4', fps / args.stride, size, size + 64)
         for frame_index, rgb in selected_frames(args.video, args.start_frame, args.stride, args.max_frames):
@@ -490,6 +624,10 @@ def process_model(args, kind, title, predictor, info, renderer_factory):
             record = dict(tracking, frame_index=frame_index, timestamp_s=timestamp,
                           detections=len(people), valid_detections=len(detections), forward_ms=forward_ms,
                           timing_included=len(records) >= args.warmup_frames, **stages)
+            filtered_record = dict(record)
+            filtered_panel = panel.copy() if use_temporal else None
+            aligned_record = dict(record)
+            aligned_panel = panel.copy() if use_alignment else None
             status = 'NO MATCH ({} detections)'.format(len(people))
             if tracking['selected_index'] is not None:
                 person = detections[tracking['selected_index']]
@@ -498,16 +636,89 @@ def process_model(args, kind, title, predictor, info, renderer_factory):
                 record['render_ms'] = (time.perf_counter() - render_started) * 1000
                 record.update({key: person[key] for key in ('shape', 'joints', 'rotvec', 'bbox', 'confidence')})
                 record['root'] = person['joints'][0].copy()
+                if hasattr(predictor, 'anchor_index'):
+                    record['anchor'] = person['joints'][predictor.anchor_index].copy()
                 status = '{} | track {} | {:.2f}'.format(tracking['status'], tracking['segment_id'], person['confidence'])
+                alignment_source = person
+                if use_temporal:
+                    temporal_started = time.perf_counter()
+                    if records and frame_index - records[-1]['frame_index'] != args.stride:
+                        temporal_filter.reset()
+                    filtered, filter_status = temporal_person(person, predictor, temporal_filter, timestamp,
+                                                              tracking['segment_id'], K, size)
+                    filtered_record.update(temporal_ms=(time.perf_counter() - temporal_started) * 1000,
+                                           temporal_state=filter_status)
+                    filtered_record.update({key: filtered[key] for key in ('shape', 'joints', 'rotvec', 'bbox', 'confidence')})
+                    filtered_record['root'] = filtered['joints'][0].copy()
+                    filtered_record['anchor'] = filtered['joints'][predictor.anchor_index].copy()
+                    render_started = time.perf_counter()
+                    filtered_panel = renderer.render(filtered_panel, filtered['vertices'])
+                    filtered_record['render_ms'] = (time.perf_counter() - render_started) * 1000
+                    alignment_source = filtered
+                if use_alignment:
+                    align_started = time.perf_counter()
+                    observations, association = landmark_sequence.observation(frame_index, size, person['bbox'])
+                    aligned, report = align_to_landmarks(alignment_source, predictor.joint_names,
+                                                         observations, K, size, args.alignment_min_confidence)
+                    if records and frame_index - records[-1]['frame_index'] != args.stride:
+                        alignment_filter.reset()
+                    aligned, report = alignment_filter.apply(
+                        alignment_source, aligned, report, predictor.joint_names, K, size,
+                        timestamp, tracking['segment_id'])
+                    aligned_record['alignment_ms'] = (time.perf_counter() - align_started) * 1000
+                    aligned_record.update({key: aligned[key] for key in ('shape', 'joints', 'rotvec', 'bbox', 'confidence')})
+                    aligned_record['root'] = aligned['joints'][0].copy()
+                    if hasattr(predictor, 'anchor_index'):
+                        aligned_record['anchor'] = aligned['joints'][predictor.anchor_index].copy()
+                    report.update(frame_index=frame_index, timestamp_s=timestamp, association=association)
+                    if not observations:
+                        report['status'] = association['status']
+                    aligned_record.update(alignment_status=report['status'], alignment_accepted=report['accepted'],
+                                           landmark_error_before_px=report['before_error_px'],
+                                           landmark_error_after_px=report['after_error_px'], landmark_count=report['landmark_count'],
+                                           landmark_detector_ms=association.get('detector_ms'))
+                    render_started = time.perf_counter()
+                    aligned_panel = renderer.render(aligned_panel, aligned['vertices'])
+                    aligned_record['render_ms'] = (time.perf_counter() - render_started) * 1000
+                    alignment_reports.append(report)
+            elif use_temporal:
+                temporal_filter.reset()
+                filtered_record.update(temporal_ms=0.0, temporal_state='reset_missing')
+            if use_alignment and tracking['selected_index'] is None:
+                alignment_filter.reset()
+                aligned_record.update(alignment_ms=0.0, alignment_status='missing_student', alignment_accepted=False)
+                alignment_reports.append(dict(frame_index=frame_index, timestamp_s=timestamp,
+                                               accepted=False, status='missing_student'))
             latency = record.get('inference_ms')
+            if use_alignment:
+                aligned_record['temporal_ms'] = filtered_record.get('temporal_ms', 0.0)
+                aligned_record['temporal_state'] = filtered_record.get('temporal_state')
+                aligned_record['processing_ms'] = (latency + aligned_record['temporal_ms'] + aligned_record['alignment_ms']) if latency is not None else None
             if record['timing_included'] and latency is not None and math.isfinite(latency) and latency > 0:
                 measured_count += 1
                 inference_total_ms += latency
+                if use_temporal:
+                    processing_total_ms += latency + filtered_record['temporal_ms']
+                if use_alignment:
+                    aligned_total_ms += aligned_record['processing_ms']
             running_fps = 1000 * measured_count / inference_total_ms if measured_count else None
             timed_title = fps_title(title, running_fps, running=True)
             if not record['timing_included']:
                 timed_title = title + ' | timing warm-up'
             writer.write(annotate(panel, timed_title, frame_index, timestamp, status))
+            if use_temporal:
+                filtered_record['processing_ms'] = (latency + filtered_record['temporal_ms']) if latency is not None else None
+                processing_fps = 1000 * measured_count / processing_total_ms if measured_count else None
+                filtered_title = temporal_fps_title(processing_fps) if record['timing_included'] else 'Student temporal | timing warm-up'
+                temporal_writer.write(annotate(filtered_panel, filtered_title, frame_index, timestamp,
+                                                 status + ' | ' + filtered_record['temporal_state']))
+                temporal_records.append(filtered_record)
+            if use_alignment:
+                aligned_fps = 1000 * measured_count / aligned_total_ms if measured_count else None
+                aligned_title = alignment_fps_title(aligned_fps) if record['timing_included'] else 'Student aligned | timing warm-up'
+                aligned_writer.write(annotate(aligned_panel, aligned_title, frame_index, timestamp,
+                                               aligned_record['alignment_status'] + ' | landmarks offline'))
+                aligned_records.append(aligned_record)
             if input_writer:
                 input_writer.write(annotate(letterbox(rgb, size), 'Input | playback: {:.2f} FPS'.format(fps / args.stride),
                                             frame_index, timestamp, 'original frame'))
@@ -517,11 +728,28 @@ def process_model(args, kind, title, predictor, info, renderer_factory):
         if not records:
             raise RuntimeError('No selected frames decoded; check --start-frame and the input video')
     finally:
-        for resource in (input_writer, writer, renderer):
+        for resource in (input_writer, aligned_writer, temporal_writer, writer, renderer):
             if resource is not None:
                 resource.close()
     summary = save_measurements(args.output / kind, records, predictor, args.stride, args.warmup_frames,
                                  fps / args.stride)
+    if use_temporal:
+        filtered_summary = save_measurements(args.output / 'student_temporal', temporal_records, predictor,
+                                              args.stride, args.warmup_frames, fps / args.stride,
+                                              temporal=temporal_settings(args))
+        filtered_summary['fallback_raw_frames'] = sum(r['temporal_state'].startswith('fallback_raw') for r in temporal_records)
+        write_json(args.output / 'student_temporal' / 'summary.json', filtered_summary)
+        summary['temporal'] = filtered_summary
+        save_temporal_comparison(args.output, summary, filtered_summary)
+    if use_alignment:
+        settings = alignment_settings(args, landmark_sequence)
+        aligned_summary = save_measurements(args.output / 'student_aligned', aligned_records, predictor,
+                                             args.stride, args.warmup_frames, fps / args.stride, alignment=settings)
+        aligned_summary['alignment_accepted_frames'] = sum(r['accepted'] for r in alignment_reports)
+        aligned_summary['alignment_skipped_frames'] = len(alignment_reports) - aligned_summary['alignment_accepted_frames']
+        write_json(args.output / 'student_aligned' / 'summary.json', aligned_summary)
+        write_json(args.output / 'student_aligned' / 'alignment.json', dict(settings=settings, frames=alignment_reports))
+        summary['alignment'] = aligned_summary
     print('[{}] {} frames, {} with a matched person, {} missing'.format(
         kind, summary['frames'], summary['selected_frames'], summary['missing_frames']), flush=True)
     timing = summary['timing']
@@ -531,7 +759,38 @@ def process_model(args, kind, title, predictor, info, renderer_factory):
     return [r['frame_index'] for r in records], summary
 
 
-def compose_comparison(output, kinds, frame_count, fps, size, benchmark_titles=None):
+def temporal_fps_title(fps):
+    return 'Student temporal | model+filter/decode: {}'.format('N/A' if fps is None else '{:.1f} FPS'.format(fps))
+
+
+def alignment_fps_title(fps):
+    return 'Student aligned | model+refine: {}'.format('N/A' if fps is None else '{:.1f} FPS'.format(fps))
+
+
+def alignment_settings(args, sequence):
+    return dict(method='independent_2d_landmark_translation_fit',
+                source='student_temporal' if args.temporal != 'off' else 'student',
+                min_confidence=args.alignment_min_confidence, landmarks=sequence.metadata,
+                depth_tau_s=args.alignment_depth_tau, depth_max_log_rate_per_s=0.5,
+                depth_max_gap_s=args.temporal_max_gap,
+                depth_filter='Absolute pelvis log-depth EMA, camera-ray compensation; 0 tau disables; may add lag',
+                note='Only camera translation/depth fitted; pose/shape retained. Reprojection is not ground-truth 3D error.',
+                timing='processing FPS includes forward, optional temporal filter/decode and fit; excludes offline detector, rendering and I/O')
+
+
+def save_temporal_comparison(output, raw, filtered):
+    keys = ('root_displacement_m', 'root_speed_m_per_s', 'pelvis_relative_joint_speed_m_per_s',
+            'pelvis_relative_joint_acceleration_m_per_s2', 'phenotypes')
+    write_json(output / 'temporal_comparison.json', {
+        'comparison': 'same student predictions, before and after causal filtering',
+        'caveat': 'Motion proxies, not ground-truth error. Smoothing can add lag and suppress true motion; inspect both videos.',
+        'frames': raw['frames'], 'raw_selected_frames': raw['selected_frames'],
+        'filtered_selected_frames': filtered['selected_frames'],
+        'settings': filtered['processing'],
+        'raw': {k: raw[k] for k in keys}, 'filtered': {k: filtered[k] for k in keys}})
+
+
+def compose_comparison(output, kinds, frame_count, fps, size, benchmark_titles=None, filename='comparison.mp4'):
     import cv2
     import numpy as np
     captures = []
@@ -542,7 +801,7 @@ def compose_comparison(output, kinds, frame_count, fps, size, benchmark_titles=N
             captures.append(cap)
             if not cap.isOpened():
                 raise RuntimeError('Cannot read encoded {}.mp4'.format(name))
-        writer = VideoWriter(output / 'comparison.mp4', fps, size * len(captures), size + 64)
+        writer = VideoWriter(output / filename, fps, size * len(captures), size + 64)
         for _ in range(frame_count):
             panels = [cap.read() for cap in captures]
             if not all(ok for ok, _ in panels):
@@ -565,7 +824,8 @@ def compose_comparison(output, kinds, frame_count, fps, size, benchmark_titles=N
 def save_timing_comparison(output, models):
     fields = ['model', 'device_name', 'input_size', 'precision', 'measured_frames', 'warmup_frames_excluded',
               'inference_fps', 'playback_fps', 'inference_mean_ms', 'inference_median_ms', 'inference_p95_ms',
-              'preprocess_mean_ms', 'output_transfer_mean_ms', 'render_mean_ms', 'rendered_frames_measured']
+              'preprocess_mean_ms', 'output_transfer_mean_ms', 'render_mean_ms', 'rendered_frames_measured',
+              'temporal_mean_ms', 'alignment_mean_ms', 'processing_mean_ms', 'processing_fps']
     with (output / 'timing.csv').open('w', newline='') as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
@@ -577,7 +837,10 @@ def save_timing_comparison(output, models):
                        inference_median_ms=timing['inference_ms']['median'], inference_p95_ms=timing['inference_ms']['p95'],
                        preprocess_mean_ms=timing['preprocess_ms']['mean'],
                        output_transfer_mean_ms=timing['output_transfer_ms']['mean'], render_mean_ms=timing['render_ms']['mean'],
-                       rendered_frames_measured=timing['render_ms']['count'])
+                       rendered_frames_measured=timing['render_ms']['count'],
+                       temporal_mean_ms=timing['temporal_ms']['mean'],
+                       alignment_mean_ms=timing['alignment_ms']['mean'],
+                       processing_mean_ms=timing['processing_ms']['mean'], processing_fps=timing['processing_fps'])
             writer.writerow(row)
 
 
@@ -590,11 +853,18 @@ def run(args, predictor_factory=load_predictor, renderer_factory=MeshRenderer):
         raise RuntimeError('Install optional video I/O with: python -m pip install -r requirements-video.txt') from exc
     if args.start_frame >= info['reported_frame_count'] > 0:
         raise ValueError('--start-frame lies beyond the video frame count')
+    landmark_sequence = None
+    if args.alignment == 'landmarks':
+        from scripts.video.landmark_observations import LandmarkSequence
+        landmark_sequence = LandmarkSequence(args.landmarks, args.video, info)
     args.output.mkdir(parents=True, exist_ok=False)
     manifest = dict(status='running', video=str(args.video), source=info,
                     video_bytes=args.video.stat().st_size, video_mtime_ns=args.video.stat().st_mtime_ns,
                     settings={k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
-                    smoothing=False, placement='raw camera-space prediction, no box anchoring',
+                    smoothing=args.temporal != 'off',
+                    temporal=temporal_settings(args) if args.temporal != 'off' else {'method': 'off'},
+                    alignment=alignment_settings(args, landmark_sequence) if landmark_sequence else {'method': 'off'},
+                    placement='raw camera-space prediction; optional temporal head-anchor filtering and separate landmark-fit Student; no box anchoring',
                     timing_note='Inference FPS = measured frames / summed synchronized forward seconds after warm-up; batch size 1. Model forward includes detection and Anny decoding. Preprocessing, transfers, rendering and video I/O excluded; forward_ms retains inclusive preprocessing+forward+transfer latency.',
                     tracking='One primary person per model, selected independently; inspect identity in comparison',
                     models={}, outputs=['input.mp4', 'comparison.mp4', 'timing.csv'])
@@ -610,13 +880,27 @@ def run(args, predictor_factory=load_predictor, renderer_factory=MeshRenderer):
             predictor = predictor_factory(checkpoint, kind, fix, args.device, args.amp)
             manifest['models'][kind] = predictor.metadata
             write_json(args.output / 'run.json', manifest)
-            indices, summary = process_model(args, kind, title, predictor, info, renderer_factory)
+            indices, summary = process_model(args, kind, title, predictor, info, renderer_factory, landmark_sequence)
             if reference is not None and indices != reference:
                 raise RuntimeError('Decoded source frame sequence changed between model passes')
             reference = indices
             manifest['models'][kind]['summary'] = summary
             manifest['outputs'].extend([kind + '.mp4', kind + '/frames.csv',
                                         kind + '/predictions.npz', kind + '/summary.json'])
+            if 'temporal' in summary:
+                manifest['models']['student_temporal'] = dict(
+                    predictor.metadata, source='student: same forward predictions',
+                    summary=summary['temporal'], temporal=temporal_settings(args))
+                manifest['outputs'].extend(['student_temporal.mp4', 'student_temporal/frames.csv',
+                                            'student_temporal/predictions.npz', 'student_temporal/summary.json',
+                                            'temporal_comparison.mp4', 'temporal_comparison.json'])
+            if 'alignment' in summary:
+                manifest['models']['student_aligned'] = dict(
+                    predictor.metadata, source='student: same forward predictions',
+                    summary=summary['alignment'], alignment=alignment_settings(args, landmark_sequence))
+                manifest['outputs'].extend(['student_aligned.mp4', 'student_aligned/frames.csv',
+                                            'student_aligned/predictions.npz', 'student_aligned/summary.json',
+                                            'student_aligned/alignment.json', 'alignment_comparison.mp4'])
             # Only one network occupies the GPU; the next pass reads the same source video.
             del predictor
             gc.collect()
@@ -626,7 +910,24 @@ def run(args, predictor_factory=load_predictor, renderer_factory=MeshRenderer):
         save_timing_comparison(args.output, manifest['models'])
         benchmark_titles = {kind: fps_title(title, manifest['models'][kind]['summary']['timing']['inference_fps'])
                             for kind, title, _, _ in jobs}
-        compose_comparison(args.output, [job[0] for job in jobs], len(reference), info['fps'] / args.stride,
+        kinds = [job[0] for job in jobs]
+        if args.temporal != 'off':
+            kinds.insert(1, 'student_temporal')
+            benchmark_titles['student'] = fps_title('Student raw', manifest['models']['student']['summary']['timing']['inference_fps'])
+            benchmark_titles['student_temporal'] = temporal_fps_title(
+                manifest['models']['student_temporal']['summary']['timing']['processing_fps'])
+            compose_comparison(args.output, ['student', 'student_temporal'], len(reference),
+                               info['fps'] / args.stride, args.panel_size, benchmark_titles,
+                               filename='temporal_comparison.mp4')
+        if args.alignment != 'off':
+            before_alignment = 'student_temporal' if args.temporal != 'off' else 'student'
+            kinds.insert(kinds.index(before_alignment) + 1, 'student_aligned')
+            benchmark_titles['student_aligned'] = alignment_fps_title(
+                manifest['models']['student_aligned']['summary']['timing']['processing_fps'])
+            compose_comparison(args.output, [before_alignment, 'student_aligned'], len(reference),
+                               info['fps'] / args.stride, args.panel_size, benchmark_titles,
+                               filename='alignment_comparison.mp4')
+        compose_comparison(args.output, kinds, len(reference), info['fps'] / args.stride,
                            args.panel_size, benchmark_titles)
         manifest.update(status='completed', processed_frames=len(reference), output_fps=info['fps'] / args.stride)
     except BaseException as exc:

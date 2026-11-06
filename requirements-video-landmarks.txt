@@ -1,0 +1,5 @@
+# Optional CPU landmark extraction ONLY. Use a separate Python 3.10/3.11 venv;
+# do not install these dependencies into the multihmr GPU/Anny environment.
+mediapipe==0.10.14
+numpy==1.26.4
+opencv-contrib-python==4.11.0.86

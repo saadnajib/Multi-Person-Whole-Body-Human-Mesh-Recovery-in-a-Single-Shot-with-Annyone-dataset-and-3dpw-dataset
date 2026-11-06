@@ -27,7 +27,7 @@ Built from the seven topic slides in the supplied template. Dense architecture, 
 - Slide 13: Sources: thesis Table T11; exp8_distill_vitb.sh; job 3614191
 - Slide 14: Sources: thesis §4.10; Table T07
 - Slide 15: Sources: thesis Tables T16–T17; jobs 3614191, 3611336, 3614192
-- Slide 16: Source: thesis Table T16; paired L40S measurements, job 3614191
+- Slide 16: Sources: thesis Table T16; L40S job 3614191; NAVER parameter count, job 3614947
 - Slide 17: Sources: thesis Figure F12; AnnyOne holdout image 579860, V1
 - Slide 18: Sources: thesis Figures F10; walking and garden examples; demo rendering settings
 - Slide 19: Sources: video-compare-3642415.out; thesis video evidence; demo_video.py

@@ -10,3 +10,13 @@ Slide 4 checked both without and with figures/smpl_vs_anny_render.png (the latte
 Slide 4 Anny bone and phenotype counts read from figures/anny_rest_skeleton.json (anny 0.6.2 package, 163 bones); Anny vertex count not stated (no verified number in the repository).
 Numeric results traced to thesis commit 3e2f21e.
 No student meshes or video FPS results fabricated.
+
+25 October 2026 update: original NAVER Anny baseline added to slide 11.
+380.94 M parameters traced to cluster evidence; full-model compute and comparable latency marked not measured.
+Teacher/student speedup labels explicitly identify their reference.
+Slide 11 PDF visually reviewed; no clipping. All shapes within canvas.
+Other 22 slide XMLs and speaker notes unchanged; scripts and PDF regenerated.
+
+25 October 2026 update (merged 6 Nov from codex/temporal-video): original NAVER Anny baseline added to the
+efficiency slide (slide 11 then, slide 16 in the 24-slide order). 380.94 M parameters traced to cluster evidence;
+full-model compute and comparable latency marked not measured. Teacher/student speedup labels identify their reference.
