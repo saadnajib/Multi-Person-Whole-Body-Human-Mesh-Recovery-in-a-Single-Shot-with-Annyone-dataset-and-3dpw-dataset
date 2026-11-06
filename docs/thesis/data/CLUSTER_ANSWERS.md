@@ -145,3 +145,24 @@ there (the script's word "over-fitting" means "no further validation gain"; the 
 bars. The in-training holdout PVE is not the final V1 test protocol (e30: 122.8 in-training vs 119.6 reported);
 the e60 run's final test numbers (`final_table.json`) are still to be sent.
 Figures: `results/experiments/exp9_kd_temperature/loss_curves/*_loss_curves.{png,pdf,csv}` on the cluster.
+
+## 6 Nov: 60-epoch student final table (job 3623342, `<RUN ..._e60>/final_table.json`, checkpoint 00059.pt)
+
+| metric | teacher | e30 student (3614191) | e60 student (3623342) | 95% bar | met (e60) |
+|---|---|---|---|---|---|
+| AnnyOne holdout V1 PVE | 73.7 | 119.6 | **107.7** | 77.6 | no |
+| AnnyOne holdout V1 PA-PVE | 50.3 | 80.8 | 74.6 | (53.0) | no |
+| AnnyOne holdout V1 MPJPE | 77.9 | 127.2 | 114.5 | 82.0 | no |
+| AnnyOne holdout recall | 87.0 | 85.4 | 85.0 | | |
+| AnnyOne holdout root error mm | 728.5 | | 697.9 | | |
+| 3DPW test PVE | 89.0 | 110.1 | **110.9** | 93.7 | no |
+| 3DPW test PA-PVE | 57.6 | 71.8 | 72.5 | (60.6) | no |
+| 3DPW test MPJPE | 88.3 | 112.0 | 112.9 | 92.9 | no |
+| 3DPW test recall | 99 | 99 | 99 | | |
+| params M / GFLOPs | 318.4 / 1927.4 | 101.4 / 603.3 | 101.4 / 603.3 | | yes |
+| inference ms (this job's bench) | 60.6 | 28.5 (3614191 bench, teacher 59.7) | 28.9 | | yes |
+
+Verdict FAIL on all four in-rule errors. Reading [Certain]: 60 epochs improve AnnyOne by 11.9 mm PVE (119.6 -> 107.7)
+and leave 3DPW unchanged (110.1 -> 110.9, within noise), exactly what the loss curves predicted. The thesis keeps the
+30-epoch run as the reported student unless the author switches; if the e60 run is reported instead, every student
+number in the thesis and deck changes and the e30 run becomes the "longer training" ablation.
