@@ -1,100 +1,103 @@
 % Revised 22 October 2026: scientific interpretation in place of a grading checklist.
+% Revised 6 November 2026: plain-language rewrite (STYLE_GUIDE.md) with the new results.
 \chapter{Discussion}
 \label{ch:discussion}
 
-The evaluation concerns three outcomes: real-image Anny supervision, compact reconstruction and frame-wise video
-application. Their interpretation depends on the data, model roles and measurement conventions.
+Here I use the results to answer the three questions of Section~\ref{sec:intro-requirements}.
 
-\section{Answers to the Research Questions}
+\section{Answers to the research questions}
 \label{sec:disc-requirements}
 
 \paragraph{Real-image supervision.}
-Converted 3DPW labels make it possible to train and compare Anny-based models on real images. The independent
-check gives a median body-joint discrepancy of \DataCheckJointsNew\,mm. Conversion constrains articulated pose
-and some shape properties, but does not create evidence absent from the source data: \DataConstantCount{}
-phenotypes are fixed, and many hand/head rotations remain rest-pose placeholders. The result is a practical
-benchmark with explicit annotation limits.
+The converted 3DPW labels make it possible to train and test Anny models on real images. An independent check puts
+them \DataCheckJointsNew\,mm from 3DPW's body joints at the median. But they cannot add what the source data lacks: \DataConstantCount{} phenotypes are the same for every person, and many hand and head rotations stay at rest
+(Section~\ref{sec:data-limits}).
 
-Control reaches \ControlThreeDPW\,mm PVE on converted 3DPW, compared with \BaseThreeDPW\,mm for the synthetic-only
-Base. Final reaches \FinalThreeDPW\,mm with the anchor and bone corrections. The large synthetic-to-real gain
-is therefore associated primarily with mixed training. It cannot be attributed entirely to the corrections
-or a network architecture change.
+Control already reaches \ControlThreeDPW\,mm PVE on converted 3DPW without the anchor and bone corrections, against
+\BaseThreeDPW\,mm for Base. Final, with the corrections, reaches \FinalThreeDPW\,mm. This means that most of the gain
+on real images comes from adding 3DPW to the training mix, and not from the corrections or from a change in the
+network.
+
+On the synthetic holdout Final follows weight, gender and cup size well (Table~\ref{tab:pheno-corr}), so its shape
+head can vary the body. Muscle is the weak phenotype, likely because the converter fixes it for every 3DPW person; I
+did not test this. On real photos the gender AUC needs no cut-off (Table~\ref{tab:gender-auc}). Men still get a gender value in
+the middle, because the AnnyOne gender labels span only \HoldGenderLabelMin{} to \HoldGenderLabelMax. Final stays the
+teacher, and Final-partial-mask is a measured trade-off (Section~\ref{sec:res-mask}).
 
 \paragraph{Compact reconstruction.}
-The student reduces parameters by \ParamRatioStudent{} times and FLOPs by \FlopRatioStudent{} times relative
-to its teacher. The paired L40S benchmark gives a \SpeedRatioStudent{}-fold latency improvement. PVE also rises
-from \FinalPVE{} to \StudentPVE\,mm on AnnyOne and from \FinalThreeDPW{} to \StudentThreeDPW\,mm on converted
-3DPW. The result demonstrates an efficiency--accuracy trade-off rather than teacher-equivalent reconstruction.
+The Student has \ParamRatioStudent{} times fewer parameters and \FlopRatioStudent{} times fewer FLOPs than its
+teacher, and it ran \SpeedRatioStudent{} times faster in the paired L40S benchmark. Its PVE rose from \FinalPVE{} to
+\StudentPVE\,mm on the AnnyOne holdout and from \FinalThreeDPW{} to \StudentThreeDPW\,mm on converted 3DPW. So the
+Student is smaller and faster, but it is also less accurate.
 
-Against the released baseline the student is \ParamRatioStudentNAVER{} times smaller and has lower 3DPW PVE
-(\StudentThreeDPW{} versus \NAVERThreeDPW\,mm). However, the student uses converted 3DPW training images and
-the released baseline has not received that adaptation. A baseline fine-tuned on the same data is needed to
-isolate architecture and distillation effects from training exposure.
+Longer training did not close the gap on real images. After \StudentSixtyEpochs{} epochs the holdout PVE fell to
+\StudentSixtyPVE\,mm, but 3DPW stayed at \StudentSixtyThreeDPW\,mm (Section~\ref{sec:res-training-length}). The reason
+may be the smaller backbone, the share of 3DPW in each batch or the teacher's own 3DPW error; I did not test this. The
+temperature sweep (Section~\ref{sec:res-kd-temperature}) will show whether $T = \MethodKDTemp$ was a good choice.
+\TODO{pending: temperature sweep results}
 
-\paragraph{Video application.}
-The completed walking run processes the same frames with both models and NVIDIA mesh rendering. The student
-has \VideoStudentMatched{} matched predictions in \VideoFrames{} frames; the baseline has \VideoBaselineMatched{}.
-These are tracking-coverage counts, not ground-truth detection recall. They establish execution on one clip,
-but do not establish pose accuracy or temporal smoothness. The application saves comparison videos and frame-wise
-pose/shape changes for inspection. The revised timing procedure separates synchronized inference latency from
-rendering and playback. The evaluation does not yet include numerical FPS and stability results from the revised video application.
+Against Multi-HMR-Anny the Student is \ParamRatioStudentNAVER{} times smaller and has a lower 3DPW PVE
+(\StudentThreeDPW{} against \NAVERThreeDPW\,mm). But only my models were trained on converted 3DPW. Separating the
+network and the distillation from the training data would need a baseline fine-tuned on the same data.
 
-\section{Interpreting Geometry and Placement}
+\paragraph{Video.}
+On the walking clip the Student kept a tracked body in all \VideoFrames{} frames, the baseline in
+\VideoBaselineMatched. By eye, temporal filtering made the motion steadier, and landmark alignment put the mesh on the person and
+reduced the jumps in size (Section~\ref{sec:res-video}). The clip has no ground truth and the landmarks come from a 2D
+detector, so this is no evidence of better 3D accuracy (Section~\ref{sec:method-temporal}). On the same frames and GPU
+the raw Student ran at \VideoStudentRawFPS{} and the baseline at \VideoNAVERFPS\,FPS \TODO{confirm against
+timing.csv}. The filtered and aligned Student values in
+Table~\ref{tab:video-fps} include extra steps.
+
+\section{Interpreting geometry and placement}
 \label{sec:disc-pve}
 
-PVE aligns the predicted and reference pelvises before measuring vertex differences. Whole-body translation
-is removed, so low PVE can coexist with incorrect camera-space placement. The teacher ablations illustrate this:
-root error changes from \num{\ControlRootErr} to \FinalRootErr\,mm while PVE changes from \ControlPVE{} to
-\FinalPVE\,mm. Placement and depth diagnostics are therefore reported alongside aligned reconstruction errors.
+PVE moves both bodies so that their pelvises meet before it measures vertex distances. So a model can have a low PVE
+and still put the person at the wrong depth. From Control to Final the root error fell from \num{\ControlRootErr} to
+\FinalRootErr\,mm, but the PVE only went from \ControlPVE{} to \FinalPVE\,mm. For this reason I report placement
+errors next to PVE.
 
-A small anatomical region can also contribute little to a whole-body average. The neck contains redundant
-rotations, and per-bone errors can differ from global head-direction errors. The output correction is assessed
-through bone angles and neck geometry as well as PVE. Appendix~\ref{ch:diagnostics} retains the supporting tests.
+Small regions hide in the average. The PVE over the neck skin fell from \ControlNeckSkin{} to \FinalNeckSkin\,mm, but with only
+\DiscNeckVerts{} vertices the neck moved the whole-body PVE by about \DiscNeckPVEShare\,mm (my rough estimate). So I
+also judged the bone correction by bone angles and neck geometry (Appendix~\ref{ch:diagnostics}).
 
-Two identical short pilot configurations differ by \NoisePVE\,mm PVE. This demonstrates sensitivity to training
-variation, but two pilot runs do not establish a universal significance threshold for other schedules or datasets.
-Small differences between single runs are interpreted cautiously. Repeated training and uncertainty estimates
-are needed for statistical conclusions.
+I trained the same short pilot twice, and the two runs differed by \NoisePVE\,mm PVE. In other words, a few
+millimetres between two single runs can be training noise alone (Section~\ref{sec:diag-noise}). Two runs give no
+general threshold, so I treat small differences with care.
 
 \section{Limitations}
 \label{sec:disc-limitations}
 
 \paragraph{Shape and children.}
-The teacher's Relative Human evaluation improves age-group separation and gender ranking, but children can
-still receive adult-like bodies. The synthetic holdout has no children, and converted real-image labels contain
-constant age and body-build values. The shape-mask variants do not isolate a general solution: parameter spread
-and gender behaviour change together. These findings concern evaluated teacher variants; equivalent student
-shape benchmarks are required before assigning the same conclusions to the student.
+Children are a measured improvement, not solved. On Relative Human the teacher separates them from adults better than
+Base, but some still get adult bodies. The holdout has no children, and the 3DPW labels fix age and body build for
+everyone. The
+holdout gender labels have no fully male body, so a gender cut-off set there would mean nothing. These results concern
+the teacher; I did not run the shape tests on the Student.
 
 \paragraph{Depth and detection.}
-The teacher's predicted-versus-reference depth slope remains \FinalSlope, with substantial residual placement
-error. Consistent anchors improve supervision without solving monocular depth ambiguity. Occlusion, truncation
-and multiple-person interactions also complicate detection and tracking. A clear single-person video offers
-limited evidence for these conditions.
+The teacher's slope of predicted against true depth stays at \FinalSlope, and a large placement error remains
+(Section~\ref{sec:res-depth}). Consistent anchors help the supervision but cannot remove the depth ambiguity of one
+image. One clip of one walking person says little about occlusion, people cut off by the frame or crowds.
 
 \paragraph{Evaluation conventions.}
-3DPW errors use fitted Anny labels, and MPJPE averages \MethodNumBones{} Anny joints rather than a published
-SMPL-space joint set. The median conversion discrepancy is a label-quality indicator, not a constant that can
-be subtracted from network error. Unlabelled bystanders complicate precision estimates. The synthetic holdout
-was excluded from this thesis's training but may have been seen by the released baseline.
+My 3DPW errors use fitted Anny labels and MPJPE over \MethodNumBones{} Anny joints, so they are not comparable with
+published results, and the label discrepancy must not be subtracted from them (Section~\ref{sec:data-limits}). My training never used the
+holdout, but it is most likely in-sample for Multi-HMR-Anny (Section~\ref{sec:res-baseline}).
 
 \paragraph{Experimental coverage and efficiency.}
-Each model is represented by one training run. The existing experiments do not separately quantify every
-student loss component. The walking example has no ground-truth mesh: natural movement, camera motion and
-tracking errors all affect movement statistics. Latency depends on hardware, precision, input resolution and
-person count. The historical paired benchmark and the new per-video benchmark are different protocols and
-must be reported separately.
+Each model comes from one training run, and I did not measure each Student loss term on its own. The walking clip has
+no ground-truth mesh, and its movement statistics also contain camera motion and tracking errors. Latency depends on
+hardware, precision, input resolution and the number of people. The paired benchmark and the per-video timing are
+different protocols, so I report them separately.
 
 \paragraph{Reproduction and release.}
-The repository records model settings and numerical provenance, but cluster scripts retain site-specific paths.
-Redistributing weights or converted annotations requires checking the terms of the datasets, body-model assets
-and source checkpoints. This report does not establish permission to release every derived artifact.
+The repository records settings and number sources, but the cluster scripts contain site-specific paths. Releasing weights or converted labels needs a check of the dataset, body-model and checkpoint terms, which I
+have not done.
 
-\section{Practical Implications}
+\section{What I report and why}
 \label{sec:disc-engineering}
 
-Whether a person receives a prediction, whether the reconstructed body is accurate, and whether it remains
-stable over time are separate questions. Tracking counts address the first, labelled-image metrics the second,
-and video inspection with frame-wise measurements the third. Inference FPS adds computational cost as another
-dimension. Reporting these quantities together provides a clearer assessment of the compact model than a
-single reconstruction error or visually pleasing example.
+Whether a person gets a body, whether the body is accurate, whether it stays steady and how fast it comes are separate
+questions. Tracking counts, labelled-image metrics, the video and the frame rates each answer one of them. For this
+reason I report all of them, and not only one error value or one good-looking example.

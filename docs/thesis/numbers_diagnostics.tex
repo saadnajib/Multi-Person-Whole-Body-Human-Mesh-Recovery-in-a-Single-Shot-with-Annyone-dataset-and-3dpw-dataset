@@ -1,5 +1,5 @@
 % =============================================================================
-% numbers_diagnostics.tex -- numbers of Chapter 5 (Diagnostics), one macro each, prefix \Diag.
+% numbers_diagnostics.tex -- numbers of Appendix F (chapters/05_diagnostics.tex), one macro each, prefix \Diag.
 % Convention: numbers.tex. Source on every line. Source key as in REWRITE_PLAN.md:
 %   H x.y = docs/handover.md section x.y; H 0b = "Numbers at a glance"; H 1 = "Project in brief";
 %   F = docs/diagnostics_findings.md (section name in quotes); D = docs/deck_explained_2026-10-19.md;
@@ -171,3 +171,21 @@
 \newcommand{\DiagGlobalHeadCtrlA}{11.7}       % deg, 3571960:318
 \newcommand{\DiagGlobalHeadCtrlB}{13.6}       % deg, 3571958:99
 \newcommand{\DiagXFiveTenRoot}{0.54}          % m, 10-ep x5, 3572482 (H 3.1)
+
+% ---------------------------------------------------------------- added 6 Nov revision (were typed in the text)
+\newcommand{\DiagRulePVE}{71.5}               % mm, exp1 success rule written before the runs, docs/experiments_plan.md:93-95; H 3.1
+\newcommand{\DiagRuleRecall}{89.2}            % percent, same rule, docs/experiments_plan.md:93-95; H 3.1
+\newcommand{\DiagHeadPxFixLow}{7.2}           % px head 2D error, lowest fix run, T08 (10-ep fix x5, 3572482); H 3.1 "7-10 px"
+\newcommand{\DiagHeadPxFixHigh}{9.6}          % px, highest fix run, T08 (2-ep fix x1, 3571598)
+\newcommand{\DiagHeadPxCtrlLow}{58.1}         % px, lowest control, T08 (2-ep control, 3571599)
+\newcommand{\DiagHeadPxCtrlHigh}{67.1}        % px, highest control, T08 (Control, 3611339:166)
+\newcommand{\DiagPelvisPxFixLow}{31.4}        % px pelvis 2D error, lowest fix run, T08 (2-ep fix x20, 3572483)
+\newcommand{\DiagPelvisPxFixHigh}{41.1}       % px, highest fix run, T08 (Final, 3611336)
+\newcommand{\DiagDepthPullLow}{2.5}           % m, depth the predictions are pulled toward, docs/handover.md:1267 (H 3.1)
+\newcommand{\DiagDepthPullHigh}{2.9}          % m, same
+\newcommand{\DiagGroupMeanNeck}{62.7}         % deg, old group mean of the neck bones, docs/handover.md:1335 (H 3.2)
+\newcommand{\DiagGroupMeanHead}{89.5}         % deg, old group mean of head and jaw, docs/handover.md:1335 (H 3.2)
+\newcommand{\DiagHeadDirLimit}{15}            % deg, exp6 pass rule global head <= baseline 12.0 + 3, docs/experiments_plan.md:525
+\newcommand{\DiagHandShareBoost}{70}          % percent of the rotation loss on the hands with the x4 boost, deck notes slide 17; H 3.3
+\newcommand{\DiagHandShareRegion}{33}         % percent with the region-normalised loss, same source
+\newcommand{\DiagDemoShapeLines}{299}         % [shape] lines of demo 3581312, docs/handover.md:876 (H 3.4; CE)

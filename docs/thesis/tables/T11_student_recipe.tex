@@ -27,8 +27,8 @@ Bone correction & four bones, estimated on Base & teacher's in training; own one
  & against Final & against Multi-HMR-Anny \\
 \midrule
 AnnyOne holdout PVE (V1) & \MethodTeacherHoldoutPVE{} $\to$ \textbf{\MethodBarHoldout} & \MethodNaverHoldoutPVE{} $\to$ \MethodBarNaverHoldout{} (likely in-sample) \\
-% Final holdout V1 MPJPE 77.9 re-measured in the student job, bar 82.0 = 77.9/0.95: 3614191:259-263
-AnnyOne holdout MPJPE (V1) & 77.9 $\to$ \textbf{82.0} & \MethodNaverHoldoutMPJPE{} $\to$ \MethodBarNaverHoldoutMPJPE \\
+% Final holdout V1 MPJPE 77.9 re-measured in the student job, bar 82.0 = 77.9/0.95: 3614191:259-263 (macros \FinalMPJPE, \BarMPJPE in numbers_results.tex)
+AnnyOne holdout MPJPE (V1) & \FinalMPJPE{} $\to$ \textbf{\BarMPJPE} & \MethodNaverHoldoutMPJPE{} $\to$ \MethodBarNaverHoldoutMPJPE \\
 3DPW test PVE (v23) & \MethodTeacherThreeDPWPVE{} $\to$ \textbf{\MethodBarThreeDPW} & \MethodNaverThreeDPWPVE{} $\to$ \MethodBarNaverThreeDPW \\
 3DPW test MPJPE (v23) & \MethodTeacherThreeDPWMPJPE{} $\to$ \MethodBarThreeDPWMPJPE & \MethodNaverThreeDPWMPJPE{} $\to$ \MethodBarNaverThreeDPWMPJPE \\
 \bottomrule

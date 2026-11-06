@@ -1,54 +1,59 @@
 % Revised 22 October 2026: completed final system and bounded future work.
-\chapter{Conclusion and Future Work}
+% Revised 6 November 2026: plain-language rewrite (STYLE_GUIDE.md) with the new results.
+\chapter{Conclusion and future work}
 \label{ch:conclusion}
 
 \section{Conclusion}
 \label{sec:concl}
 
-This thesis presents and evaluates a compact student for multi-person human mesh recovery with Anny. The model
-combines a ViT-B encoder, a learned feature projector and prediction heads initialized from a ViT-L teacher.
-Training combines AnnyOne and converted 3DPW supervision with feature and output distillation. At inference
-time only the student and Anny decoding layer are required.
+Multi-HMR reconstructs several complete human bodies from one image. My project builds on this framework with the
+Anny body model, converted 3DPW labels and a smaller distilled student. I also added temporal filtering and landmark
+alignment to improve the video outputs.
 
-The conversion pipeline bridges SMPL-annotated real images and Anny-space supervision through geometric
-joint correspondence, virtual torso joints and a shared shape per actor. Independent checks document its
-accuracy and annotation limits. Consistent head anchors and fixed output corrections form part of the
-teacher/student configuration, with supporting analyses provided in the appendices.
+The converter turns 3DPW's SMPL labels into Anny labels through joint correspondence, virtual torso joints and one
+shape per person. An independent check puts its joints \DataCheckJointsNew\,mm from 3DPW's at the median, and some
+phenotypes are the same for every person (Section~\ref{sec:data-limits}). The ViT-B student trains on AnnyOne and
+converted 3DPW. It has a learned projector and heads copied from its ViT-L teacher, Final, and learns from it through
+feature and output distillation. Both models use consistent head anchors and two fixed output corrections, analysed in
+the appendices. At inference only the student and the Anny decoding layer run.
 
-The student has \StudentParams\,M parameters and \StudentGFLOPs\,GFLOPs in the recorded configuration,
-compared with \FinalParams\,M and \FinalGFLOPs\,GFLOPs for the teacher. Paired L40S forward latency is
-\StudentMsLFortyS\,ms versus \TeacherMsLFortyS\,ms. Student PVE is \StudentPVE\,mm on AnnyOne and
-\StudentThreeDPW\,mm on converted 3DPW. The teacher remains more accurate on both sets. The student improves
-over the released baseline's \NAVERThreeDPW\,mm 3DPW PVE, although real-image training exposure differs.
-These results establish a compactness and speed advantage with an accuracy trade-off.
+The student has \StudentParams\,M parameters and \StudentGFLOPs\,GFLOPs, against \FinalParams\,M and
+\FinalGFLOPs\,GFLOPs for the teacher, and one forward pass took \StudentMsLFortyS{} against \TeacherMsLFortyS\,ms on the
+L40S. Its PVE was \StudentPVE\,mm on the AnnyOne holdout and \StudentThreeDPW\,mm on converted 3DPW, against
+\FinalPVE{} and \FinalThreeDPW\,mm for the teacher. So it missed the 95\,\% bars (Section~\ref{sec:res-student}). It
+beat the \NAVERThreeDPW\,mm of Multi-HMR-Anny on 3DPW, but only my models were trained on converted 3DPW.
 
-The video application processes identical source frames with the student and baseline and saves their meshes
-beside the input. In the completed \VideoFrames{}-frame walking example the student has \VideoStudentMatched{}
-tracked predictions and the baseline \VideoBaselineMatched{}. This provides an initial video demonstration;
-a temporal-quality claim requires inspection of the saved videos and measurements. The implementation remains
-a frame-wise image model with tracking, rather than a learned temporal predictor.
+A 60-epoch run lowered the holdout PVE to \StudentSixtyPVE\,mm but left 3DPW at \StudentSixtyThreeDPW\,mm
+(Section~\ref{sec:res-training-length}). The gap to the teacher on real images is not a matter of training length,
+so I keep the 30-epoch student. Whether another temperature than $T = \MethodKDTemp$ helps is still open
+(Section~\ref{sec:res-kd-temperature}). \TODO{pending: temperature sweep result}
 
-\section{Future Work}
+On a walking clip of \VideoFrames{} frames the student kept a tracked person in \VideoStudentMatched{} frames, the
+baseline in \VideoBaselineMatched{} (Section~\ref{sec:res-video}). By eye, the filter made the motion steadier and the
+alignment put the mesh on the person. The network still works frame by frame, and neither step is a learned temporal
+model (Section~\ref{sec:method-temporal}). The clip has no ground truth, so this shows steadier output, not better 3D
+accuracy.
+
+\section{Future work}
 \label{sec:future}
 
-\paragraph{Accuracy at reduced cost.}
-Longer training, distillation-weight ablations and alternative feature transfer strategies could reduce the
-student's error while retaining its lower cost. They need matched evaluation against the current student,
-teacher and a baseline adapted to the same real-image data. This report uses the verified 30-epoch student;
-a later run should replace it only after its checkpoint and complete evaluation are available.
-
 \paragraph{Temporal evaluation and modelling.}
-The next step is to inspect the walking overlays and parameter variation, then examine clips with occlusion
-and camera motion. Synchronized inference FPS should be reported with GPU, precision and resolution.
-If substantial jitter is observed, track-wise shape aggregation, smoothing or learned temporal refinement can
-be evaluated against the unsmoothed baseline. Stability and reconstruction accuracy should be measured together.
+I would run the filter and the alignment on the 3DPW test sequences, whose converted labels exist at \DataLabelFps{}
+frames per second, and measure PVE per frame against the raw student. That way steadiness and accuracy are measured
+together. Clips with occlusion, camera motion and several people should follow, each frame rate given with its GPU,
+precision and resolution. A learned temporal model (Section~\ref{sec:bg-temporal}) is a separate project.
+
+\paragraph{Accuracy at reduced cost.}
+After the temperature sweep, distillation-weight ablations, other ways of transferring features or more real images
+per batch could lower the student's error. A fair comparison also needs Multi-HMR-Anny fine-tuned on the same 3DPW
+data.
 
 \paragraph{Real-image shape.}
-Age-group labels, body measurements or additional real-image Anny fits could improve supervision beyond
-constant converter values. Evaluation should include children and distinguish the body model's ability to
-generate child proportions from the network's ability to infer them reliably from real photographs.
+Age-group labels, body measurements or more real Anny fits could replace the constant phenotypes. Tests with children
+should keep two questions apart: whether Anny can make child proportions, and whether the network recognises a child
+in a photo.
 
 \paragraph{Reliability and reproducibility.}
-Repeated runs, uncertainty estimates and a larger held-out evaluation would strengthen comparisons.
-Portable configuration and a documented release process would make the system easier to verify.
-These are possible extensions, rather than completed experiments.
+Each model comes from one run. Repeated runs, uncertainty estimates and a larger held-out set would show which
+differences are real, and a portable configuration with release checks would make the system easier to verify. I have
+not run any of these.

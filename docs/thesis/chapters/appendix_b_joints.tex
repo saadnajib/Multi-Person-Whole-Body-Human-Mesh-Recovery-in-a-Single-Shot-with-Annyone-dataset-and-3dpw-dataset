@@ -1,21 +1,28 @@
-\chapter{SMPL--Anny Joint Correspondence}
+\chapter{SMPL--Anny joint correspondence}
 \label{app:joints}
+% Never \input tables/draft_mapping.tex: it defines the same table label as this file.
+% TODO (author): check the spine rows, neck offset and scale factor against a converter log (README.md).
 
-The converter compares the rest skeletons geometrically before fitting posed frames. Hip targets are associated
-with Anny's proximal upper-leg bones by proximity to the hip midpoint. For the spine, candidate Anny bones are
-ordered by normalized height and the ordered triple nearest the SMPL spine heights is selected. Limb and head
-candidates start from the anatomical correspondence in the converter. The final per-run choices are saved
-with the fits.
+The skeletons are those of Table~\ref{tab:body-models}: SMPL has \BgSmplJoints{} joints, Anny \BgAnnyBones{} bones,
+of which the root and \DataFittedBones{} rotate in the fit. Some joints of the two rigs sit at different places, so
+names alone are not enough. The converter compares the two rest skeletons (the default standing pose) before it fits
+the posed frames. For each hip, I take the Anny upper-leg bone whose head lies as far from the pelvis as SMPL's hip
+joint. For the spine, I order the Anny spine bones by height from the hip midpoint (0) to the neck (1) and keep the
+three closest to SMPL's spine joints. Limbs and head follow the anatomical correspondence in the converter. Each run
+saves its choices with the fits.
 
-Let $\mathbf o_A,\mathbf o_S$ be hip midpoints, $s$ the ratio of hip-to-neck lengths and $\mathbf Q_{S\to A}$
-the rest-frame axis alignment. The target location expressed in Anny's rest frame is
+Torso targets use a virtual joint (Equation~\eqref{eq:virtual-joint}) whose offset is measured once in the rest pose.
+Let $\mathbf o_A,\mathbf o_S$ be the hip midpoints, $s$ the ratio of hip-midpoint-to-neck lengths,
+$\mathbf Q_{S\to A}$ the axis alignment, and $\mathbf h^0_b,\mathbf Q^0_b$ the rest head and orientation of the bone
+$b$ assigned to SMPL joint $k$:
 \begin{equation}
  \mathbf j^{S\to A}_k=\mathbf o_A+s\mathbf Q_{S\to A}(\mathbf j^S_k-\mathbf o_S),\qquad
- \boldsymbol\delta_k=(\mathbf Q^0_b)^\top(\mathbf j^{S\to A}_k-\mathbf h^0_b),
+ \boldsymbol\delta_k=(\mathbf Q^0_b)^\top(\mathbf j^{S\to A}_k-\mathbf h^0_b).
  \label{eq:rest-offset}
 \end{equation}
-for the associated bone $b$. The posed virtual joint then follows Equation~\eqref{eq:virtual-joint}.
-The offset is fixed after rest-pose construction; it is not an extra joint learned independently in each frame.
+In words, the SMPL joint is first moved into Anny's rest skeleton by the hip midpoint, the torso scale and the axis
+alignment; the offset is then measured from the Anny bone head in that bone's own frame. The offset stays fixed and
+turns with the bone, so it is not an extra joint fitted in each frame.
 
 \begin{table}[htbp]
 \centering\small
@@ -24,24 +31,23 @@ The offset is fixed after rest-pose construction; it is not an extra joint learn
 SMPL target & Anny correspondence and fitting point \\
 \midrule
 Pelvis & root bone with a measured torso offset \\
-Left/right hip & proximal upper-leg bone selected geometrically, with an offset \\
-Spine1, spine2, spine3 & ordered rest-height correspondence among spine bones, with offsets \\
+Left/right hip & proximal upper-leg bone chosen by distance from the pelvis, with an offset \\
+Spine1, spine2, spine3 & spine bones matched by normalised rest height, in order, with offsets \\
 Neck & neck candidate with a measured rest-frame offset \\
 Left/right collar & clavicle bone with an offset \\
-Shoulder, elbow, wrist & corresponding upper-arm, lower-arm and wrist bone heads \\
-Knee, ankle, foot & corresponding lower-leg, foot and toe bone heads \\
-Head and hand targets & corresponding candidate bone heads; pose determined by the permitted parent rotations \\
+Shoulder, elbow, wrist & heads of the matching upper-arm, lower-arm and wrist bones \\
+Knee, ankle, foot & heads of the matching lower-leg, foot and toe bones \\
+Head and hand targets & heads of the matching candidate bones; pose set by the permitted parent rotations \\
 \bottomrule
 \end{tabular}
-\caption[Construction of the SMPL--Anny correspondence]{Correspondence construction used by the converter.
-Exact resolved bone names and offset vectors are metadata of the fit, rather than universal constants shared
-by every Anny rig version. The fit rotates the root and \DataFittedBones{} mapped body bones; remaining
-bones, including most fingers and fine head/neck articulation, retain their rest rotation.}
+\caption[Construction of the SMPL--Anny correspondence]{Correspondence used by the converter for the v23 labels.
+Exact bone names and offsets are metadata of each fit and can differ between Anny rig versions. The fit rotates the
+root and \DataFittedBones{} body bones; the others, including most fingers and the finer head and neck bones, keep
+their rest rotation.}
 \label{tab:mapping}
 \end{table}
 
-The fitting output stores \texttt{anny\_bone\_names}, \texttt{joint\_offsets\_local} and
-\texttt{offset\_joints}. These arrays are the authoritative correspondence for reproducing a particular fit.
-The code-level construction
-is in \path{scripts/data/smpl_to_anny.py}; the effect of geometric matching and virtual joints is evaluated
-in Appendix~\ref{app:conversion}.
+Each fit stores its own correspondence in three arrays: \path{anny_bone_names}, \path{joint_offsets_local} and
+\path{offset_joints}. To reproduce a particular fit, use these arrays and not this table. The code is in
+\path{scripts/data/smpl_to_anny.py}. Appendix~\ref{app:conversion} shows how geometric matching and virtual joints
+changed the fit error, and why matching by name failed in my first converter.

@@ -6,6 +6,7 @@
 % shape mask loss.py:255-310 (off in all three columns; on in Final-masked, job 3612325).
 % loss.py line numbers of the terms (column dropped 19 Oct): bce 314, offset 315, rotmat 319-335, shape 336-343,
 % dist 344, transl 345, global_rot 350-363, j3d 367-377, v3d 378, v2d 381-382, j2d 383-384.
+% Plain-words caption sentence per loss group: final deck slide 7 (added 6 Nov).
 % Boost renormalisation x4 -> x2.41 / x0.60: H 1 "x4 boost"; loss.py configure_joint_weights.
 \begin{table}[!htb]
 \centering\footnotesize
@@ -36,7 +37,9 @@ Bone correction & neck02, head, metacarpal1.L, finger4-1.R & none & on & none & 
 \end{tabular}
 \caption[Loss terms and their weights]{Loss terms and their weights. ``Default'' is the value in \texttt{loss.py}; Final, Control and Student are the
 values of those runs (model names in Table~\ref{tab:model-names}). The total loss is the weighted sum of all rows above
-the rule. For people from 3DPW the rotation and global-rotation terms skip the \MethodHandMaskBones{} finger, thumb
+the rule. In plain words, detection and offset find each person, rotations and shape get the posture and the
+proportions right, distance and translation put the body at the right distance, the 3D terms match the body geometry,
+the 2D terms make the mesh line up with the photo, and the two KD terms make the student imitate the teacher. For people from 3DPW the rotation and global-rotation terms skip the \MethodHandMaskBones{} finger, thumb
 and metacarpal bones in all three runs; the mesh terms are not masked. The shape mask for 3DPW people is off in all
 three runs and on only in Final-masked (Section~\ref{sec:method-real}). The Student keeps the teacher's bone correction
 during training and is evaluated with its own, re-estimated after training (Section~\ref{sec:method-student}).}

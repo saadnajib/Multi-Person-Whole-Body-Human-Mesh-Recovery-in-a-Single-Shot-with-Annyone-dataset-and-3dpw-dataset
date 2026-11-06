@@ -1,41 +1,53 @@
-% appendix_d_figures.tex -- Appendix D Extra figures.
-% Plan: REWRITE_PLAN.md section 2 (Appendices) and 3 (F8, F9 office pair, F10 remaining montages, F23).
-% Writing rules: section 5 of the plan (every caption: images, models, setting, caveat). No job ids here.
-% F14 (label check) and F21 (age sweep) are in Chapters 3 and 2; F6 and F24 in Chapter 5; the first four 3DPW
-% montages of F10 and the real-photo figure F13 in Chapter 6. Sources: docs/figures/*.jpg and the demo montages
-% of the cluster (figures/img/). F11 (all 12 hands montages) and F17 (the 9 rest-pose montages not in Chapter 6)
-% are at the end.
-% Trimmed 19 Oct to 4 pages: the same seven figures and labels, in compact grids (rows of matched height, several
-% montages per row); F8 + F23 share one float, F9 office + F10 3DPW frames share one float (images side by side, two captions). The
-% chapter-6 trim may move two figures here (in-training curves, ViT-S curves); page 4 has room for them.
+% appendix_d_figures.tex -- Appendix D Extra figures. Plan: REWRITE_PLAN.md sections 2-3; 6 Nov plan (wf1/plan.json).
+% Every caption names the images, the models, the setting and the caveat. No job ids here. Sources: docs/figures/*.jpg
+% and the cluster demo montages (figures/img/). Compact grids since the 19 Oct trim.
+% 6 Nov: fig:depth-579862 moved here from 06_results.tex (sec:res-depth) and shares the first float with
+% fig:depth-579860. figures/plots/F19_student.tex is no longer \input anywhere (fig:student-curves sits in the F23
+% figure in Chapter 5); the file stays on disk, like F22_vits_curves.tex. The optional fig:video-more was not added.
 % Long version: git show 76aa1a4:docs/thesis/chapters/appendix_d_figures.tex.
 
-\chapter{Extra Figures}
+\chapter{Extra figures}
 \label{app:figures}
 
-This appendix holds the figures that the chapters refer to but do not show: the second depth example, two more
-bone-correction pairs, a second neck pair on 3DPW, the other demo frames and photos, all twelve demo images with
-predicted fingers and nine more rest-pose line-ups. Every panel is judged by eye; where a body is placed from the
-detector box, depth errors are hidden.
+The chapters refer to the figures below but do not show them, so that the main text stays short. Here are both depth
+examples, two more bone-correction pairs on the holdout, a second neck pair on 3DPW, the other demo frames and photos,
+the in-training curves of Final and Control, all twelve demo images with predicted fingers, and nine more rest-pose
+line-ups.
 
-% F8 (plan section 3; docs/figures/depth_before_after_579860.jpg) and F23 (exp6 compare panels on the holdout: Base
-% without and with the bone correction, no training; job in Appendix A), one float.
+I judged every image panel by eye, so none of them is a measurement. Where a body is placed from the detector box,
+a wrong depth cannot be seen in the picture.
+
+% F8 pair (depth_before_after_579862/579860) and F23 (exp6 compare panels: Base without and with the bone
+% correction, no training; job in Appendix A), one float.
 \begin{figure}[!ht]
 \centering
-\includegraphics[width=0.62\linewidth]{depth_before_after_579860}
+\begin{minipage}[t]{0.485\linewidth}
+\centering
+\captionsetup{format=plain,justification=raggedright}
+\includegraphics[width=\linewidth]{depth_before_after_579862}
+\caption[Holdout image 579862 at the predicted depth: ground truth, Base, depth pilot]{Holdout image 579862 rendered
+at each model's own predicted depth: ground truth, Base, and the depth pilot (head-joint targets, depth weight
+$\times$5, 10 epochs, AnnyOne only). The predicted body goes from 0.76 to 0.95 of its true height. Synthetic image;
+a good case, not a typical one. Image 579860 is on the right, in Figure~\ref{fig:depth-579860}.}
+\label{fig:depth-579862}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\linewidth}
+\centering
+\captionsetup{format=plain,justification=raggedright}
+\includegraphics[width=\linewidth]{depth_before_after_579860}
 \caption[Holdout image 579860 at the predicted depth: ground truth, Base, depth pilot]{Holdout image 579860
-rendered at each model's own predicted depth: ground truth, Base, and the depth pilot (head-joint targets, depth
-weight $\times$5, 10 epochs, AnnyOne only). Before the fix the ground-truth head shows above a shrunken body placed
-too far away. Synthetic image; one case, not a typical one. Companion of Figure~\ref{fig:depth-579862}.}
+rendered at each model's own predicted depth: ground truth, Base, and the same depth pilot as on the left. Before the fix the ground-truth head shows above a shrunken body placed too far
+away. Synthetic image; one case, not a typical one.}
 \label{fig:depth-579860}
+\end{minipage}
 
 \vspace{6pt}
 \includegraphics[width=0.49\linewidth]{exp6_compare_579864}\hfill
 \includegraphics[width=0.49\linewidth]{exp6_compare_579866}
 \caption[Two more holdout pairs: Base without and with the bone correction]{Holdout images 579864 (left) and 579866
-(right): Base as trained next to the same checkpoint with the bone correction applied at the output, no training
-(Section~\ref{sec:diag-neck}). Synthetic images at the model's own predicted depth, so the depth bug still draws the
-bodies too small; necks judged by eye. Companions of Figure~\ref{fig:diag-neck-base}.}
+(right): Base as trained next to the same checkpoint with the bone correction applied at the output, without any
+training (Section~\ref{sec:diag-neck}). Synthetic images at the model's own predicted depth, so the depth bug still
+draws the bodies too small. Necks judged by eye. These go with Figure~\ref{fig:diag-neck-base}.}
 \label{fig:exp6-compare}
 \end{figure}
 
@@ -55,12 +67,12 @@ bodies too small; necks judged by eye. Companions of Figure~\ref{fig:diag-neck-b
 \caption[Two 3DPW test frames: Base against the neck pilot]{Left: 3DPW test frames \texttt{downtown\_bar\_00} 701
 (top) and \texttt{office\_phoneCall\_00} 440 (bottom), Base next to the neck pilot (the bone correction and a 2-epoch
 fine-tune); necks ringed. Bodies placed from the detector box, fingers at rest pose; judged by eye, no metric. The two
-columns differ by the correction and by the fine-tune.}
+columns differ by the correction and also by the fine-tune.}
 \label{fig:neck-3dpw-office}
-\caption[Four more 3DPW test frames, Base against Final]{Right: the other four 3DPW test frames of the demo, top to
-bottom \texttt{downtown\_walking}, stairs, \texttt{downtown\_runForBus} and fencing, each as photo and Base, then
-photo and Final (labels in the image). Placed from the detector box, fingers at rest pose; by eye, no metric. The
-first four frames are in Figure~\ref{fig:3dpw-overlays}.}
+\caption[Four more 3DPW test frames, Base against Final]{Right: the other four 3DPW test frames of the demo, from top
+to bottom \texttt{downtown\_walking}, stairs, \texttt{downtown\_runForBus} and fencing. Each shows the photo and Base,
+then the photo and Final (labels in the image). Placed from the detector box, fingers at rest pose; by eye, no
+metric. The first four frames are in Figure~\ref{fig:3dpw-overlays}.}
 \label{fig:3dpw-overlays-more}
 \end{figure}
 
@@ -71,17 +83,18 @@ first four frames are in Figure~\ref{fig:3dpw-overlays}.}
 \includegraphics[height=1.02cm]{F10_photo_tennis_v5_vs_final}\\[2pt]
 \includegraphics[height=1.49cm]{F10_photo_stage_v5_vs_final}\hfill
 \includegraphics[height=1.49cm]{F10_photo_party_v5_vs_final}
-\caption[Four real photos, Base against Final]{The four real photos of the demo (garden, tennis; stage, party), never
-used in training, each as photo and Base, then photo and Final; placed from the detector box, fingers at rest pose;
-by eye, no metric. The tennis photo also appears in Figure~\ref{fig:real-photos}.}
+\caption[Four real photos, Base against Final]{The four real photos of the demo (garden and tennis in the top row,
+stage and party below). None of them was used in training. Each shows the photo and Base, then the photo and Final.
+Placed from the detector box, fingers at rest pose; by eye, no metric. The tennis photo is also in
+Figure~\ref{fig:real-photos}.}
 \label{fig:photo-montages}
 \end{figure}
 
-% F20, in-training curves of Final and Control (moved from Chapter 6 in the 19 Oct trimming pass)
+% F20, in-training curves of Final and Control (moved from the results chapter in the 19 Oct trimming pass)
 \input{figures/plots/F20_val_curves}
 
 % F11, all twelve montages (photo | Base | photo | Final, labels baked in; demo with --relax_hands 0); rows of
-% matched height. Chapter 6 shows zoomed crops of party, guitar and bar only.
+% matched height. Chapter 5 shows zoomed crops of party, guitar and bar only.
 \begin{figure}[tbp]
 \centering
 \includegraphics[height=1.02cm]{F11_hands_photo_garden}\hfill
@@ -96,18 +109,19 @@ by eye, no metric. The tennis photo also appears in Figure~\ref{fig:real-photos}
 \includegraphics[height=1.98cm]{F11_hands_3dpw_bar}\hfill
 \includegraphics[height=1.98cm]{F11_hands_3dpw_office}\hfill
 \includegraphics[height=1.98cm]{F11_hands_3dpw_market}
-\caption[All twelve demo images with predicted fingers, Base and Final]{All twelve demo images with predicted fingers
-(not set to rest pose), each as photo and Base, then photo and Final (labels in the image). Row by row: the garden
-and tennis photos; the stage photo and fencing; stairs and \texttt{downtown\_walking}; \texttt{downtown\_runForBus},
-the party photo and guitar; \texttt{downtown\_bar}, \texttt{office\_phoneCall} and the weekly market. Demo setting,
-placed from the detector box; Base still has the flipped left index-finger base (metacarpal1.L) and right
-ring-finger base, Final has the correction. In most images the hands are a few pixels wide and cannot be judged;
-Figure~\ref{fig:fingers-demo} zooms on the three where they can. By eye; no metric.}
+\caption[All twelve demo images with predicted fingers, Base and Final]{All twelve demo images with the predicted
+fingers (not set to rest pose), each as photo and Base, then photo and Final (labels in the image). Row by row: the
+garden and tennis photos; the stage photo and fencing; stairs and \texttt{downtown\_walking};
+\texttt{downtown\_runForBus}, the party photo and guitar; \texttt{downtown\_bar}, \texttt{office\_phoneCall} and the
+weekly market. Demo setting, placed from the detector box. Base still has the flipped base bone of the left index
+finger (metacarpal1.L) and of the right ring finger; Final has the correction. In most images the hands are only a
+few pixels wide and cannot be judged, so Figure~\ref{fig:fingers-demo} zooms in on the three where they can. By eye;
+no metric.}
 \label{fig:fingers-all}
 \end{figure}
 
-% F17, the nine rest-pose montages not shown in Chapter 6 (photo | Base | photo | Final | photo | Final-masked,
-% labels baked in; demo with --rest_pose 1). Chapter 6 shows tennis, stage and downtown_bar.
+% F17, the nine rest-pose montages not shown in Chapter 5 (photo | Base | photo | Final | photo | Final-masked,
+% labels baked in; demo with --rest_pose 1). Chapter 5 shows tennis, stage and downtown_bar.
 \begin{figure}[tbp]
 \centering
 \includegraphics[height=1.26cm]{F17_rest_photo_garden}\\[2pt]
@@ -120,10 +134,10 @@ Figure~\ref{fig:fingers-demo} zooms on the three where they can. By eye; no metr
 \includegraphics[height=1.98cm]{F17_rest_3dpw_office}\hfill
 \includegraphics[height=1.98cm]{F17_rest_3dpw_market}
 \caption[Nine more rest-pose line-ups: Base, Final, Final-masked]{The other nine demo images in rest pose, each as
-photo and Base, photo and Final, photo and Final-masked (labels in the image). Top to bottom: the garden photo, the
-3DPW test frames fencing, stairs, \texttt{downtown\_walking} and \texttt{downtown\_runForBus}; then the party photo
-and guitar, \texttt{office\_phoneCall} and the weekly market. Every detected person is in rest pose, so only body
-shape differs. Demo setting, placed from the detector box; at this size only gross differences of build can be
-seen. By eye; no metric. The other three images are in Figure~\ref{fig:rest-lineup}.}
+photo and Base, photo and Final, photo and Final-masked (labels in the image). From top to bottom: the garden photo,
+the 3DPW test frames fencing, stairs, \texttt{downtown\_walking} and \texttt{downtown\_runForBus}; then the party
+photo and guitar, \texttt{office\_phoneCall} and the weekly market. Every detected person stands in rest pose, so
+only the body shape differs between the models. Demo setting, placed from the detector box. At this size only large
+differences in build can be seen. By eye; no metric. The other three images are in Figure~\ref{fig:rest-lineup}.}
 \label{fig:rest-more}
 \end{figure}

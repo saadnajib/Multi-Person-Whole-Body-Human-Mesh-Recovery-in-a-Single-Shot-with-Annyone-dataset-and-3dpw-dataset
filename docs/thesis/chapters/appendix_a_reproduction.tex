@@ -7,26 +7,33 @@
 % Trimmed 19 Oct: the scripts table (old A.4, tab:scripts-new) and the commands (old A.5) moved to docs/thesis/REPRODUCE.md;
 % labels sec:app-scripts and sec:app-commands now sit on the pointer at the end of the runs section. Long version:
 % git show 76aa1a4:docs/thesis/chapters/appendix_a_reproduction.tex.
+% 6 Nov additions: exp9 header; exp8_distill_vitb.sh:257, :932, :1142 (seed only in the bone-fix trace; train.py
+% has no manual_seed); docs/video_inference.md:36-60, :387-440; demo_video.py:826-843, :911-926. Pending: F6-F8.
 
-\chapter{Reproduction: Model Names, Runs and Job Ids}
+\chapter{Model names, runs and reproduction}
 \label{app:reproduction}
 \begingroup % until the end of the file: \path may also break after _ and - (long run names)
 \expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}%
 
 Every number in this thesis can be traced in two steps. Each headline number is a macro in one of the files
-\path{numbers_*.tex} of the thesis source, and the comment next to it names the Slurm job and the line of its log, for
-example \texttt{3611336:191}. Table~\ref{tab:runs} maps that job to the model, the log and the checkpoint, and
-Table~\ref{tab:names} maps every model name to the run name it had during the project. This appendix is the only
-place where job ids and old run names appear.
+\path{numbers_*.tex} of the thesis source, and the comment next to it names the job and the line of its log, for
+example \texttt{3611336:191}. A job is one piece of work that Slurm, the scheduler of the cluster, ran for me, and
+the job id is the number Slurm gave it. Table~\ref{tab:runs} maps each job to the model, the log and the checkpoint.
+Table~\ref{tab:names} maps every model name to the run name it had during the project. Job ids and old run names
+appear only in this appendix.
 
 \section{Model names}
 \label{sec:app-names}
 
-``L'' is our ViT-L line, every model that keeps the ViT-L backbone. L-stage 1 to 4 are the steps of the transfer
-schedule that turned NAVER's released model into ours; Base is its end and the start of every later fine-tune. Final
-and Control are the two arms of the last experiment, the same 10-epoch fine-tune of Base with and without the two
-fixes. The number after ``Student-S/'' is the old version number of a ViT-S student; Student is the ViT-B model
-distilled from Final.
+``L'' is my ViT-L line, every model that keeps the ViT-L backbone. L-stage 1 to 4 are the steps of the transfer
+schedule that turned NAVER's released model into mine. Base is the end of that schedule and the start of every later
+fine-tune. Final and Control are the two arms of the last experiment: the same \MethodFinalEpochs-epoch fine-tune of
+Base, with and without the two fixes. The number after ``Student-S/'' is the old version number of a ViT-S student,
+and Student is the ViT-B model distilled from Final.
+
+``Student, 60 epochs'' is the Student's recipe trained twice as long, for the experiment of
+Section~\ref{sec:res-training-length}. It is not the reported model. The sweep of
+Section~\ref{sec:res-kd-temperature} trains the same recipe at \KDSweepArms{} distillation temperatures.
 
 \input{tables/T19_model_names}
 
@@ -35,72 +42,105 @@ distilled from Final.
 
 All training, evaluation and demo jobs ran on the DFKI Pegasus Slurm cluster, from the repository clone in
 \path{/netscratch/najib/multi-hmr}. The repository is public on GitHub
-(\path{saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset});
-checkpoints, logs and datasets are not in it. Each job script prints the short git hash of the clone into the run's
+(\path{saadnajib/Multi-Person-Whole-Body-Human-Mesh-Recovery-in-a-Single-Shot-with-Annyone-dataset-and-3dpw-dataset}).
+Checkpoints, logs and datasets are not in it. Each job script prints the short git hash of the clone into the run's
 \path{settings.txt}, so a run can be matched to a commit.
 
-Every job runs inside the container image \path{ubuntu+20.04_v4.sqsh} (in \path{/netscratch/najib/ContainerImages/}), started by \texttt{srun} with the option \path{--container-image} and the mounts \path{/fscratch}, \path{/netscratch}, \path{/home/najib} and
-\path{/dev/shm}. Inside it, \path{slurm/env.sh} is sourced first. It activates the conda environment
-\texttt{multihmr} (Python 3.9, PyTorch 2.0.1 with CUDA 11.7, xformers 0.0.20, torchvision 0.15.2), moves the
-Hugging Face, Torch and Anny caches to \path{/netscratch/najib}, sets one thread per data-loader worker, and strips the
-\texttt{X | None} type hints from the downloaded DINOv2 hub code, which Python 3.9 rejects. \path{slurm/egl.sh} then
-installs the EGL libraries for the headless renderer; the video launcher additionally tests a real render and stops before checkpoint loading if it fails.
+Every job runs inside the container image \path{ubuntu+20.04_v4.sqsh} (in \path{/netscratch/najib/ContainerImages/}),
+started by \texttt{srun} with the option \path{--container-image} and the mounts \path{/fscratch}, \path{/netscratch},
+\path{/home/najib} and \path{/dev/shm}. Inside it, \path{slurm/env.sh} is sourced first. It activates the conda
+environment \texttt{multihmr} (Python 3.9, PyTorch 2.0.1 with CUDA 11.7, xformers 0.0.20, torchvision 0.15.2) and
+moves the Hugging Face, Torch and Anny caches to \path{/netscratch/najib}. It also sets one thread per data-loader
+worker and strips the \texttt{X | None} type hints from the downloaded DINOv2 hub code, because Python 3.9 rejects
+them. \path{slurm/egl.sh} then installs the EGL libraries for the headless renderer. The video launcher also tests a
+real render and stops before loading a checkpoint if that test fails.
 
-That PyTorch build has GPU kernels up to compute capability 8.6, so the training and evaluation scripts ask for A100,
-A40, L40S and RTX A6000 nodes and refuse an H100 or H200 (compute capability 9.0). The V100 nodes \texttt{gifu} and
-\texttt{glendale} are excluded: every converter task sent there failed within a minute with an argument-parser error
-whose cause is unknown. Only the 3DPW converter ran on H100 nodes, through a small virtual environment with PyTorch
-2.1.2 for CUDA 12.1 on top of \texttt{multihmr} (\texttt{PY\_VENV=/netscratch/najib/venv\_cu121}). Steps that need
-only NumPy (building the 3DPW label files, the re-fit check) run on the login node. The model-cost script needs a GPU
-node, because \path{model.py} imports the renderer and the login node has no EGL.
+The landmark detector of the video pipeline, MediaPipe 0.10.14, runs in its own Python 3.10 environment, with the
+packages pinned in \path{requirements-video-landmarks.txt}. There, \path{scripts/video/extract_pose_landmarks.py} reads
+the video once on the CPU and writes a JSON file before the GPU job starts. The environment lies in
+\path{/netscratch/najib/venvs/video-landmarks}.
+
+That PyTorch build has GPU kernels up to compute capability 8.6. For this reason the training and evaluation scripts
+ask for A100, A40, L40S and RTX A6000 nodes and refuse an H100 or H200 (compute capability 9.0). The V100 nodes
+\texttt{gifu} and \texttt{glendale} are excluded: every converter task sent there failed within a minute with an
+argument-parser error whose cause I do not know. Only the 3DPW converter ran on H100 nodes, through a small virtual
+environment with PyTorch 2.1.2 for CUDA 12.1 on top of \texttt{multihmr}
+(\texttt{PY\_VENV=/netscratch/najib/venv\_cu121}). Steps that need only NumPy (building the 3DPW label files, the re-fit
+check) run on the login node. The model-cost script needs a GPU node, because \path{model.py} imports the renderer and
+the login node has no EGL.
 
 \section{Runs, jobs, logs and checkpoints}
 \label{sec:app-runs}
 
-Table~\ref{tab:runs} lists every job behind a number, a table or a figure of the thesis; all of them have
-finished.
+Table~\ref{tab:runs} lists every job behind a number, a table or a figure of the thesis. All of them have finished
+except the \KDSweepArms{} sweep jobs, which I submitted on 6 November. The table still lacks the job ids of the
+sweep, of the five-panel video and of the stage photo.
 
 \input{tables/T13_runs}
 
 The scripts behind these jobs and the exact commands that produced the thesis numbers are listed in the file
 \path{docs/thesis/REPRODUCE.md} of the repository.\label{sec:app-scripts}\label{sec:app-commands} Each command runs
-from the login node in the repository clone; the flags each training run passes are in Appendix~\ref{app:flags}.
+from the login node in the repository clone. The flags each training run passes are in Appendix~\ref{app:flags}.
 
 \section{What cannot be reproduced exactly}
 \label{sec:app-repro-limits}
 
-The training code sets no random seed. The \texttt{--seed} of the holdout trace only picks which training images the
-bone correction is estimated on. The order in which training images are drawn (with replacement) therefore differs between two runs of the same command, and so does the number of optimiser steps skipped for
-non-finite gradients (16 in Final, 10 in Control, out of 10,000). Two runs of one 2-epoch configuration differed by
-7.6\,mm PVE, 1.9\,deg head direction and 0.8 recall points (Table~\ref{tab:pilot-noise}); a repeat of Final or Control
-is expected to land within such a margin, not on the same numbers. The two arms also ran on different GPU types
-(Final on an A100, Control on an A40, both with TF32), which changes the speed and, at the level of rounding, the
-arithmetic. Evaluating a fixed checkpoint involves no sampling; that it repeats exactly across GPU types was not
-tested.
+The training code sets no random seed. The \texttt{-{}-seed} of the holdout trace only picks which training images the
+bone correction is estimated on. The Student script passes its seed to that trace and nowhere else
+(\path{exp8_distill_vitb.sh}, lines 257 and 1142). The sweep runs through the same script, so this also holds for the
+60-epoch run and for every temperature. The order in which training images are drawn (with replacement) therefore
+differs between two runs of the same command. So does the number of optimiser steps skipped for non-finite gradients
+(\MethodFinalNaNSteps{} in Final, 10 in Control, out of $\num{\MethodFinalSteps}$).
+
+Two runs of one 2-epoch configuration differed by \NoisePVE\,mm PVE, \NoiseHeadDeg\,deg head direction and
+\DiagNoiseRecall{} recall points (Table~\ref{tab:pilot-noise}). A repeat of Final or Control should land within such
+a margin, not on the same numbers. The two arms also ran on different GPU types (Final on an A100, Control on an A40,
+both with TF32), which changes the speed and, at the level of rounding, the arithmetic. Evaluating a fixed checkpoint
+involves no sampling. I did not test whether it repeats exactly across GPU types.
+
+Apart from the temperature, the sweep runs evaluate after every epoch instead of every fifth and also compute the
+training loss on the validation images (\texttt{-{}-val\_loss 1}). Both only measure and never change a weight. Because
+of this, the sweep's own $T=4$ run repeats the reported recipe and will give a second estimate of run-to-run
+variation.
 
 Three further limits apply. The history scripts of the L line and of Student-S were edited after their runs, so their
 recipes in Table~\ref{tab:names} are as recorded there, not re-run. \path{train.py} keeps only the last two or three
 checkpoints of a run, so intermediate epochs are gone. The checkpoints, the AnnyOne and 3DPW data and the Relative
-Human annotations are not in the repository; 3DPW and Relative Human come with their own licences.
+Human annotations are not in the repository, and 3DPW and Relative Human come with their own licences.
 
-\section{Video Execution Evidence}
+\section{Video execution evidence}
 \label{sec:app-video}
 
-The author supplied \path{video-compare-3642415.out} and its corresponding error log. The run used the
-30-epoch student checkpoint
+The first video comparison ran as job 3642415, and I have its log \path{video-compare-3642415.out} and the matching
+error log. It used the 30-epoch Student checkpoint
 \path{results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/train/checkpoints/00029.pt}
-and the correction selected by that run's \path{student_fix_arg.txt}. The baseline was
-\path{models/multiHMR/multiHMR_672_L_anny.pt}; the input was \path{man_walking.mp4}. Both checkpoints loaded
-with 100\% state coverage. The renderer reported an NVIDIA L40S and passed its test mesh.
+with the correction selected by that run's \path{student_fix_arg.txt}. The baseline was
+\path{models/multiHMR/multiHMR_672_L_anny.pt} and the input was \path{man_walking.mp4}. Both checkpoints loaded with
+100\,\% state coverage. The renderer reported an NVIDIA L40S and passed its test mesh.
 
-The final log lines report \VideoFrames{} processed frames for each model, \VideoStudentMatched{} student
-matches and \VideoBaselineMatched{} baseline matches. The completed output is
-\path{results/video_compare/video_3642415/comparison.mp4}. The log contains no synchronized inference-FPS
-result from the later timing implementation and supplies no numerical pose/shape stability summary.
+The final log lines report \VideoFrames{} processed frames for each model, \VideoStudentMatched{} student matches and
+\VideoBaselineMatched{} baseline matches. The output is \path{results/video_compare/video_3642415/comparison.mp4}. The
+job ran before the temporal filter and the later timing code existed. So its log has no synchronised inference FPS
+and no numerical summary of pose or shape stability.
 
-The video implementation and EGL correction are recorded in commits \texttt{1d5621b} and \texttt{7b0b5e1};
-the revised FPS implementation is \texttt{a0fa59f}. It is launched through
-\path{slurm/demo/run_video_compare.sh}. Its usage, timing boundaries and outputs are documented in
-\path{docs/video_inference.md}.
+The five-panel video of Section~\ref{sec:res-video} came from a later run of the same launcher with
+\path{TEMPORAL=ema} and \path{ALIGNMENT=landmarks}. It adds the filtered and the aligned Student panels
+(Section~\ref{sec:method-temporal}) and a frame-rate label on every panel. The matched-frame counts in the thesis are
+those of job 3642415. My final presentation printed the same counts for the new run, but I have not yet checked them
+against its \path{student/summary.json} and \path{baseline/summary.json}. \TODO{job id, run.json and timing.csv of
+the five-panel run}
+
+The frame-rate labels measure different work (Table~\ref{tab:video-fps}; definitions in
+\path{docs/video_inference.md}, lines 387--440). \path{timing.csv} has one row per panel. The raw Student and the
+baseline show \texttt{inference\_fps}, model inference alone. The filtered panel shows \texttt{processing\_fps} from
+\path{student_temporal/summary.json}, which also counts the filter and the Anny re-decode. The aligned panel shows the
+same quantity from \path{student_aligned/summary.json}, which also counts the alignment fit but not the offline
+landmark extraction.
+
+The video implementation and the EGL correction are in commits \texttt{1d5621b} and \texttt{7b0b5e1}, and the revised
+FPS implementation is \texttt{a0fa59f}. It is launched through \path{slurm/demo/run_video_compare.sh}, and
+\path{docs/video_inference.md} documents its usage, timing boundaries and outputs. The stage photo of
+Section~\ref{sec:res-image-compare} comes from \path{slurm/demo/run_image_compare.sh}, whose defaults are the same
+Student, correction and baseline (\path{docs/image_comparison.md}). \TODO{job id and input photo}
 
 \endgroup

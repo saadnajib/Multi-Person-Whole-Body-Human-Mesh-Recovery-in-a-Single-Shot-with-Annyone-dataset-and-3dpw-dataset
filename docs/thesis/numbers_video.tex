@@ -5,3 +5,18 @@
 \newcommand{\VideoStudentMatched}{356} % [student] 356 with a matched person, 0 missing
 \newcommand{\VideoBaselineMatched}{354} % [baseline] 354 with a matched person, 2 missing
 \newcommand{\VideoBaselineMissing}{2} % same baseline summary
+
+% --- Video pipeline settings (Method, Section sec:method-video / sec:method-temporal); added 6 Nov ---------------
+% These are the pipeline defaults; the settings of the five-panel run of the final deck (slide 18) still need its run.json.
+\newcommand{\VideoFov}{55}            % deg, assumed field of view along the longer image side; docs/video_inference.md:201 (FOV default)
+\newcommand{\VideoWarmupFrames}{10}   % frames excluded from speed averages; docs/video_inference.md:203 (WARMUP_FRAMES)
+\newcommand{\VideoPoseTau}{0.08}      % s, pose time constant; docs/video_inference.md:205; scripts/video/temporal_filter.py:65
+\newcommand{\VideoTranslTau}{0.12}    % s, head-anchor time constant; docs/video_inference.md:206; scripts/video/temporal_filter.py:65
+\newcommand{\VideoShapeTau}{1.0}      % s, phenotype time constant; docs/video_inference.md:207; scripts/video/temporal_filter.py:65
+\newcommand{\VideoMaxGap}{0.25}       % s, reset gap; docs/video_inference.md:208; scripts/video/temporal_filter.py:66
+\newcommand{\VideoDepthTau}{0.35}     % s, aligned log-depth time constant; docs/video_inference.md:211; scripts/video/alignment_depth_filter.py:14
+\newcommand{\VideoMinConf}{0.5}       % minimum landmark confidence; docs/video_inference.md:212; scripts/video/landmark_alignment.py:51
+\newcommand{\VideoDepthRate}{0.5}     % log-depth units per second, rate limit; scripts/video/alignment_depth_filter.py:10, :40
+\newcommand{\VideoMinLandmarks}{4}    % confident landmarks needed (incl. shoulder, hip, knee or ankle); scripts/video/landmark_alignment.py:41-44
+\newcommand{\VideoDepthBoundLow}{0.5} % lower depth bound, times current median joint depth; scripts/video/landmark_alignment.py:66, :138
+\newcommand{\VideoDepthBoundHigh}{2}  % upper depth bound, times current median joint depth; scripts/video/landmark_alignment.py:66, :139

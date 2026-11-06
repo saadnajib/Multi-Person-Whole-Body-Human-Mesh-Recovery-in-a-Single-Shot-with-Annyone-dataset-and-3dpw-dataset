@@ -1,81 +1,73 @@
 % =============================================================================
 % Chapter 2  Background and related work
-% REWRITE_PLAN.md section 2 ("2 Background and related work"), 1.4, 5. Trimmed to 6 pages on 19 Oct;
-% the long version is in commit 76aa1a4 (git show 76aa1a4:docs/thesis/chapters/02_background.tex).
-% Absorbs draft main.tex:110-213. Numbers: numbers_background.tex (prefix Bg).
-% Citations: references.bib + references_background.bib.
-% Dropped on purpose: the draft's "73.5 vs 80.1 mm MPJPE on 3DPW (ViT-B vs ViT-S)"
-% (main.tex:173, :204-205). The Multi-HMR paper could not be opened from this
-% machine to check them; the released README numbers are used instead.
+% Numbers: numbers_background.tex (Bg). Dropped on purpose: the draft's "73.5 vs 80.1 mm MPJPE"
+% (main.tex:173, :204-205), unchecked against the paper; the released README numbers are used instead.
 % =============================================================================
 
-\chapter{Background and Related Work}
+\chapter{Background and related work}
 \label{ch:background}
 
-This chapter introduces the body models, networks, data and training ideas the thesis builds on, and for each prior
-work it says which choice of mine it explains or constrains. What the thesis adds is listed in
-Section~\ref{sec:intro-contrib}.
+My network predicts bodies in one body model, Anny, but part of its training labels come in another, SMPL, so I
+describe both before the data. The new parts of my work are listed in Section~\ref{sec:intro-contrib}.
 
-% -----------------------------------------------------------------------------
-\section{Parametric body models: the SMPL family and Anny}
+\section{The body models SMPL and Anny}
 \label{sec:bg-bodymodels}
 
-A parametric body model is a differentiable function
-$M(\boldsymbol{\theta},\boldsymbol{\beta}) \rightarrow \mathbf{V}\in\mathbb{R}^{N\times 3}$ that maps a pose
-$\boldsymbol{\theta}$ and a shape $\boldsymbol{\beta}$ to the $N$ vertices of a mesh. The shape deforms a template
-mesh in its rest pose. The pose moves a skeleton of bones, and the skin follows by \emph{linear blend skinning}
-(LBS):
+A body model turns a few numbers into a 3D mesh of a person, a surface of points (vertices) joined into triangles.
+The pose $\boldsymbol{\theta}$ says how the body bends and the shape $\boldsymbol{\beta}$ how it is built. The
+function $M(\boldsymbol{\theta},\boldsymbol{\beta}) \rightarrow \mathbf{V}\in\mathbb{R}^{N\times 3}$ is
+differentiable, so a network can be trained through it. The shape deforms a template mesh in its rest pose. Then the
+pose turns a skeleton of bones, and the skin follows by \emph{linear blend skinning} (LBS):
 \begin{equation}
   \mathbf{v}_i' \;=\; \sum_{k} w_{ik}\, \mathbf{G}_k(\boldsymbol{\theta},\boldsymbol{\beta})\, \mathbf{v}_i(\boldsymbol{\beta}),
   \label{eq:bg-lbs}
 \end{equation}
 where $\mathbf{v}_i(\boldsymbol{\beta})$ is the shaped rest vertex, $w_{ik}$ the skinning weight of bone $k$ and
-$\mathbf{G}_k$ the bone's world transform, found by chaining the rotations of all bones from the root down to $k$.
-Because the transforms chain, a wrong rotation high in the tree moves everything below it. This matters in
-Appendix~\ref{ch:diagnostics}, where two neck bones turned by half a turn leave the head pointing the right way but
-twist the skin between them.
+$\mathbf{G}_k$ the bone's world transform, found by chaining the rotations of all bones from the root down to $k$. In
+words, every vertex moves with the bones it is attached to, mixed by its weights. Because the transforms chain, a wrong
+rotation high in the tree moves everything below it. In Appendix~\ref{ch:diagnostics}, two neck bones turned by half a
+turn leave the head pointing the right way but twist the skin between them.
 
 \paragraph{The SMPL family.}
-SMPL~\cite{loper2015smpl} has \num{\BgSmplVertices} vertices and \BgSmplJoints{} joints. Its shape space is a set of
-principal components learned from registered scans of adults; most methods use the first \BgSmplBetas{}
-coefficients. These are statistical directions, not named properties: no coefficient means ``older'' or ``more
-muscular''. Adult scan statistics limit the representation of child proportions. SMIL~\cite{hesse2018smil} is a separate infant model, and
+SMPL~\cite{loper2015smpl}, the body model of most earlier work and of the 3DPW labels, has \num{\BgSmplVertices}
+vertices and \BgSmplJoints{} joints. Its shape space was learned from registered scans of adults as principal
+components, and most methods use the first \BgSmplBetas{} coefficients, called betas. These are statistical
+directions, not named properties: no coefficient means ``older'' or ``more muscular''. Because the scans are of adults,
+SMPL represents child proportions poorly. SMIL~\cite{hesse2018smil} is a separate infant model, and
 AGORA~\cite{patel2021agora} and BEV~\cite{sun2022bev} blend the adult template towards an infant one with one extra
 coefficient. SMPL-H~\cite{romero2017mano} adds MANO hands with \BgManoHandJoints{} joints each, and
-SMPL-X~\cite{pavlakos2019smplx} adds a face, for \BgSmplxJoints{} joints on \num{\BgSmplxVertices} vertices. SMPL is
-provided under research licence terms; the terms for assets, datasets and trained weights must be checked separately.
-Multi-HMR, the network this thesis starts from, predicts SMPL-X~\cite{baradel2024multihmr}, so moving it to Anny
-meant replacing the whole output layer.
+SMPL-X~\cite{pavlakos2019smplx} also adds a face, for \BgSmplxJoints{} joints on \num{\BgSmplxVertices} vertices. SMPL
+has research licence terms; those of assets, datasets and weights must be checked separately. Multi-HMR, the network
+my work starts from, was published for SMPL-X~\cite{baradel2024multihmr}. NAVER's later Anny release replaced its
+output layer, and my teacher keeps that release's backbone with its own heads (Appendix~\ref{app:reproduction}).
 
 \paragraph{Anny.}
-Anny~\cite{bregier2025anny} is a body model by NAVER LABS Europe built from the open MakeHuman
-project~\cite{makehuman} instead of from scans. Its code is under the Apache~2.0 licence and its assets under
-CC0~\cite{naver2025annycode}. The implementation uses the full rig of \BgAnnyBones{} bones, compatible with the AnnyOne labels.
-The body-model package and topology must match the checkpoint and annotation configuration; the parameter
-count of a default rig in another release is not a substitute for that configuration. Pose is one rigid transform per bone, applied
-by Equation~\eqref{eq:bg-lbs}. Of the bones, \BgAnnyHelperBones{} are helper bones (toes, breasts, face micro-bones)
-whose rotation an image cannot reveal; I keep them at rest, which leaves \BgAnnyActiveBones{} predicted bones. The
-neck is modelled by three stacked bones, \texttt{neck01} to \texttt{neck03}, followed by \texttt{head}.
+Anny~\cite{bregier2025anny} is a body model by NAVER LABS Europe. It is built from the open MakeHuman
+project~\cite{makehuman}, an artist-made human model, and not from scans. Its code is under the Apache~2.0 licence and
+its assets under CC0~\cite{naver2025annycode}. I use the full rig of \BgAnnyBones{} bones, because the AnnyOne labels
+are written for it. Package, rig and mesh must match the checkpoint and the labels; the default rig of another release
+has a different bone count and does not fit them. Pose is one rigid transform per
+bone, applied by Equation~\eqref{eq:bg-lbs}. Of the bones, \BgAnnyHelperBones{} are helper bones (toes, breasts, small
+face bones) whose rotation an image cannot show. I keep them at rest, which leaves \BgAnnyActiveBones{} predicted
+bones. The neck has three stacked bones, \texttt{neck01} to \texttt{neck03}, followed by \texttt{head}.
 
-Shape is set by \BgAnnyPhenotypes{} \emph{phenotype} values between 0 and 1: \texttt{gender}, \texttt{age},
-\texttt{muscle}, \texttt{weight}, \texttt{height}, \texttt{proportions}, \texttt{cupsize}, \texttt{firmness}, and
-three blend weights \texttt{african}, \texttt{asian} and \texttt{caucasian}. Each value drives artist-made blend
-shapes, vertex offsets of the rest mesh. Because the values have names, a predicted body can be read as ``older'' or
-``heavier''. Gender 0 is the male end and 1 the female end (rest stature \BgStatureGenderZero\,m and
-\BgStatureGenderOne\,m). Age blends five anchor bodies placed at $\mathrm{linspace}(-\tfrac{1}{3}, 1, 5)$: age 0 is
-the baby, \BgAgeAnchorChild{} the child, \BgAgeAnchorYoung{} the young adult and 1 the old adult; the newborn would
-need an age below 0, which a network output squashed into $(0,1)$ never gives.
+Shape is set by \BgAnnyPhenotypes{} \emph{phenotype} values between 0 and 1, such as \texttt{gender}, \texttt{age},
+\texttt{weight} and three blend weights \texttt{african}, \texttt{asian} and \texttt{caucasian}
+(all in Table~\ref{tab:body-models}). Each value drives blend shapes, artist-made
+offsets of the rest-mesh vertices. Because the values have names, a predicted body can be read as ``older'' or
+``heavier''. Gender 0 is the male end and 1 the female end, with rest statures of
+\BgStatureGenderZero\,m and \BgStatureGenderOne\,m. Age blends five anchor bodies placed at
+$\mathrm{linspace}(-\tfrac{1}{3}, 1, 5)$: age 0 is the baby, \BgAgeAnchorChild{} the child, \BgAgeAnchorYoung{} the
+young adult and 1 the old adult. The newborn would need an age below 0, which a network output squashed into $(0,1)$
+never gives.
 
 Figure~\ref{fig:bg-age-sweep} shows what age does. At the mean AnnyOne shape, moving age from 0 to 1 raises the
-skeletal height from \BgSweepHeightAgeZero\,m to \BgSweepHeightAgeOne\,m (\BgSweepHeightAgeHalf\,m at 0.5); most of
+skeletal height from \BgSweepHeightAgeZero\,m to \BgSweepHeightAgeOne\,m (\BgSweepHeightAgeHalf\,m at 0.5), so most of
 the change happens below about 0.5. A small height value does not make a child: at age 0.6 the smallest reachable
-body is \BgSmallestAdultStature\,m tall and keeps adult proportions. What marks a child is narrow shoulders relative
-to the head, a shoulder-to-head width ratio of \BgShoulderHeadChild{} at age 0.1 against \BgShoulderHeadAdult{} at
-0.6. Only a low age produces it, which is why Appendix~\ref{ch:diagnostics} treats children as an age problem. I never
-convert ages to years, because three scales are in use and disagree: the value read as 11~years is
-\BgElevenYearsScaleC{} in Anny's calibration, \BgElevenYearsScaleA{} in the code I inherited and
-\BgElevenYearsScaleB{} on the MakeHuman slider. I call a person \emph{child-shaped} if the age value is below about
-\BgChildShapeAge.
+body is \BgSmallestAdultStature\,m tall and keeps adult proportions. What marks a child is narrow
+shoulders relative to the head: the shoulder-to-head width ratio is \BgShoulderHeadChild{} at age 0.1 against
+\BgShoulderHeadAdult{} at 0.6, and only a low age produces it. I never convert ages to years, because three scales
+in the code disagree. I call a person \emph{child-shaped} if the age value is below about \BgChildShapeAge.
 
 \begin{figure}[t]
   \centering
@@ -96,145 +88,175 @@ convert ages to years, because three scales are in use and disagree: the value r
   \label{fig:bg-age-sweep}
 \end{figure}
 
-\paragraph{AnnyOne.}
-AnnyOne is NAVER's synthetic dataset for Anny: rendered scenes of several people with exact Anny labels (all bone
-transforms, all phenotypes and the camera). Its authors describe more than \num{\BgAnnyOnePublished}
-images~\cite{bravo2026annyfit}; the release copy I train on holds \num{\BgAnnyOneImages} images. It is the only
-source of complete Anny labels, shape included, that I have (Section~\ref{sec:data-annyone}).
+\paragraph{SMPL and Anny side by side.}
+Table~\ref{tab:body-models} and Figure~\ref{fig:body-models} put the two models side by side. They differ most in
+the skeleton (\BgSmplJoints{} joints against \BgAnnyBones{} bones) and in the shape (\BgSmplBetas{} unnamed
+coefficients against \BgAnnyPhenotypes{} named phenotypes). SMPL stores the pose as one axis-angle rotation per joint,
+three numbers whose direction is the axis and whose length is the angle. My network gives each Anny rotation as \MethodRotDims{} numbers (the 6D
+form), which are turned into a valid rotation matrix.
 
-% -----------------------------------------------------------------------------
-\section{Image Features and Attention}
+My network predicts Anny. The only dataset with Anny labels, AnnyOne, is synthetic, and the real photos I have, 3DPW
+(Section~\ref{sec:bg-labels}), come with SMPL labels. This is why Chapter~\ref{ch:data} converts 3DPW.
+
+\IfFileExists{tables/T26_body_models.tex}{\input{tables/T26_body_models}}{\TODO{T26 body-model table missing}}
+\IfFileExists{figures/F24_body_models.tex}{\input{figures/F24_body_models}}{\TODO{F24 body-model figure missing}}
+
+\paragraph{AnnyOne.}
+AnnyOne is NAVER's synthetic dataset for Anny: computer-rendered scenes of several people, each with exact Anny
+labels (all bone transforms, all phenotypes and the camera). Its authors describe more than
+\num{\BgAnnyOnePublished} images~\cite{bravo2026annyfit}, and the release copy I train on holds \num{\BgAnnyOneImages}
+images. It is my only source of complete Anny labels, shape included (Section~\ref{sec:data-annyone}).
+
+\section{Image features and attention}
 \label{sec:bg-transformer}
 
-A Vision Transformer divides an image into patches and represents each patch by a token
-\cite{dosovitskiy2021vit}. Attention combines token information through queries $\mathbf Q$, keys $\mathbf K_a$
+A Vision Transformer (ViT)~\cite{dosovitskiy2021vit} cuts an image into square patches and turns each into a vector,
+a token. Attention mixes information between tokens through queries $\mathbf Q$, keys $\mathbf K_a$
 and values $\mathbf V_a$:
 \begin{equation}
  \operatorname{Attention}(\mathbf Q,\mathbf K_a,\mathbf V_a)
- =\operatorname{softmax}\!\left(\frac{\mathbf Q\mathbf K_a^\top}{\sqrt{d_k}}\right)\mathbf V_a .
+ =\operatorname{softmax}\!\left(\frac{\mathbf Q\mathbf K_a^\top}{\sqrt{d_k}}\right)\mathbf V_a ,
  \label{eq:bg-attention}
 \end{equation}
-The subscript distinguishes attention keys from camera intrinsics $\mathbf K$. Self-attention relates image
-patches to each other; cross-attention allows a person query to read information from image tokens.
-Multi-HMR uses both image features and person queries, enabling one shared encoding of a multi-person image.
-DINOv2 provides pretrained visual features for the ViT-L teacher and ViT-B student
-\cite{oquab2023dinov2}. A smaller encoder reduces cost but changes feature width, motivating the projector
-and transferred-head design in Chapter~\ref{ch:method}.
+where $d_k$ is the length of a key. In words, each query takes an average of the values, weighted by how well it matches
+each key. The subscript $a$ keeps these keys apart from the camera intrinsics $\mathbf K$
+(Chapter~\ref{ch:method}). Multi-HMR uses self-attention between image patches and cross-attention, where a person
+query reads from all image tokens. DINOv2~\cite{oquab2023dinov2} gives the pretrained features of the ViT-L teacher
+and the ViT-B student. The ViT-B has narrower tokens, so the student needs a projector (Section~\ref{sec:bg-kd}).
 
-\section{Single-person and multi-person human mesh recovery}
+\section{Single-person and multi-person mesh recovery}
 \label{sec:bg-hmr}
+
+Human mesh recovery (HMR) estimates the mesh of a body model from an image.
 
 \paragraph{Regression and fitting.}
 HMR~\cite{kanazawa2018hmr} regressed body-model parameters for one cropped person with a convolutional encoder, an
-iterative regressor and an adversarial pose prior. HMR~2.0~\cite{goel2023humans4d} replaced the encoder by a Vision
-Transformer (ViT)~\cite{dosovitskiy2021vit} and showed that a large ViT trained on a broad data mixture is a strong
-and simple recipe, which Multi-HMR shares. My model follows the same principle: the network outputs the parameters
-directly, with no optimisation at test time. SMPLify~\cite{bogo2016smplify} goes the other way and fits SMPL to 2D
-keypoints by optimisation; SPIN~\cite{kolotouros2019spin} puts such a fit inside the training loop. My 3DPW converter
-(Chapter~\ref{ch:data}) is an optimisation of the SMPLify kind, but in 3D, between two body models, and run once
-offline.
+iterative regressor and an adversarial pose prior (a second network that tells real poses from impossible ones).
+HMR~2.0~\cite{goel2023humans4d} replaced the encoder by a ViT and showed that a large ViT trained on a broad data
+mixture is a strong and simple recipe, which Multi-HMR shares. My model follows the same principle: the network outputs
+the parameters directly, with no optimisation at test time. SMPLify~\cite{bogo2016smplify} goes the other way and fits
+SMPL to 2D keypoints by optimisation, and SPIN~\cite{kolotouros2019spin} puts such a fit inside the training loop. My
+3DPW converter (Chapter~\ref{ch:data}) is an optimisation of the SMPLify kind, but in 3D, between two body models, and
+run once offline.
 
-\paragraph{Single-shot multi-person: ROMP and Multi-HMR.}
-Two-stage methods run a detector and then a single-person network on each crop, so the cost grows with the number of
-people. ROMP~\cite{sun2021romp} does both in one pass: it predicts a heatmap of body centres and reads body
-parameters at the detected centres. Multi-HMR~\cite{baradel2024multihmr}, the architecture of this thesis, keeps this
-idea. A DINOv2~\cite{oquab2023dinov2} ViT turns the image into one token per
-$\BgPatch{\times}\BgPatch$-pixel patch, a $\BgTokenGrid{\times}\BgTokenGrid$ grid at \BgInputRes{} pixels. Each
-token scores whether a person's primary keypoint, the head joint in the released code~\cite{naver2024multihmrcode},
-lies in it. High-scoring tokens become the queries of the \emph{Human Perception Head} (HPH), which attends to all
-image tokens and regresses the body parameters and the person's distance from the camera. That distance belongs to
-the head joint, and this anchor is at the centre of the depth defect of Appendix~\ref{ch:diagnostics}.
-Section~\ref{sec:method-architecture} gives the details. The released SMPL-X checkpoints reach a PVE of
-\BgMhrLPVE\,mm on the 3DPW test set with ViT-L in \BgMhrLMs\,ms and \BgMhrBPVE\,mm with ViT-B in \BgMhrBMs\,ms on a
-V100~\cite{naver2024multihmrcode}, which is why my smaller model is a ViT-B student. These are SMPL-X errors and
-cannot be compared with the Anny-space errors of this thesis.
+\paragraph{Single-shot multi-person methods.}
+Two-stage methods run a person detector and then a single-person network on each crop, so the cost grows with the
+number of people. ROMP~\cite{sun2021romp} does both in one pass (single-shot): it predicts a heatmap
+of body centres and reads the body parameters at the detected centres. Multi-HMR~\cite{baradel2024multihmr}, the
+architecture of my work, keeps this idea. Its ViT turns the image into one token per
+$\BgPatch{\times}\BgPatch$-pixel patch, a $\BgTokenGrid{\times}\BgTokenGrid$ grid at \BgInputRes{} pixels. Each token
+scores whether a person's primary keypoint, the head joint in the released code~\cite{naver2024multihmrcode}, lies in
+it. High-scoring tokens become the queries of the \emph{Human Perception Head} (HPH). The
+HPH attends to all image tokens and regresses the body parameters and the distance of the person's head joint from the
+camera. This anchor is at the centre of the depth defect in Appendix~\ref{ch:diagnostics}.
+Section~\ref{sec:method-architecture} gives the details.
+
+The released SMPL-X checkpoints reach a PVE (mean vertex distance, Section~\ref{sec:method-eval}) of
+\BgMhrLPVE\,mm on the 3DPW test set with ViT-L in \BgMhrLMs\,ms, and \BgMhrBPVE\,mm with ViT-B in \BgMhrBMs\,ms
+on a V100 GPU~\cite{naver2024multihmrcode}. The ViT-B is as accurate and faster, which is why my smaller model is a
+ViT-B student. These are SMPL-X errors and cannot be compared with the Anny-space errors of this thesis.
 
 \paragraph{BEV and Relative Human.}
-BEV~\cite{sun2022bev} extends ROMP with explicit depth reasoning and an age-aware body. Its authors collected
-Relative Human, real photos in which every person carries an age group (adult, teenager, kid, baby), a depth layer and
-keypoints. It is the only real data with age labels I could use, so I use it, for evaluation only, to test whether
-predicted ages and genders follow the people on real photos (Section~\ref{sec:data-rh}). It has no 3D bodies.
+BEV~\cite{sun2022bev} extends ROMP with explicit depth reasoning and an age-aware body. Its authors collected Relative
+Human, real photos in which every person has an age group (adult, teenager, kid, baby), a depth layer and keypoints. It
+has no 3D bodies, but it is the only real data with age labels I could use. I use it for evaluation only, to test
+whether predicted ages and genders follow the people on real photos (Section~\ref{sec:data-rh}).
 
 \paragraph{Multi-HMR-Anny and Anny-Fit.}
-In February 2026 NAVER released a Multi-HMR checkpoint that predicts Anny, trained on BEDLAM, AnnyOne and further
-real images~\cite{naver2024multihmrcode}. A multi-person HMR network for Anny therefore already exists, and this
-thesis does not claim to be the first. This checkpoint, Multi-HMR-Anny, is where my backbone weights come from and the
-baseline I compare against (Section~\ref{sec:res-baseline}). On the same backbone its decoder has
-\BgNaverHeadLayers{} cross-attention blocks and \BgNaverHeadParams\,M parameters, against \BgOurHeadLayers{} blocks
-and \BgOurHeadParams\,M in mine. It was trained on AnnyOne, which includes the images I hold out, so its AnnyOne error
-is most likely an in-sample number. Anny-Fit~\cite{bravo2026annyfit}, by the same group, refines such predictions per
-image by optimisation and adapts them to children at test time; my model stays a single forward pass. I did not use
-it; it is the natural comparison for future work on children.
+NAVER has released a Multi-HMR checkpoint that predicts Anny, trained on BEDLAM, AnnyOne and further real
+images~\cite{naver2024multihmrcode}. So a multi-person network for Anny already exists, and I do not claim to be the
+first. This checkpoint, Multi-HMR-Anny, gives my teacher's backbone weights and is the baseline I compare against.
+On the same backbone its decoder has \BgNaverHeadLayers{}
+cross-attention blocks and \BgNaverHeadParams\,M parameters, against \BgOurHeadLayers{} blocks and
+\BgOurHeadParams\,M in mine. It was trained on AnnyOne, so its AnnyOne error is most likely in-sample
+(Section~\ref{sec:res-baseline}). Anny-Fit~\cite{bravo2026annyfit}, by the same group, refines such predictions per
+image by optimisation and adapts them to children at test time. My model stays a single forward pass. I did not use
+Anny-Fit; it is the natural comparison for future work on children.
 
-% -----------------------------------------------------------------------------
 \section{Synthetic training data}
 \label{sec:bg-synthetic}
 
 AGORA~\cite{patel2021agora} renders scanned people with SMPL-X fits into realistic scenes, and
-BEDLAM~\cite{black2023bedlam} showed that synthetic images alone can train competitive networks. AnnyOne does the
-same for Anny. Synthetic labels are exact and complete, but leave open how well a network transfers to real photos. In
-this thesis my shape predictions follow the labels on the synthetic holdout but collapse towards the training average
-on real photos (Appendix~\ref{ch:diagnostics}). This is why Final mixes \BgMixReal\,\% real images into every batch,
-and why those images need Anny labels.
+BEDLAM~\cite{black2023bedlam} showed that synthetic images alone can train competitive networks. AnnyOne does the same
+for Anny. Synthetic labels are exact and complete, but the images look different from photos, so a network trained on them
+can work less well on real photos. In my experiments the shape predictions followed the labels on the
+synthetic holdout, the AnnyOne images I keep out of training, but collapsed towards the training average on real photos
+(Section~\ref{sec:res-rh}). This is why Final, my teacher, mixes \BgMixReal\,\% real images into every batch, and why
+those images need Anny labels.
 
-% -----------------------------------------------------------------------------
 \section{Real-data labels for a new body model}
 \label{sec:bg-labels}
 
 3DPW~\cite{vonmarcard2018_3dpw} is the standard real-world test set for mesh recovery: \BgThreeDPWSequences{} video
-sequences with SMPL ground truth for one or two actors each. SMPL and Anny share neither skeleton nor shape space, so
-the labels must be re-expressed in Anny by fitting. The SMPL-X code transfers fits between SMPL-family models through a
-vertex correspondence~\cite{pavlakos2019smplx}, and the Anny package offers an inverter that fits Anny to a target
-mesh~\cite{naver2025annycode}; none turns a 3DPW label into an Anny label directly, so I wrote my own converter
-(Section~\ref{sec:data-converter}). A fit to joint positions recovers only what joint positions determine; what the
-converted labels can and cannot test is listed in Section~\ref{sec:data-limits}. SHAPY~\cite{choutas2022shapy}
-supervises shape on real images with measurements and word attributes instead; Anny's named phenotypes would suit
-such labels, but I collected none.
+sequences with SMPL labels for one or two actors each. SMPL and Anny share neither skeleton nor shape space, so the
+labels must be refitted in Anny. The SMPL-X code transfers fits between SMPL-family models through a
+vertex correspondence~\cite{pavlakos2019smplx}, and the Anny package has an inverter that fits Anny to a target
+mesh~\cite{naver2025annycode}. Neither turns a 3DPW label into an Anny label directly, so I wrote my own converter
+(Section~\ref{sec:data-converter}). A fit to joint positions recovers only what joints determine;
+Section~\ref{sec:data-limits} lists what the converted labels can and cannot test. SHAPY~\cite{choutas2022shapy} instead
+supervises shape on real images with body measurements and word attributes. Anny's named phenotypes would suit such
+labels, but I collected none.
 
-% -----------------------------------------------------------------------------
 \section{Knowledge distillation}
 \label{sec:bg-kd}
 
-Knowledge distillation~\cite{hinton2015distilling} trains a small \emph{student} to reproduce a large, trained
-\emph{teacher}, originally by matching its class probabilities softened by a temperature.
-FitNets~\cite{romero2015fitnets} let the student also match an intermediate representation of the teacher through a
-small learned regressor. DINOv2~\cite{oquab2023dinov2} distilled its smaller ViTs from its largest one, so a DINOv2
-ViT-B is a good starting point for a student. My Student combines both forms: a projector maps its
-\BgProjIn-wide ViT-B tokens to the teacher's \BgProjOut-wide tokens, which lets the teacher's heads be copied
-unchanged (Section~\ref{sec:method-kd}). It has \BgStudentParams\,M parameters against \BgFinalParams\,M, and the
-question is whether it keeps at least \BgNinetyFive\,\% of Final's accuracy on both test sets.
+A large network is accurate but slow. Knowledge distillation~\cite{hinton2015distilling} trains a small \emph{student}
+to imitate a large, trained \emph{teacher}, originally by matching its class probabilities softened by a
+temperature. FitNets~\cite{romero2015fitnets} let the student also match an intermediate
+representation of the teacher through a small learned regressor. DINOv2~\cite{oquab2023dinov2} distilled its smaller
+ViTs from its largest one, so a DINOv2 ViT-B is a good starting point for a student. My Student uses both forms and
+matches the teacher's image features and outputs (Section~\ref{sec:method-kd}). With
+\BgStudentParams\,M parameters against \BgFinalParams\,M for Final, the question is whether it keeps at least
+\BgNinetyFive\,\% of Final's accuracy on both test sets.
 
-% -----------------------------------------------------------------------------
+\paragraph{The projector.}
+The student starts with a copy of the teacher's prediction heads. Its features have \BgProjIn{} channels, but the
+teacher's features and the copied heads use \BgProjOut. A projector, one linear layer, converts one width into the
+other, so the student's features can be compared with the teacher's and fed into the copied heads. Because the heads
+read its output, the projector stays in the deployed student.
+
+\paragraph{The temperature.}
+After the projector, each patch token is a list of \BgProjOut{} channel values. Teacher and student tokens are
+compared in three steps. First, the values are divided by the temperature $T$. Then a softmax turns them into
+positive weights that add up to 1. Finally, the Kullback--Leibler (KL) divergence measures how differently teacher and
+student spread these weights. It is zero when they are equal. A larger $T$ makes the weights softer. For
+example, two channels with weights [\BgTempExampleHigh, \BgTempExampleLow] at $T=1$ get about
+[\BgTempExampleSoftHigh, \BgTempExampleSoftLow] at $T=\MethodKDTemp$ (an illustration, not a measurement).
+Softer weights let the student also learn from the smaller channel responses. The weights describe feature patterns,
+not probabilities of body parts. Dividing by $T$ shrinks the gradients by about $T^2$, so the loss is multiplied by $T^2$
+to keep the gradient size comparable across temperatures~\cite{hinton2015distilling}.
+% Source of the T^2 factor: distill.py:16-19 (docstring) and :97 (kl * T**2).
+
+The output distillation is a plain L1 loss, a sum of absolute differences between the student's and the teacher's
+rotations, phenotypes and distances, with no temperature. The reported Student uses $T=\MethodKDTemp$;
+Section~\ref{sec:res-kd-temperature} varies it.
+
 \section{Temporal models for video}
 \label{sec:bg-temporal}
 
-The deployed student works independently on single frames. Tracking and sequence-level measurements
-extend its application to video, while temporal learning remains a separate modelling choice. Most video methods refine
-per-frame features of an image network: HMMR~\cite{kanazawa2019hmmr} with a temporal convolution,
-VIBE~\cite{kocabas2020vibe} with a recurrent network and a motion discriminator tied to SMPL,
-TCMR~\cite{choi2021tcmr} with branches that predict the current frame from its neighbours to reduce jitter, and
-MPS-Net~\cite{wei2022mpsnet} and GLoT~\cite{shen2023glot} with attention over frames. SmoothNet~\cite{zeng2022smoothnet}
-smooths the output poses of any estimator without image features. PHALP~\cite{rajasegaran2022phalp} and
-4DHumans~\cite{goel2023humans4d} track people through video, the first step of any multi-person video method, and
-WHAM~\cite{shin2024wham} places the motion in world coordinates.
+Most video methods refine the per-frame features of an image network: HMMR~\cite{kanazawa2019hmmr} with a
+temporal convolution, VIBE~\cite{kocabas2020vibe} with a recurrent network and a motion discriminator tied to SMPL, and
+TCMR~\cite{choi2021tcmr} with branches that predict the current frame from its neighbours to reduce jitter (small
+frame-to-frame shaking). MPS-Net~\cite{wei2022mpsnet} and GLoT~\cite{shen2023glot} use attention over
+frames. SmoothNet~\cite{zeng2022smoothnet} is a learned network that smooths the output poses of any estimator over a
+window of frames. PHALP~\cite{rajasegaran2022phalp} and 4DHumans~\cite{goel2023humans4d} track
+people through video, the first step of any multi-person video method, and WHAM~\cite{shin2024wham} places the motion
+in world coordinates.
 
-The video application in Section~\ref{sec:method-video} uses association and unsmoothed frame-wise inference.
-This gives a reference for deciding whether learned refinement is needed. It does not implement the temporal
-convolutions, recurrent models or attention windows of the methods above.
+My student sees one frame at a time, so its body can shake or change size between frames. I keep it frame-wise
+and add two inference-time steps, without retraining (Section~\ref{sec:method-temporal}). First, an
+exponential moving average blends each tracked person's new bone rotations, phenotypes and position with the earlier
+ones. Like SmoothNet, it smooths outputs without image features. But it is a fixed formula, not a learned network. It is
+also causal (only the current and earlier frames count) and works on body-model parameters. Second, the body's
+position and depth are aligned to 2D landmarks from an independent detector. The learned methods above remain future
+work.
 
-\section{Positioning the Present Work}
+\section{Position of this work}
 \label{sec:bg-scope}
 
-The method follows the single-shot detection and regression design of Multi-HMR. Its compactness comes from
-a smaller image encoder with a projector and transferred heads, rather than a new attention operator.
-The projector serves two roles: it aligns feature dimensions for distillation and preserves the representation
-width expected by the copied prediction heads. This differs from a feature adapter used only during training;
-the deployed student keeps the projector.
-
-Real-image supervision is another distinct part of the system. Using an existing body model does not supply
-annotations in its parameter space. Joint-based conversion makes 3DPW useful for Anny training, but cannot
-recover shape variables that the source joints do not constrain. This limitation motivates separate
-reconstruction and phenotype evaluations.
+My method keeps the single-shot design of Multi-HMR and gets smaller through a smaller image encoder with a
+projector and copied heads, not through a new attention operator. Table~\ref{tab:related-position} relates the prior
+work to mine.
 
 \begin{table}[tbp]
 \centering\small
@@ -245,19 +267,18 @@ Approach & Relevant idea & Relation to this thesis \\
 \midrule
 Multi-HMR and its released Anny model \cite{baradel2024multihmr,naver2024multihmrcode} &
 single-shot multi-person detection and body regression &
-baseline framework; source checkpoints; external comparison \\
+framework; teacher's backbone weights; baseline \\
 FitNets and knowledge distillation \cite{romero2015fitnets,hinton2015distilling} &
-representation and output transfer from a teacher &
-motivate projected feature matching and parameter distillation \\
+feature and output transfer from a teacher &
+the student's projected feature matching and output distillation \\
 BEV \cite{sun2022bev} &
-age-aware reconstruction and real-photo age-group annotations &
-motivates evaluating child proportions; not an implemented student component \\
+age-aware reconstruction and real-photo age-group labels &
+reason to evaluate child proportions; not used in the student \\
 VIBE, TCMR and SmoothNet \cite{kocabas2020vibe,choi2021tcmr,zeng2022smoothnet} &
 temporal features or output refinement &
-future comparison if frame-wise video inspection reveals instability \\
+SmoothNet is the closest relative of my inference-time filter; the learned temporal models are future work \\
 \bottomrule
 \end{tabular}
-\caption[Position of the proposed compact system]{Relevant prior work and its role. The method combines an
-existing single-shot framework with compact teacher--student training and converted Anny supervision.}
+\caption[Prior work and this thesis]{Prior work and how it relates to this thesis.}
 \label{tab:related-position}
 \end{table}

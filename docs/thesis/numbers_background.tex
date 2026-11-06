@@ -63,6 +63,11 @@
 \newcommand{\BgFinalParams}{318.38}     % M params, our ViT-L model; H 0a (smoke test 3613926)
 \newcommand{\BgStudentParams}{101.38}   % M params, ViT-B student; H 0a (smoke test 3613926)
 \newcommand{\BgNinetyFive}{95}          % percent: supervisor's bar for a smaller model; P 1 "[1b-ii]"
+% Temperature illustration (not a measurement): final deck 5 Nov slide 4 notes; computed: ln(0.88/0.12)/4 = 0.498, softmax -> 0.622/0.378
+\newcommand{\BgTempExampleHigh}{0.88}     % weight of the larger channel at T = 1; final deck slide 4 notes (illustration)
+\newcommand{\BgTempExampleLow}{0.12}      % weight of the smaller channel at T = 1; same
+\newcommand{\BgTempExampleSoftHigh}{0.62} % same pair at T = 4: 1/(1+exp(-0.498)) = 0.622; computed from the two above
+\newcommand{\BgTempExampleSoftLow}{0.38}  % same pair at T = 4: 0.378; computed
 
 % --- Multi-HMR-Anny (NAVER) vs our head ------------------------------------------
 \newcommand{\BgNaverHeadLayers}{8}      % cross-attention blocks in NAVER's Anny head; naver/multi-hmr multi_hmr_anny/multi_hmr.py:29 (xat_depth=8)
