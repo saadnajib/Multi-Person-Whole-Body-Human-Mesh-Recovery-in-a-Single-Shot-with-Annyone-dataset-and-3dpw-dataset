@@ -261,7 +261,7 @@ def plot_run(data, terms, title, out_base):
     for i, t in enumerate(terms):
         te = sorted(e for e in data['train'] if t in data['train'][e])
         if te:
-            ax1.plot(te, [data['train'][e][t] for e in te], color='#2a78d6', lw=0.9, ls=['--', ':', '-.'][i % 3], label=f'train {t}')
+            ax1.plot(te, [data['train'][e][t] for e in te], color='#2a78d6', lw=0.9, ls=['--', ':', '-.', (0, (6, 2, 1, 2, 1, 2))][i % 4], label=f'train {t}')
     val_ds = sorted(set(data['val_loss']) | set(data['val']))
     col = {ds: ds_colors[i % len(ds_colors)] for i, ds in enumerate(val_ds)}
     for ds in sorted(data['val_loss']):
