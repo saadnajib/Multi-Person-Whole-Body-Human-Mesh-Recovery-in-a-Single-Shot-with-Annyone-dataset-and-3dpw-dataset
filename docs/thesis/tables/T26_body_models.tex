@@ -1,0 +1,40 @@
+% T26 SMPL and Anny side by side. Added 6 Nov (supervisor's request of 22 Oct, deck slide 4).
+% Sources: numbers_background.tex:13-25 (\BgSmpl..., \BgAnny...); chapters/02_background.tex:39-63 (meaning of the
+% betas and phenotypes, licences); scripts/data/smpl_to_anny.py:178-238 (SMPL 24-joint order, betas vs phenotypes,
+% gender convention); model.py:139-149 (helper-bone mask), :454-456 (deccam: distance + offset) and :619-621 (decpose 163*6, decshape 11, deccam 3);
+% docs/presentations/2026-10-22_supervisor/build_presentation.py:196-203 and Sources_and_presenting_notes.md (slide 4);
+% figures/anny_rest_skeleton.json (region counts, anny 0.6.2); numbers_data.tex:57-61 (24 matched points, 18 fitted
+% bones, 144 at rest). The Anny vertex count is deliberately left out (two conflicting numbers in the repo).
+\begin{table}[!tbp]
+\centering\footnotesize
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.17\linewidth}>{\raggedright\arraybackslash}p{0.37\linewidth}>{\raggedright\arraybackslash}p{0.38\linewidth}@{}}
+\toprule
+ & SMPL & Anny \\
+\midrule
+Built from & registered scans of adults & the open MakeHuman project (artist-made) \\
+Mesh & \num{\BgSmplVertices} vertices & one artist-made mesh; vertex count not stated$^{a}$ \\
+Skeleton & \BgSmplJoints{} joints (23 + root): \BodySmplCentreJoints{} on the centre line, \BodySmplSideJoints{} on each
+  side & \BgAnnyBones{} bones: face \BodyAnnyFaceBones, hands \BodyAnnyHandBones, toes \BodyAnnyToeBones, arms
+  \BodyAnnyArmBones, legs \BodyAnnyLegBones, spine \BodyAnnySpineBones, neck and head \BodyAnnyNeckHeadBones,
+  breasts \BodyAnnyBreastBones, root 1 \\
+Shape & \BgSmplBetas{} betas: principal components of the scans; no single value has a meaning of its own &
+  \BgAnnyPhenotypes{} named phenotypes in $[0, 1]$: gender, age, muscle, weight, height, proportions, cup size,
+  firmness, African, Asian, Caucasian \\
+Pose & one axis-angle rotation per joint, $\BgSmplJoints \times 3 = \BodySmplPoseNumbers$ numbers & one rigid
+  transform per bone \\
+Children & needs a separate infant model or a blend towards one & covered by the age phenotype (baby at 0) \\
+Licence & research licence terms & code Apache~2.0, assets CC0 \\
+\midrule
+In this thesis & the 3DPW labels; refitted with Anny on \BodyMatchedPoints{} matched points (root and
+  \DataFittedBones{} bones move, \DataRestBones{} stay at rest) & what the model predicts: \BgAnnyBones{} rotations in
+  6D form ($\BgAnnyBones \times \BodyAnnyRotDims = \num{\BodyAnnyPoseNumbers}$ numbers; \BgAnnyHelperBones{} helper
+  bones set to rest, \BgAnnyActiveBones{} used), \BgAnnyPhenotypes{} phenotypes and a 3D position (distance and image offset, 3 numbers) \\
+\bottomrule
+\multicolumn{3}{@{}p{0.95\linewidth}@{}}{\scriptsize $^{a}$\,The vertex count of the Anny mesh depends on the
+release and on whether unattached vertices are kept; it is not stated here.}
+\end{tabular}
+\caption[SMPL and Anny side by side]{The two body models of this thesis. SMPL is the body model of the 3DPW labels
+and of most earlier work; Anny is the body model the network predicts. Bone counts per region are those of the full
+rest rig used by the AnnyOne labels and by our model (Figure~\ref{fig:body-models}).}
+\label{tab:body-models}
+\end{table}

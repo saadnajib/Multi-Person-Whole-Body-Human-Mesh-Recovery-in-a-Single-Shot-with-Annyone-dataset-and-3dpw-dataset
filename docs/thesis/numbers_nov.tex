@@ -1,0 +1,152 @@
+% =============================================================================
+% numbers_nov.tex  --  numbers that arrived between 5 and 6 Nov 2026 (after the final supervisor presentation)
+% Convention: see numbers.tex. One macro per value, source on the same line. Used by T22-T27 and F23-F27.
+% Source key: CA = data/CLUSTER_ANSWERS.md (section named in the comment); PS = data/plot_stats.md;
+%   PC = data/holdout_phenotype_corr.csv; RHcsv = data/rh_per_person_{base,final,masked,partialmask}.csv
+%   (recomputed 6 Nov with python: matched people with a male/female tag, AUC rank-based with ties averaged,
+%   women positive; spreads = population sd over all matched people; every value below reproduced);
+%   DECK = the author's final presentation of 5 Nov (final.pptx; slide number given);
+%   VI = docs/video_inference.md; NOTES = docs/presentations/2026-10-22_supervisor/Sources_and_presenting_notes.md.
+% Run names as in numbers_results.tex. Student = exp8 ViT-B, 30 epochs, job 3614191 (the reported student);
+% Student-60 = the same recipe trained for 60 epochs, job 3623342, checkpoint 00059.pt.
+% =============================================================================
+
+% --- Student-60 (job 3623342, <RUN ..._e60>/final_table.json); CA "6 Nov: 60-epoch student final table" ------
+\newcommand{\StudentSixtyEpochs}{60}          % epochs x 1,000 steps, batch 8; CA "6 Nov: 60-epoch student final table"
+\newcommand{\StudentSixtyPVE}{107.7}          % mm, holdout V1; 3623342 final_table.json; CA 6 Nov final table
+\newcommand{\StudentSixtyPAPVE}{74.6}         % mm, holdout V1; same
+\newcommand{\StudentSixtyMPJPE}{114.5}        % mm, holdout V1; same
+\newcommand{\StudentSixtyRecall}{85.0}        % percent, holdout V1; same
+\newcommand{\StudentSixtyRootErr}{697.9}      % mm, holdout V1 root error; same (teacher in that table 728.5)
+\newcommand{\StudentSixtyTestHundredPVE}{111.0}  % mm, AnnyOne test-100 V0; 3623342 final_table.json as relayed 6 Nov (facts F1); not in CA
+\newcommand{\StudentSixtyTestHundredPAPVE}{78.2} % mm; same
+\newcommand{\StudentSixtyTestHundredMPJPE}{115.0}% mm; same
+\newcommand{\StudentSixtyTestHundredRecall}{85.0}% percent; same
+\newcommand{\StudentSixtyThreeDPW}{110.9}     % mm, 3DPW test v23, 8,190 images; CA 6 Nov final table
+\newcommand{\StudentSixtyPAThreeDPW}{72.5}    % mm; same
+\newcommand{\StudentSixtyMPJPEThreeDPW}{112.9}% mm; same
+\newcommand{\StudentSixtyRecallThreeDPW}{99}  % percent; same
+\newcommand{\StudentSixtyMs}{28.9}            % ms, student, this job's bench; CA 6 Nov final table
+\newcommand{\TeacherMsSixtyJob}{60.6}         % ms, teacher re-timed in job 3623342's bench; CA 6 Nov final table
+\newcommand{\TeacherRootErrStudentJob}{728.5} % mm, teacher holdout root error as re-measured in 3614191 (CA STUDENT DONE) and 3623342
+\newcommand{\StudentSixtyGainHoldout}{11.9}   % mm PVE, 119.6 - 107.7; CA 6 Nov final table "Reading"
+\newcommand{\StudentSixtyChangeThreeDPW}{0.8} % mm PVE, 110.9 - 110.1 (worse, within noise); computed from CA 6 Nov final table
+\newcommand{\StudentSixtyRatioPVE}{1.46}      % 107.7 / 73.7, holdout V1; computed here
+\newcommand{\StudentSixtyRatioThreeDPW}{1.25} % 110.9 / 89.0, 3DPW test; computed here
+\newcommand{\SpeedRatioStudentSixty}{2.10}    % 60.6 / 28.9 (both in job 3623342's bench); computed here
+
+% --- Loss curves of the two students (scripts/analysis/plot_loss_curves.py, tensorboard); CA "6 Nov: loss curves"
+% Slopes over the last 20% of the epochs; percent per epoch. No validation loss in either run (trained before --val_loss).
+\newcommand{\LossThirtyWindow}{25--30}        % epochs of the slope window, e30 run; facts F2 (last 20% of 30 epochs)
+\newcommand{\LossSixtyWindow}{49--60}         % epochs of the slope window, e60 run; facts F2 (last 20% of 60 epochs)
+\newcommand{\LossThirtyTrainFirst}{130.67}    % train loss total, start of window, e30 (3614191); CA 6 Nov loss curves
+\newcommand{\LossThirtyTrainLast}{124.12}     % same, end of window
+\newcommand{\LossThirtyTrainSlope}{\ensuremath{-0.87}} % percent/epoch, falling; same
+\newcommand{\LossThirtyHoldFirst}{130.49}     % mm, in-training val PVE AnnyOne holdout, e30; same
+\newcommand{\LossThirtyHoldLast}{122.83}      % mm; same
+\newcommand{\LossThirtyHoldSlope}{\ensuremath{-1.21}}  % percent/epoch, falling; same
+\newcommand{\LossThirtyValFirst}{88.03}       % mm, in-training val PVE 3DPW-val (300 images), e30; same
+\newcommand{\LossThirtyValLast}{87.75}        % mm; same
+\newcommand{\LossThirtyValSlope}{\ensuremath{-0.06}}   % percent/epoch, flat; same
+\newcommand{\LossSixtyTrainFirst}{120.53}     % train loss total, start of window, e60 (3623342); CA 6 Nov loss curves
+\newcommand{\LossSixtyTrainLast}{115.75}      % same
+\newcommand{\LossSixtyTrainSlope}{\ensuremath{-0.29}}  % percent/epoch, falling; same
+\newcommand{\LossSixtyHoldFirst}{117.46}      % mm, in-training val PVE AnnyOne holdout, e60; same
+\newcommand{\LossSixtyHoldLast}{113.04}       % mm; same
+\newcommand{\LossSixtyHoldSlope}{\ensuremath{-0.38}}   % percent/epoch, falling; same
+\newcommand{\LossSixtyValFirst}{85.47}        % mm, in-training val PVE 3DPW-val (300 images), e60; same
+\newcommand{\LossSixtyValLast}{85.96}         % mm; same
+\newcommand{\LossSixtyValSlope}{\ensuremath{+0.06}}    % percent/epoch, flat; same
+\newcommand{\LossValImages}{300}              % 3DPW-validation images of the in-training evaluation; CA 6 Nov loss curves
+\newcommand{\LossEvalEvery}{5}                % epochs between in-training evaluations (old runs); CA 6 Nov loss curves; exp9 header
+\newcommand{\LossFrozenEpochs}{5}             % epochs with the copied heads frozen (epochs 0-4); CA STUDENT DONE; exp9 header
+\newcommand{\LossLRHalfThirty}{12}            % epochs between LR halvings, e30; exp9 header (x0.5 every 12 epochs); facts F2
+\newcommand{\LossLRHalfSixty}{24}             % epochs between LR halvings, e60; facts F2
+
+% --- Phenotype correlation on the AnnyOne holdout (V1, matched people); PC and PS "Phenotype correlation" ------
+\newcommand{\PhenoNBase}{222}                 % people; PC (n column)
+\newcommand{\PhenoNControl}{219}              % PC
+\newcommand{\PhenoNFinal}{214}                % PC
+\newcommand{\PhenoRFinalWeight}{0.77}         % Pearson r, Final; PC 0.775
+\newcommand{\PhenoRFinalGender}{0.73}         % PC 0.733
+\newcommand{\PhenoRFinalCupsize}{0.69}        % PC 0.688
+\newcommand{\PhenoRFinalProportions}{0.67}    % PC 0.666
+\newcommand{\PhenoRFinalAsian}{0.62}          % PC 0.622
+\newcommand{\PhenoRFinalHeight}{0.48}         % PC 0.481
+\newcommand{\PhenoRFinalFirmness}{0.46}       % PC 0.459
+\newcommand{\PhenoRFinalCaucasian}{0.46}      % PC 0.463
+\newcommand{\PhenoRFinalAge}{0.31}            % PC 0.311
+\newcommand{\PhenoRFinalAfrican}{0.30}        % PC 0.304
+\newcommand{\PhenoRFinalMuscle}{0.27}         % PC 0.273
+\newcommand{\PhenoRBaseMuscle}{0.41}          % PC 0.409
+\newcommand{\PhenoSlopeMaxFinal}{0.61}        % largest slope of Final (weight, 0.607); PC; every slope of every model < 1 (max 0.666, Base weight)
+\newcommand{\PhenoSdPredWeightFinal}{0.19}    % sd of Final's weight predictions; PC 0.1936
+\newcommand{\PhenoSdGtWeightFinal}{0.25}      % sd of the weight labels, Final's matched people; PC 0.2471
+
+% --- Gender on Relative Human (val, matched people with a male/female tag); PS last two sections, RHcsv ---------
+% Accuracy at 0.5: existing \RHGender{Base,Final,Masked,Partial} (percent); mean predictions: existing
+% \RH{Women,Men}Gender{Base,Final,Masked,Partial}.
+\newcommand{\RHGenderNBase}{932}              % people with a gender tag, matched; PS; RHcsv
+\newcommand{\RHGenderNFinal}{1308}           % PS; RHcsv
+\newcommand{\RHGenderNMasked}{1163}          % PS; RHcsv
+\newcommand{\RHGenderNPartial}{1271}         % PS; RHcsv
+\newcommand{\RHGenderAUCBase}{0.562}          % gender AUC, women positive; PS; RHcsv
+\newcommand{\RHGenderAUCFinal}{0.780}         % PS; RHcsv
+\newcommand{\RHGenderAUCMasked}{0.705}        % PS; RHcsv
+\newcommand{\RHGenderAUCPartial}{0.752}       % PS; RHcsv
+\newcommand{\RHGenderBestBase}{0.636}         % best accuracy, cut-off scanned ON Relative Human in 0.01 steps (effect size only); PS; RHcsv
+\newcommand{\RHGenderBestFinal}{0.723}        % PS; RHcsv
+\newcommand{\RHGenderBestMasked}{0.685}       % PS; RHcsv
+\newcommand{\RHGenderBestPartial}{0.707}      % PS; RHcsv (reached at 0.92 and 0.93 alike)
+\newcommand{\RHGenderCutBase}{0.62}           % cut-off of that best accuracy; PS; RHcsv
+\newcommand{\RHGenderCutFinal}{0.89}          % PS; RHcsv
+\newcommand{\RHGenderCutMasked}{0.95}         % PS; RHcsv
+\newcommand{\RHGenderCutPartial}{0.93}        % PS (RHcsv: 0.92 gives the same 0.707)
+\newcommand{\RHSpreadWeightBase}{0.101}       % sd of predicted weight, all matched RH people; PS; RHcsv 0.1015
+\newcommand{\RHSpreadWeightFinal}{0.058}      % PS; RHcsv 0.0582
+\newcommand{\RHSpreadWeightMasked}{0.146}     % PS; RHcsv 0.1457
+\newcommand{\RHSpreadWeightPartial}{0.120}    % PS; RHcsv 0.1200
+\newcommand{\RHSpreadMuscleBase}{0.084}       % sd of predicted muscle; PS; RHcsv 0.0842
+\newcommand{\RHSpreadMuscleFinal}{0.053}      % PS; RHcsv 0.0528
+\newcommand{\RHSpreadMuscleMasked}{0.084}     % PS; RHcsv 0.0842
+\newcommand{\RHSpreadMusclePartial}{0.055}    % PS; RHcsv 0.0551
+\newcommand{\HoldGenderLabelMin}{0.38}        % lowest gender label, AnnyOne holdout (214 matched people, Final); PS; holdout_per_person_final.csv 0.384
+\newcommand{\HoldGenderLabelMax}{0.82}        % highest; PS; holdout_per_person_final.csv 0.821
+\newcommand{\HoldGenderLabelAboveHalf}{85}    % percent of those labels above 0.5; PS; holdout_per_person_final.csv 85.0
+
+% --- KD temperature sweep (exp9; supervisor request 5 Nov); RESULTS PENDING ------------------------------------
+\newcommand{\KDSweepArms}{5}                  % temperatures 1, 2, 4, 8, 16; slurm/experiments/exp9_kd_temperature.sh (TEMPS)
+\newcommand{\KDSweepMaxT}{16}                 % largest temperature; same
+% The reported temperature is \MethodKDTemp (= 4, numbers_method.tex). No sweep result exists yet: do not add one here
+% before kd_temperature_sweep.csv is in data/.
+
+% --- Body models (T26, F24) --------------------------------------------------------------------------------------
+\newcommand{\BodySmplPoseNumbers}{72}         % 24 joints x 3 axis-angle; DECK 22 Oct slide 4 (build_presentation.py:200)
+\newcommand{\BodySmplCentreJoints}{6}         % pelvis, spine1-3, neck, head; same slide; smpl_to_anny.py SMPL_JOINT_NAMES
+\newcommand{\BodySmplSideJoints}{9}           % per side; same
+\newcommand{\BodyAnnyRotDims}{6}              % numbers per predicted rotation (6D); model.py:619 (decpose = 163 * 6)
+\newcommand{\BodyAnnyPoseNumbers}{978}        % 163 x 6, the pose output of our head; model.py:619
+\newcommand{\BodyAnnyFaceBones}{59}           % figures/anny_rest_skeleton.json region_counts (anny 0.6.2)
+\newcommand{\BodyAnnyHandBones}{38}           % same (19 per hand)
+\newcommand{\BodyAnnyToeBones}{28}            % same
+\newcommand{\BodyAnnyArmBones}{14}            % same
+\newcommand{\BodyAnnyLegBones}{12}            % same
+\newcommand{\BodyAnnySpineBones}{5}           % same
+\newcommand{\BodyAnnyNeckHeadBones}{4}        % same (neck01-03 + head)
+\newcommand{\BodyAnnyBreastBones}{2}          % same
+\newcommand{\BodyMatchedPoints}{24}           % Anny points fitted to the SMPL joints; smpl_to_anny_name_mapping in the same json
+% Anny vertex count deliberately NOT given (two conflicting numbers in the repo; NOTES slide 4).
+
+% --- Video comparison (DECK 5 Nov slide 18, frame overlay of the five-panel video, man_walking.mp4) ---------------
+% Frames and matches: existing \VideoFrames, \VideoStudentMatched, \VideoBaselineMatched (the same 356 / 356 / 354 on slide 18).
+% FPS values are the labels burned into comparison.mp4; confirm against that run's timing.csv (job id not known yet).
+\newcommand{\VideoPlaybackFPS}{29.97}         % input playback FPS; DECK slide 18 overlay; ffprobe of the embedded video (2997/100, 356 frames)
+\newcommand{\VideoStudentRawFPS}{18.3}        % Student raw, final average inference FPS; DECK slide 18 overlay
+\newcommand{\VideoStudentTemporalFPS}{14.9}   % Student temporal, model + filter/decode FPS; same
+\newcommand{\VideoStudentAlignedFPS}{12.9}    % Student aligned, model + refine FPS; same
+\newcommand{\VideoNAVERFPS}{8.5}              % Original Multi-HMR (NAVER Anny), final average inference FPS; same
+\newcommand{\VideoSpeedRatioNAVER}{2.15}      % 18.3 / 8.5; computed here
+\newcommand{\VideoFigureFrame}{178}           % frame shown in F25 (5.94 s), extracted with ffmpeg from the slide-18 video
+
+% --- Image comparison (DECK 5 Nov slide 11; demo_image_compare.py, docs/image_comparison.md) ----------------------
+\newcommand{\ImageCompareDetections}{3}       % visible detections per model on the stage photo; DECK slide 11 panel labels

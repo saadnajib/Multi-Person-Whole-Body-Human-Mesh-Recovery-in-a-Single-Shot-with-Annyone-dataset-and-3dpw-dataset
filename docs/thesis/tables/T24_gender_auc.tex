@@ -1,0 +1,43 @@
+% T24 Gender on Relative Human: accuracy at 0.5, AUC, mean predictions, best accuracy, real-photo shape spread. Added 6 Nov.
+% Sources: data/plot_stats.md sections "Gender on Relative Human: accuracy and AUC" and "Partial-mask model on Relative
+% Human, and where a gender cut-off can come from"; every value recomputed 6 Nov with python from
+% data/rh_per_person_{base,final,masked,partialmask}.csv (Relative Human val; matched people with a male/female tag;
+% accuracy: pred >= 0.5 = woman; AUC rank-based, ties averaged, women positive; best accuracy: cut-offs 0.00-1.00 in
+% steps of 0.01 scanned on Relative Human itself; spreads = population sd over ALL matched people). All reproduced;
+% the partial mask's best accuracy 0.707 is reached at 0.92 and 0.93 alike (plot_stats.md gives 0.93).
+% Accuracy at 0.5 equals the eval logs (3611285_0, 3612131, 3613616, 3616821): \RHGender... macros of numbers_results.tex.
+% Holdout gender labels: data/plot_stats.md (partial-mask section); data/holdout_per_person_final.csv, V1_eval_masked rows.
+\begin{table}[!tbp]
+\centering\footnotesize
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+ & Base & Final & Final-masked & \shortstack[r]{Final-\\partial-mask} \\
+\midrule
+People with a gender tag   & \RHGenderNBase & \num{\RHGenderNFinal} & \num{\RHGenderNMasked} & \num{\RHGenderNPartial} \\
+Gender AUC                 & \RHGenderAUCBase & \RHGenderAUCFinal & \RHGenderAUCMasked & \RHGenderAUCPartial \\
+Accuracy at 0.5 (\%)       & \RHGenderBase & \RHGenderFinal & \RHGenderMasked & \RHGenderPartial \\
+Mean prediction, women     & \RHWomenGenderBase & \RHWomenGenderFinal & \RHWomenGenderMasked & \RHWomenGenderPartial \\
+Mean prediction, men       & \RHMenGenderBase & \RHMenGenderFinal & \RHMenGenderMasked & \RHMenGenderPartial \\
+Best accuracy$^{a}$        & \RHGenderBestBase & \RHGenderBestFinal & \RHGenderBestMasked & \RHGenderBestPartial \\
+\quad at cut-off           & \RHGenderCutBase & \RHGenderCutFinal & \RHGenderCutMasked & \RHGenderCutPartial \\
+\addlinespace
+\multicolumn{5}{@{}l}{\emph{Spread (sd) of the prediction over all matched people}} \\
+Weight                     & \RHSpreadWeightBase & \RHSpreadWeightFinal & \RHSpreadWeightMasked & \RHSpreadWeightPartial \\
+Muscle                     & \RHSpreadMuscleBase & \RHSpreadMuscleFinal & \RHSpreadMuscleMasked & \RHSpreadMusclePartial \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{0.72\linewidth}\scriptsize
+$^{a}$\,Cut-off chosen on Relative Human itself, so this row only
+shows how large the threshold effect is; it is not a usable result. A real cut-off cannot come from the AnnyOne
+holdout either: its gender labels only span \HoldGenderLabelMin{} to \HoldGenderLabelMax{}, with
+\HoldGenderLabelAboveHalf\,\% above 0.5, so it has no fully male body.
+\end{minipage}
+\caption[Gender on Relative Human: accuracy, AUC and shape spread]{Gender on the Relative Human validation split
+(people matched to a labelled box with a male or female tag; Anny's gender 0 is the male end). The AUC does not
+depend on a cut-off (0.5 = chance); accuracy uses the cut-off 0.5. The masked models still rank women above men but
+moved both sexes up, so at 0.5 most men are called women. The partial mask keeps most of the ranking and doubles the
+weight spread on real photos compared with Final; muscle spread does not come back. One run per model.}
+\label{tab:gender-auc}
+\end{table}

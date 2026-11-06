@@ -166,3 +166,9 @@ Verdict FAIL on all four in-rule errors. Reading [Certain]: 60 epochs improve An
 and leave 3DPW unchanged (110.1 -> 110.9, within noise), exactly what the loss curves predicted. The thesis keeps the
 30-epoch run as the reported student unless the author switches; if the e60 run is reported instead, every student
 number in the thesis and deck changes and the e30 run becomes the "longer training" ablation.
+
+Additional rows of the same e60 `final_table.json` (as pasted by the author on 6 Nov): AnnyOne test-100 (evaluate(), V0):
+teacher PVE 77.5 / PA-PVE 54.4 / MPJPE 78.5 / recall 87.0; e60 student 111.0 / 78.2 / 115.0 / 85.0. Training throughput
+(not comparable between the two): teacher 10.93, student 11.54 images/s. Learning-rate schedule of the e60 run: exp8's
+default LR_DECAY_EVERY = 2/5 of EPOCHS (`slurm/experiments/exp8_distill_vitb.sh` header, "StepLR x0.5 every
+LR_DECAY_EVERY"), i.e. x0.5 every 24 epochs; EVAL_FREQ 5 (exp8 default).

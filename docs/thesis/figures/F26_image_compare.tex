@@ -1,0 +1,15 @@
+% F26 Image comparison on a stage photo: Student vs the original Multi-HMR-Anny. Added 6 Nov.
+% Image: slide 11 of the author's final presentation (5 Nov), ppt/media/image16.png (2016 x 736, three 672-px panels),
+% produced by demo_image_compare.py (docs/image_comparison.md: FOV 55 degrees along the longer side, panel size 672);
+% black letterbox bars cut (scratchpad script make_images.py), labels unchanged. Saved as figures/img/F26_image_compare.jpg
+% (2016 px wide, JPEG quality 85). "3 visible detection(s)" per model = the panel labels.
+\begin{figure}[!tbp]
+\centering
+\IfFileExists{figures/img/F26_image_compare.jpg}{%
+  \includegraphics[width=\linewidth]{F26_image_compare.jpg}}{\fbox{\TODO{F26 image missing}}}
+\caption[Image comparison: Student and Multi-HMR-Anny]{One real photo of three people on a stage. Left: the input.
+Middle: the Student (ViT-B). Right: the original Multi-HMR-Anny of NAVER. Both models find all
+\ImageCompareDetections{} people. No ground truth exists for this photo, so the figure shows only how the meshes sit
+on the people.}
+\label{fig:image-compare}
+\end{figure}

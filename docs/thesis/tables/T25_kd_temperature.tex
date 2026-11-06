@@ -1,0 +1,38 @@
+% T25 KD temperature sweep (exp9; the supervisor's request of 22 Oct, repeated 5 Nov). Added 6 Nov.
+% RESULTS PENDING: the five jobs (slurm/experiments/exp9_kd_temperature.sh, T in 1 2 4 8 16, everything else at the
+% reported recipe, EVAL_FREQ 1, VAL_LOSS 1) were submitted 6 Nov. Only the reported T 4 row (job 3614191, the
+% Student of T17; data/CLUSTER_ANSWERS.md "STUDENT DONE") has numbers. NEVER fill a \Pend row by hand (replace the whole \Pend by its eight cells): copy the
+% values from results/experiments/exp9_kd_temperature/kd_temperature_sweep.csv (written by
+% scripts/analysis/kd_temperature_sweep.py; columns temperature, run, holdout_{pve,pa_pve,mpjpe,recall},
+% threedpw_{pve,pa_pve,mpjpe,recall}, source) into data/ first and cite it here. The collector also prints the PICK
+% line and the run-to-run noise (sweep T 4 arm minus the reported T 4 run); put that noise in the caption.
+\begin{table}[!tbp]
+\centering\footnotesize
+\newcommand{\Pend}{\multicolumn{8}{c@{}}{\TODO{pending: exp9 run submitted 6 Nov, no result yet}}}%
+\setlength{\tabcolsep}{4pt}%
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+ & \multicolumn{4}{c}{AnnyOne holdout, V1} & \multicolumn{4}{c@{}}{3DPW test, V0} \\
+\cmidrule(lr){2-5}\cmidrule(l){6-9}
+$T$ & PVE & PA-PVE & MPJPE & Rec. & PVE & PA-PVE & MPJPE & Rec. \\
+\midrule
+1           & \Pend \\
+2           & \Pend \\
+4 (sweep)   & \Pend \\
+8           & \Pend \\
+16          & \Pend \\
+\addlinespace
+4 (reported) & \StudentPVE & \StudentPAPVE & \StudentMPJPE & \StudentRecall & \StudentThreeDPW & \StudentPAThreeDPW & \StudentMPJPEThreeDPW & \StudentRecallThreeDPW \\
+\midrule
+Teacher     & \FinalPVE & \FinalPAPVE & \FinalMPJPE & \FinalRecall & \FinalThreeDPW & \FinalPAThreeDPW & \FinalMPJPEThreeDPW & \FinalRecallThreeDPW \\
+95\,\% bar  & \BarPVE & & \BarMPJPE & & \BarThreeDPW & & \BarMPJPEThreeDPW & \\
+\bottomrule
+\end{tabular}
+\caption[Distillation temperature sweep]{Distillation temperature sweep for the Student (errors in mm, recall in
+\%). Only the temperature $T$ of the feature distillation changes: it softens the channel softmax of the projected
+backbone tokens before the KL term (gradient scaled by $T^2$); the output distillation is an L1 term without a
+temperature and stays as it is. Everything else is the reported recipe (\StudentEpochs{} epochs). The row
+``4 (reported)'' is the Student of Table~\ref{tab:student}; the sweep re-runs $T = 4$ so that its difference to the
+reported run gives the run-to-run noise. \TODO{sweep results pending: \KDSweepArms{} jobs submitted 6 Nov}}
+\label{tab:kd-temperature}
+\end{table}

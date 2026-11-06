@@ -1,0 +1,23 @@
+% F25 The five-panel video comparison (man_walking.mp4). Added 6 Nov.
+% Image: the video embedded on slide 18 of the author's final presentation (5 Nov; ppt/media/media1.mp4, 3360 x 736,
+% 356 frames, 29.97 FPS); frame 178 extracted with ffmpeg (the slide's poster frame, ppt/media/image18.png, is frame 0),
+% black letterbox bars cut, the five 672-px panels rearranged 2 + 2 + 1 (scratchpad script make_images.py); nothing
+% else changed: titles and FPS labels are the ones burned into the video. Saved as figures/img/F25_video_panels.jpg
+% (1356 px wide, JPEG quality 85). FPS values: numbers_nov.tex \Video...FPS; confirm against the run's timing.csv.
+\begin{figure}[!tbp]
+\centering
+\IfFileExists{figures/img/F25_video_panels.jpg}{%
+  \includegraphics[width=\linewidth]{F25_video_panels.jpg}}{\fbox{\TODO{F25 image missing}}}
+\caption[Video comparison: Student variants and Multi-HMR-Anny]{One frame (\VideoFigureFrame{} of \VideoFrames) of
+the video comparison. Top left: the input (playback \VideoPlaybackFPS\,FPS). Top right: the raw Student, one
+prediction per frame (inference \VideoStudentRawFPS\,FPS). Middle left: the Student with temporal smoothing, a causal
+exponential moving average per track on the bone rotations (blended on the rotation sphere), the shape and the 3D
+position, with the mesh decoded again through Anny (model and filter \VideoStudentTemporalFPS\,FPS). Middle right: the
+Student with landmark alignment: MediaPipe shoulders, hips, knees and ankles, the mesh position and depth fitted so the
+projected joints match them, then the corrected depth smoothed (model and refinement \VideoStudentAlignedFPS\,FPS;
+landmarks extracted offline). Bottom: the original Multi-HMR-Anny of NAVER (inference \VideoNAVERFPS\,FPS). The FPS
+labels are burned into the video; their definitions are in Table~\ref{tab:video-fps}. Neither variant retrains the
+Student. In this frame the raw Student mesh sits in front of the person; the aligned mesh follows the person more
+closely.}
+\label{fig:video-panels}
+\end{figure}

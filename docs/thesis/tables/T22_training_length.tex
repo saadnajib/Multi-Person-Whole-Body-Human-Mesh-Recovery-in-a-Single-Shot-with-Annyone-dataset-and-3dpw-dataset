@@ -1,0 +1,37 @@
+% T22 Training length: the 30-epoch student (reported) against the same recipe trained for 60 epochs. Added 6 Nov.
+% Sources: data/CLUSTER_ANSWERS.md "19 Oct morning: STUDENT DONE" (job 3614191: holdout V1 :195-207, 3DPW test, L40S
+% cost :213-221) and "6 Nov: 60-epoch student final table" (job 3623342, final_table.json, checkpoint 00059.pt).
+% Teacher = Final (exp7 fix arm); its numbers are the ones both student jobs re-measured. Bars = teacher / 0.95 on PVE
+% and MPJPE only (the rule of T11/T17; numbers_results.tex \BarPVE, \BarMPJPE, \BarThreeDPW, \BarMPJPEThreeDPW).
+% ms: each student job timed itself and the teacher on its own GPU (3614191: L40S, 59.7 / 28.5; 3623342: 60.6 / 28.9).
+\begin{table}[!tbp]
+\centering\footnotesize
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+ & Teacher & \shortstack[r]{Student\\30 epochs} & \shortstack[r]{Student\\60 epochs} & 95\,\% bar \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{AnnyOne holdout, V1}} \\
+PVE (mm)    & \FinalPVE    & \StudentPVE    & \StudentSixtyPVE    & $\leq$ \BarPVE \\
+PA-PVE (mm) & \FinalPAPVE  & \StudentPAPVE  & \StudentSixtyPAPVE  & \\
+MPJPE (mm)  & \FinalMPJPE  & \StudentMPJPE  & \StudentSixtyMPJPE  & $\leq$ \BarMPJPE \\
+Recall (\%) & \FinalRecall & \StudentRecall & \StudentSixtyRecall & \\
+\addlinespace
+\multicolumn{5}{@{}l}{\emph{3DPW test (v23 labels, 8,190 images), V0}} \\
+PVE (mm)    & \FinalThreeDPW       & \StudentThreeDPW       & \StudentSixtyThreeDPW       & $\leq$ \BarThreeDPW \\
+PA-PVE (mm) & \FinalPAThreeDPW     & \StudentPAThreeDPW     & \StudentSixtyPAThreeDPW     & \\
+MPJPE (mm)  & \FinalMPJPEThreeDPW  & \StudentMPJPEThreeDPW  & \StudentSixtyMPJPEThreeDPW  & $\leq$ \BarMPJPEThreeDPW \\
+Recall (\%) & \FinalRecallThreeDPW & \StudentRecallThreeDPW & \StudentSixtyRecallThreeDPW & \\
+\addlinespace
+\multicolumn{5}{@{}l}{\emph{Cost, batch 1, one person}} \\
+ms per image & \TeacherMsLFortyS{} / \TeacherMsSixtyJob & \StudentMsLFortyS & \StudentSixtyMs & faster \\
+\bottomrule
+\end{tabular}
+\caption[Training length: the Student after 30 and 60 epochs]{Training length. The Student of
+Table~\ref{tab:student} (\StudentEpochs{} epochs) and the same recipe trained for \StudentSixtyEpochs{} epochs, against
+the teacher and the 95\,\% bars (teacher error divided by 0.95; the rule is set on PVE and MPJPE). Doubling the
+epochs lowers the holdout PVE by \StudentSixtyGainHoldout\,mm but leaves 3DPW where it was
+(\StudentThreeDPW{} and \StudentSixtyThreeDPW\,mm PVE); both runs miss all four bars. Each student job timed itself and the teacher on its own GPU, so the teacher has two times (30-epoch job
+first). Parameters and FLOPs are the same for both students (\StudentParams\,M, \StudentGFLOPs{} GFLOPs). One run
+each, no seed.}
+\label{tab:training-length}
+\end{table}
