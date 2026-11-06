@@ -138,11 +138,15 @@ for t in "${ARMS[@]}"; do
   RUN_T="$(run_of "${t}")"
   echo
   echo "--- KD_T=${t}: RUN=${RUN_T} (mode ${MODE})"
+  # exp8's pre-flight (label and fit checks on netscratch) takes a few minutes per arm: stream its output live
+  # (indented) instead of printing it only when exp8 returns, so a slow arm does not look like a hang
+  TMP_T="$(mktemp)"
   set +e
-  OUT_T="$(KD_T="${t}" RUN="${RUN_T}" VAL_LOSS="${VAL_LOSS}" EVAL_FREQ="${EVAL_FREQ}" TIME="${TIME}" bash "${EXP8}" 2>&1)"
-  RC=$?
+  KD_T="${t}" RUN="${RUN_T}" VAL_LOSS="${VAL_LOSS}" EVAL_FREQ="${EVAL_FREQ}" TIME="${TIME}" bash "${EXP8}" 2>&1 \
+    | tee "${TMP_T}" | sed -u 's/^/    /'
+  RC=${PIPESTATUS[0]}
   set -e
-  printf '%s\n' "${OUT_T}" | sed 's/^/    /'
+  OUT_T="$(cat "${TMP_T}")"; rm -f -- "${TMP_T}"
   if [ "${RC}" != 0 ]; then
     echo "    exp8 exit ${RC} for KD_T=${t}: NOT SUBMITTED"
     FAILED+=("${t}")
