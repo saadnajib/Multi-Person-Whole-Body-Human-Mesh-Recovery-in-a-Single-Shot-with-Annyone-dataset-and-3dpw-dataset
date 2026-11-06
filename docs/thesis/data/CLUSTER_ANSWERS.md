@@ -126,3 +126,22 @@ Send back, when the jobs are done:
   run on the five sweep folders AND, already now, on the two finished runs
   `results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30` (job 3614191) and
   `..._e60` (job 3623342): train loss + validation PVE every 5 epochs, no validation loss (the old runs predate `--val_loss`).
+
+## 6 Nov: loss curves of the 30- and 60-epoch students (`scripts/analysis/plot_loss_curves.py`, source tensorboard)
+
+Neither run has a validation loss (trained without `--val_loss`); the in-training validation PVE stands in for it.
+Slopes over the last 20% of epochs, as printed on login1:
+
+| run | train loss total | val PVE AnnyOne holdout (in-training) | val PVE 3DPW-val (300 imgs) |
+|---|---|---|---|
+| e30 (job 3614191) | 130.67 -> 124.12, -0.87%/epoch, falling | 130.49 -> 122.83, -1.21%/epoch, falling | 88.03 -> 87.75, -0.06%/epoch, flat |
+| e60 (job 3623342) | 120.53 -> 115.75, -0.29%/epoch, falling | 117.46 -> 113.04, -0.38%/epoch, falling | 85.47 -> 85.96, +0.06%/epoch, flat |
+
+Reading [Certain for the numbers]: doubling the epochs bought ~10 mm in-training holdout PVE (122.8 -> 113.0) and
+~2 mm on 3DPW-val (87.8 -> 86.0); on AnnyOne both curves still fall but 3.4x slower than at epoch 30; on 3DPW the
+validation error has been flat since about epoch 25 while the training loss still falls, so more epochs do not help
+there (the script's word "over-fitting" means "no further validation gain"; the validation error is not rising).
+[Likely] another doubling would give a few mm on AnnyOne and nothing on 3DPW; no run length reaches the 77.6 / 93.7
+bars. The in-training holdout PVE is not the final V1 test protocol (e30: 122.8 in-training vs 119.6 reported);
+the e60 run's final test numbers (`final_table.json`) are still to be sent.
+Figures: `results/experiments/exp9_kd_temperature/loss_curves/*_loss_curves.{png,pdf,csv}` on the cluster.
