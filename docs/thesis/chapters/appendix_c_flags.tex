@@ -6,8 +6,11 @@
 %   Colour-jitter flags: parsed at train.py:1722-1725, read nowhere (grep "args.brightness" over the repo: no hit;
 %   data/CLUSTER_ANSWERS.md: no augmentation). Loss weights: tables/T02_loss_weights.tex (not repeated here).
 % Added 6 Nov. 60-epoch run: exp8_distill_vitb.sh:227, :229 (LR_DECAY_EVERY = 2/5 of EPOCHS); facts F2; CA "6 Nov:
-%   loss curves". Its settings.txt is not in the repository (values inferred). Sweep: exp9_kd_temperature.sh header;
-%   train.py:1713, :1801-1802 (defaults), :610-611, :783-835 (--val_loss). exp9 also sets SEED 0 (open question).
+%   loss curves". Its settings.txt is not in the repository (values from the script's rule and the launch command
+%   "EPOCHS=60 bash slurm/experiments/exp8_distill_vitb.sh", docs/handover.md:545, :3306; RUN suffix _e60 and the
+%   computed time limit: exp8_distill_vitb.sh:294, :306-307). Sweep: exp9_kd_temperature.sh header, :80 (TIME 16 h,
+%   passed to exp8 per arm at :145); train.py:1713, :1801-1802 (defaults), :610-611, :783-835 (--val_loss). exp9 also
+%   sets SEED 0, as exp8 does by default (open question). Commands: REPRODUCE.md:84-85 (Final, Control), :157 (Student).
 % No job ids and no old run names in this file (plan section 5); Table~\ref{tab:names} maps names to runs.
 % Trimmed 19 Oct: flags equal to the default dropped unless they matter (dropped: --load_only_backbone 0,
 %   --person_center head, --rotmat_loss l1, --global_rot_bones, --debug_anchor 2 (a print, no effect),
@@ -20,14 +23,16 @@
 \label{app:flags}
 
 This appendix lists the command-line flags I passed to the training script, so that each run can be repeated.
-Table~\ref{tab:flags-final} gives them for Final and Control. Table~\ref{tab:flags-student} gives them for the
-Student of Section~\ref{sec:method-student} and for the 60-epoch run of Section~\ref{sec:res-training-length}, and
-Table~\ref{tab:flags-sweep} for the temperature sweep of Section~\ref{sec:res-kd-temperature}.
+Table~\ref{tab:flags-final} covers Final and Control. The Student of Section~\ref{sec:method-student} and the
+60-epoch run of Section~\ref{sec:res-training-length} share Table~\ref{tab:flags-student}. The temperature sweep of
+Section~\ref{sec:res-kd-temperature} has its own, Table~\ref{tab:flags-sweep}.
 
-A flag is listed when its value differs from the default in the code, or when it keeps the default but matters for
-the result. Every other flag keeps its default. The loss weights are in Table~\ref{tab:loss-weights} of
-Chapter~\ref{ch:method}, and the commands that start the runs in the file
-\path{docs/thesis/REPRODUCE.md} of the repository (Appendix~\ref{app:reproduction}).
+I list a flag when its value differs from the default in the code, or when it keeps the default but matters for the
+result. Every other flag keeps its default. The loss weights are in Table~\ref{tab:loss-weights} of
+Chapter~\ref{ch:method}. The commands that start Final, Control and the Student are in the file
+\path{docs/thesis/REPRODUCE.md} of the repository (Appendix~\ref{app:reproduction}). I started the 60-epoch run with
+\texttt{EPOCHS=60} in front of the same Student command, and the sweep with
+\path{slurm/experiments/exp9_kd_temperature.sh}.
 
 \begingroup
 \expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}%
@@ -36,7 +41,7 @@ Chapter~\ref{ch:method}, and the commands that start the runs in the file
 \begin{longtable}{@{}>{\raggedright}p{3.55cm}>{\raggedright}p{1.5cm}>{\raggedright}p{2.55cm}>{\raggedright\arraybackslash}p{4.65cm}@{}}
 \caption[Training flags of Final and Control]{Training flags of Final and Control. ``Value'' is Final's. Where Control
 differs, its value follows in brackets. Paths are relative to the project folder on the cluster. Both runs start from
-Base and see \MethodFinalEpochs{} epochs of 1,000 iterations at batch \MethodFinalBatch, that is 40,000 images, at a
+Base and train for \MethodFinalEpochs{} epochs of 1,000 iterations at batch \MethodFinalBatch, that is 40,000 images, at a
 constant learning rate.}
 \label{tab:flags-final}\\
 \toprule
@@ -83,13 +88,16 @@ Flag & Default & Value (Control) & Meaning \\
 
 \begin{longtable}{@{}>{\raggedright}p{3.55cm}>{\raggedright}p{1.5cm}>{\raggedright}p{2.55cm}>{\raggedright\arraybackslash}p{4.65cm}@{}}
 \caption[Training flags of the Student]{Training flags of the Student where they differ from Final's. Every other flag
-is as in Table~\ref{tab:flags-final}, the targets, masks, loss weights and 3DPW mixing included, so the Student learns
-the corrected depth. There is no shape mask. The Student trains \MethodStudentEpochs{} epochs of 1,000 iterations at
-batch \MethodStudentBatch, that is 240,000 images, with a 20-hour Slurm limit. The colour-jitter flags
-(\texttt{--brightness 0.2} and so on) are passed but read nowhere in the code, so no augmentation was used. Of the
-flags below, the 60-epoch run of Section~\ref{sec:res-training-length} differs only in the two values in brackets. I
-inferred them from the script's rule (the learning rate halves every 2/5 of the epochs), because that run's settings
-file is not in the repository.}
+is as in Table~\ref{tab:flags-final}. This includes the targets, the masks, the loss weights and the 3DPW mixing, so the
+Student also learns the corrected depth. There is no shape mask. The Student trains for \MethodStudentEpochs{} epochs
+of 1,000 iterations at batch \MethodStudentBatch, that is 240,000 images, with a 20-hour Slurm limit. The script passes
+the colour-jitter flags (\texttt{--brightness 0.2} and so on), but the code never reads them, so there was no
+augmentation. Of the flags below, the 60-epoch run of Section~\ref{sec:res-training-length} differs only in the two
+values in brackets. Its job settings also differ: it has its own run name, ending in \path{_e60}, and the script
+computes its time limit from the epoch count instead of using 20 hours. That run's settings file is not in the
+repository. I took the two values from the script's rule (the learning rate halves every 2/5 of the epochs) and from
+the recorded launch command, which set only the epoch count. The loss curves of Figure~\ref{fig:loss-curves} drop at
+the expected epochs.}
 \label{tab:flags-student}\\
 \toprule
 Flag & Default & Value (60 epochs) & Meaning \\
@@ -110,15 +118,16 @@ Flag & Default & Value (60 epochs) & Meaning \\
 \path{--lambda_kd}, \path{--lambda_kd_out} & 1.0, 0 & 1.0, 1.0 & feature distillation (KL, temperature 4) and output distillation (L1) \\
 \path{--bone_fix} & off & the teacher's & Final's correction in training; the Student's own, estimated on 200 training images, for evaluation \\
 \path{--batch_size}, \path{--learning_rate} & 2, $5\cdot10^{-6}$ & 8, $3\cdot10^{-5}$ & images per step; Adam learning rate \\
-\path{--max_iter}, \path{--lr_decay_every} & 10,000, 30 & 30,000, \MethodStudentLRDecay{} (60,000, \LossLRHalfSixty) & 30 epochs; learning rate halved after epochs 12 and 24 (60-epoch run: after 24 and 48) \\
+\path{--max_iter}, \path{--lr_decay_every} & 10,000, 30 & 30,000, \MethodStudentLRDecay{} (60,000, \LossLRHalfSixty) & 30 epochs; learning rate halved after epochs 12 and 24 (60-epoch run: after \LossLRHalfSixty{} and 48) \\
 \path{--eval_freq}, \path{--nb_max_ckpt} & 1, 10 & 5, 3 & evaluate every 5 epochs, keep 3 checkpoints \\
 \end{longtable}
 
 \begin{longtable}{@{}>{\raggedright}p{3.55cm}>{\raggedright}p{1.5cm}>{\raggedright}p{2.55cm}>{\raggedright\arraybackslash}p{4.65cm}@{}}
 \caption[Training flags of the temperature sweep]{Training flags of the distillation temperature sweep that differ
-from the Student's (Table~\ref{tab:flags-student}). Each value of $T$ is one full Student run. The repeat of $T = 4$
-shows how much two runs with the same training settings differ. The 30- and 60-epoch runs predate
-\path{--val_loss}, so they have no validation loss.}
+from the Student's (Table~\ref{tab:flags-student}). Each temperature $T$ is one full Student run. I repeat $T = 4$
+to measure how much two runs with the same training settings differ; its result is pending
+(Section~\ref{sec:res-kd-temperature}). The 30- and 60-epoch runs were trained before \path{--val_loss} existed, so
+they have no validation loss.}
 \label{tab:flags-sweep}\\
 \toprule
 Flag & Default & Value & Meaning \\
@@ -130,9 +139,10 @@ Flag & Default & Value & Meaning \\
 \endhead
 \bottomrule
 \endfoot
-\path{--kd_temperature} & 4 & 1, 2, 4, 8, 16 & softens the channel softmax of the feature distillation; the output L1 has no temperature \\
-\path{--eval_freq} & 1 & 1 & evaluate after every epoch (Student: every 5); only measures \\
-\path{--val_loss} & 0 & 1 & new flag: the training loss on the validation images, in evaluation mode, no gradients; only measures \\
+\path{--kd_temperature} & \MethodKDTemp{} & 1, 2, 4, 8, 16 & softens the channel softmax of the feature distillation; the output L1 has no temperature \\
+\path{--eval_freq} & 1 & 1 & evaluate after every epoch (Student: every 5); this changes nothing in training \\
+\path{--val_loss} & 0 & 1 & a new flag that computes the training loss on the validation images in evaluation mode, without gradients, so it does not change the training either \\
 \path{RUN} (script) & & \path{..._kdT<t>_sweep} & own output folder per temperature \\
+\path{TIME} (script) & & 16 h & Slurm limit per temperature (Student: 20 h); each temperature is one job \\
 \end{longtable}
 \endgroup

@@ -30,9 +30,9 @@
 %     Typed 119.6 / 110.1 replaced by \StudentPVE / \StudentThreeDPW on 6 Nov.
 %   Student, 60 epochs (added 6 Nov): job 3623342, RUN ..._e60, checkpoint 00059.pt; data/CLUSTER_ANSWERS.md "6 Nov: 60-epoch
 %     student final table" and the paragraph after it (LR halved every 24 = exp8's default 2/5 of EPOCHS,
-%     slurm/experiments/exp8_distill_vitb.sh:229; EVAL_FREQ 5); same starting weights and flags as the Student.
+%     slurm/experiments/exp8_distill_vitb.sh:229; EVAL_FREQ 5; FAIL on all four bars); same starting weights and flags as the Student.
 %   Temperature sweep (added 6 Nov): slurm/experiments/exp9_kd_temperature.sh header (TEMPS 1 2 4 8 16, RUN names
-%     <prefix>_e30_kdT<t>_sweep, EVAL_FREQ 1, VAL_LOSS 1, everything else exp8's defaults); submitted 6 Nov, job ids
+%     <prefix>_e30_kdT<t>_sweep in results/experiments/exp8_distill_vitb/, EVAL_FREQ 1, VAL_LOSS 1, everything else exp8's defaults); submitted 6 Nov, job ids
 %     not yet in the repository (open question F8).
 \begingroup
 \expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}% let \path break after _ and - here
@@ -93,9 +93,9 @@ Student-S/final & v8, \path{anny_distill_vits_v8_final}, ep.~52 & Student-S/6c, 
 \addlinespace
 \multicolumn{6}{@{}l}{\emph{ViT-B student (requirement 1b)}} \\
 Student & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30}; job 3614191 (done 19 Oct) & NAVER's \path{multiHMR_672_B} backbone; every head tensor from Final; teacher Final & B+p, all & A+P, v23 & 30 $\times$ 1,000 $\times$ 8, $3\cdot10^{-5}$, halved every 12; Final's targets and masks; holdout \StudentPVE, 3DPW \StudentThreeDPW\,mm, 95\,\% rule not met \\
-Student, 60 epochs & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60}, ep.~59; job 3623342 & as Student & B+p, all & A+P, v23 & as Student, but \StudentSixtyEpochs{} epochs, halved every \LossLRHalfSixty; holdout \StudentSixtyPVE, 3DPW \StudentSixtyThreeDPW\,mm; training-length experiment, not the reported model \\
+Student, 60 epochs & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60}, ep.~59; job 3623342 & as Student & B+p, all & A+P, v23 & as Student, but \StudentSixtyEpochs{} epochs, halved every \LossLRHalfSixty; holdout \StudentSixtyPVE, 3DPW \StudentSixtyThreeDPW\,mm, 95\,\% rule not met; training-length experiment, not the reported model \\
 \addlinespace
 \multicolumn{6}{@{}l}{\emph{Distillation-temperature sweep (submitted 6 Nov, results pending)}} \\
-Student, $T=t$ & exp9 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT<t>_sweep}; jobs \TODO{ids pending} & as Student & B+p, all & A+P, v23 & as Student, with feature-distillation temperature $t \in \{1, 2, 4, 8, 16\}$; evaluation after every epoch and validation loss on (both only measure) \\
+Student, $T=t$ & exp8 (submitted by exp9) \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT<t>_sweep}; jobs \TODO{ids pending} & as Student & B+p, all & A+P, v23 & as Student, with feature-distillation temperature $t \in \{1, 2, 4, 8, 16\}$; evaluation after every epoch and validation loss on (both only measure) \\
 \end{longtable}
 \endgroup

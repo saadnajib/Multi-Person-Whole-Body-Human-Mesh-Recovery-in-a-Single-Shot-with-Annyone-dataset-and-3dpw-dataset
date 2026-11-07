@@ -27,8 +27,8 @@ appear only in this appendix.
 
 ``L'' is my ViT-L line, every model that keeps the ViT-L backbone. L-stage 1 to 4 are the steps of the transfer
 schedule that turned NAVER's released model into mine. Base is the end of that schedule and the start of every later
-fine-tune. Final and Control are the two arms of the last experiment: the same \MethodFinalEpochs-epoch fine-tune of
-Base, with and without the two fixes. The number after ``Student-S/'' is the old version number of a ViT-S student,
+fine-tune. Final and Control are the two runs of the last teacher experiment (exp7). Both are the same
+\MethodFinalEpochs-epoch fine-tune of Base, one with the two corrections and one without them. The number after ``Student-S/'' is the old version number of a ViT-S student,
 and Student is the ViT-B model distilled from Final.
 
 ``Student, 60 epochs'' is the Student's recipe trained twice as long, for the experiment of
@@ -57,7 +57,7 @@ real render and stops before loading a checkpoint if that test fails.
 
 The landmark detector of the video pipeline, MediaPipe 0.10.14, runs in its own Python 3.10 environment, with the
 packages pinned in \path{requirements-video-landmarks.txt}. There, \path{scripts/video/extract_pose_landmarks.py} reads
-the video once on the CPU and writes a JSON file before the GPU job starts. The environment lies in
+the video once on the CPU and writes a JSON file before the GPU job starts. \path{docs/video_inference.md} creates this environment at
 \path{/netscratch/najib/venvs/video-landmarks}.
 
 That PyTorch build has GPU kernels up to compute capability 8.6. For this reason the training and evaluation scripts
@@ -94,53 +94,56 @@ differs between two runs of the same command. So does the number of optimiser st
 
 Two runs of one 2-epoch configuration differed by \NoisePVE\,mm PVE, \NoiseHeadDeg\,deg head direction and
 \DiagNoiseRecall{} recall points (Table~\ref{tab:pilot-noise}). A repeat of Final or Control should land within such
-a margin, not on the same numbers. The two arms also ran on different GPU types (Final on an A100, Control on an A40,
-both with TF32), which changes the speed and, at the level of rounding, the arithmetic. Evaluating a fixed checkpoint
+a margin, not on the same numbers. Final and Control also ran on different GPU types (Final on an A100, Control on an A40,
+both with TF32). This changes the speed, and it can change the last digits of the arithmetic. Evaluating a fixed checkpoint
 involves no sampling. I did not test whether it repeats exactly across GPU types.
 
 Apart from the temperature, the sweep runs evaluate after every epoch instead of every fifth and also compute the
-training loss on the validation images (\texttt{-{}-val\_loss 1}). Both only measure and never change a weight. Because
+training loss on the validation images (\texttt{-{}-val\_loss 1}). Both additions only read values out of the model; neither changes a weight. Because
 of this, the sweep's own $T=4$ run repeats the reported recipe and will give a second estimate of run-to-run
 variation.
 
-Three further limits apply. The history scripts of the L line and of Student-S were edited after their runs, so their
+There are three more things I cannot repeat. The history scripts of the L line and of Student-S were edited after their runs, so their
 recipes in Table~\ref{tab:names} are as recorded there, not re-run. \path{train.py} keeps only the last two or three
 checkpoints of a run, so intermediate epochs are gone. The checkpoints, the AnnyOne and 3DPW data and the Relative
 Human annotations are not in the repository, and 3DPW and Relative Human come with their own licences.
 
-\section{Video execution evidence}
+\section{Evidence that the video comparison ran}
 \label{sec:app-video}
 
-The first video comparison ran as job 3642415, and I have its log \path{video-compare-3642415.out} and the matching
-error log. It used the 30-epoch Student checkpoint
+For the video comparison of job 3642415 I have the log \path{video-compare-3642415.out} and the matching error
+log. It used the 30-epoch Student checkpoint
 \path{results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/train/checkpoints/00029.pt}
 with the correction selected by that run's \path{student_fix_arg.txt}. The baseline was
 \path{models/multiHMR/multiHMR_672_L_anny.pt} and the input was \path{man_walking.mp4}. Both checkpoints loaded with
-100\,\% state coverage. The renderer reported an NVIDIA L40S and passed its test mesh.
+100\,\% state coverage, meaning every saved weight found its place in the model. The renderer reported an NVIDIA L40S and passed its test mesh.
 
 The final log lines report \VideoFrames{} processed frames for each model, \VideoStudentMatched{} student matches and
 \VideoBaselineMatched{} baseline matches. The output is \path{results/video_compare/video_3642415/comparison.mp4}. The
-job ran before the temporal filter and the later timing code existed. So its log has no synchronised inference FPS
-and no numerical summary of pose or shape stability.
+job ran before the temporal filter and the later timing code existed. So its log does not give the inference speed of the two
+models measured on the same frames, and it has no number for how much the pose or the body shape changes from frame
+to frame.
 
 The five-panel video of Section~\ref{sec:res-video} came from a later run of the same launcher with
 \path{TEMPORAL=ema} and \path{ALIGNMENT=landmarks}. It adds the filtered and the aligned Student panels
 (Section~\ref{sec:method-temporal}) and a frame-rate label on every panel. The matched-frame counts in the thesis are
-those of job 3642415. My final presentation printed the same counts for the new run, but I have not yet checked them
-against its \path{student/summary.json} and \path{baseline/summary.json}. \TODO{job id, run.json and timing.csv of
+those of job 3642415. My final presentation shows the same counts next to the five-panel video. I have not yet checked whether they are that run's own counts or those
+of job 3642415. Its \path{student/summary.json} and \path{baseline/summary.json} will tell. \TODO{job id, run.json and timing.csv of
 the five-panel run}
 
-The frame-rate labels measure different work (Table~\ref{tab:video-fps}; definitions in
-\path{docs/video_inference.md}, lines 387--440). \path{timing.csv} has one row per panel. The raw Student and the
+The frame-rate label on each panel counts a different amount of work (Table~\ref{tab:video-fps}; definitions in
+\path{docs/video_inference.md}, lines 387--440). \path{timing.csv} has one row per model panel, and the input panel's
+playback rate is a column of those rows. The raw Student and the
 baseline show \texttt{inference\_fps}, model inference alone. The filtered panel shows \texttt{processing\_fps} from
 \path{student_temporal/summary.json}, which also counts the filter and the Anny re-decode. The aligned panel shows the
-same quantity from \path{student_aligned/summary.json}, which also counts the alignment fit but not the offline
-landmark extraction.
+same quantity from \path{student_aligned/summary.json}, which counts the filter work as well as the alignment fit, but not the
+offline landmark extraction.
 
 The video implementation and the EGL correction are in commits \texttt{1d5621b} and \texttt{7b0b5e1}, and the revised
-FPS implementation is \texttt{a0fa59f}. It is launched through \path{slurm/demo/run_video_compare.sh}, and
-\path{docs/video_inference.md} documents its usage, timing boundaries and outputs. The stage photo of
-Section~\ref{sec:res-image-compare} comes from \path{slurm/demo/run_image_compare.sh}, whose defaults are the same
-Student, correction and baseline (\path{docs/image_comparison.md}). \TODO{job id and input photo}
+FPS implementation is \texttt{a0fa59f}. The video comparison is launched through \path{slurm/demo/run_video_compare.sh}, and
+\path{docs/video_inference.md} describes how to run it, where each timing starts and stops, and which files it
+writes. The stage photo of Section~\ref{sec:res-image-compare} was made by \path{demo_image_compare.py}, normally
+launched through \path{slurm/demo/run_image_compare.sh}, whose defaults are the same Student, correction and baseline
+(\path{docs/image_comparison.md}). \TODO{job id and input photo}
 
 \endgroup

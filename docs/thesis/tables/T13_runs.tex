@@ -10,7 +10,8 @@
 % crashes 3587852 / 3587853, Relative Human smoke test 3608336; the "What" column merged into the first.
 % The only place in the thesis where job ids appear (plan section 5), together with T19 and Appendix A's text.
 % Paths are relative to the project folder on the cluster (/netscratch/najib/multi-hmr). Log = logs/<name>_<job>.out;
-% array jobs log as <name>_<job>_<task>.out.
+% array jobs log as <name>_<job>_<task>.out. Exception: the video and image launchers log as
+% logs/video-compare-<job>.out and logs/image-compare-<job>.out (run_video_compare.sh:13, run_image_compare.sh:13).
 % Added 6 Nov: Student 60 epochs (3623342; CA "6 Nov: 60-epoch student final table"); loss curves (login node, no job;
 % scripts/analysis/plot_loss_curves.py docstring; CA "6 Nov: loss curves"); temperature sweep (exp9_kd_temperature.sh
 % header "OUTPUTS"; scripts/analysis/kd_temperature_sweep.py docstring; job ids pending, open question F8); video job
@@ -25,7 +26,7 @@
 \begin{longtable}{@{}>{\raggedright}p{3.75cm}>{\raggedright}p{2.35cm}>{\raggedright\arraybackslash}p{6.5cm}@{}}
 \caption[Runs, jobs, logs and checkpoints]{The Slurm jobs behind every number, table and figure of the thesis, with
 the log and the checkpoint or output. Model names as in Table~\ref{tab:names}. Paths are relative to the project
-folder on the cluster; the log of job $j$ is \path{logs/<log name>_}$j$\path{.out} (array jobs: \path{_}$j$\path{_<task>.out}).
+folder on the cluster; the log of job $j$ is \path{logs/<log name>_}$j$\path{.out} (array jobs: \path{_}$j$\path{_<task>.out}; the video and image jobs: \path{logs/<log name>-}$j$\path{.out}, with a hyphen).
 \textsf{E7} stands for \path{results/experiments/exp7_final_model/}, \textsf{M} for \path{models/multiHMR/}.}
 \label{tab:runs}\\
 \toprule
@@ -61,7 +62,7 @@ Temperature sweep, \KDSweepArms{} runs (submitted 6 Nov) & \TODO{job ids pending
 Relative Human: Base, neck pilot, Final, Final-masked, Final-partial-mask & 3611285\_0, \_1, 3612131, 3613616, 3616821 & \path{eval_rh}; \path{results/diagnostics/relative_human_val_<tag>/} \\
 Demos: neck pilot, Final, Final-masked, each next to Base & 3581312, 3612078, 3613617 & \path{demo-compare}; \path{demo_montage_photos/}, \path{demo_montage_3dpwtest/} \\
 Demos: predicted fingers (Base, Final); rest pose (Base, Final, Final-masked) & 3615018, 3615019 & \path{demo-compare}; scripts \path{slurm/demo/run_demo_compare_hands.sh}, \path{_rest.sh} (copies made on the cluster) \\
-Video, raw Student and Multi-HMR-Anny on \path{man_walking.mp4} (frame and match counts) & 3642415 & \path{video-compare}; \path{results/video_compare/video_3642415/comparison.mp4} \\
+Video, raw Student and Multi-HMR-Anny on \path{man_walking.mp4} (frame and match counts) & 3642415 & \path{video-compare} (log \path{logs/video-compare-3642415.out}); \path{results/video_compare/video_3642415/comparison.mp4} \\
 Video, five panels with temporal filter and landmark alignment (Figure~\ref{fig:video-panels}) & \TODO{job id pending} & \path{video-compare}; \path{slurm/demo/run_video_compare.sh} with \path{TEMPORAL=ema}, \path{ALIGNMENT=landmarks} and \path{LANDMARKS=<json>}; landmarks from \path{scripts/video/extract_pose_landmarks.py} (separate MediaPipe 0.10.14 environment); \path{results/video_compare/video_<job>/}: \path{comparison.mp4}, \path{timing.csv}, \path{student_temporal/}, \path{student_aligned/alignment.json}; thesis copy \path{figures/img/F25_video_panels.jpg} (frame \VideoFigureFrame{} of the video in the final presentation) \\
 Stage photo, Student and Multi-HMR-Anny (Figure~\ref{fig:image-compare}) & \TODO{job id and input photo pending} & \path{image-compare}; \path{slurm/demo/run_image_compare.sh}, which runs \path{demo_image_compare.py}; \path{results/image_compare/images_<job>/comparison/}; thesis copy \path{figures/img/F26_image_compare.jpg} (cut from the final presentation) \\
 \addlinespace

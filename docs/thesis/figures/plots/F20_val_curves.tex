@@ -38,9 +38,9 @@
 \end{groupplot}
 \end{tikzpicture}
 \caption[In-training PVE per epoch, Final and Control]{PVE of Final and Control after each training epoch (one run
-each, no seed). The x-axis is the epoch and the y-axis the PVE; lower is better. Left: 300 images of the corrected
-3DPW validation labels. Right: the AnnyOne holdout as evaluated during training, in setting V0 (helper bones
-unmasked), so the values are higher than the V1 numbers of Table~\ref{tab:final-annyone}. Values from the training
-logs; read in Section~\ref{sec:res-final}.}
+each, no seed). The x-axis is the epoch and the y-axis the PVE; lower is better. Left: \LossValImages{} images of the
+corrected 3DPW validation labels. Right: the AnnyOne holdout as evaluated during training, in setting V0 (helper bones
+unmasked), so the last-epoch values are higher than the V1 numbers of Table~\ref{tab:final-annyone}
+(\FinalPVE\,mm for Final and \ControlPVE\,mm for Control). Values from the training logs; read in Section~\ref{sec:res-final}.}
 \label{fig:val-curves}
 \end{figure}

@@ -3,36 +3,41 @@
 \addcontentsline{toc}{chapter}{Abstract}
 
 The problem in this thesis is to turn one photo of several people into a 3D body for each person, at a lower
-computational cost. I trained a small ViT-B student that learns from a larger ViT-L teacher. Both use the
-single-shot Multi-HMR framework and the Anny body model, whose shape parameters have names such as age, height and
-proportions.
+computational cost. I trained a small ViT-B network, the student, that learns from a larger ViT-L network, the
+teacher. Both use Multi-HMR, which finds all people and their bodies in one pass, and the Anny body model, with
+named shape parameters such as age and height.
 
-The training data combine synthetic AnnyOne images, which have exact Anny labels, with real 3DPW photos labelled in
-a different body model, SMPL. I converted these labels to Anny by fitting an Anny body to each one, with geometric
-correspondence and virtual torso joints. The converted labels cover \DataThreeDPWTotalImages{} images with
-\DataThreeDPWTotalPeople{} labelled people.
+AnnyOne images are synthetic and have exact Anny labels. 3DPW photos are real, but labelled in another body model,
+SMPL. I fitted an Anny body to each 3DPW label, using points that correspond geometrically in both models and
+virtual torso joints, for \DataThreeDPWTotalImages{} images with \DataThreeDPWTotalPeople{} labelled people.
 
-The teacher was trained with \DataMixThreeDPW\,\% real images and two corrections to its supervision. The student
-starts with a copy of the teacher's prediction heads, and a learned projector converts its features to the width
-these heads expect. It learns from the labels and from the teacher's features and outputs.
+The teacher was trained with \DataMixThreeDPW\,\% real images per batch and two corrections to its targets. The
+student gets copies of the teacher's prediction heads, and a learned projector widens the student's features to
+fit them. The student learns from the labels and, by knowledge distillation, from the teacher's features and
+outputs.
 
-The student has \StudentParams\,million parameters and needs \StudentGFLOPs\,GFLOPs for one person, against
-\FinalParams\,million and \FinalGFLOPs\,GFLOPs for the teacher. A forward pass on one L40S GPU took
-\StudentMsLFortyS\,ms against \TeacherMsLFortyS\,ms. But the student is less accurate. Its per-vertex error (PVE) was
-\StudentPVE\,mm on the synthetic holdout and \StudentThreeDPW\,mm on converted 3DPW, against \FinalPVE{} and
-\FinalThreeDPW\,mm for the teacher. On 3DPW it had a lower error than the released Multi-HMR-Anny baseline
-(\NAVERThreeDPW\,mm), which was not trained on 3DPW. The baseline's holdout result is most likely in-sample. All 3DPW
-errors use converted labels and are not directly comparable with published SMPL-space results.
+The student has \StudentParams\,million parameters and needs \StudentGFLOPs\,GFLOPs for one person, the teacher
+\FinalParams\,million and \FinalGFLOPs\,GFLOPs. On one L40S GPU the student's forward pass took
+\StudentMsLFortyS\,ms and the teacher's \TeacherMsLFortyS\,ms.
 
-Training for \StudentSixtyEpochs{} instead of \StudentEpochs{} epochs lowered the holdout PVE to
-\StudentSixtyPVE\,mm, but the 3DPW PVE went from \StudentThreeDPW{} to \StudentSixtyThreeDPW\,mm. So longer training
-helps on synthetic images and does not close the gap to the teacher on real ones. I kept the \StudentEpochs-epoch
-student. A sweep of the distillation temperature over \KDSweepArms{} values is running.
+But the student is also less accurate. Its per-vertex error (PVE, the mean distance to the true surface) was
+\StudentPVE\,mm on held-out AnnyOne images and \StudentThreeDPW\,mm on 3DPW, the teacher's \FinalPVE{} and
+\FinalThreeDPW\,mm. On 3DPW the student had a lower PVE than the released Multi-HMR-Anny baseline
+(\NAVERThreeDPW\,mm), which was not trained on my converted 3DPW labels. The baseline's AnnyOne result most likely
+comes from its training images. All 3DPW errors are against converted labels and not directly comparable
+with published SMPL results.
+
+In a training-length experiment I trained the student for \StudentSixtyEpochs{} instead of \StudentEpochs{} epochs.
+Its holdout PVE fell from \StudentPVE{} to \StudentSixtyPVE\,mm, but its 3DPW PVE went from \StudentThreeDPW{} to
+\StudentSixtyThreeDPW\,mm. So longer training helps on synthetic images but not on real photos, and the student
+still did not reach the teacher's accuracy. I kept the \StudentEpochs-epoch student. I also submitted a temperature
+sweep over \KDSweepArms{} values of the distillation temperature, which softens the features before comparison;
+its result is pending.
 \TODO{temperature sweep result pending}
 
-For video I added, at inference and without retraining, an exponential moving average of each tracked person's pose,
-shape and position, and an alignment of position and depth to detected 2D landmarks. On a walking clip the student
-was tracked in \VideoStudentMatched{} of \VideoFrames{} frames and the baseline in \VideoBaselineMatched. By eye the
-output becomes steadier and better placed, but the clip has no ground truth. The student did not reach the teacher's
-accuracy. Other limits are that the holdout has no children, the shape on real photos is uncertain and depth errors
-remain.
+For video I added temporal filtering and landmark alignment, without retraining. An exponential moving average
+blends each tracked person's pose, shape and position with earlier frames, and then the body's position and depth
+are fitted to detected 2D landmarks. On a walking clip the student kept a tracked body in \VideoStudentMatched{} of
+\VideoFrames{} frames and the released baseline in \VideoBaselineMatched; these counts show tracking only, not
+accuracy. By eye the student's output is steadier and better placed, but the clip has no ground truth. The holdout
+also has no children, the shape on real photos is uncertain and depth errors remain.

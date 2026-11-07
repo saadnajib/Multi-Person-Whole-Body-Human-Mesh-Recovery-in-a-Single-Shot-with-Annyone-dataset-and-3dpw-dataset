@@ -2,11 +2,11 @@
 \chapter{Datasets and Anny label generation}
 \label{ch:data}
 
-Every number in this thesis comes from one of the datasets below, so I describe them before the method.
+Every number in this thesis comes from one of the datasets below, and I describe them before the method.
 Table~\ref{tab:data-splits} lists each split, its size and its use. Most of the chapter is about converting 3DPW to
-Anny, because the converted labels decide what the real-image numbers can show. Two rules
-hold throughout: no test image is ever trained on, and numbers on the old 3DPW labels never appear next to numbers
-on the final v23 labels.
+Anny, because every real-image number in this thesis is measured against those converted labels. I follow two rules
+in every experiment. No test image is ever trained on, and I never put a number on the old 3DPW labels next to a
+number on the final v23 labels.
 
 \begin{table}[htbp]
 \centering\footnotesize
@@ -24,7 +24,7 @@ diagnostic manifest & \DataManifestTrain{} + \DataManifestHoldout{} entries & pe
 3DPW-Anny test, v23 & \DataThreeDPWTestImages{} / \DataThreeDPWTestPeople & reported 3DPW numbers; never trained on & \ref{ch:results} \\
 3DPW-Anny old labels & \DataOldTotalImages{} / \DataOldTotalPeople & historical experiments only; not used by Student & \ref{app:pilots} \\
 Relative Human val. & \DataRHValImages{} / \DataRHValPeople & children and gender on real photos; evaluation only & \ref{ch:diagnostics}, \ref{ch:results} \\
-demo images & \DataDemoTotal{} images & by-eye comparison and the student-against-baseline photo comparison (Section~\ref{sec:res-image-compare}); no metric & \ref{ch:diagnostics}, \ref{ch:results} \\
+demo images & \DataDemoTotal{} images & by-eye comparison; no metric & \ref{ch:diagnostics}, \ref{ch:results} \\
 walking video & \VideoFrames{} frames & \texttt{man\_walking.mp4}; video comparison, no labels & \ref{ch:results} \\
 \bottomrule
 \end{tabular}
@@ -41,23 +41,29 @@ labelled people after the drop rules (v23 labels, Section~\ref{sec:data-defects}
 AnnyOne~\cite{bregier2025anny} is the synthetic dataset released with Anny. It holds \DataAnnyOneImages{} rendered
 images of \DataAnnyOneRenderPx{}$\times$\DataAnnyOneRenderPx{} pixels, with \DataAnnyOnePeoplePerImage{} people per
 image on average. Because the images are rendered, every visible person has an exact label: the Anny pose
-(\DataBones{} bone transforms), the \DataPhenotypes{} phenotypes and the camera intrinsics (focal length and image
-centre). The network sees each image resized to \DataInputPx{} pixels. The field of view changes from image to image,
-from \DataAnnyOneFovMin{}$^\circ$ to \DataAnnyOneFovMax{}$^\circ$ on a small sample of \DataAnnyOneFovSample{} images,
-so training and evaluation use each image's own intrinsics.
+(\DataBones{} bone transforms), the \DataPhenotypes{} phenotypes (Anny's shape values, Section~\ref{sec:bg-bodymodels})
+and the camera intrinsics (focal length and image centre). The network sees each image resized to \DataInputPx{} pixels. The field of view changes from image to image,
+from \DataAnnyOneFovMin{}$^\circ$ to \DataAnnyOneFovMax{}$^\circ$ on a small sample of \DataAnnyOneFovSample{} images.
+For this reason training and evaluation use each image's own intrinsics.
 
 \paragraph{Split.} AnnyOne has no official split, so I made one. Indices 0 to \DataAnnyOneLastTrainIndex{} are the
 training set. The last \DataHoldoutImages{} images, indices \DataHoldoutFirstIndex{} to \DataHoldoutLastIndex, are
 my holdout, which no model trained in this thesis has seen. NAVER's model was trained on the AnnyOne release, which
-includes the \DataHoldoutImages{} images I hold out, so its \NAVERAnnyOne\,mm is most likely an in-sample number;
-mine are held out. The 3DPW test script also scores the last \DataHoldoutImages{} AnnyOne images, but in setting V0,
-which leaves Anny's helper bones unmasked (Section~\ref{sec:method-eval}). So its ``AnnyOne test-100'' value is not
-the holdout number, which I always give in setting V1.
+includes the \DataHoldoutImages{} images I hold out. Its \NAVERAnnyOne\,mm holdout PVE (the mean vertex error,
+Section~\ref{sec:method-eval}) is therefore most likely an in-sample number, in other words an error on images it had
+already seen during training. My models have never seen these images.
+
+The 3DPW test script also scores the last \DataHoldoutImages{} AnnyOne images, but in setting V0. In V0 the error
+counts Anny's helper bones (toes, breasts, face and subdivision bones); in my headline setting V1 they are masked out
+(Section~\ref{sec:method-eval}). The script's ``AnnyOne test-100'' value is therefore not the holdout number, which I
+always give in setting V1.
 
 \paragraph{Few children.} In Anny the child shape appears below an age value of about \DataChildAgeLow{} to
 \DataChildAgeHigh{} (Section~\ref{sec:bg-bodymodels}). Only \DataAnnyOneAgeBelowThree\% of AnnyOne's people are
-younger than 0.3, and the median age is \DataAnnyOneAgeMedian. The holdout has nobody younger than \DataHoldoutMinAge{}, so
-it tests adults only. This is why I added Relative Human (Section~\ref{sec:data-rh}).
+younger than 0.3 (\DataAnnyOneAgeBelowTwo\% below 0.2, \DataAnnyOneAgeBelowFour\% below 0.4). The median age is
+\DataAnnyOneAgeMedian, and \DataAnnyOneAgeModeShare\% of all people lie between 0.5 and 0.6. In a training batch,
+\DataBatchChildLow\% to \DataBatchChildHigh\% of the supervised people are younger than 0.3. The holdout has nobody
+younger than \DataHoldoutMinAge{}, which means it tests adults only. This is why I added Relative Human (Section~\ref{sec:data-rh}).
 
 % -----------------------------------------------------------------------------
 \section{3DPW}
@@ -69,12 +75,11 @@ second. Inertial sensors on the actors give SMPL ground truth. The standard rele
 training, \DataThreeDPWValSeq{} validation and \DataThreeDPWTestSeq{} test sequences, with one or two labelled actors
 each: \DataThreeDPWPersonSeq{} person-sequences (\DataThreeDPWMen{} men, \DataThreeDPWWomen{} women). Bystanders
 have no labels. I keep the splits as 3DPW defines them. One validation sequence, \texttt{outdoors\_crosscountry\_00},
-yields no labels (Section~\ref{sec:data-defects}), which leaves \DataThreeDPWValUsableSeq{} usable validation
-sequences.
+gives no labels at all (Section~\ref{sec:data-defects}), and \DataThreeDPWValUsableSeq{} validation sequences remain.
 
 \paragraph{Why 3DPW must be converted.} My network predicts Anny bodies. AnnyOne is the only dataset with Anny
 labels, and it is synthetic. 3DPW has real photos, but its labels are SMPL bodies, which have a different skeleton
-and different shape controls (Table~\ref{tab:body-models}). So I fit an Anny body to every labelled 3DPW person and
+and different shape controls (Table~\ref{tab:body-models}). For this reason I fit an Anny body to every labelled 3DPW person and
 write new labels in AnnyOne's format.
 
 % -----------------------------------------------------------------------------
@@ -92,7 +97,9 @@ My converter (\texttt{smpl\_to\_anny.py}, version 2.3) works in four steps:
   save one label per image.
 \end{enumerate}
 
-\paragraph{Objective.} Anny's skinning has no analytic inverse, so I fit by gradient descent. For each person and
+\paragraph{Objective.} There is no formula that turns joint positions back into Anny's pose and shape (Anny's skinning
+has no analytic inverse). Instead I fit them by gradient descent: the fitter starts from a guess, measures the joint
+mismatch and changes the values to reduce it. For each person and
 frame I search Anny's \DataBones{} rotations $\mathbf{r}$ (6D form, two columns of each rotation matrix), the
 phenotype logits $\boldsymbol{\ell}$ (values that the sigmoid $\sigma$ maps into $(0,1)$) and a translation
 $\mathbf{t}$ so that Anny's joints land on the \DataSmplJoints{} SMPL joints $\hat{\mathbf{J}}^{S}$ of the frame:
@@ -116,17 +123,18 @@ about a bone's own axis moves no joint but corkscrews the mesh. The second ($\la
 free phenotypes towards 0.5, so that one remaining joint gap cannot drag a phenotype to an extreme. Adam (learning
 rate \DataFitLr) fits in the order of step~2. Shape comes last because it is the weakest signal. Each frame starts
 from the previous frame's solution (\DataColdIters{} iterations per stage on a person's first frame, \DataWarmIters{}
-afterwards). The targets are 3DPW's own per-frame \texttt{jointPositions}. I do not recompute them with the neutral SMPL model,
+afterwards). The pose refit of step~4 takes \DataRefineIters{} iterations per frame. The targets are 3DPW's own per-frame \texttt{jointPositions}. I do not recompute them with the neutral SMPL model,
 because 3DPW's shape coefficients belong to the gendered models, and the neutral model would move the joints by
 \DataNeutralShift\,mm on average.
 
 \paragraph{Bones and shape.} Only the root and \DataFittedBones{} of the \DataMappedBones{} mapped bones may rotate;
 \DataRestBones{} of \DataBones{} bones stay at rest, among them \texttt{neck02}, \texttt{neck03}, \texttt{head} and
-every finger bone. Joints cannot determine most phenotypes. Weight, muscle, cup size, firmness and the three
-ethnicity values move no joint, and adult age barely does. So the converter reads gender from 3DPW, fixes age at
+every finger bone. The joint positions say nothing about most of the phenotypes. Weight, muscle, cup size, firmness
+and the three ethnicity values move no joint, and adult age barely does. The converter therefore reads gender from
+3DPW, fixes age at
 \DataFixedAge{} (an adult value) and the seven others at \DataFixedNeutral, and fits only height and proportions.
 Since version 2.3 it writes men as \DataGenderMale{} and women as \DataGenderFemale{}, Anny's convention
-(\texttt{--gender\_convention anny}). The pose refit of step~4 takes \DataRefineIters{} iterations per frame.
+(\texttt{--gender\_convention anny}).
 
 \paragraph{Frames, camera and label files.} I fit every third valid frame (\DataLabelFps{} frames per second). Since
 version 2.3 one grid holds for every person of a sequence (frame numbers divisible by \DataFrameStride,
@@ -134,18 +142,18 @@ version 2.3 one grid holds for every person of a sequence (frame numbers divisib
 detection, because all labelled actors must appear in the same image label. The label builder writes one file per
 image in the AnnyOne format and checks that the image exists. It drops a person when the fit error exceeds
 \DataDropErr\,mm, less than \DataDropVisPct\% of the mesh is inside the image, or the box is narrower or shorter than \DataDropBox\,px. A dataset
-class pads the portrait images to a square and shifts the principal point (the image centre in the intrinsics), so
-the training and evaluation code run on these labels unchanged.
+class pads the portrait images to a square and shifts the principal point (the image centre in the intrinsics). The
+training and evaluation code then run on these labels unchanged.
 
 % -----------------------------------------------------------------------------
 \section{Geometric correspondence and virtual joints}
 \label{sec:data-history}
 
 SMPL and Anny define some joints at different anatomical points. For example, both have a hip joint, but not at
-exactly the same place, and matching the two directly would make the fitter distort the body to close that gap. So
-joint names alone do not give a reliable fitting objective. My final procedure lines up the rest skeletons by the
-hip midpoint and the body axes, chooses the hip bones by distance and the spine bones by normalised height along the
-torso. Appendix~\ref{app:joints} gives the full correspondence.
+exactly the same place, and matching the two directly would make the fitter distort the body to close that gap.
+This means I cannot pair joints by name alone. Instead my final procedure puts both skeletons in their rest pose and
+lines them up at the hip midpoint and along the body axes. It then chooses each Anny hip bone by distance and each
+spine bone by its normalised height along the torso. Appendix~\ref{app:joints} gives the full correspondence.
 
 For a torso target $k$ attached to Anny bone $b=\pi(k)$, the fitter uses a virtual joint
 \begin{equation}
@@ -155,9 +163,9 @@ For a torso target $k$ attached to Anny bone $b=\pi(k)$, the fitter uses a virtu
 \end{equation}
 where $\mathbf h_b$ is the posed bone head, $\mathbf Q_b$ its orientation, and $\boldsymbol\delta_k$ a constant
 offset in the bone's rest frame, measured from the aligned rest skeletons. In words, the point used for fitting is
-moved by a fixed offset that turns with the bone, so the two skeletons are compared at the same body location while
-Anny's rig stays intact. Limb targets use the bone head itself. The offsets reduce a difference in joint definition.
-They do not make the two body models anatomically identical.
+moved by a fixed offset that turns with the bone. The two skeletons are then compared at the same body location, and
+Anny's rig stays intact. Limb targets use the bone head itself. The offsets only shrink the difference in where the
+two models put a joint; SMPL and Anny are still two anatomically different bodies.
 
 % -----------------------------------------------------------------------------
 \section{Label construction and validation}
@@ -169,12 +177,14 @@ the v23 labels with the two earlier sets.
 
 \input{tables/T04_label_sets}
 
-The optimiser's loss only says how well it met its own objective. For this reason a separate check reads the
-finished labels and compares body-joint positions, projected keypoints, actor completeness and the gender convention
-with 3DPW's source data. On the v23 labels its median body-joint discrepancy was \DataCheckJointsNew\,mm and its
-grade WARN (Table~\ref{tab:label-check}). The remaining warnings concern limb proportions and joint-definition
-differences, including the hip, and not the label defects that the re-fit corrected. The check samples images, so
-it does not prove that every label is free of error.
+The optimiser's loss only says how well the fit met its own objective. It cannot tell me whether the finished labels
+are right. For this reason I run a separate check that reads the finished labels and compares four things with 3DPW's
+source data: the body-joint positions, the projected keypoints, whether every actor is present, and the gender
+convention. The check samples images and cannot prove that every label is free of error. On the v23 labels the median
+body-joint discrepancy was \DataCheckJointsNew\,mm, and the check's overall grade was WARN
+(Table~\ref{tab:label-check} lists the grades). The warnings that remain come from limb proportions and from joints
+that SMPL and Anny define differently, the hip among them. They are not the defects of the earlier label sets, which
+the re-fit corrected (Appendix~\ref{app:conversion}).
 
 \input{tables/T05_label_check}
 
@@ -205,64 +215,69 @@ defects are in Appendix~\ref{app:conversion}.
 \section{What the 3DPW labels can and cannot test}
 \label{sec:data-limits}
 
-The v23 labels are converted labels, not ground truth. Four limits follow from the converter's design.
+The v23 labels are converted labels, not ground truth. The way the converter is built limits what they can test, in
+four ways.
 
 \paragraph{Eight constant phenotypes.} The labels test three phenotypes: gender (from metadata), height and
 proportions (fitted; medians \DataLabelMedianHeight{} and \DataLabelMedianProportions). The other
 \DataConstantCount{} are the same for every person: age \DataFixedAge{} and \DataNeutralCount{} values at
 \DataFixedNeutral. A model trained on 3DPW is pulled towards these constants for every real person, by the shape loss
 and the mesh terms. By my estimate, 3DPW people are about \DataSupervisedShareThreeDPW\% of the supervised people in
-a \DataMixAnnyOne/\DataMixThreeDPW{} batch. The 3DPW error is also measured against these neutral-body meshes, so it
-likely rewards a neutral prediction; I did not test this. The shape mask of Section~\ref{sec:method-real} removes the
+a \DataMixAnnyOne/\DataMixThreeDPW{} batch. The 3DPW error is also measured against these neutral-body meshes. I expect
+that it rewards a neutral prediction, but I did not test this. The shape mask of Section~\ref{sec:method-real} removes the
 shape loss on the constants (Final-masked). At age \DataFixedAge{} every label is a full adult
-(Figure~\ref{fig:bg-age-sweep}), and 3DPW has no children, so it can neither teach nor test them.
+(Figure~\ref{fig:bg-age-sweep}). 3DPW has no children, and these labels can neither teach nor test them.
 
 \paragraph{Head and hands at rest.} \texttt{neck02}, \texttt{neck03} and \texttt{head} stay at identity in every
-label, so the head turns only through \texttt{neck01}, and the labels cannot test the half-turned neck bones of
+label. The head turns only through \texttt{neck01}, and the labels cannot test the half-turned neck bones of
 Appendix~\ref{ch:diagnostics}. 3DPW's SMPL ground truth has no finger joints, so every label has rest-pose hands. The
 training masks their rotation terms for 3DPW people (Section~\ref{sec:method-real}).
 
 \paragraph{Residual label error.} The checked labels differ from 3DPW's source body joints by
-\DataCheckJointsNew\,mm at the median and \DataCheckJointsNewPn\,mm at the 95th percentile. This describes label
-quality. It is not a universal error floor and must not be subtracted from a network's PVE (the mean vertex error,
-Section~\ref{sec:method-eval}), because a network is compared with the fitted Anny targets and not with the source
-joints.
+\DataCheckJointsNew\,mm at the median and \DataCheckJointsNewPn\,mm at the 95th percentile. This number describes
+label quality. A network is compared with the fitted Anny targets and not with the source joints. The residual is
+therefore no universal error floor, and it must not be subtracted from a network's PVE
+(Section~\ref{sec:method-eval}).
 
 \paragraph{Not comparable with published numbers.} I never evaluated against the original SMPL meshes, my targets
 carry the residual error above, and my MPJPE (the mean joint error) averages all \DataBones{} Anny joints (Section~\ref{sec:method-eval}).
-So my 3DPW numbers cannot be compared with published 3DPW results, and I write ``lowest error on our 3DPW-Anny
-labels''. Bystanders are unlabelled, so precision on 3DPW is a lower bound.
+For these three reasons my 3DPW numbers cannot be compared with published 3DPW results, and I write ``lowest error
+on our 3DPW-Anny labels''. Bystanders have no labels, and a model that detects one of them correctly still counts as
+a false detection. For this reason the precision I measure on 3DPW (the share of detections that match a labelled
+person) is only a lower bound.
 
 % -----------------------------------------------------------------------------
 \section{Relative Human}
 \label{sec:data-rh}
 
-Neither the holdout nor 3DPW contains children. Relative Human, introduced with BEV~\cite{sun2022bev}, fills this
-gap. It holds \DataRHImages{} real photos, many crowded and with children. Each person has a box, an age group
-(adult, teen, kid, baby) and a gender coded 0 for male, as in Anny; there are no 3D labels. The copy I use has no
-supplied licence file, so its redistribution terms still need checking. I use only the validation split, for
+Neither the holdout nor 3DPW contains children, and I needed a third dataset for them. Relative Human, introduced
+with BEV~\cite{sun2022bev}, is such a dataset. It holds \DataRHImages{} real photos, many crowded and with children. Each person has a box, an age group
+(adult, teen, kid, baby) and a gender coded 0 for male, as in Anny; there are no 3D labels. The copy I use came
+without a licence file. Its redistribution terms still need checking. I use only the validation split, for
 evaluation: \DataRHValImages{} images with \DataRHValPeople{} labelled people (\DataRHValAdults{} adults,
 \DataRHValTeens{} teens, \DataRHValKids{} kids, \DataRHValBabies{} babies, \DataRHValUnknownAge{} of unknown age).
 
 The model runs once on each whole photo with a field of view of \DataRHFov$^\circ$, and detections are paired with
 labelled boxes as in Section~\ref{sec:method-eval}. A predicted age below \DataRHChildThr{} counts as child-shaped, a
-predicted gender below \DataRHGenderThr{} as male. I report recall (the share of labelled people found) and mean
-predicted age per age group, the gender accuracy, and the child-against-adult AUC of the predicted age: the chance
-that a kid or baby gets a lower predicted age than an adult, where 0.5 is chance. Every number covers detected people
-only, so recall always stands next to it.
+predicted gender below \DataRHGenderThr{} as male. For each age group I report recall (the share of labelled
+people found) and the mean predicted age. I also report the gender accuracy and the child-against-adult AUC of the
+predicted age. This AUC is the chance that a kid or baby gets a lower predicted age than an adult; a value of 0.5
+means chance level. Every number covers detected people only, and recall always stands next to it.
 
 % -----------------------------------------------------------------------------
 \section{The diagnostic manifest and the demo images}
 \label{sec:data-manifest}
 
-For the checks of Appendix~\ref{ch:diagnostics}, a seeded script picked \DataManifestTotal{} fixed (image, person)
-entries from the AnnyOne labels alone, \DataManifestTrain{} from the training range and \DataManifestHoldout{} from
-the holdout (groups in Table~\ref{tab:diag-checks}). Base, the AnnyOne-only start of every fine-tune, saw the
-training entries, and every later fine-tune gives their images a sampling weight of zero, so they stay the same
-in-sample reference for all models. The manifest children therefore show whether a model can fit a child it has
+For the checks of Appendix~\ref{ch:diagnostics} I picked \DataManifestTotal{} fixed (image, person) entries from
+the AnnyOne labels alone, with a script and a fixed random seed, so the choice can be repeated: \DataManifestTrain{}
+from the training range and \DataManifestHoldout{} from the holdout (groups in Table~\ref{tab:diag-checks}). Base,
+the AnnyOne-only model that every later run starts from, saw the training entries during its own training. Every
+later run gives their images a sampling weight of zero, and no model sees them again. This keeps them the same
+already-seen reference for all models. The manifest children therefore show whether a model can fit a child it has
 seen, not whether it generalises.
 
 For by-eye comparisons I use \DataDemoTotal{} real images: \DataDemoPhotos{} photos and \DataDemoFrames{} 3DPW test
 frames, one middle frame from each of \DataDemoFrames{} test sequences. No model trained on them and no metric is
 computed on them. The photo comparison with Multi-HMR-Anny (Section~\ref{sec:res-image-compare}) and the walking
-video (Section~\ref{sec:res-video}) have no labels either, so no reconstruction error exists for them.
+video (Section~\ref{sec:res-video}) have no labels either. I can only show their meshes, and no reconstruction error can
+be computed for them.

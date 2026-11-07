@@ -9,16 +9,16 @@
 \chapter{Extra figures}
 \label{app:figures}
 
-The chapters refer to the figures below but do not show them, so that the main text stays short. Here are both depth
-examples, two more bone-correction pairs on the holdout, a second neck pair on 3DPW, the other demo frames and photos,
-the in-training curves of Final and Control, all twelve demo images with predicted fingers, and nine more rest-pose
-line-ups.
+The chapters refer to the figures below but do not show them, so that the main text stays short. This appendix has
+both depth examples and two more bone-correction pairs on the holdout. It also has a second neck pair on 3DPW, the
+other demo frames and photos, and the in-training curves of Final and Control. The last two figures show all twelve
+demo images with predicted fingers and nine more rest-pose line-ups.
 
 I judged every image panel by eye, so none of them is a measurement. Where a body is placed from the detector box,
 a wrong depth cannot be seen in the picture.
 
-% F8 pair (depth_before_after_579862/579860) and F23 (exp6 compare panels: Base without and with the bone
-% correction, no training; job in Appendix A), one float.
+% F8 pair (depth_before_after_579862/579860) and the exp6 compare panels (old plan F23; not the new F23_loss_curves):
+% Base without and with the bone correction, no training; job in Appendix A), one float.
 \begin{figure}[!ht]
 \centering
 \begin{minipage}[t]{0.485\linewidth}
@@ -27,8 +27,8 @@ a wrong depth cannot be seen in the picture.
 \includegraphics[width=\linewidth]{depth_before_after_579862}
 \caption[Holdout image 579862 at the predicted depth: ground truth, Base, depth pilot]{Holdout image 579862 rendered
 at each model's own predicted depth: ground truth, Base, and the depth pilot (head-joint targets, depth weight
-$\times$5, 10 epochs, AnnyOne only). The predicted body goes from 0.76 to 0.95 of its true height. Synthetic image;
-a good case, not a typical one. Image 579860 is on the right, in Figure~\ref{fig:depth-579860}.}
+$\times$5, 10 epochs, AnnyOne only). The predicted body goes from 0.76 to 0.95 of its true height. Synthetic image.
+This is one of the good cases, not a typical one. Image 579860 is on the right, in Figure~\ref{fig:depth-579860}.}
 \label{fig:depth-579862}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\linewidth}
@@ -36,8 +36,9 @@ a good case, not a typical one. Image 579860 is on the right, in Figure~\ref{fig
 \captionsetup{format=plain,justification=raggedright}
 \includegraphics[width=\linewidth]{depth_before_after_579860}
 \caption[Holdout image 579860 at the predicted depth: ground truth, Base, depth pilot]{Holdout image 579860
-rendered at each model's own predicted depth: ground truth, Base, and the same depth pilot as on the left. Before the fix the ground-truth head shows above a shrunken body placed too far
-away. Synthetic image; one case, not a typical one.}
+rendered at each model's own predicted depth: ground truth, Base, and the same depth pilot as on the left. In the Base
+panel the ground-truth head shows above a shrunken body that is placed too far away. Synthetic image. This is one
+case only, and not a typical one.}
 \label{fig:depth-579860}
 \end{minipage}
 
@@ -45,9 +46,10 @@ away. Synthetic image; one case, not a typical one.}
 \includegraphics[width=0.49\linewidth]{exp6_compare_579864}\hfill
 \includegraphics[width=0.49\linewidth]{exp6_compare_579866}
 \caption[Two more holdout pairs: Base without and with the bone correction]{Holdout images 579864 (left) and 579866
-(right): Base as trained next to the same checkpoint with the bone correction applied at the output, without any
-training (Section~\ref{sec:diag-neck}). Synthetic images at the model's own predicted depth, so the depth bug still
-draws the bodies too small. Necks judged by eye. These go with Figure~\ref{fig:diag-neck-base}.}
+(right). In each image the top row is Base as trained and the bottom row is the same Base checkpoint with the
+bone correction applied to its output, with no further training (Section~\ref{sec:diag-neck}). Synthetic images at the
+model's own predicted depth, so the depth bug still draws the bodies too small. I judged the necks by eye; there is
+no metric. These go with Figure~\ref{fig:diag-neck-base}.}
 \label{fig:exp6-compare}
 \end{figure}
 
@@ -66,12 +68,12 @@ draws the bodies too small. Necks judged by eye. These go with Figure~\ref{fig:d
 \end{minipage}
 \caption[Two 3DPW test frames: Base against the neck pilot]{Left: 3DPW test frames \texttt{downtown\_bar\_00} 701
 (top) and \texttt{office\_phoneCall\_00} 440 (bottom), Base next to the neck pilot (the bone correction and a 2-epoch
-fine-tune); necks ringed. Bodies placed from the detector box, fingers at rest pose; judged by eye, no metric. The two
+fine-tune); necks ringed. Bodies placed from the detector box, fingers at rest pose. Judged by eye, no metric. The two
 columns differ by the correction and also by the fine-tune.}
 \label{fig:neck-3dpw-office}
 \caption[Four more 3DPW test frames, Base against Final]{Right: the other four 3DPW test frames of the demo, from top
 to bottom \texttt{downtown\_walking}, stairs, \texttt{downtown\_runForBus} and fencing. Each shows the photo and Base,
-then the photo and Final (labels in the image). Placed from the detector box, fingers at rest pose; by eye, no
+then the photo and Final (labels in the image). Placed from the detector box, fingers at rest pose. Judged by eye, no
 metric. The first four frames are in Figure~\ref{fig:3dpw-overlays}.}
 \label{fig:3dpw-overlays-more}
 \end{figure}
@@ -85,7 +87,7 @@ metric. The first four frames are in Figure~\ref{fig:3dpw-overlays}.}
 \includegraphics[height=1.49cm]{F10_photo_party_v5_vs_final}
 \caption[Four real photos, Base against Final]{The four real photos of the demo (garden and tennis in the top row,
 stage and party below). None of them was used in training. Each shows the photo and Base, then the photo and Final.
-Placed from the detector box, fingers at rest pose; by eye, no metric. The tennis photo is also in
+Placed from the detector box, fingers at rest pose. Judged by eye, no metric. The tennis photo is also in
 Figure~\ref{fig:real-photos}.}
 \label{fig:photo-montages}
 \end{figure}
@@ -115,8 +117,8 @@ garden and tennis photos; the stage photo and fencing; stairs and \texttt{downto
 \texttt{downtown\_runForBus}, the party photo and guitar; \texttt{downtown\_bar}, \texttt{office\_phoneCall} and the
 weekly market. Demo setting, placed from the detector box. Base still has the flipped base bone of the left index
 finger (metacarpal1.L) and of the right ring finger; Final has the correction. In most images the hands are only a
-few pixels wide and cannot be judged, so Figure~\ref{fig:fingers-demo} zooms in on the three where they can. By eye;
-no metric.}
+few pixels wide and cannot be judged, so Figure~\ref{fig:fingers-demo} zooms in on the three where they can. Judged
+by eye, no metric.}
 \label{fig:fingers-all}
 \end{figure}
 
@@ -138,6 +140,6 @@ photo and Base, photo and Final, photo and Final-masked (labels in the image). F
 the 3DPW test frames fencing, stairs, \texttt{downtown\_walking} and \texttt{downtown\_runForBus}; then the party
 photo and guitar, \texttt{office\_phoneCall} and the weekly market. Every detected person stands in rest pose, so
 only the body shape differs between the models. Demo setting, placed from the detector box. At this size only large
-differences in build can be seen. By eye; no metric. The other three images are in Figure~\ref{fig:rest-lineup}.}
+differences in build can be seen. Judged by eye, no metric. The other three images are in Figure~\ref{fig:rest-lineup}.}
 \label{fig:rest-more}
 \end{figure}
