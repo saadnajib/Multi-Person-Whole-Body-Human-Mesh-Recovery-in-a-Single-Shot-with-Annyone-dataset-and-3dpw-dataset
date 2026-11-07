@@ -4,8 +4,7 @@
 % Numbers: data/CLUSTER_ANSWERS.md "6 Nov: loss curves" (slopes over the last 20% of the epochs) -> numbers_nov.tex.
 % Plot readings (visible in the images): holdout PVE rises from epoch 5 to 10 (copied heads unfrozen after epoch 5,
 % CA "STUDENT DONE"); the training loss drops after each LR halving (every 12 epochs in e30, 24 in e60; exp9 header).
-% TODO: the legend draws "train rotmat" and "train kd_out" with the same dash style; replace both PNGs with the fixed
-% re-render of plot_loss_curves.py when it arrives (same file names).
+% PNGs re-rendered 7 Nov with the fixed plot_loss_curves.py (four distinct line styles), tensorboard source.
 \begin{figure}[!p]
 \centering
 \begin{subfigure}[t]{\linewidth}\centering
@@ -21,8 +20,7 @@
   \caption{Student, \StudentSixtyEpochs{} epochs}\label{fig:loss-curves-e60}
 \end{subfigure}
 \caption[Training curves of the 30- and 60-epoch students]{Training curves of the Student. Top of each panel: the
-training loss per epoch, total and its terms (log scale; the two dashed lines are the rotation term and the output
-distillation term, which the legend does not tell apart). Bottom: the validation PVE measured during training every
+training loss per epoch, total and its terms (log scale). Bottom: the validation PVE measured during training every
 \LossEvalEvery{} epochs on the AnnyOne holdout and on \LossValImages{} 3DPW-validation images. These runs were
 trained before a validation loss was logged, so the validation PVE stands in for it. Over the last 20\,\% of the
 epochs (\LossThirtyWindow{} and \LossSixtyWindow) the training loss still falls (\LossThirtyTrainSlope{} and
