@@ -52,9 +52,8 @@ On the walking clip the Student kept a tracked body in \VideoStudentMatched{} of
 did so in \VideoBaselineMatched. These are tracker matches, not recall against labels (Section~\ref{sec:res-video}).
 By eye, temporal filtering made the motion steadier, and landmark alignment put the mesh on the person and reduced the
 jumps in size. The clip has no ground truth and the landmarks come from a 2D detector, so this is no evidence of
-better 3D accuracy (Section~\ref{sec:method-temporal}). The video overlay shows \VideoStudentRawFPS{} FPS for the raw
-Student and \VideoNAVERFPS\,FPS for the baseline on the same frames and GPU \TODO{confirm against the run's
-timing.csv}. The filtered and aligned frame rates in Table~\ref{tab:video-fps} also include the time of those steps.
+better 3D accuracy (Section~\ref{sec:method-temporal}). On one \VideoGPU{} the raw Student ran at \VideoStudentRawFPS{} FPS and the
+baseline at \VideoNAVERFPS\,FPS on the same frames. The filtered and aligned frame rates in Table~\ref{tab:video-fps} also include the time of those steps.
 
 \section{Interpreting geometry and placement}
 \label{sec:disc-pve}

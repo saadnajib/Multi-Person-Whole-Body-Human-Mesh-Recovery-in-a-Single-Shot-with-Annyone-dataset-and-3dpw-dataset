@@ -137,16 +137,34 @@
 \newcommand{\BodyMatchedPoints}{24}           % Anny points fitted to the SMPL joints; smpl_to_anny_name_mapping in the same json
 % Anny vertex count deliberately NOT given (two conflicting numbers in the repo; NOTES slide 4).
 
-% --- Video comparison (DECK 5 Nov slide 18, frame overlay of the five-panel video, man_walking.mp4) ---------------
+% --- Video comparison, job 3657550 (results/video_compare/video_3657550: run.json, timing.csv, summaries; relayed 7 Nov) --
 % Frames and matches: existing \VideoFrames, \VideoStudentMatched, \VideoBaselineMatched (the same 356 / 356 / 354 on slide 18).
 % FPS values are the labels burned into comparison.mp4; confirm against that run's timing.csv (job id not known yet).
 \newcommand{\VideoPlaybackFPS}{29.97}         % input playback FPS; DECK slide 18 overlay; ffprobe of the embedded video (2997/100, 356 frames)
-\newcommand{\VideoStudentRawFPS}{18.3}        % Student raw, final average inference FPS; DECK slide 18 overlay
-\newcommand{\VideoStudentTemporalFPS}{14.9}   % Student temporal, model + filter/decode FPS; same
-\newcommand{\VideoStudentAlignedFPS}{12.9}    % Student aligned, model + refine FPS; same
-\newcommand{\VideoNAVERFPS}{8.5}              % Original Multi-HMR (NAVER Anny), final average inference FPS; same
-\newcommand{\VideoSpeedRatioNAVER}{2.15}      % 18.3 / 8.5; computed here
+\newcommand{\VideoStudentRawFPS}{18.3}        % Student raw inference_fps 18.346; timing.csv of job 3657550 (also the slide-18 overlay)
+\newcommand{\VideoStudentTemporalFPS}{14.9}   % student_temporal processing_fps 14.874; timing.csv 3657550
+\newcommand{\VideoStudentAlignedFPS}{12.9}    % student_aligned processing_fps 12.922; timing.csv 3657550
+\newcommand{\VideoNAVERFPS}{8.5}              % baseline inference_fps 8.500; timing.csv 3657550
+\newcommand{\VideoSpeedRatioNAVER}{2.16}      % 117.65 / 54.51 ms mean inference (timing.csv 3657550); computed here
 \newcommand{\VideoFigureFrame}{178}           % frame shown in F25 (5.94 s), extracted with ffmpeg from the slide-18 video
 
 % --- Image comparison (DECK 5 Nov slide 11; demo_image_compare.py, docs/image_comparison.md) ----------------------
 \newcommand{\ImageCompareDetections}{3}       % visible detections per model on the stage photo; DECK slide 11 panel labels
+
+% --- Video run 3657550: hardware, timing and motion proxies (run.json, timing.csv, temporal_comparison.json, summaries)
+\newcommand{\VideoJob}{3657550}               % job of the five-panel video; results/video_compare/video_3657550
+\newcommand{\VideoGPU}{NVIDIA A40}            % run.json models.*.device_name
+\newcommand{\VideoMeasuredFrames}{346}        % timing.csv measured_frames (after warm-up)
+\newcommand{\VideoWarmup}{10}                 % timing.csv warmup_frames_excluded
+\newcommand{\VideoStudentMs}{54.5}            % ms, Student mean inference_ms; timing.csv 3657550
+\newcommand{\VideoNAVERMs}{117.6}             % ms, baseline mean inference_ms; timing.csv 3657550
+\newcommand{\VideoTemporalMs}{12.7}           % ms, temporal filter + Anny re-decode per frame; timing.csv temporal_mean_ms
+\newcommand{\VideoAlignMs}{10.2}              % ms, alignment fit per frame; timing.csv alignment_mean_ms
+\newcommand{\VideoAccelRaw}{38.0}             % m/s^2, mean pelvis-relative joint acceleration, raw Student; run.json summary
+\newcommand{\VideoAccelTemporal}{10.5}        % m/s^2, same, temporal Student; run.json student_temporal summary
+\newcommand{\VideoAccelNAVER}{29.6}           % m/s^2, same, baseline (unsmoothed); run.json baseline summary
+\newcommand{\VideoRootSpeedRaw}{1.69}         % m/s, mean head-anchor (root) speed, raw Student; run.json summary
+\newcommand{\VideoRootSpeedTemporal}{0.63}    % m/s, temporal Student; run.json student_temporal summary
+\newcommand{\VideoRootSpeedAligned}{0.53}     % m/s, aligned Student; run.json student_aligned summary
+\newcommand{\VideoGenderStdRaw}{0.058}        % std of predicted gender over the clip, raw Student; run.json summary
+\newcommand{\VideoGenderStdTemporal}{0.024}   % same, temporal Student; run.json student_temporal summary

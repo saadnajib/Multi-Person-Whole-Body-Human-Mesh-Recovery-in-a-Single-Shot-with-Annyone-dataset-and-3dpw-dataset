@@ -496,8 +496,8 @@ phenotypes (\VideoShapeTau\,s). Rotations are blended by shortest-arc quaternion
 valid; a plain average of turns of almost $+180^\circ$ and $-180^\circ$ would give no rotation at all. The filtered
 parameters are decoded again through Anny, so vertices are never averaged. The state resets after a missed detection, a
 new track or a gap above \VideoMaxGap\,s, and a missed frame is never filled with an old body. Raw and filtered
-outputs share one forward pass. The constants are the pipeline defaults, initial settings to be inspected on
-the video and not tuned\TODO{confirm in run.json of the five-panel video run}.
+outputs share one forward pass. The constants are the pipeline defaults (the five-panel run used exactly these, as its
+\path{run.json} records). They are initial settings that I inspected on the video and did not tune.
 
 \paragraph{Landmark alignment.} The filter cannot move a body that sits at the wrong place or is drawn too large. For
 this I run MediaPipe Pose, an existing 2D landmark detector, once offline on the CPU over the original video. Its

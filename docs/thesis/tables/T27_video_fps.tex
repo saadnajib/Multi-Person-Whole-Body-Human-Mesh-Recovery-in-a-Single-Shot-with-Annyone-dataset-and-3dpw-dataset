@@ -3,9 +3,8 @@
 % Baseline 354/356 matched) and the frame overlay burned into the embedded comparison video (ffprobe: 356 frames,
 % 29.97 FPS, 3360 x 736 = five 672-px panels). FPS definitions: docs/video_inference.md, "Inference speed and playback
 % speed" (lines ~384-409) and the TEMPORAL / ALIGNMENT paragraphs (lines ~422-439).
-% TODO(author): confirm the four model FPS values against that run's timing.csv and run.json (GPU, precision, input
-% size); the job id of this run is not known yet. The older job 3642415 (numbers_video.tex) has the same frame and match
-% counts but no FPS measurement.
+% Values confirmed 7 Nov against timing.csv and run.json of job 3657550 (NVIDIA A40, fp32 with TF32, 672 px, 346 timed
+% frames after 10 warm-up frames); the slide-18 overlay shows the same values.
 \begin{table}[!tbp]
 \centering\footnotesize
 \begin{tabular}{@{}lr>{\raggedright\arraybackslash}p{0.52\linewidth}@{}}
@@ -18,14 +17,15 @@ Student, temporal & \VideoStudentTemporalFPS & model inference plus the temporal
 Student, aligned & \VideoStudentAlignedFPS & model inference, the temporal work if enabled, and the alignment fit; offline landmark extraction excluded \\
 Multi-HMR-Anny (NAVER) & \VideoNAVERFPS & average model inference, same definition as the raw Student \\
 \bottomrule
-\multicolumn{3}{@{}p{0.95\linewidth}@{}}{\scriptsize All FPS are batch-one, sequential timings on the same GPU and the
-same frames, after warm-up. None of them includes image preprocessing, rendering or video decoding and encoding, so
-none is end-to-end video throughput. \TODO{confirm against the run's timing.csv}}
+\multicolumn{3}{@{}p{0.95\linewidth}@{}}{\scriptsize All FPS are batch-one, sequential timings on one \VideoGPU{} (fp32 with
+TF32, 672-pixel input) over the same \VideoMeasuredFrames{} frames after \VideoWarmup{} warm-up frames. None of them includes image preprocessing, rendering or video decoding and encoding, so
+none is end-to-end video throughput.}
 \end{tabular}
 \caption[Video comparison: frames, matches and speed]{Video comparison on one walking clip
 (\VideoFrames{} frames). The Student matched a person in \VideoStudentMatched{} of \VideoFrames{} frames,
 Multi-HMR-Anny in \VideoBaselineMatched{} of \VideoFrames; these are tracker matches, not labelled accuracy. The FPS
-values are the labels shown in the comparison video (Figure~\ref{fig:video-panels}). The raw Student runs about
+values come from the run's timing file (job \VideoJob) and are also printed in the comparison video
+(Figure~\ref{fig:video-panels}). The raw Student runs about
 \VideoSpeedRatioNAVER{} times as fast as Multi-HMR-Anny; temporal smoothing and landmark alignment cost part of that
 gain.}
 \label{tab:video-fps}

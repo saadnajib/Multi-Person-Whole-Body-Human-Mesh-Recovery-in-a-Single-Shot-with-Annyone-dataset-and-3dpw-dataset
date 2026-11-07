@@ -172,3 +172,16 @@ teacher PVE 77.5 / PA-PVE 54.4 / MPJPE 78.5 / recall 87.0; e60 student 111.0 / 7
 (not comparable between the two): teacher 10.93, student 11.54 images/s. Learning-rate schedule of the e60 run: exp8's
 default LR_DECAY_EVERY = 2/5 of EPOCHS (`slurm/experiments/exp8_distill_vitb.sh` header, "StepLR x0.5 every
 LR_DECAY_EVERY"), i.e. x0.5 every 24 epochs; EVAL_FREQ 5 (exp8 default).
+
+## 7 Nov: five-panel video run = job 3657550 (`results/video_compare/video_3657550/`, run.json + timing.csv as pasted)
+
+NVIDIA A40, fp32 with TF32, 672 px, batch 1, 346 timed frames after 10 warm-up frames; man_walking.mp4, 356 frames at
+29.97 FPS. timing.csv: Student inference 54.51 ms mean = 18.35 FPS; student_temporal processing 67.23 ms = 14.87 FPS
+(filter + re-decode 12.72 ms); student_aligned processing 77.39 ms = 12.92 FPS (alignment fit 10.16 ms); baseline
+(multiHMR_672_L_anny) 117.65 ms = 8.50 FPS; ratio 2.16. Matches: Student 356/356, baseline 354/356 (this run's
+summaries). Filter constants as defaults (pose 0.08 s, translation 0.12 s, shape 1.0 s, gap 0.25 s, depth 0.35 s);
+MediaPipe Pose 0.10.14 on CPU, 12 landmarks, all 356 frames accepted. Motion proxies (run.json summaries, not accuracy):
+mean pelvis-relative joint acceleration raw 38.0, temporal 10.5, aligned 10.5, baseline 29.6 m/s^2; mean root speed
+raw 1.69, temporal 0.63, aligned 0.53, baseline 1.52 m/s; gender std over the clip raw 0.058, temporal 0.024.
+Temperature sweep jobs (submitted 6 Nov 16:39, pending 7 Nov): T=1 3717507, T=2 3717530, T=4 3717538, T=8 3717581,
+T=16 3717598.

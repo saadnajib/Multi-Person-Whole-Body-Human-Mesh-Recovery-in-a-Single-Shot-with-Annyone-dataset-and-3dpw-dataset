@@ -164,10 +164,9 @@ the same frames with the procedure of Section~\ref{sec:method-video} and rendere
 temporal filtering, the Student with landmark alignment, and the baseline. The filter blends each frame's prediction
 with the earlier ones through an exponential moving average per tracked person. The alignment moves the mesh in
 position and depth until its joints line up with MediaPipe landmarks (Section~\ref{sec:method-temporal}). Neither
-retrains the Student. The counts I quote are those of the earlier run of Appendix~\ref{sec:app-video}: the Student
+retrains the Student. In this run the Student
 kept a matched person in \VideoStudentMatched{} of \VideoFrames{} frames and the baseline in \VideoBaselineMatched{}.
-My presentation printed the same for the new run, which I have not yet checked against its summaries. These counts
-come from the tracker. They are not a detection recall against labels.
+These counts come from the tracker. They are not a detection recall against labels.
 
 Seen frame by frame, the raw Student mesh sometimes extends beyond the person; in Figure~\ref{fig:video-panels} it is drawn ahead
 of the man. Temporal filtering makes its movement steadier. Landmark alignment improves its position and apparent
@@ -178,14 +177,20 @@ The frame rates in Table~\ref{tab:video-fps} measure different amounts of work. 
 both time model inference alone: \VideoStudentRawFPS{} against \VideoNAVERFPS\,FPS on the same GPU and frames, so the
 Student is about \VideoSpeedRatioNAVER{} times faster. The two networks differ in more than the backbone, though; the
 baseline's head has \BgNaverHeadLayers{} cross-attention blocks and mine \BgOurHeadLayers. The filtered and the aligned
-Student do extra work and run at \VideoStudentTemporalFPS{} and \VideoStudentAlignedFPS\,FPS. None of these values
-compares with the median forward times of Table~\ref{tab:model-cost}. \TODO{confirm the FPS values against
-the run's timing.csv; job id pending}
+Student do extra work and run at \VideoStudentTemporalFPS{} and \VideoStudentAlignedFPS\,FPS. All four were measured on
+one \VideoGPU{}, so none of them compares with the L40S forward times of Table~\ref{tab:model-cost}. Per frame, the
+Student's inference took \VideoStudentMs\,ms and the baseline's \VideoNAVERMs\,ms; the filter added
+\VideoTemporalMs\,ms and the alignment fit another \VideoAlignMs\,ms.
 
 The clip has no ground truth, so I cannot say that the steadier mesh is also the more accurate one. The landmarks
-come from another detector and not from a measured body, so agreeing with them is not the same as being right. I ran
-only this one clip, with one person and no occlusion, and I did not look at the motion statistics that each run
-saves.
+come from another detector and not from a measured body, so agreeing with them is not the same as being right. The motion
+statistics that the run saves agree with what I see in the video. The mean joint acceleration (relative to the
+pelvis) falls from \VideoAccelRaw{} to \VideoAccelTemporal\,m/s$^2$ with the filter, and the mean speed of the
+head anchor from \VideoRootSpeedRaw{} to \VideoRootSpeedTemporal\,m/s (\VideoRootSpeedAligned\,m/s after
+alignment). The predicted gender also varies less over the clip (standard deviation \VideoGenderStdRaw{} against
+\VideoGenderStdTemporal). The unsmoothed baseline has \VideoAccelNAVER\,m/s$^2$. Lower numbers mean less jitter,
+but a filter can also flatten real motion, so they are not accuracy numbers. I ran only this one clip, with one
+person and no occlusion.
 
 % -----------------------------------------------------------------------------
 

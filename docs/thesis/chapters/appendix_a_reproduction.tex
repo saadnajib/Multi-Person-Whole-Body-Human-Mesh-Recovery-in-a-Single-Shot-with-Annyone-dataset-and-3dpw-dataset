@@ -126,10 +126,11 @@ to frame.
 
 The five-panel video of Section~\ref{sec:res-video} came from a later run of the same launcher with
 \path{TEMPORAL=ema} and \path{ALIGNMENT=landmarks}. It adds the filtered and the aligned Student panels
-(Section~\ref{sec:method-temporal}) and a frame-rate label on every panel. The matched-frame counts in the thesis are
-those of job 3642415. My final presentation shows the same counts next to the five-panel video. I have not yet checked whether they are that run's own counts or those
-of job 3642415. Its \path{student/summary.json} and \path{baseline/summary.json} will tell. \TODO{job id, run.json and timing.csv of
-the five-panel run}
+(Section~\ref{sec:method-temporal}) and a frame-rate label on every panel. This run is job \VideoJob{} (\path{results/video_compare/video_3657550/}). It ran
+on one \VideoGPU{} in fp32 with TF32 at 672 pixels, timed \VideoMeasuredFrames{} frames after \VideoWarmup{}
+warm-up frames, and used the filter constants of Section~\ref{sec:method-temporal}. Its own summaries give the same
+matched-frame counts as job 3642415: \VideoStudentMatched{} of \VideoFrames{} for the Student and
+\VideoBaselineMatched{} for the baseline.
 
 The frame-rate label on each panel counts a different amount of work (Table~\ref{tab:video-fps}; definitions in
 \path{docs/video_inference.md}, lines 387--440). \path{timing.csv} has one row per model panel, and the input panel's
