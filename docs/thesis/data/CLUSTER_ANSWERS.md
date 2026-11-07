@@ -185,3 +185,10 @@ mean pelvis-relative joint acceleration raw 38.0, temporal 10.5, aligned 10.5, b
 raw 1.69, temporal 0.63, aligned 0.53, baseline 1.52 m/s; gender std over the clip raw 0.058, temporal 0.024.
 Temperature sweep jobs (submitted 6 Nov 16:39, pending 7 Nov): T=1 3717507, T=2 3717530, T=4 3717538, T=8 3717581,
 T=16 3717598.
+
+## 7 Nov: exp9 temperature sweep, first arm done. T=1 (job 3717507, COMPLETED 07:20:44, exit 0; `[val_loss]` lines present every epoch, no Traceback)
+
+`<RUN>_kdT1_sweep/final_table.json`: holdout V1 PVE 116.0 / PA-PVE 77.8 / MPJPE 123.1; AnnyOne test-100 V0 119.2 / 81.3 /
+123.6; 3DPW test 109.9 / 71.0 / 111.6; verdict FAIL (same four rows as the reported T=4 run). Compared with the reported
+T=4 run (119.6 / 80.8 / 127.2; 110.1 / 71.8 / 112.0): 3.6 mm better on the holdout, 0.2 mm on 3DPW, both within the
+run-to-run noise (7.6 mm PVE). T=2 (3717530) and T=4 sweep (3717538) running; T=8 (3717581) and T=16 (3717598) pending.
