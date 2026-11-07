@@ -143,3 +143,95 @@ only the body shape differs between the models. Demo setting, placed from the de
 differences in build can be seen. Judged by eye, no metric. The other three images are in Figure~\ref{fig:rest-lineup}.}
 \label{fig:rest-more}
 \end{figure}
+
+\section{Figures of the teacher ablations}
+\label{app:figures-teacher}
+These figures belong to the teacher ablations in Section~\ref{sec:res-teacher-ablations} and to the shape analysis in
+Section~\ref{sec:res-rh}. I moved them here to keep Chapter~\ref{ch:results} short; the text there refers to each of them.
+
+\begin{figure}[!tbp]
+\centering
+\begin{subfigure}{0.45\linewidth}\centering
+  \includegraphics[width=\linewidth]{F10_3dpw_bar_v5_vs_final}\caption{\texttt{downtown\_bar}}\end{subfigure}\hfill
+\begin{subfigure}{0.45\linewidth}\centering
+  \includegraphics[width=\linewidth]{F10_3dpw_market_v5_vs_final}\caption{weekly market}\end{subfigure}\\[4pt]
+\begin{subfigure}{0.45\linewidth}\centering
+  \includegraphics[width=\linewidth]{F10_3dpw_office_v5_vs_final}\caption{\texttt{office\_phoneCall}}\end{subfigure}\hfill
+\begin{subfigure}{0.45\linewidth}\centering
+  \includegraphics[width=\linewidth]{F10_3dpw_guitar_v5_vs_final}\caption{guitar}\end{subfigure}
+\caption[3DPW test frames, Base against Final]{Four 3DPW test frames, each shown as photo and Base (left half), then
+photo and Final (right half; the labels in the image name the two checkpoints). Bodies placed from the detector box,
+fingers at rest pose; judged by eye, no metric. The other four demo frames are in Figure~\ref{fig:3dpw-overlays-more}
+(Appendix~\ref{app:figures}).}
+\label{fig:3dpw-overlays}
+\end{figure}
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=0.55\linewidth]{neck_before_after_3dpw_bar}
+\caption[3DPW test frame: Base against the neck pilot]{Real 3DPW test frame \texttt{downtown\_bar\_00} 701: Base
+(left) and the neck pilot, fine-tuned 2 epochs with the correction (right); necks ringed. Bodies placed from the
+detector box; judged by eye. The columns differ by the correction and the fine-tune. A second frame is in
+Figure~\ref{fig:neck-3dpw-office}.}
+\label{fig:neck-3dpw-bar}
+\end{figure}
+
+% F11: render-panel crops of the three F11_hands_* montages; trim {l b r t} in px of the stored (downscaled) files.
+% Demo with --relax_hands 0; Final with the bone correction (data/demo_compare_3615018_hands.log).
+\begin{figure}[!tbp]
+\centering
+\begin{tabular}{@{}c@{\hspace{4pt}}c@{}}
+\small Base, predicted fingers & \small Final, predicted fingers \\[2pt]
+\includegraphics[trim={782 288 1200 151},clip,width=0.36\linewidth]{F11_hands_photo_party} &
+\includegraphics[trim={1982 288 0 151},clip,width=0.36\linewidth]{F11_hands_photo_party} \\
+\multicolumn{2}{c}{\small (a) party photo: the hand at the face and the hand over the armrest} \\[4pt]
+\includegraphics[trim={580 354 1124 330},clip,width=0.36\linewidth]{F11_hands_3dpw_guitar} &
+\includegraphics[trim={1592 354 112 330},clip,width=0.36\linewidth]{F11_hands_3dpw_guitar} \\
+\multicolumn{2}{c}{\small (b) 3DPW test frame, guitar: strumming hand (left) and fretting hand (right)} \\[4pt]
+\includegraphics[trim={560 404 1124 330},clip,width=0.36\linewidth]{F11_hands_3dpw_bar} &
+\includegraphics[trim={1572 404 112 330},clip,width=0.36\linewidth]{F11_hands_3dpw_bar} \\
+\multicolumn{2}{c}{\small (c) 3DPW test frame \texttt{downtown\_bar}: the hand on the bar and the hanging hand} \\
+\end{tabular}
+\caption[Predicted fingers on three demo images, Base and Final]{Predicted fingers (not set to rest pose) on three
+demo images, zoomed on the hands; Base left, Final right. Bodies placed from the detector box, so meshes sit beside
+their people. Base still carries the two flipped hand bones; Final has the correction. Neither model puts the fingers
+on the real ones. Three images, judged by eye; the columns differ by the correction and the fine-tune. All twelve
+montages are in Figure~\ref{fig:fingers-all}.}
+\label{fig:fingers-demo}
+\end{figure}
+
+% F17: render panels 2, 4, 6 of the three F17_rest_* montages (photo panels left out); --rest_pose 1
+% (data/demo_compare_3615019_rest.log).
+\begin{figure}[!tbp]
+\centering
+\begin{tabular}{@{}c@{\hspace{3pt}}c@{\hspace{3pt}}c@{}}
+\small Base & \small Final & \small Final-masked \\[2pt]
+\includegraphics[trim={400 0 1600 13},clip,width=0.29\linewidth]{F17_rest_photo_tennis} &
+\includegraphics[trim={1200 0 800 13},clip,width=0.29\linewidth]{F17_rest_photo_tennis} &
+\includegraphics[trim={2000 0 0 13},clip,width=0.29\linewidth]{F17_rest_photo_tennis} \\
+\multicolumn{3}{c}{\small (a) tennis photo: five men in a line} \\[4pt]
+\includegraphics[trim={400 0 1600 13},clip,width=0.29\linewidth]{F17_rest_photo_stage} &
+\includegraphics[trim={1200 0 800 13},clip,width=0.29\linewidth]{F17_rest_photo_stage} &
+\includegraphics[trim={2000 0 0 13},clip,width=0.29\linewidth]{F17_rest_photo_stage} \\
+\multicolumn{3}{c}{\small (b) stage photo: three singers} \\[4pt]
+\includegraphics[trim={400 0 1600 35},clip,height=3.75cm]{F17_rest_3dpw_bar} &
+\includegraphics[trim={1200 0 800 35},clip,height=3.75cm]{F17_rest_3dpw_bar} &
+\includegraphics[trim={2000 0 0 35},clip,height=3.75cm]{F17_rest_3dpw_bar} \\
+\multicolumn{3}{c}{\small (c) 3DPW test frame \texttt{downtown\_bar}: two men} \\
+\end{tabular}
+\caption[Rest-pose line-up: Base, Final, Final-masked]{Rest-pose line-up on three demo images: every detected person
+drawn in rest pose over the photo, so only body shape differs; Base, Final and Final-masked from left to right.
+Bodies placed from the detector box; judged by eye, one run per model. The other nine images are in
+Figure~\ref{fig:rest-more}.}
+\label{fig:rest-lineup}
+\end{figure}
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=0.40\linewidth]{final_model_real_photos}
+\caption[Three real photos, Base against Final]{Three real photos never used in training (a tennis photo and the 3DPW
+test frames \texttt{downtown\_walking\_00} and \texttt{downtown\_runForBus\_00}): Base left, Final right, bodies
+placed from the detector box. Most men get male bodies, women stay female, the boy stays an adult body. Judged by
+eye; no metric exists for these images.}
+\label{fig:real-photos}
+\end{figure}

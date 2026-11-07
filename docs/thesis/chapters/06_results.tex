@@ -239,26 +239,9 @@ intervals and no second run of Final.
 \subsection{Real-image supervision}
 \label{sec:res-3dpw}
 
-\begin{figure}[!tbp]
-\centering
-\begin{subfigure}{0.45\linewidth}\centering
-  \includegraphics[width=\linewidth]{F10_3dpw_bar_v5_vs_final}\caption{\texttt{downtown\_bar}}\end{subfigure}\hfill
-\begin{subfigure}{0.45\linewidth}\centering
-  \includegraphics[width=\linewidth]{F10_3dpw_market_v5_vs_final}\caption{weekly market}\end{subfigure}\\[4pt]
-\begin{subfigure}{0.45\linewidth}\centering
-  \includegraphics[width=\linewidth]{F10_3dpw_office_v5_vs_final}\caption{\texttt{office\_phoneCall}}\end{subfigure}\hfill
-\begin{subfigure}{0.45\linewidth}\centering
-  \includegraphics[width=\linewidth]{F10_3dpw_guitar_v5_vs_final}\caption{guitar}\end{subfigure}
-\caption[3DPW test frames, Base against Final]{Four 3DPW test frames, each shown as photo and Base (left half), then
-photo and Final (right half; the labels in the image name the two checkpoints). Bodies placed from the detector box,
-fingers at rest pose; judged by eye, no metric. The other four demo frames are in Figure~\ref{fig:3dpw-overlays-more}
-(Appendix~\ref{app:figures}).}
-\label{fig:3dpw-overlays}
-\end{figure}
-
 Table~\ref{tab:final-3dpw} scores every model with the same script. Final has the lowest error on our 3DPW-Anny
 labels, \FinalThreeDPW\,mm PVE, ahead of Control, Mixed-L (the previous best), Base and Multi-HMR-Anny, and it finds
-\FinalRecallThreeDPW\,\% of the labelled people. In the overlays (Figure~\ref{fig:3dpw-overlays}) most men get male bodies in Final and female-looking ones in Base, Final's bodies are
+\FinalRecallThreeDPW\,\% of the labelled people. In the overlays (Figure~\ref{fig:3dpw-overlays}, Appendix~\ref{app:figures}) most men get male bodies in Final and female-looking ones in Base, Final's bodies are
 a little larger, and the seated guitar player is poor in both.
 
 Control, without either change, is already \GainBaseToControlThreeDPW\,mm better than Base. So most of the gain over
@@ -308,17 +291,7 @@ synthetic, and the single-image figure shows the pilot, not Final.
 \subsection{Bone correction}
 \label{sec:res-bone}
 
-\begin{figure}[!tbp]
-\centering
-\includegraphics[width=0.55\linewidth]{neck_before_after_3dpw_bar}
-\caption[3DPW test frame: Base against the neck pilot]{Real 3DPW test frame \texttt{downtown\_bar\_00} 701: Base
-(left) and the neck pilot, fine-tuned 2 epochs with the correction (right); necks ringed. Bodies placed from the
-detector box; judged by eye. The columns differ by the correction and the fine-tune. A second frame is in
-Figure~\ref{fig:neck-3dpw-office}.}
-\label{fig:neck-3dpw-bar}
-\end{figure}
-
-Figure~\ref{fig:neck-3dpw-bar} shows the correction on a real frame that no model trained on: Base draws both necks as
+Figure~\ref{fig:neck-3dpw-bar} (Appendix~\ref{app:figures}) shows the correction on a real frame that no model trained on: Base draws both necks as
 thin stalks under the head, the corrected model at normal width. Figure~\ref{fig:diag-neck-base} and
 Table~\ref{tab:neck-bones} give the correction without training and after a 2-epoch fine-tune. Final keeps it through
 ten epochs with real images (Table~\ref{tab:final-annyone}). Its neck02 bone is \FinalNeckTwo\,deg off against
@@ -339,30 +312,6 @@ the correction is the likely cause of the wider necks. Flips that cancel each ot
 \subsection{Hand articulation}
 \label{sec:res-fingers}
 
-% F11: render-panel crops of the three F11_hands_* montages; trim {l b r t} in px of the stored (downscaled) files.
-% Demo with --relax_hands 0; Final with the bone correction (data/demo_compare_3615018_hands.log).
-\begin{figure}[!tbp]
-\centering
-\begin{tabular}{@{}c@{\hspace{4pt}}c@{}}
-\small Base, predicted fingers & \small Final, predicted fingers \\[2pt]
-\includegraphics[trim={782 288 1200 151},clip,width=0.36\linewidth]{F11_hands_photo_party} &
-\includegraphics[trim={1982 288 0 151},clip,width=0.36\linewidth]{F11_hands_photo_party} \\
-\multicolumn{2}{c}{\small (a) party photo: the hand at the face and the hand over the armrest} \\[4pt]
-\includegraphics[trim={580 354 1124 330},clip,width=0.36\linewidth]{F11_hands_3dpw_guitar} &
-\includegraphics[trim={1592 354 112 330},clip,width=0.36\linewidth]{F11_hands_3dpw_guitar} \\
-\multicolumn{2}{c}{\small (b) 3DPW test frame, guitar: strumming hand (left) and fretting hand (right)} \\[4pt]
-\includegraphics[trim={560 404 1124 330},clip,width=0.36\linewidth]{F11_hands_3dpw_bar} &
-\includegraphics[trim={1572 404 112 330},clip,width=0.36\linewidth]{F11_hands_3dpw_bar} \\
-\multicolumn{2}{c}{\small (c) 3DPW test frame \texttt{downtown\_bar}: the hand on the bar and the hanging hand} \\
-\end{tabular}
-\caption[Predicted fingers on three demo images, Base and Final]{Predicted fingers (not set to rest pose) on three
-demo images, zoomed on the hands; Base left, Final right. Bodies placed from the detector box, so meshes sit beside
-their people. Base still carries the two flipped hand bones; Final has the correction. Neither model puts the fingers
-on the real ones. Three images, judged by eye; the columns differ by the correction and the fine-tune. All twelve
-montages are in Figure~\ref{fig:fingers-all}.}
-\label{fig:fingers-demo}
-\end{figure}
-
 Predicted fingers are \BaseFingers\,deg off in Base and \ControlFingers\,deg in Control, worse than fingers left at
 rest (\BaseFingersRest\,deg; Table~\ref{tab:fingers}). Final, with the two flipped hand bones corrected, reaches
 \FinalFingers\,deg (Table~\ref{tab:final-annyone}), and the correction alone gave \NoTrainFingers. So about half of
@@ -370,7 +319,7 @@ the finger error was two flipped bones, metacarpal1.L and finger4-1.R, and train
 explained. Real images add nothing to the fingers, because the hand mask removes the rotation terms of the
 \MethodHandMaskBones{} hand bones for 3DPW people, whose labels hold rest-pose hands.
 
-Figure~\ref{fig:fingers-demo} shows predicted fingers on real images, which every earlier demo set to rest pose. In
+Figure~\ref{fig:fingers-demo} (Appendix~\ref{app:figures}) shows predicted fingers on real images, which every earlier demo set to rest pose. In
 these crops Base's fingers are splayed and stiff, with one finger of the left hand sticking out as the flipped metacarpal1.L
 would make it. Final's fingers are closed and bent, and they look like hands. In the party photo the hand lies over the
 armrest, in the guitar frame it is curled as if fretting, and in the bar frame it bends over the edge of the bar. Small
@@ -397,16 +346,6 @@ model; statistics in \texttt{data/plot\_stats.md}.}
 \label{fig:rh-age}
 \end{figure}
 
-\begin{figure}[!tbp]
-\centering
-\includegraphics[width=0.40\linewidth]{final_model_real_photos}
-\caption[Three real photos, Base against Final]{Three real photos never used in training (a tennis photo and the 3DPW
-test frames \texttt{downtown\_walking\_00} and \texttt{downtown\_runForBus\_00}): Base left, Final right, bodies
-placed from the detector box. Most men get male bodies, women stay female, the boy stays an adult body. Judged by
-eye; no metric exists for these images.}
-\label{fig:real-photos}
-\end{figure}
-
 Table~\ref{tab:relhuman} measures body shape on labelled real photos. Final finds more people than Base and gets the
 gender right for \RHGenderFinal\,\% of them, against \RHGenderBase\,\%. Women are recognised (mean predicted gender
 \RHWomenGenderFinal, where 1 is female), but men stay in the middle (\RHMenGenderFinal). The child-against-adult AUC is
@@ -415,7 +354,7 @@ the chance that a random child gets a lower predicted age than a random adult, s
 for Base. In Figure~\ref{fig:rh-age} the x-axis is the Relative Human age group and the y-axis the predicted Anny age. Base's
 boxes stand at the same height for every group. Final's step down from adults to babies, and only its baby box reaches
 below the child line. On the demo photos
-(Figures~\ref{fig:real-photos} and~\ref{fig:photo-montages}) most men look male in Final, and the boy keeps an adult
+(Figures~\ref{fig:real-photos} and~\ref{fig:photo-montages}, Appendix~\ref{app:figures}) most men look male in Final, and the boy keeps an adult
 body.
 
 Because the AUC only ranks people, a common shift of all ages cannot raise it, so the step is a real separation of
@@ -439,33 +378,7 @@ similar, AnnyOne has no fully male body, and the model saw men labelled 0 only i
 have to come from 3DPW validation, which I did not do. The best accuracy in Table~\ref{tab:gender-auc} uses a cut-off
 chosen on Relative Human itself, so it only shows how large the threshold effect is.
 
-% F17: render panels 2, 4, 6 of the three F17_rest_* montages (photo panels left out); --rest_pose 1
-% (data/demo_compare_3615019_rest.log).
-\begin{figure}[!tbp]
-\centering
-\begin{tabular}{@{}c@{\hspace{3pt}}c@{\hspace{3pt}}c@{}}
-\small Base & \small Final & \small Final-masked \\[2pt]
-\includegraphics[trim={400 0 1600 13},clip,width=0.29\linewidth]{F17_rest_photo_tennis} &
-\includegraphics[trim={1200 0 800 13},clip,width=0.29\linewidth]{F17_rest_photo_tennis} &
-\includegraphics[trim={2000 0 0 13},clip,width=0.29\linewidth]{F17_rest_photo_tennis} \\
-\multicolumn{3}{c}{\small (a) tennis photo: five men in a line} \\[4pt]
-\includegraphics[trim={400 0 1600 13},clip,width=0.29\linewidth]{F17_rest_photo_stage} &
-\includegraphics[trim={1200 0 800 13},clip,width=0.29\linewidth]{F17_rest_photo_stage} &
-\includegraphics[trim={2000 0 0 13},clip,width=0.29\linewidth]{F17_rest_photo_stage} \\
-\multicolumn{3}{c}{\small (b) stage photo: three singers} \\[4pt]
-\includegraphics[trim={400 0 1600 35},clip,height=3.75cm]{F17_rest_3dpw_bar} &
-\includegraphics[trim={1200 0 800 35},clip,height=3.75cm]{F17_rest_3dpw_bar} &
-\includegraphics[trim={2000 0 0 35},clip,height=3.75cm]{F17_rest_3dpw_bar} \\
-\multicolumn{3}{c}{\small (c) 3DPW test frame \texttt{downtown\_bar}: two men} \\
-\end{tabular}
-\caption[Rest-pose line-up: Base, Final, Final-masked]{Rest-pose line-up on three demo images: every detected person
-drawn in rest pose over the photo, so only body shape differs; Base, Final and Final-masked from left to right.
-Bodies placed from the detector box; judged by eye, one run per model. The other nine images are in
-Figure~\ref{fig:rest-more}.}
-\label{fig:rest-lineup}
-\end{figure}
-
-In the rest-pose line-up (Figure~\ref{fig:rest-lineup}) only the body differs. In the pictures, Base gives nearly
+In the rest-pose line-up (Figure~\ref{fig:rest-lineup}, Appendix~\ref{app:figures}) only the body differs. In the pictures, Base gives nearly
 everyone the same slim, flat body. Final gives the singers a fuller chest and hips, and the man in the bar a broader
 torso. The
 tennis men stay slim in all three models, in line with the men's mid-range gender score, and Final-masked looks like
