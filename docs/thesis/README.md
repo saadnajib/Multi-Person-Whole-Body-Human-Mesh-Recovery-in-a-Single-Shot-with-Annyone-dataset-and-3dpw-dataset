@@ -18,6 +18,25 @@ report preserves main's additional experiments; its final length and build check
 are recorded in [validation_2026-11-08.txt](validation_2026-11-08.txt). Font size and
 margins are unchanged. The merged PDF is **120 pages**.
 
+## Upload to Overleaf
+
+Download [Najib_thesis_Overleaf_complete.zip](Najib_thesis_Overleaf_complete.zip),
+then choose **New Project → Upload Project** in Overleaf and upload the entire ZIP.
+Set **Main document** to `thesis.tex` and **Compiler** to **pdfLaTeX**, then recompile.
+The archive places `thesis.tex` directly at the project root and includes all chapter,
+table, bibliography, data and figure dependencies, including
+`figures/tikz/F05_distillation.tex`.
+
+Do not upload only the chapter files or flatten the folders. The error
+`File figures/tikz/F05_distillation.tex not found` means the diagram is missing
+from that location in the uploaded project. A fresh extraction of this archive
+was compiled successfully to the 120-page PDF without LaTeX errors or unresolved
+references/citations. Existing temperature-sweep placeholders remain pending
+research results, not compilation errors.
+
+This ZIP matches the thesis source at commit `d05c366`. Rebuild the archive after
+future source edits before treating it as the current Overleaf version.
+
 ## Build
 
 From this directory:
