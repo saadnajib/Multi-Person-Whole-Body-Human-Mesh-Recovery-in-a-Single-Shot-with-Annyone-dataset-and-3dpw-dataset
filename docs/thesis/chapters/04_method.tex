@@ -1,5 +1,5 @@
 % =============================================================================
-% Chapter 4: Method. Owner: Method writer. Plan: docs/thesis/REWRITE_PLAN.md, section 2 "4 Method".
+% Chapter 4: Method. Plan: docs/thesis/REWRITE_PLAN.md, section 2 "4 Method".
 % Numbers: numbers_method.tex (prefix \Method...). Tables: tables/T02, T07, T11. Figures: figures/tikz/F01, F03-F05.
 % Trimmed 19 Oct (I/O table, HPH dimensions and ViT-S history numbers cut; see git 76aa1a4). Absorbs draft main.tex:216-580 (problem statement, architecture, loss
 % equation, distillation mechanics, mixed training, schedule). Labels defined here: ch:method, sec:method-*,
@@ -10,10 +10,9 @@
 \chapter{Methodology}
 \label{ch:method}
 
-The deployed system is the ViT-B Student. A larger ViT-L teacher, denoted Final in the experiment
-records, supplies transferred prediction heads and distillation targets. This chapter describes the final
-configuration, followed by its losses, training and evaluation. Detailed development diagnostics are in
-Appendix~\ref{ch:diagnostics}.
+This chapter explains how I trained the ViT-B Student and used it for image and video inference.
+The larger ViT-L teacher, called Final in the experiment records, provides the copied prediction heads
+and teacher targets. The supporting diagnostic experiments are in Appendix~\ref{ch:diagnostics}.
 
 \section{System Overview}
 \label{sec:method-overview}
@@ -40,10 +39,11 @@ $C_s=\MethodWidthB$. The trainable projection is
  \mathbf W\in\mathbb R^{C_t\times C_s},\quad C_t=\MethodWidthL .
  \label{eq:student-projection}
 \end{equation}
-Both detection and body-parameter prediction use this projected representation. Preserving the teacher's head
-width permits head-weight transfer; reducing the image encoder provides most of the parameter and computation
-savings. This is a compact configuration of the Multi-HMR family, rather than a claim that ViT-B or
-knowledge distillation is itself new.
+For each image patch, the student produces \MethodWidthB{} feature values. The projector learns
+\MethodWidthL{} weighted combinations of those values, plus a bias. It changes their representation so
+that the teacher's copied heads can use them. It does not add new image information. Both detection and
+body prediction use the projected features, so the projector remains part of the student at inference.
+Most of the saving comes from replacing the larger encoder.
 
 % -----------------------------------------------------------------------------
 \section{Multi-HMR for Anny: task and architecture}
@@ -64,7 +64,9 @@ vertices and joints, and the mesh is moved so that its anchor joint sits at the 
   \mathbf{t}_i = z_i\,\mathbf{K}^{-1}\,(u_i, v_i, 1)^{\top}.
   \label{eq:method-placement}
 \end{equation}
-The goal is a mesh with the right pose, shape and place in the camera frame, from one pass over the whole image.
+The decoder first builds the body, subtracts its head-joint position and moves the whole mesh to
+$\mathbf t_i$. Its head then sits at the predicted 3D anchor. This changes placement without changing
+the body's pose or proportions.
 
 \subsection{Architecture}
 \label{sec:method-architecture}
@@ -102,8 +104,10 @@ and needs $\num{\MethodGflopsL}$ GFLOPs per image with one person.
 \section{Supervised Training Objective}
 \label{sec:method-losses}
 
-Anny runs on each person's true parameters to give target vertices and joints; the anchor targets are built from one
-joint (Section~\ref{sec:method-depth}). The total loss is
+A loss penalizes a mismatch during training. Each term compares a prediction with its corresponding
+label: detection with detection, pose with pose, and so on. Anny converts the labelled body parameters
+into target joints and vertices. All anchor targets refer to the same head joint
+(Section~\ref{sec:method-depth}). The total loss is
 \begin{equation}
 \begin{split}
 \mathcal{L} = {}& \alpha_{\text{det}}\mathcal{L}_{\text{det}}
@@ -145,7 +149,8 @@ contribution of easy background tokens. For $N_h$ supervised people and their su
     \|\widehat{\mathbf o}_i-\mathbf o_i\|_1 .
  \label{eq:loss-offset}
 \end{equation}
-Using the same anchor for these targets, depth and body placement keeps their supervision geometrically consistent.
+The detection score is compared with the binary label, while the offset is compared with the target
+2D offset. They are separate losses; the score and location are not compared with each other.
 
 \subsection{Pose, Shape and Placement}
 
@@ -182,9 +187,11 @@ With $K_X$ points and optional normalized joint weights $w_\ell$,
  w_\ell\|\widehat{\overline{\mathbf X}}_{i\ell}-\overline{\mathbf X}_{i\ell}\|_1 .
  \label{eq:loss-geometry}
 \end{equation}
-For vertices $w_\ell=1$; the joint term uses the configured joint weights. Root subtraction removes translation,
-which is why these losses cannot replace Equation~\eqref{eq:loss-placement}. Reprojection uses the predicted
-camera-space points without pelvis alignment:
+For vertices $w_\ell=1$; joints use the configured weights. Subtracting each body's pelvis moves both
+pelvises to the origin. The comparison then checks the body around that common point, regardless of where
+it was placed in the scene. Placement therefore needs the separate losses in
+Equation~\eqref{eq:loss-placement}. The 2D losses project the bodies back into the image without this
+pelvis alignment:
 \begin{equation}
  \mathcal L_{X2D}=\frac{1}{|\Omega_X|}
  \sum_{(i,\ell)\in\Omega_X}
@@ -204,7 +211,8 @@ median (Appendix~\ref{ch:diagnostics}). The 3D terms align both skeletons at the
 translation see placement directly, and the 2D terms indirectly; before the depth fix the two direct terms made up
 about \MethodLossShareDepth\% of the loss, against \MethodLossShareShape\% for shape. Training runs in fp32 with TF32
 products (mixed precision gave NaN values with the Anny layer), and steps with NaN or Inf gradients are skipped
-(\MethodFinalNaNSteps{} of $\num{\MethodFinalSteps}$ in Final). No weight was tuned in this thesis.
+(\MethodFinalNaNSteps{} of $\num{\MethodFinalSteps}$ in Final). The main loss weights are listed in Table~\ref{tab:loss-weights}; the reported pilots test specific
+changes rather than an exhaustive weight search.
 
 % -----------------------------------------------------------------------------
 \section{Training schedule and model names}
@@ -322,8 +330,9 @@ real (an estimate). The test split is never used for training.
 
 \paragraph{The hand mask.} The converter fits only the root and the bones that carry a mapped SMPL joint, so every
 finger, thumb and metacarpal bone of a 3DPW label is at rest. With \texttt{-{}-mask\_3dpw\_hands 1} the rotation terms
-skip these \MethodHandMaskBones{} bones for 3DPW people, so the fingers are learned from AnnyOne only; the mesh terms
-still carry the rest-pose hands.
+skip these \MethodHandMaskBones{} bones for 3DPW people. Measured finger-rotation supervision therefore
+comes from AnnyOne. The mesh losses still include the fitted rest-pose hands, and the student's output
+distillation still uses the teacher's hand predictions. The mask does not remove all hand-related training.
 
 \paragraph{The shape mask, tested.} The converter leaves \MethodShapeMaskCount{} phenotypes at constants (age
 \MethodConstAge; muscle, weight, cup size, firmness and three ethnicity values at \MethodConstOther). With
@@ -352,11 +361,14 @@ With batch size $B$, the implemented feature loss is
  p^t_{unc}\log\frac{p^t_{unc}}{p^s_{unc}} .
  \label{eq:method-kd}
 \end{equation}
-Temperature $T=\MethodKDTemp$ softens the channel distribution and the $T^2$ factor rescales its gradients
-\cite{hinton2015distilling}. The code uses batch-mean KL reduction: tokens are summed, not averaged.
-The student features in this equation are exactly the projected features consumed by the heads. This provides
-representation supervision in addition to parameter targets, following the motivation of feature distillation
-\cite{romero2015fitnets}. The teacher features are detached.
+For each patch, softmax turns its feature channels into values that sum to one. Dividing by
+$T=\MethodKDTemp$ makes this distribution less concentrated on the largest channels. KL divergence then
+penalizes differences between the teacher's distribution and the projected student's distribution.
+These are feature-channel distributions, not probabilities of body classes. The $T^2$ factor rescales
+the gradients~\cite{hinton2015distilling}. The implementation averages over images and sums over
+tokens and channels. Only the student and projector receive gradients from this term; the teacher
+stays fixed. Matching intermediate representations follows the idea of feature distillation
+\cite{romero2015fitnets}.
 
 \paragraph{Head transfer and output distillation.} The student copies every teacher head tensor whose name and shape
 match. Both run on the true person locations, so person $i$ of one is person $i$ of the other, and
@@ -375,12 +387,11 @@ mask. Teacher predictions are available even where a converted ground-truth hand
 For both distillation terms, the selected recipe uses $\lambda_{\mathrm{kd}}=\MethodKDLambda$ and
 $\lambda_{\mathrm{kd-out}}=\MethodKDOutLambda$.
 
-\paragraph{Warm-up freeze and projector-fed heads.} Copied heads that read through random input layers give confident
-wrong outputs, and their gradients damage the copied weights; the copied tensors therefore stay frozen for the first
-epochs. The final design removes the random input layers: a linear projector maps the student's tokens to the
-teacher's width, every head is built at that width (\texttt{-{}-head\_dim}), all head tensors transfer, and
-Equation~\eqref{eq:method-kd} trains the projector toward exactly the input the heads expect. TF32 products and the teacher's backbone in bfloat16 cut a ViT-S student's step from
-\MethodItTimeBefore{} to \MethodItTimeAfter\,s on an A100, with unchanged evaluation numbers.
+\paragraph{Why the copied heads are frozen first.}
+The heads already know how to turn teacher features into body predictions, but the new projector initially
+produces different inputs. I freeze the copied heads for the first \MethodStudentFreeze{} epochs so the
+encoder and projector can adapt without immediately changing those weights. I then train the heads too.
+This gives the student a useful starting point while allowing later adaptation to its own features.
 
 \subsection{The ViT-B student of Final}
 \label{sec:method-student}
@@ -388,7 +399,8 @@ Equation~\eqref{eq:method-kd} trains the projector toward exactly the input the 
 \paragraph{Recipe.} The Student follows the projector-fed design with a ViT-B backbone and the corrected training of
 this chapter (Table~\ref{tab:student-recipe}). Its backbone starts from NAVER's Multi-HMR ViT-B, trained for mesh
 recovery, and trains fully; the copied heads stay frozen for \MethodStudentFreeze{} epochs; the targets are exactly
-the teacher's. I claim no augmentation: the job script names colour jitter, but no code reads that setting. The copied heads output the half-turn that the teacher's bone correction
+the teacher's. The script contains a colour-jitter option, but the training code does not use it, so I do not count it
+as an applied augmentation. The copied heads output the half-turn that the teacher's bone correction
 undoes, so the student trains with that correction; afterwards its own is estimated on \MethodBoneFixImages{} training
 images and used in every evaluation.
 
@@ -409,10 +421,28 @@ body representation and evaluation convention. The baseline's AnnyOne result is 
 Table~\ref{tab:metrics} lists the metrics. Errors are means over matched people: a greedy 2D matcher pairs each
 labelled person with at most one detection, and recall is the share of labelled people that got one.
 
+
 \input{tables/T07_metrics}
 
+For one matched person, pelvis-centred vertex and joint errors are
+\begin{equation}
+ \mathrm{PVE}=\frac{1}{N_v}\sum_{v=1}^{N_v}
+ \|\widehat{\overline{\mathbf V}}_v-\overline{\mathbf V}_v\|_2,\qquad
+ \mathrm{MPJPE}=\frac{1}{N_j}\sum_{j=1}^{N_j}
+ \|\widehat{\overline{\mathbf J}}_j-\overline{\mathbf J}_j\|_2 .
+ \label{eq:eval-errors}
+\end{equation}
+The bars denote subtraction of each body's pelvis. Scores are averaged over matched people and
+reported in millimetres. PA-PVE first fits one rotation, translation and uniform scale to align the
+predicted vertices with the target, then computes the mean Euclidean vertex distance.
+Recall is the number of matched labelled people divided by the total number of labelled people.
+These evaluation scores differ from the coordinate-wise L1 losses used during training. A lower
+centred error does not necessarily mean a better overlay in the camera image.
+
+
 \paragraph{AnnyOne holdout.} The last \MethodHoldoutN{} AnnyOne images (indices $\num{\MethodHoldoutFirst}$ to
-$\num{\MethodHoldoutLast}$), never trained on and without children (Chapter~\ref{ch:data}). The headline setting V1
+$\num{\MethodHoldoutLast}$) are excluded from training in this thesis and contain no children
+(Chapter~\ref{ch:data}). The released baseline may have seen them. The headline setting V1
 masks the helper bones, as the demos do; V0 does not. A trace script adds the placement and per-bone metrics.
 
 \paragraph{3DPW test.} All $\num{\MethodTestImages}$ test images ($\num{\MethodTestPeople}$ people) of the corrected
@@ -434,37 +464,82 @@ confidence intervals or a significance threshold for every dataset and schedule.
 final student and teacher was not performed. Evaluation of fixed checkpoints is kept separate from
 training variation.
 
-\section{Frame-wise Video Application and Timing}
+\section{Video Inference, Filtering and Alignment}
 \label{sec:method-video}
 
-A video is decoded in source-frame order. Every selected frame is letterboxed to each checkpoint's input size
-and evaluated with the same field-of-view assumption. The default is $55^\circ$ along the longer image side.
-Predictions retain their camera-space placement; no detection-box anchoring or temporal smoothing is applied.
-A geometric tracker associates one primary person by box overlap and normalized centre distance. Missing
-predictions remain missing, and track breaks interrupt temporal differences.
+The video application uses the trained image model without retraining it. It keeps the raw predictions
+and can add two steps: temporal filtering to reduce changes between frames, and landmark alignment to
+improve where the mesh is drawn. These steps address different problems.
 
-For constant frame spacing $\Delta t$, a pelvis-relative joint is
-$\mathbf q_{tj}=\mathbf J_{tj}-\mathbf J_{t,\mathrm{root}}$.
-The application records the motion proxies
+\paragraph{Raw prediction and tracking.}
+Frames are read in their original order and padded to each checkpoint's input size. Both models use the
+same camera assumption: by default, a $55^\circ$ field of view along the longer image side. The raw mesh
+keeps its predicted camera-space placement. A geometric tracker follows one primary person using box
+overlap and centre distance. A missing detection remains missing; it is not replaced by an old mesh.
+
+\paragraph{Temporal filtering.}
+For shape values and the 3D head anchor, I use an exponential moving average:
+\begin{equation}
+ \alpha_t=1-e^{-\Delta t/\tau},\qquad
+ \overline{\mathbf x}_t=(1-\alpha_t)\overline{\mathbf x}_{t-1}+\alpha_t\mathbf x_t .
+ \label{eq:video-ema}
+\end{equation}
+Here $\mathbf x_t$ is the current prediction, $\overline{\mathbf x}_{t-1}$ is the previous filtered
+value and $\Delta t$ is the time between selected frames. A larger time constant $\tau$ gives stronger
+smoothing but can delay fast movement. Setting it to zero passes the current value through.
+The defaults are 1.0\,s for shape, 0.12\,s for the head anchor and 0.08\,s for pose.
+
+Bone rotations need a different interpolation because averaging their coordinates can produce an invalid
+rotation. I convert them to unit quaternions and use shortest-path spherical interpolation (SLERP) with
+the same $\alpha_t$. Anny then rebuilds the mesh from the filtered pose and shape and places it at the
+filtered anchor. The filter uses current and past outputs only. It resets on a missing detection, a
+track change or a timestamp gap above 0.25\,s. No future frames or learned temporal weights are used.
+
+\paragraph{Landmark alignment.}
+MediaPipe~\cite{mediapipecode} detects shoulders, elbows, wrists, hips, knees and ankles in the original
+video. These 2D landmarks are extracted separately and associated with the tracked person. The saved
+landmark file is checked against the source video's hash and dimensions to avoid using points from
+another video or an already rendered overlay.
+
+I fit one translation $\boldsymbol\Delta\in\mathbb R^3$ to bring the projected Anny joints closer to
+these points. The optimizer uses confidence-weighted residuals and a robust loss, so one poor landmark
+has less influence. It requires confident points spanning the upper and lower body, rejects outliers
+and checks that the fitted body stays in front of the camera and within the allowed translation range.
+A rejected fit keeps the unaligned prediction. If filtering is enabled, alignment uses the filtered body.
+
+This step changes position and depth, but leaves bone lengths, pose and shape unchanged. Moving a body
+farther away makes its projection smaller; moving it closer makes it larger. It can improve an overlay
+without proving that the body's 3D position is correct.
+
+\paragraph{Stabilizing aligned depth.}
+Independent alignment can choose a slightly different depth in each frame and make the mesh appear to
+grow and shrink. I therefore filter the logarithm of the fitted pelvis depth, using a default time
+constant of 0.35\,s and limiting each log-depth step to $0.5\Delta t$. The whole body is translated
+along the current pelvis camera ray to reach this depth, which preserves the pelvis's image position.
+The state resets after rejected fits, missing predictions or track breaks. This is a trade-off: less
+size flicker may come with more current-frame landmark error. The reported projection error is
+recomputed from the mesh actually rendered.
+
+\paragraph{Measurements and timing.}
+For a pelvis-relative joint $\mathbf q_{tj}=\mathbf J_{tj}-\mathbf J_{t,\mathrm{root}}$ and constant
+frame spacing $\Delta t$, the application records
 \begin{equation}
  \mathbf v_{tj}=\frac{\mathbf q_{tj}-\mathbf q_{t-1,j}}{\Delta t},\qquad
  \mathbf a_{tj}=\frac{\mathbf q_{tj}-2\mathbf q_{t-1,j}+\mathbf q_{t-2,j}}{\Delta t^2}.
  \label{eq:video-motion}
 \end{equation}
-It also records phenotype standard deviation and adjacent-frame changes. These are predicted-motion statistics,
-not acceleration errors against ground truth. Natural motion and camera movement can increase them.
+It also records shape variation, missing frames and track segments. These are changes in predictions,
+not errors against ground-truth motion. Natural movement can increase them, and an incorrect body can
+still be very smooth.
 
-The comparison places the input, student and released baseline side by side on identical selected frames.
-Playback FPS is source FPS divided by frame stride. Inference FPS uses batch size one and synchronized wall
-timing around the model forward call:
+Inference speed is computed as
 \begin{equation}
- \mathrm{FPS}_{\mathrm{infer}}=\frac{N_{\mathrm{timed}}}
- {\sum_{t\in\mathcal T}\tau_t},\qquad
- \tau_t=\mathrm{elapsed\ forward\ seconds}.
+ \mathrm{FPS}_{\mathrm{infer}}=
+ \frac{N_{\mathrm{timed}}}{\sum_{t\in\mathcal T}\tau_t},
  \label{eq:video-fps}
 \end{equation}
-The first ten processed frames are excluded from timing averages but retained in the videos and movement
-measurements. Preprocessing, transfers outside the model, mesh rendering and video I/O are excluded from
-$\tau_t$; inference includes detection and Anny decoding. Rendering is measured separately. Device, precision,
-resolution and person count must accompany speed claims. The video model remains frame-wise: tracking gives
-association, not learned temporal information.
+where $\tau_t$ is synchronized elapsed time for the reported stage. The first ten frames are excluded
+from timing averages. Raw FPS covers the model forward pass; filtered FPS also includes filtering and
+Anny decoding; aligned FPS includes the active refinement steps. Preprocessing, rendering, video I/O
+and offline landmark extraction are excluded. These values differ from playback FPS and from complete
+online throughput. GPU, precision, resolution and person count must accompany a speed comparison.

@@ -8,8 +8,7 @@ This appendix preserves the converter development and label-integrity checks tha
 
 The first converter (v1) chose the Anny bones by name. It gave \DataVOneBarMean\,mm on \texttt{downtown\_bar\_00};
 on four test scenes the error was \DataVOneFloorMin{} to \DataVOneFloorMax\,mm on every frame, and all four actors
-came out with the same body. A residual independent of the pose and a shape independent of the person mean
-that the shape absorbed a fixed mismatch between the skeletons. Placing both models in their rest poses showed two
+came out with the same body. This pattern suggested that shape fitting was compensating for a fixed mismatch between the skeletons. Placing both models in their rest poses showed two
 wrong choices that no name reveals. Anny's rig numbers the spine top-down, SMPL bottom-up, so SMPL's lumbar
 \texttt{spine1} had been mapped to a bone \DataSpineMapError\,cm above it; and SMPL's hips had been mapped to
 \texttt{pelvis.L/R}, \DataHipMapError\,cm from the hip joint, instead of \texttt{upperleg01.L/R}. Version 2 picks the
@@ -28,7 +27,7 @@ $\mathbf{R}_b$ the posed bone head and frame. The offsets are \DataOffsetPelvis\
 \DataScenesMin{} to \DataScenesMax\,mm (one occluded frame \DataScenesWorstFrame\,mm). Age, however, came out at exactly \DataFreeAge{} for every actor in every
 version: joints cannot tell one adult age from another. Version 2.2 fixes age at \DataFixedAge; on all
 \DataThreeDPWPersonSeq{} person-sequences it fitted \DataOldFrames{} frames with a median error of
-\DataOldFitMedian\,mm. By every measure the converter prints, these fits looked clean. They still held two of the
+\DataOldFitMedian\,mm. The converter's own error summaries did not reveal the label-integrity problems. They still held two of the
 three defects of the next section.
 
 \begin{table}[htbp]

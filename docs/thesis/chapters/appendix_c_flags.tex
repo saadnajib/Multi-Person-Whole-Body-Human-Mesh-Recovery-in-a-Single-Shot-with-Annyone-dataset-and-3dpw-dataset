@@ -1,4 +1,4 @@
-% appendix_c_flags.tex -- Appendix C Flags and weights. Owner: Appendix writer.
+% appendix_c_flags.tex -- Appendix C Flags and weights.
 % Sources: Final / Control: slurm/experiments/exp7_final_model.sh header (ENV defaults), :207-257 (settings, RUN,
 %   BONE_FIX_ARG, HANDS_ARG, SHAPE_ARG, TIME), :759-771 (the train.py command). Student:
 %   slurm/experiments/exp8_distill_vitb.sh header (RECIPE, ENV) and :319-331 (TRAIN_CMD); TIME=20:00:00 from the
@@ -29,7 +29,7 @@ repository (Appendix~\ref{app:reproduction}).
 \begin{longtable}{@{}>{\raggedright}p{3.55cm}>{\raggedright}p{1.5cm}>{\raggedright}p{2.55cm}>{\raggedright\arraybackslash}p{4.65cm}@{}}
 \caption[Training flags of Final and Control]{Training flags of Final and Control. ``Value'' is Final's; where Control
 differs, its value follows in brackets. Paths are relative to the project folder on the cluster. Both runs start from
-Base and see 10 epochs of 1,000 iterations at batch 4, that is 40,000 images, at a constant learning rate.}
+Base and see 10 epochs of 1,000 iterations at batch 4, that is 40,000 sampled image presentations, at a constant learning rate.}
 \label{tab:flags-final}\\
 \toprule
 Flag & Default & Value (Control) & Meaning \\
@@ -76,7 +76,7 @@ Flag & Default & Value (Control) & Meaning \\
 \begin{longtable}{@{}>{\raggedright}p{3.55cm}>{\raggedright}p{1.5cm}>{\raggedright}p{2.55cm}>{\raggedright\arraybackslash}p{4.65cm}@{}}
 \caption[Training flags of the Student]{Training flags of the Student where they differ from Final's. Every other flag,
 the targets, masks, loss weights and 3DPW mixing included, is as in Table~\ref{tab:flags-final}, so that the Student
-learns the corrected depth; no shape mask. 30 epochs of 1,000 iterations at batch 8, that is 240,000 images, with a
+learns the corrected depth; no shape mask. 30 epochs of 1,000 iterations at batch 8, that is 240,000 sampled image presentations, with a
 20-hour Slurm limit. The colour-jitter flags (\texttt{--brightness 0.2} and so on) are passed but read nowhere in the
 code, so no augmentation was used.}
 \label{tab:flags-student}\\

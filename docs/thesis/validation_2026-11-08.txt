@@ -1,0 +1,41 @@
+Thesis editorial revision — 8 November 2026
+Compiled with latexmk, pdflatex and biber.
+Pages: 100 including front matter, appendices and bibliography (previous supervisor revision: 102).
+
+LaTeX errors: 0
+Undefined references/citations: 0
+Duplicate labels: 0
+Overfull boxes: 0
+Visible TODO / pending figure placeholders: 0
+Existing chapter labels retained: yes
+All numbers*.tex files unchanged: yes
+Original font size and page geometry retained: yes
+No new cluster runs or measured reconstruction results added.
+
+The TeX installation reports the pre-existing German hyphenation fallback warning.
+Visual checks: abstract, introduction, data, equations, metrics, video method, result tables,
+discussion, conclusion, appendix tables and bibliography; final method boundary checked after trimming.
+
+PDF SHA256: 696088fb61e50bd67fbd75e28b1c5f19d694d825ffdcdcb0002a586ed1659b99
+
+Top-level PDF outline:
+page 2: Eigenständigkeitserklärung
+page 3: Abstract
+page 5: Contents
+page 9: 1 Introduction
+page 11: 2 Background and Related Work
+page 17: 3 Datasets and Anny Label Generation
+page 25: 4 Methodology
+page 39: 5 Experiments and Results
+page 57: 6 Discussion
+page 61: 7 Conclusion and Future Work
+page 63: List of Figures
+page 65: List of Tables
+page 67: A Reproduction: Model Names, Runs and Job Ids
+page 73: B SMPL–Anny Joint Correspondence
+page 75: C Flags and Weights
+page 77: D Extra Figures
+page 81: E Pilot Results in Full
+page 85: F Supporting Diagnostic Experiments
+page 93: G Supporting Conversion Experiments
+page 97: Bibliography

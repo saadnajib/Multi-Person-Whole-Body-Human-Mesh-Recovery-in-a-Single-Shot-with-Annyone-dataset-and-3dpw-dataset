@@ -13,7 +13,7 @@
 \centering\footnotesize
 \begin{tabular}{@{}lrrrrc@{}}
 \toprule
-Metric & Teacher & Student & Ratio & Bar & Met? \\
+Metric & Teacher & Student & Ratio & Limit & Met? \\
 \midrule
 \multicolumn{6}{@{}l}{\emph{AnnyOne holdout, V1}} \\
 PVE (mm) & \FinalPVE & \StudentPVE & \StudentRatioPVE & $\leq$ \BarPVE & no \\
@@ -42,7 +42,7 @@ ms per image & \TeacherMsLFortyS & \StudentMsLFortyS & \SpeedRatioStudent$\times
 95\,\% rule: every error of the Student at most the teacher's divided by 0.95, every recall at least 0.95 of the
 teacher's, and fewer parameters, fewer FLOPs and a faster forward pass. The rule fails on every error and holds on
 recall and cost. One run, no seed. Against Multi-HMR-Anny the PVE bars would be \BarNAVERAnnyOne\,mm on AnnyOne
-(most likely in-sample for it; not met) and \BarNAVERThreeDPW\,mm on 3DPW (met). Cost: both models timed in the
+(potentially in-sample for it; not met) and \BarNAVERThreeDPW\,mm on 3DPW (met). Cost: both models timed in the
 Student's job on one L40S.}
 \label{tab:student}
 \end{table}

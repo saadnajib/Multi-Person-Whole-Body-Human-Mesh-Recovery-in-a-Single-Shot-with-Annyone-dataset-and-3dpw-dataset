@@ -1,4 +1,4 @@
-% appendix_e_pilots.tex -- Appendix E Pilot results in full. Owner: Appendix writer.
+% appendix_e_pilots.tex -- Appendix E Pilot results in full.
 % Sources (V1, 100-image AnnyOne holdout, matched people, unless noted):
 %   depth pilots  = exp1: docs/handover.md 3.1 (table and "What this says"); success rule docs/experiments_plan.md:93-95;
 %                   full table = tables/T08_depth_runs.tex (tab:depth-runs), not repeated here.
@@ -81,31 +81,22 @@ the geodesic pilot's L1 control \\
 \end{longtable}
 \endgroup
 
-\paragraph{Pilot noise.} Table~\ref{tab:pilot-noise} in Appendix~\ref{ch:diagnostics} gives the yardstick for all of
-the above. Two runs of one configuration differed by \DiagNoisePVE\,mm PVE, \DiagNoiseHead\,deg head direction and
-\DiagNoiseRecall{} recall points, and restarting a fine-tune of Base cost about \DiagRestartCost\,mm. One pilot
-therefore resolves about 10\,mm PVE, 3\,deg and 2 recall points. The root error, the bone angles, the girth and the
-finger error moved far beyond that; the PVE and recall differences of every pilot did not. That is why each pilot is
-read against its own control, and why the two changes that entered Final were chosen for what the diagnostics showed,
-not for a PVE gain.
-
-\section{History: the ViT-S students}
-\label{sec:method-kd-history}
-
-The first answer to the size requirement was a line of ViT-S students of Base, Student-S/1 to Student-S/final, trained
-before both fixes and the label correction (numbers in Section~\ref{sec:res-history}). They taught three lessons.
-Feature distillation alone leaves the student's heads unsupervised, so heads must be copied from the teacher. Copied
-heads need projector-fed inputs, not random input layers. And the start matters most: a backbone already trained for
-mesh recovery gave the largest gain, and the student was limited by the images it had seen, not by its size.
-
+\paragraph{Pilot variation.}
+Two runs of one short configuration differed by \DiagNoisePVE\,mm PVE, \DiagNoiseHead\,deg head
+direction and \DiagNoiseRecall{} recall points (Table~\ref{tab:pilot-noise}). Restarting fine-tuning
+also raised PVE relative to Base in the recorded runs. These observations make small single-run
+differences difficult to interpret; they do not define a universal significance threshold. I selected
+the placement and bone corrections using their targeted diagnostics as well as the body-error tables.
 
 \section{History: the ViT-S students and the schedule to Base}
+\label{sec:method-kd-history}
 \label{sec:res-history}
 
 \input{tables/T20_history}
 
 Table~\ref{tab:history} keeps the draft's V0 measurements from before both fixes: the schedule to Base
 (Table~\ref{tab:history-stages}) and the ViT-S students (Table~\ref{tab:history-students}), at best
-\StudentSixcRatio{} times their teacher's error. Three lessons followed: a backbone trained for mesh recovery gave the
-largest gain, so the Student starts from NAVER's ViT-B; heads at the teacher's width beat narrower ones, so it keeps
-Final's heads; and data limited the students, so it sees six times more images.
+\StudentSixcRatio{} times their teacher's error. These trials informed the final student design. Mesh-recovery pretraining and heads at the teacher's
+feature width performed better in the recorded trials, so Student uses NAVER's ViT-B initialization and
+Final's heads. I also increased the training budget to six times as many sampled image presentations.
+These trials do not prove that data, rather than capacity, was the only limitation.

@@ -1,4 +1,3 @@
-% Revised 22 October 2026: final-method narrative requested by the supervisor.
 \chapter{Introduction}
 \label{ch:intro}
 
@@ -6,85 +5,76 @@
 \label{sec:intro-task}
 \label{sec:intro-anny}
 
-Human mesh recovery estimates a person's three-dimensional body from an image. A parametric body model
-expresses that surface through pose and shape variables. Recovering these variables for several people requires
-a system to locate each person, estimate articulated pose and shape, and place the reconstructed bodies in the
-camera frame. These capabilities support applications such as motion visualization and human-centred scene
-understanding.
+A photograph shows a person in two dimensions. Human mesh recovery estimates the person's 3D body, including
+pose, shape and position relative to the camera. When several people appear in the image, the system must
+also find them and keep their predictions separate. Such models can support motion visualization and
+applications that need to understand people in a scene.
 
-Multi-HMR~\cite{baradel2024multihmr} addresses this task in a single forward pass. A Vision Transformer encodes
-the image, a detection head selects a primary keypoint for each person, and a Human Perception Head predicts
-body parameters and distance. Its public implementation includes an Anny-based
-model~\cite{bregier2025anny,naver2024multihmrcode}. That released model is a baseline for this thesis; the
-existence of an Anny-based multi-person estimator is not itself a contribution.
+Multi-HMR~\cite{baradel2024multihmr} predicts bodies for several people in one forward pass. A Vision
+Transformer extracts image features, a detection head finds each person's anchor point, and a Human
+Perception Head predicts body parameters and depth. The original paper uses SMPL-X. NAVER later released
+an Anny-based version~\cite{bregier2025anny,naver2024multihmrcode}, which I use as a baseline.
 
-Anny is useful because its shape is controlled by \MethodNumPheno{} named phenotype values, including age,
-height and proportions. Its full rig contains \MethodNumBones{} bones and supports whole-body reconstruction
-in one representation. Compared with the adult-focused SMPL shape space~\cite{loper2015smpl}, it provides
-a direct way to express child and adult proportions. Expressing a shape and inferring it reliably from a
-photograph are separate problems. Synthetic AnnyOne images provide complete parameter labels, but real images
-differ in appearance and do not generally have equivalent Anny annotations.
+Anny has \MethodNumPheno{} named shape controls and a full rig of \MethodNumBones{} bones. Its age and
+proportion controls can produce both child and adult bodies. However, being able to create a child body
+does not mean that a network will predict one for a child in a photograph. AnnyOne provides complete
+labels for synthetic images, but their appearance differs from real photos. Real datasets such as 3DPW
+provide useful examples, but their body labels use SMPL and need conversion before Anny training.
 
-Computational cost is a second concern. Large image encoders provide strong features but increase parameter
-count and inference time. A compact student trained under a larger teacher offers a way to retain the
-single-shot pipeline while reducing cost. This thesis studies the combination of real-image Anny supervision
-and teacher--student training, and measures the resulting efficiency--accuracy trade-off.
+The other problem is computational cost. A large image encoder can be accurate but slow and expensive to
+run. I therefore train a smaller student using a larger teacher. The aim is to measure how much model size
+and inference time can be reduced, and how much accuracy is lost.
 
 \section{Problem Statement and Scope}
 \label{sec:intro-requirements}
 
-Given an RGB image and camera intrinsics, the objective is to predict an Anny body for every detected person.
-Each prediction comprises bone rotations, phenotype values and a head-joint anchor in the camera frame.
-The deployed model is the ViT-B \emph{Student}. The ViT-L model called \emph{Final} in the recorded experiments
-is its teacher and a reconstruction reference. NAVER's released \emph{Multi-HMR-Anny} is the external baseline.
-These roles are kept distinct throughout the report.
+The task is to predict an Anny body for each detected person from one RGB image and camera intrinsics.
+Each prediction contains bone rotations, body-shape values and a head-anchor position in camera coordinates.
+I use three main model names: \emph{Student} is the smaller ViT-B model; \emph{Final} is the larger ViT-L
+teacher; and \emph{Multi-HMR-Anny} is NAVER's released baseline. Final is the name of a teacher checkpoint,
+not the name of the deployed student.
 
-Three questions define the scope:
+The thesis addresses three questions:
 \begin{enumerate}
-\item \textbf{Real-image supervision:} how can 3DPW's SMPL annotations be converted into Anny targets,
-  and which pose and shape information do those targets constrain?
-\item \textbf{Compact reconstruction:} how much model size, computation and latency can be reduced through
-  a ViT-B student with transferred heads and feature/output distillation, and what reconstruction error
-  remains relative to the teacher and released baseline?
-\item \textbf{Video application:} can the image-based student be executed on a clear single-person video,
-  and what do frame-wise overlays and movement measurements reveal about its behaviour?
+\item How can 3DPW's SMPL labels be converted into Anny labels, and which body properties can this conversion recover?
+\item How much smaller and faster is the student, and how accurate is it compared with its teacher and the released baseline?
+\item How does the student behave on a walking video, and how can output smoothing and alignment improve its use on video?
 \end{enumerate}
 
-The video application predicts each frame independently and adds tracking and measurement. A learned temporal
-network is outside the present implementation. Reconstruction is evaluated on AnnyOne and converted 3DPW
-labels; age and gender behaviour is examined on Relative Human. The scope does not include collecting new
-real-image shape annotations or estimating accurate chronological age from photographs.
+I evaluate reconstruction on AnnyOne and converted 3DPW labels, and examine the teacher's age and gender
+predictions on Relative Human. The video application runs the image model on each frame, then optionally
+filters its outputs across time and adjusts placement using image landmarks. It does not train a video
+network. Collecting new real-image shape labels and estimating age in years are outside this work.
 
 \section{Contributions}
 \label{sec:intro-contrib}
 
-The work makes four practical contributions:
+The main contributions are:
 \begin{enumerate}
-\item \textbf{Real-image Anny supervision.} A joint-based fitting pipeline uses geometric correspondence,
-  virtual torso joints and independent checks to convert the standard 3DPW splits into Anny labels.
-\item \textbf{A defined compact reconstruction system.} A ViT-B student uses a learned feature projector,
-  transferred prediction heads and joint feature/output distillation. It has \StudentParams\,M parameters,
-  compared with \FinalParams\,M in its teacher and \NAVERParams\,M in the released baseline.
-\item \textbf{A controlled evaluation.} The student, teacher and baseline are compared under specified
-  label and evaluation conventions. Supporting ablations examine consistent anchor supervision and fixed
-  bone corrections. Pose, placement and shape are assessed separately.
-\item \textbf{A video comparison application.} Identical source frames are processed by both models,
-  and their meshes are saved beside the input. Tracking gaps, pose/shape changes and synchronized
-  inference timings can be inspected without retraining.
+\item \textbf{Anny labels for real images.} I convert the standard 3DPW splits using joint fitting,
+  virtual torso joints and one shared body shape per person. Independent checks describe the remaining label errors.
+\item \textbf{A smaller student model.} I combine a ViT-B encoder with a trainable projector, copied
+  prediction heads and feature/output distillation. The student has \StudentParams\,M parameters,
+  compared with \FinalParams\,M in the teacher and \NAVERParams\,M in the released baseline.
+\item \textbf{Evaluation of accuracy and cost.} I compare the three models under the same evaluation
+  conventions and study the teacher's anchor and bone corrections. Body geometry, placement and shape
+  predictions are checked separately because one score cannot describe all three.
+\item \textbf{A video comparison tool.} I save the input and predicted meshes side by side, with optional
+  student smoothing and landmark alignment. The tool also records missing predictions, changes between
+  frames and inference timings.
 \end{enumerate}
 
-The central result is a measured trade-off. The student is \ParamRatioStudent{} times smaller than its teacher
-and \SpeedRatioStudent{} times faster in the paired L40S benchmark, with PVE of \StudentPVE\,mm on the synthetic
-holdout and \StudentThreeDPW\,mm on converted 3DPW. Its teacher remains more accurate on both sets. The student's
-3DPW result improves over the released baseline, but that comparison includes a difference in real-image training
-exposure. It therefore does not isolate an architectural improvement.
+The student is \ParamRatioStudent{} times smaller than the teacher and \SpeedRatioStudent{} times faster
+in the paired L40S benchmark, but the teacher remains more accurate on both reconstruction sets.
+The student's lower 3DPW error than the released baseline includes the benefit of additional real-image
+training; it cannot be attributed to the smaller architecture alone.
 
 \section{Thesis Structure}
 \label{sec:intro-outline}
 
-Chapter~\ref{ch:background} introduces body models, human mesh recovery and related distillation and video
-methods. Chapter~\ref{ch:data} describes the datasets, Anny label generation and annotation limitations.
-Chapter~\ref{ch:method} presents the final architecture, losses, training and video procedure.
-Chapter~\ref{ch:results} reports reconstruction, efficiency and video results, followed by their interpretation
-in Chapter~\ref{ch:discussion}. Chapter~\ref{ch:conclusion} concludes. The appendices provide reproduction
-information, joint correspondence, implementation settings and supporting diagnostic experiments.
+Chapter~\ref{ch:background} introduces the body models and related work.
+Chapter~\ref{ch:data} explains the datasets and label conversion.
+Chapter~\ref{ch:method} describes the model, training losses and video processing.
+Chapter~\ref{ch:results} reports the results, and Chapter~\ref{ch:discussion} discusses what they show
+and where they are limited. Chapter~\ref{ch:conclusion} concludes with possible next steps.
+The appendices contain reproduction details and the supporting diagnostic experiments.

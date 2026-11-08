@@ -1,32 +1,29 @@
-% Revised 22 October 2026: final student as deployed model; source-traced macros.
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-Multi-person human mesh recovery estimates articulated body surfaces and their positions from one image.
-This thesis studies a compact Anny-based reconstruction system using a ViT-B student distilled from a larger
-ViT-L teacher. Both follow the single-shot Multi-HMR framework. Anny expresses body shape through named
-parameters, including age, height and proportions, and provides a common representation for the student,
-teacher and evaluation.
+Human mesh recovery estimates a person's 3D body from an image. In this thesis, I study how to make a
+multi-person model smaller and faster while keeping useful reconstruction accuracy. I use the Multi-HMR
+framework with Anny, a body model with named shape controls such as age, height and proportions.
+A smaller ViT-B student learns from a larger ViT-L teacher through knowledge distillation.
 
-The training pipeline combines complete synthetic supervision from AnnyOne with real images from 3DPW.
-A fitting procedure converts 3DPW's SMPL annotations to Anny using geometric correspondence and virtual
-torso joints. The corrected labels contain \DataThreeDPWTotalImages{} images and
-\DataThreeDPWTotalPeople{} labelled person instances. Teacher training uses consistent head-joint anchors,
-a fixed bone-rotation correction and a mixture containing \DataMixThreeDPW\,\% real images. A learned projector
-connects the student's features to prediction heads initialized from the teacher. Ground-truth supervision
-is combined with feature and output distillation losses.
+The training data combine synthetic AnnyOne images with real images from 3DPW. These datasets use different
+body models, so I fit Anny bodies to 3DPW's source joints before training. The corrected label set contains
+\DataThreeDPWTotalImages{} images and \DataThreeDPWTotalPeople{} labelled person instances. The teacher uses
+\DataMixThreeDPW\,\% real images, consistent head-anchor targets and fixed corrections for selected bone
+rotations. The student learns from these labels and from the teacher's features and body predictions.
+A trainable projector connects the smaller encoder to prediction heads copied from the teacher.
 
-The student has \StudentParams\,million parameters and requires \StudentGFLOPs\,GFLOPs in the recorded
-one-person configuration, compared with \FinalParams\,million parameters and \FinalGFLOPs\,GFLOPs for the
-teacher. Paired L40S forward latency is \StudentMsLFortyS\,ms for the student and \TeacherMsLFortyS\,ms for
-the teacher. The reduction has an accuracy cost: student PVE is \StudentPVE\,mm on the synthetic holdout
-and \StudentThreeDPW\,mm on converted 3DPW, compared with \FinalPVE\,mm and \FinalThreeDPW\,mm for the
-teacher. The student's 3DPW PVE is lower than the released Multi-HMR-Anny baseline's \NAVERThreeDPW\,mm,
-although training exposure differs. The baseline's synthetic-holdout result is potentially in-sample.
+The student has \StudentParams\,million parameters and requires \StudentGFLOPs\,GFLOPs for the recorded
+one-person input, compared with \FinalParams\,million and \FinalGFLOPs\,GFLOPs for the teacher. In a paired
+L40S benchmark, a forward pass takes \StudentMsLFortyS\,ms for the student and \TeacherMsLFortyS\,ms for the
+teacher. This saving comes with higher reconstruction error. Student PVE is \StudentPVE\,mm on the synthetic
+holdout and \StudentThreeDPW\,mm on converted 3DPW; the teacher reaches \FinalPVE\,mm and
+\FinalThreeDPW\,mm. The student improves on the released baseline's \NAVERThreeDPW\,mm 3DPW PVE, although
+the baseline did not receive the same 3DPW training. Its synthetic result may include images seen in training.
 
-A frame-wise application compares the student and baseline on the same walking video. The student provides
-a tracked prediction in all \VideoFrames{} frames; the baseline provides one in \VideoBaselineMatched{} frames.
-These counts establish execution and tracking coverage on one clip. Pose jitter and shape consistency still
-require inspection of the video and measurements. Remaining limitations include the student's accuracy gap,
-adult-only synthetic holdout coverage, uncertain real-image shape and residual depth errors. All reported
-3DPW errors use converted Anny labels and are not directly comparable with published SMPL-space results.
+I also compare the models on a walking video and add optional output smoothing and landmark-based alignment.
+These steps use the trained student without retraining it. The original comparison records a tracked person
+in all \VideoFrames{} student frames and \VideoBaselineMatched{} baseline frames. These counts show coverage,
+not 3D accuracy. The main limitations are the student's accuracy gap, unreliable child proportions on real
+photos and remaining placement errors. All 3DPW reconstruction scores use fitted Anny labels, so they cannot
+be compared directly with published SMPL-space scores.

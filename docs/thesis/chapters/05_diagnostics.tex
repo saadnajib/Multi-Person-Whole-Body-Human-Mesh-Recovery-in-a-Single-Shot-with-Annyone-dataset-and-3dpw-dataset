@@ -17,8 +17,7 @@
 \label{ch:diagnostics}
 
 Base showed three failures in its renders: thin, twisted necks, claw-like fingers and adult bodies on children.
-Before changing any training setting, I tested each belief about their causes on its own, including the ones that
-turned out wrong. Unless stated otherwise, every number is from Base on the \DiagHoldoutImages-image AnnyOne holdout in
+I used targeted checks to investigate the causes before choosing training changes. Unless stated otherwise, every number is from Base on the \DiagHoldoutImages-image AnnyOne holdout in
 setting V1, one run per arm without a seed, read against the variation of Section~\ref{sec:diag-noise}.
 
 % -----------------------------------------------------------------------------
@@ -102,8 +101,8 @@ a decoding error (the black corner is in the dataset image). Synthetic; two of f
 \label{fig:diag-gt-decode}
 \end{figure}
 
-The checks rule out the rig, the label decoding and the gradient path. Shape dominates the loss (\DiagLossShareShape\,\%; translation
-\DiagLossShareTransl\,\%, distance \DiagLossShareDist\,\%). The cause had to be in what training asked of the network.
+The sampled checks did not reveal a general failure in the rig, label decoding or gradient path. Shape dominates the loss (\DiagLossShareShape\,\%; translation
+\DiagLossShareTransl\,\%, distance \DiagLossShareDist\,\%). I therefore examined the targets and per-bone predictions more closely.
 The overfit run gave two warnings: the rotation loss barely moved while the images were memorised
 (\DiagOverfitRotFirst{} $\to$ \DiagOverfitRotLast), and the translation and 2D terms rose (\DiagOverfitTranslFirst{}
 $\to$ \DiagOverfitTranslLast, \DiagOverfitTwoDFirst{} $\to$ \DiagOverfitTwoDLast, first against last five epochs),
@@ -153,16 +152,18 @@ terms (\DiagLossShareDepthTerms\,\% of the loss) could not resist; near people h
 Table~\ref{tab:depth-runs} tests the fix against same-schedule controls. All five fix runs reach a root error of
 \DiagRootErrFixLow--\DiagRootErrFixHigh\,m, both controls stay at \DiagRootErrCtrlLow--\DiagRootErrCtrlHigh\,m, the
 drawn size rises from \DiagSizeCtrlLow--\DiagSizeCtrlHigh{} to \DiagSizeFixLow--\DiagSizeFixHigh, and the head lands
-within 7--10 instead of 58--67 pixels: every fix run lies below every control, far outside run-to-run variation. Two
+within 7--10 instead of 58--67 pixels: every tested fix run has lower root error than either control. This is consistent evidence across
+these configurations, although repeated-run uncertainty was not estimated. Two
 other checkpoints trained with pelvis targets carry the bug too. It stayed hidden because PVE aligns the pelvis first
 and the real-photo demos place each body from its detection box.
 
-Not shown is correct depth: the slope barely moved (\DiagSlopeSwitch{} with the switch alone,
+Depth remains inaccurate: the slope barely moved (\DiagSlopeSwitch{} with the switch alone,
 \DiagSlopeStrongLow--\DiagSlopeStrongHigh{} with a stronger depth loss), and predictions are still pulled toward
 2.5--2.9\,m for a reason I have not found. The pelvis 2D error rose to 31--41 pixels, likely because the head is now
 pinned while the body is still too small (not checked). Every fix run is worse than its control by
 +\DiagFixCostPVELow{} to +\DiagFixCostPVEHigh\,mm PVE and $-$\DiagFixCostRecallLow{} to $-$\DiagFixCostRecallHigh{}
-recall points: each gap within variation, all in one direction, so a likely cost. By the success rule written
+recall points. The direction is consistent across these runs, but the size of any repeatable cost
+is not established. By the success rule written
 beforehand (PVE $\le$ 71.5\,mm, recall $\ge$ 89.2\,\%) every run failed, the controls included.
 
 % -----------------------------------------------------------------------------
@@ -191,10 +192,10 @@ for neck02, head, metacarpal1.L and finger4-1.R.
 
 Without training the correction restores neck02, girth and neck-skin error, but the head direction worsens to
 \DiagHeadDirNoTrain\,deg, above the 15-degree limit set beforehand, likely because the head's error differs per
-person; a 2-epoch fine-tune brings it to \DiagHeadDirFineTune\,deg (control \DiagHeadDirCtrlTwo). The body-PVE gaps
-lie within variation. Figure~\ref{fig:exp6-compare} shows two more holdout pairs. Not shown: why the bones flipped
-(the singular 6D start value fits the tilted metacarpal1.L, not neck02's twist), and necks on real photos, which have
-no ground truth (Figure~\ref{fig:neck-3dpw-bar}, by eye).
+person; a 2-epoch fine-tune brings it to \DiagHeadDirFineTune\,deg (control \DiagHeadDirCtrlTwo). The small body-PVE differences need repeated runs to interpret. Figure~\ref{fig:exp6-compare} shows
+two more holdout pairs. The original cause of the flips remains unresolved: the singular 6D initialization
+may explain the tilted metacarpal, but not the neck twist. The real-photo neck examples have no reference
+geometry and are judged visually (Figure~\ref{fig:neck-3dpw-bar}).
 
 % -----------------------------------------------------------------------------
 \section{The fingers}
@@ -228,14 +229,16 @@ threshold; the smallness goes into height instead. Gender carries no signal (acc
 our demo photos the medians of all 299 shape lines (gender \DiagDemoGenderMedian, age \DiagDemoAgeMedian, height
 \DiagDemoHeightMedian) equal the training medians.
 
-Children and female-looking men are one failure: with weak image cues the shape head returns the training median.
+The child and gender results suggest a shared problem: on real photos, several shape predictions
+stay near the training median.
 Two mechanisms fit, and the evidence cannot rank them: the gap between synthetic and real images, or the loss (an L1
 on sigmoid outputs regresses to the median, the sigmoid's gradient is 0.25 at 0.5 but 0.015 at 0.015, and only
 \DiagChildShare\,\% of training people are below age 0.3). It looks like a short adult because Anny's child shape (shoulder over head width \DiagShoulderHeadChild{} at age
 0.1, \DiagShoulderHeadAdult{} at 0.6) appears only below an age of about 0.4--0.5: a low height at age 0.6 gives a
 short adult (at least \DiagSmallestAdult\,m), and proportions barely matter (leg over stature \DiagProportionsLeg).
 
-Not shown: which mechanism dominates, and ages in years (the code uses three age scales that disagree).
+These tests do not identify which mechanism dominates. I also avoid reporting age in years because
+the available age calibrations disagree.
 
 % -----------------------------------------------------------------------------
 \section{Pilot noise and restart cost}
@@ -245,9 +248,9 @@ Not shown: which mechanism dominates, and ages in years (the code uses three age
 
 Table~\ref{tab:pilot-noise} records the differences between two identical pilot configurations. These
 observations motivate matched controls and caution with small single-run differences; they are not a
-statistically estimated significance threshold for all experiments. That suffices for every change this chapter relies on (root error, bone
-angles 175 to 5\,deg, girth 0.46 to 1.00, fingers 17.3 to 8.3\,deg), but not for a PVE change of a few millimetres, so
-the PVE costs of the depth fix and the neck pilot stay unresolved; no bootstrap intervals were computed.
+statistically estimated significance threshold for all experiments. The large changes in bone angles, neck girth and placement are supported by their targeted diagnostics.
+The PVE costs of the depth fix and neck pilot remain uncertain; no repeated final runs or bootstrap
+intervals were available.
 
 % -----------------------------------------------------------------------------
 \section{What did not work}
@@ -256,5 +259,5 @@ the PVE costs of the depth fix and the neck pilot stay unresolved; no bootstrap 
 Six changes did not fix a failure (Appendix~\ref{app:pilots}, Table~\ref{tab:pilots-all}): an age-balanced sampler
 (inconclusive on 10 in-sample children), a global head orientation loss (within the spread of two identical controls),
 a region-normalised hand loss, a geodesic rotation loss, the neck and hand boost, and a $\times$20 depth loss (no gain
-over $\times$5). Each worked around a fault the loss could not see; the two fixes that worked came from the
-diagnostics.
+over $\times$5). These tests did not provide reliable fixes under the tested settings. The placement and bone corrections
+were selected after the more specific diagnostics identified their target errors.

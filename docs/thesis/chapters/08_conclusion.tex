@@ -1,54 +1,51 @@
-% Revised 22 October 2026: completed final system and bounded future work.
 \chapter{Conclusion and Future Work}
 \label{ch:conclusion}
 
 \section{Conclusion}
 \label{sec:concl}
 
-This thesis presents and evaluates a compact student for multi-person human mesh recovery with Anny. The model
-combines a ViT-B encoder, a learned feature projector and prediction heads initialized from a ViT-L teacher.
-Training combines AnnyOne and converted 3DPW supervision with feature and output distillation. At inference
-time only the student and Anny decoding layer are required.
+In this thesis, I trained and evaluated a smaller student for multi-person human mesh recovery with Anny.
+The student uses a ViT-B encoder, a trainable projector and prediction heads copied from a ViT-L teacher.
+It learns from AnnyOne, converted 3DPW labels and the teacher's features and outputs. The teacher is only
+needed during training.
 
-The conversion pipeline bridges SMPL-annotated real images and Anny-space supervision through geometric
-joint correspondence, virtual torso joints and a shared shape per actor. Independent checks document its
-accuracy and annotation limits. Consistent head anchors and fixed output corrections form part of the
-teacher/student configuration, with supporting analyses provided in the appendices.
+The 3DPW converter fits Anny bodies to source joints and keeps one body shape per person across a sequence.
+Virtual joints account for differences in where the two body models define their joints. The checks also
+show which labels remain approximate or constant. This makes the real-image results easier to interpret.
 
-The student has \StudentParams\,M parameters and \StudentGFLOPs\,GFLOPs in the recorded configuration,
-compared with \FinalParams\,M and \FinalGFLOPs\,GFLOPs for the teacher. Paired L40S forward latency is
-\StudentMsLFortyS\,ms versus \TeacherMsLFortyS\,ms. Student PVE is \StudentPVE\,mm on AnnyOne and
-\StudentThreeDPW\,mm on converted 3DPW. The teacher remains more accurate on both sets. The student improves
-over the released baseline's \NAVERThreeDPW\,mm 3DPW PVE, although real-image training exposure differs.
-These results establish a compactness and speed advantage with an accuracy trade-off.
+The student has \StudentParams\,M parameters and needs \StudentGFLOPs\,GFLOPs in the recorded configuration.
+Its paired L40S forward time is \StudentMsLFortyS\,ms, compared with \TeacherMsLFortyS\,ms for the teacher.
+However, its PVE of \StudentPVE\,mm on AnnyOne and \StudentThreeDPW\,mm on converted 3DPW does not meet
+the accuracy-retention target against the teacher. Its lower 3DPW error than the released baseline also
+reflects different training data. The result is a smaller, faster model with a measurable accuracy cost.
 
-The video application processes identical source frames with the student and baseline and saves their meshes
-beside the input. In the completed \VideoFrames{}-frame walking example the student has \VideoStudentMatched{}
-tracked predictions and the baseline \VideoBaselineMatched{}. This provides an initial video demonstration;
-a temporal-quality claim requires inspection of the saved videos and measurements. The implementation remains
-a frame-wise image model with tracking, rather than a learned temporal predictor.
+The video tool compares the student and baseline on the same frames. Optional temporal filtering smooths
+the predicted rotations, shape and position; landmark alignment adjusts placement; and a depth filter
+limits sudden changes in apparent size. These are inference steps around a frame-wise image model.
+They do not establish improved 3D accuracy without labelled video evaluation.
 
 \section{Future Work}
 \label{sec:future}
 
-\paragraph{Accuracy at reduced cost.}
-Longer training, distillation-weight ablations and alternative feature transfer strategies could reduce the
-student's error while retaining its lower cost. They need matched evaluation against the current student,
-teacher and a baseline adapted to the same real-image data. This report uses the verified 30-epoch student;
-a later run should replace it only after its checkpoint and complete evaluation are available.
+\paragraph{Reduce the student's accuracy gap.}
+The synthetic validation curve was still improving after 30 epochs, so a longer run is worth testing.
+The real-image curve had nearly flattened, which suggests that duration alone may not close that gap.
+Distillation weights and feature-transfer choices should be tested separately. A baseline trained on
+the same real images would help distinguish the benefit of the data from the benefit of the method.
 
-\paragraph{Temporal evaluation and modelling.}
-The next step is to inspect the walking overlays and parameter variation, then examine clips with occlusion
-and camera motion. Synchronized inference FPS should be reported with GPU, precision and resolution.
-If substantial jitter is observed, track-wise shape aggregation, smoothing or learned temporal refinement can
-be evaluated against the unsmoothed baseline. Stability and reconstruction accuracy should be measured together.
+\paragraph{Evaluate video refinement.}
+The next step is to compare raw, filtered and aligned predictions on several clips, including occlusion
+and camera motion. The evaluation should measure stability, lag and reconstruction accuracy together.
+The depth filter also needs a measured comparison with independent per-frame alignment. Learned temporal
+refinement can then be tested against these simpler filters. Speed measurements should include the
+landmark detector when discussing a complete online system.
 
-\paragraph{Real-image shape.}
-Age-group labels, body measurements or additional real-image Anny fits could improve supervision beyond
-constant converter values. Evaluation should include children and distinguish the body model's ability to
-generate child proportions from the network's ability to infer them reliably from real photographs.
+\paragraph{Improve real-image shape.}
+Real age-group labels, body measurements or additional Anny fits could provide supervision beyond the
+converter's fixed values. A held-out set with children is needed to test whether the network learns
+child proportions, rather than only producing them on familiar synthetic examples.
 
-\paragraph{Reliability and reproducibility.}
-Repeated runs, uncertainty estimates and a larger held-out evaluation would strengthen comparisons.
-Portable configuration and a documented release process would make the system easier to verify.
-These are possible extensions, rather than completed experiments.
+\paragraph{Repeat and document the experiments.}
+Repeated runs and a larger evaluation set would make small differences easier to assess. The report
+uses the verified 30-epoch student; any later checkpoint should be reported only after its evaluation
+is complete. Portable configuration and clear instructions would also make the work easier to reproduce.

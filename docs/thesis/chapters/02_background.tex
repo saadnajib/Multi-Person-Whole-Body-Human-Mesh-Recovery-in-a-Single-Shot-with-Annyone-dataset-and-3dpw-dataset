@@ -12,9 +12,8 @@
 \chapter{Background and Related Work}
 \label{ch:background}
 
-This chapter introduces the body models, networks, data and training ideas the thesis builds on, and for each prior
-work it says which choice of mine it explains or constrains. What the thesis adds is listed in
-Section~\ref{sec:intro-contrib}.
+This chapter explains the body models and earlier methods used in this work. I focus on the ideas needed
+to understand the label conversion, student training and video application.
 
 % -----------------------------------------------------------------------------
 \section{Parametric body models: the SMPL family and Anny}
@@ -44,8 +43,8 @@ AGORA~\cite{patel2021agora} and BEV~\cite{sun2022bev} blend the adult template t
 coefficient. SMPL-H~\cite{romero2017mano} adds MANO hands with \BgManoHandJoints{} joints each, and
 SMPL-X~\cite{pavlakos2019smplx} adds a face, for \BgSmplxJoints{} joints on \num{\BgSmplxVertices} vertices. SMPL is
 provided under research licence terms; the terms for assets, datasets and trained weights must be checked separately.
-Multi-HMR, the network this thesis starts from, predicts SMPL-X~\cite{baradel2024multihmr}, so moving it to Anny
-meant replacing the whole output layer.
+The original Multi-HMR paper predicts SMPL-X~\cite{baradel2024multihmr}. This thesis uses the later
+Anny-compatible release and its body-model interface.
 
 \paragraph{Anny.}
 Anny~\cite{bregier2025anny} is a body model by NAVER LABS Europe built from the open MakeHuman
@@ -128,8 +127,8 @@ and transferred-head design in Chapter~\ref{ch:method}.
 HMR~\cite{kanazawa2018hmr} regressed body-model parameters for one cropped person with a convolutional encoder, an
 iterative regressor and an adversarial pose prior. HMR~2.0~\cite{goel2023humans4d} replaced the encoder by a Vision
 Transformer (ViT)~\cite{dosovitskiy2021vit} and showed that a large ViT trained on a broad data mixture is a strong
-and simple recipe, which Multi-HMR shares. My model follows the same principle: the network outputs the parameters
-directly, with no optimisation at test time. SMPLify~\cite{bogo2016smplify} goes the other way and fits SMPL to 2D
+and simple recipe, which Multi-HMR shares. My image model also predicts the parameters directly. The optional video alignment step is a separate
+optimization of placement after this prediction. SMPLify~\cite{bogo2016smplify} goes the other way and fits SMPL to 2D
 keypoints by optimisation; SPIN~\cite{kolotouros2019spin} puts such a fit inside the training loop. My 3DPW converter
 (Chapter~\ref{ch:data}) is an optimisation of the SMPLify kind, but in 3D, between two body models, and run once
 offline.
@@ -152,8 +151,8 @@ cannot be compared with the Anny-space errors of this thesis.
 \paragraph{BEV and Relative Human.}
 BEV~\cite{sun2022bev} extends ROMP with explicit depth reasoning and an age-aware body. Its authors collected
 Relative Human, real photos in which every person carries an age group (adult, teenager, kid, baby), a depth layer and
-keypoints. It is the only real data with age labels I could use, so I use it, for evaluation only, to test whether
-predicted ages and genders follow the people on real photos (Section~\ref{sec:data-rh}). It has no 3D bodies.
+keypoints. I use its real-photo age-group and gender annotations for evaluation only
+(Section~\ref{sec:data-rh}). It provides no reference 3D bodies for this evaluation.
 
 \paragraph{Multi-HMR-Anny and Anny-Fit.}
 In February 2026 NAVER released a Multi-HMR checkpoint that predicts Anny, trained on BEDLAM, AnnyOne and further
@@ -161,10 +160,10 @@ real images~\cite{naver2024multihmrcode}. A multi-person HMR network for Anny th
 thesis does not claim to be the first. This checkpoint, Multi-HMR-Anny, is where my backbone weights come from and the
 baseline I compare against (Section~\ref{sec:res-baseline}). On the same backbone its decoder has
 \BgNaverHeadLayers{} cross-attention blocks and \BgNaverHeadParams\,M parameters, against \BgOurHeadLayers{} blocks
-and \BgOurHeadParams\,M in mine. It was trained on AnnyOne, which includes the images I hold out, so its AnnyOne error
-is most likely an in-sample number. Anny-Fit~\cite{bravo2026annyfit}, by the same group, refines such predictions per
-image by optimisation and adapts them to children at test time; my model stays a single forward pass. I did not use
-it; it is the natural comparison for future work on children.
+and \BgOurHeadParams\,M in mine. It was trained on AnnyOne, whose release includes the images I hold out. Its exact image exposure is
+not verified here, so I treat its holdout score as potentially in-sample. Anny-Fit~\cite{bravo2026annyfit}, by the same group, refines such predictions per
+image by optimization and adapts them to children at test time. I did not evaluate it. It would be a useful
+comparison for future work on children; the video's placement-only alignment does not perform this shape fitting.
 
 % -----------------------------------------------------------------------------
 \section{Synthetic training data}
@@ -201,15 +200,14 @@ FitNets~\cite{romero2015fitnets} let the student also match an intermediate repr
 small learned regressor. DINOv2~\cite{oquab2023dinov2} distilled its smaller ViTs from its largest one, so a DINOv2
 ViT-B is a good starting point for a student. My Student combines both forms: a projector maps its
 \BgProjIn-wide ViT-B tokens to the teacher's \BgProjOut-wide tokens, which lets the teacher's heads be copied
-unchanged (Section~\ref{sec:method-kd}). It has \BgStudentParams\,M parameters against \BgFinalParams\,M, and the
-question is whether it keeps at least \BgNinetyFive\,\% of Final's accuracy on both test sets.
+unchanged (Section~\ref{sec:method-kd}). It has \BgStudentParams\,M parameters against \BgFinalParams\,M, and I test it against the error-retention criterion defined in Section~\ref{sec:method-student}.
 
 % -----------------------------------------------------------------------------
 \section{Temporal models for video}
 \label{sec:bg-temporal}
 
-The deployed student works independently on single frames. Tracking and sequence-level measurements
-extend its application to video, while temporal learning remains a separate modelling choice. Most video methods refine
+The student predicts each image independently. To reduce changes between frames, I add optional filtering
+of its outputs. Learned video methods go further by training on sequences. Several refine
 per-frame features of an image network: HMMR~\cite{kanazawa2019hmmr} with a temporal convolution,
 VIBE~\cite{kocabas2020vibe} with a recurrent network and a motion discriminator tied to SMPL,
 TCMR~\cite{choi2021tcmr} with branches that predict the current frame from its neighbours to reduce jitter, and
@@ -218,9 +216,9 @@ smooths the output poses of any estimator without image features. PHALP~\cite{ra
 4DHumans~\cite{goel2023humans4d} track people through video, the first step of any multi-person video method, and
 WHAM~\cite{shin2024wham} places the motion in world coordinates.
 
-The video application in Section~\ref{sec:method-video} uses association and unsmoothed frame-wise inference.
-This gives a reference for deciding whether learned refinement is needed. It does not implement the temporal
-convolutions, recurrent models or attention windows of the methods above.
+My video application keeps the raw predictions as a reference and adds tracking, exponential smoothing
+and optional landmark alignment (Section~\ref{sec:method-video}). The filter uses previous outputs without
+learning new weights. It is simpler than the learned temporal methods above, but can introduce delay.
 
 \section{Positioning the Present Work}
 \label{sec:bg-scope}
@@ -254,7 +252,7 @@ age-aware reconstruction and real-photo age-group annotations &
 motivates evaluating child proportions; not an implemented student component \\
 VIBE, TCMR and SmoothNet \cite{kocabas2020vibe,choi2021tcmr,zeng2022smoothnet} &
 temporal features or output refinement &
-future comparison if frame-wise video inspection reveals instability \\
+possible learned alternatives to the implemented output filters \\
 \bottomrule
 \end{tabular}
 \caption[Position of the proposed compact system]{Relevant prior work and its role. The method combines an

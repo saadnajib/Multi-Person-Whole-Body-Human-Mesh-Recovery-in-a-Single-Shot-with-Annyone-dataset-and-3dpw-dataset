@@ -10,10 +10,11 @@
 \chapter{Datasets and Anny Label Generation}
 \label{ch:data}
 
-This chapter describes the images and labels behind every number in the thesis. Table~\ref{tab:data-splits} lists
-every split with its size and its use. The fitting pipeline converts 3DPW's SMPL annotations to Anny so that both training and evaluation use the network's output representation. Most of the chapter is about the 3DPW conversion, because the converted labels
-decide what the real-image numbers can show. Two rules hold throughout: no test image is trained on, and numbers on
-the old 3DPW labels never appear next to numbers on the v23 labels.
+I use AnnyOne for complete synthetic labels, 3DPW for real images, and Relative Human to check shape
+predictions on real photos. Table~\ref{tab:data-splits} lists the splits and their roles. The main preparation
+step is converting 3DPW's SMPL annotations to Anny. The quality and limits of these fits affect how the
+real-image results should be read. I exclude the test images from training in this thesis; the released
+baseline's earlier exposure to AnnyOne is a separate limitation.
 
 \begin{table}[htbp]
 \centering\footnotesize
@@ -23,8 +24,8 @@ the old 3DPW labels never appear next to numbers on the v23 labels.
 \toprule
 split & size (images / people) & used for & chapters \\
 \midrule
-AnnyOne training & \DataAnnyOneTrainImages{} images & training of every model; \DataMixAnnyOne\% of each mixed batch & \ref{ch:method}, \ref{ch:results} \\
-AnnyOne holdout & \DataHoldoutImages{} images & headline synthetic evaluation (V1); never trained on & \ref{ch:diagnostics}, \ref{ch:results} \\
+AnnyOne training & \DataAnnyOneTrainImages{} images & training of thesis models; \DataMixAnnyOne\% of each mixed batch & \ref{ch:method}, \ref{ch:results} \\
+AnnyOne holdout & \DataHoldoutImages{} images & synthetic evaluation (V1); excluded from thesis training & \ref{ch:diagnostics}, \ref{ch:results} \\
 diagnostic manifest & \DataManifestTrain{} + \DataManifestHoldout{} entries & per-person diagnostics; excluded from every fine-tune & \ref{ch:diagnostics} \\
 3DPW-Anny train, v23 & \DataThreeDPWTrainImages{} / \DataThreeDPWTrainPeople & \DataMixThreeDPW\% of each mixed batch & \ref{ch:method}, \ref{ch:results} \\
 3DPW-Anny val., v23 & \DataThreeDPWValImages{} / \DataThreeDPWValPeople & \DataValImagesPerEpoch{} images scored after each epoch; monitoring only & \ref{ch:results} \\
@@ -54,13 +55,13 @@ on a sample of \DataAnnyOneFovSample{} images), so training and evaluation use e
 \paragraph{Split.} Indices 0 to \DataAnnyOneLastTrainIndex{} are the training set. The last \DataHoldoutImages{}
 images, indices \DataHoldoutFirstIndex{} to \DataHoldoutLastIndex, are the holdout, my own choice and not an
 official split; no model trained in this thesis has seen them. NAVER's model was trained on the AnnyOne release, so
-for that model the holdout is most likely in-sample. The 3DPW test script also scores the last \DataHoldoutImages{}
+that model may have seen these images before. Its exact exposure is not verified. The 3DPW test script also scores the last \DataHoldoutImages{}
 AnnyOne images, but in setting V0; its ``AnnyOne test-100'' value is therefore not the holdout number, which is
 always given in setting V1.
 
 \paragraph{Few children.} In Anny the child shape appears below an age of about \DataChildAgeLow{} to
 \DataChildAgeHigh{} (Section~\ref{sec:bg-bodymodels}). Only \DataAnnyOneAgeBelowThree\% of AnnyOne's people are
-younger than 0.3 (\DataAnnyOneAgeBelowTwo\% below 0.2, \DataAnnyOneAgeBelowFour\% below 0.4); the median age is
+below an age-parameter value of 0.3 (\DataAnnyOneAgeBelowTwo\% below 0.2, \DataAnnyOneAgeBelowFour\% below 0.4); the median age is
 \DataAnnyOneAgeMedian, and \DataAnnyOneAgeModeShare\% of all people lie between 0.5 and 0.6. In a training batch,
 \DataBatchChildLow\% to \DataBatchChildHigh\% of the supervised people are younger than 0.3. The holdout has nobody
 younger than \DataHoldoutMinAge{} and tests adults only, which is why I added Relative Human
@@ -83,12 +84,15 @@ sequences.
 \section{Converting SMPL to Anny}
 \label{sec:data-converter}
 
-The converter (\texttt{smpl\_to\_anny.py}, version 2.3) fits an Anny body to every labelled person, frame by
-frame; a label builder moves the fits into 3DPW's camera frame and merges them into one label file per image.
+3DPW describes bodies with SMPL parameters, which cannot be copied directly into Anny. I instead adjust an
+Anny body until its joints are close to 3DPW's source joints. The converter does this for each labelled person
+and selected frame. A label builder then moves the fitted bodies into camera coordinates and puts all
+labelled people from the same image into one annotation file.
 
-\paragraph{Objective.} Anny has no analytic inverse of its skinning, so I fit by gradient descent. For each person and frame
-I search Anny's \DataBones{} rotations $\mathbf{r}$ (6D), the phenotype logits $\boldsymbol{\ell}$ and a translation
-$\mathbf{t}$ so that Anny's joints land on the \DataSmplJoints{} SMPL joints $\hat{\mathbf{J}}^{S}$ of the frame:
+\paragraph{Objective.} I use gradient-based optimization to reduce the distance between corresponding joints. The variables
+are the permitted bone rotations $\mathbf r$ (represented in 6D), the free shape logits $\boldsymbol\ell$
+and a translation $\mathbf t$. The target is the set of \DataSmplJoints{} source SMPL joints
+$\hat{\mathbf J}^{S}$:
 \begin{equation}
 \begin{split}
 \min_{\mathbf{r},\boldsymbol{\ell},\mathbf{t}}\
@@ -115,9 +119,11 @@ average, because 3DPW's shape coefficients belong to the gendered models.
 every finger bone. Joints cannot determine most phenotypes: weight, muscle, cup size, firmness and the three
 ethnicity values move no joint, and adult age barely does. The converter therefore reads gender from 3DPW, fixes age
 at \DataFixedAge{} and the seven others at \DataFixedNeutral, and fits only height and proportions. Since version 2.3 it writes men as \DataGenderMale{} and women as
-\DataGenderFemale{}, Anny's convention (\texttt{--gender\_convention anny}). After a first pass over all frames, the
-median of each free phenotype becomes the person's one body, and every frame's pose is fitted again with it
-(\DataRefineIters{} iterations).
+\DataGenderFemale{}, Anny's convention (\texttt{--gender\_convention anny}). Height and proportions are estimated by adjusting Anny's controls to bring its joints closer to the
+source joints; they are not copied from SMPL's shape coefficients. After the first pass, I take the median
+height and proportion values across the sequence. I use this one shape for the person and fit each frame's
+pose again (\DataRefineIters{} iterations). This prevents the same actor from receiving a different body
+shape in every frame.
 
 \paragraph{Frames, camera and label files.} I fit every third valid frame (\DataLabelFps{} frames per second). Since
 version 2.3 one grid holds for every person of a sequence (frame numbers divisible by \DataFrameStride,
@@ -130,8 +136,8 @@ point, so the training and evaluation code run on these labels unchanged.
 \section{Geometric Correspondence and Virtual Joints}
 \label{sec:data-history}
 
-SMPL and Anny define some joints at different anatomical points. Matching their names alone therefore does
-not define a reliable fitting objective. The final procedure aligns the rest skeletons using the hip midpoint
+A joint called ``hip'' does not necessarily sit at the same place in SMPL and Anny. Matching joint names
+alone can therefore make the fitter bend or stretch the body to correct a difference in joint definitions. The final procedure aligns the rest skeletons using the hip midpoint
 and body axes, chooses hip bones by geometric proximity, and selects the spine correspondence by normalized
 height along the torso. Appendix~\ref{app:joints} gives the correspondence construction.
 
@@ -144,8 +150,9 @@ For a torso target $k$ attached to Anny bone $b=\pi(k)$, the fitter uses a virtu
 where $\mathbf h_b$ is the posed bone head, $\mathbf Q_b$ its orientation, and $\boldsymbol\delta_k$ a constant
 offset expressed in the bone's rest frame. The offset is measured from the aligned rest skeletons. Rotation
 moves the virtual point with its bone, so the objective compares equivalent locations without altering
-Anny's skeleton or mesh. Limb targets without offsets use the bone head itself. This construction reduces
-a joint-definition discrepancy; it does not make the body models anatomically identical.
+Anny's skeleton or mesh. In simple terms, the virtual joint is a marker attached to a bone: it moves
+with the bone and provides a more comparable fitting point. Limb targets without offsets use the bone
+head itself. The two body models still have different proportions.
 
 \section{Label Construction and Validation}
 \label{sec:data-validation}
@@ -172,9 +179,10 @@ quality indicator and must not be subtracted from a network's PVE as if it were 
 \section{What the 3DPW labels can and cannot test}
 \label{sec:data-limits}
 
-The v23 labels are converted labels, not ground truth. Four limits follow from the converter's design.
+The v23 labels are fitted estimates. They are the training and evaluation targets used here, but they
+do not provide an independent measurement of every body property. Four limits matter.
 
-\paragraph{Eight constant phenotypes.} The labels test three phenotypes: gender (from metadata), height and
+\paragraph{Eight constant phenotypes.} The labels provide person-specific values for three phenotypes: gender (from metadata), height and
 proportions (fitted; medians \DataLabelMedianHeight{} and \DataLabelMedianProportions). The other
 \DataConstantCount{} are the same for every person: age \DataFixedAge{} and \DataNeutralCount{} values at
 \DataFixedNeutral. A model trained on 3DPW is pulled towards these constants for every real person, by the shape loss
