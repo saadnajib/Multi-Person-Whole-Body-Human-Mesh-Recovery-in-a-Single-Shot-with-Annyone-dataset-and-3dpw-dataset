@@ -23,16 +23,14 @@ The student has \StudentParams\,million parameters and needs \StudentGFLOPs\,GFL
 But the student is also less accurate. Its per-vertex error (PVE, the mean distance to the true surface) was
 \StudentPVE\,mm on held-out AnnyOne images and \StudentThreeDPW\,mm on 3DPW, the teacher's \FinalPVE{} and
 \FinalThreeDPW\,mm. On 3DPW the student had a lower PVE than the released Multi-HMR-Anny baseline
-(\NAVERThreeDPW\,mm), which was not trained on my converted 3DPW labels. The baseline's AnnyOne result most likely
-comes from its training images. All 3DPW errors are against converted labels and not directly comparable
+(\NAVERThreeDPW\,mm), which was not trained on my converted 3DPW labels. The baseline's AnnyOne result may include images seen during training. All 3DPW errors are against converted labels and not directly comparable
 with published SMPL results.
 
 In a training-length experiment I trained the student for \StudentSixtyEpochs{} instead of \StudentEpochs{} epochs.
 Its holdout PVE fell from \StudentPVE{} to \StudentSixtyPVE\,mm, but its 3DPW PVE went from \StudentThreeDPW{} to
 \StudentSixtyThreeDPW\,mm. So longer training helps on synthetic images but not on real photos, and the student
 still did not reach the teacher's accuracy. I kept the \StudentEpochs-epoch student. A sweep of the distillation
-temperature, which softens the features before they are compared, changed the errors only within the run-to-run
-noise.
+temperature, which softens the features before they are compared, changed the errors by no more than two runs of the same setting differ.
 
 For video I added temporal filtering and landmark alignment, without retraining. An exponential moving average
 blends each tracked person's pose, shape and position with earlier frames, and then the body's position and depth

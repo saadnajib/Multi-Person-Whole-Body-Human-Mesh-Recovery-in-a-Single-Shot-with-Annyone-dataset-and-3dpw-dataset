@@ -60,8 +60,7 @@ and orientation of its bodies, and its aligned surface is slightly worse.
 This comparison is not fully fair to the baseline. My Student and teacher were trained on converted 3DPW images, and
 the released baseline was not. The result compares two complete trained systems, and it does not show that my network
 design is better. On the holdout the bias goes the other way. NAVER's model was trained on the AnnyOne release, and
-that release includes the \MethodHoldoutN{} images I hold out. Its \NAVERAnnyOne\,mm is therefore most likely an
-in-sample number, and mine are not. On 3DPW, which neither NAVER's model nor Base saw before my fine-tune, the teacher is
+that release includes the \MethodHoldoutN{} images I hold out. Its \NAVERAnnyOne\,mm is potentially in-sample, while I excluded these images from thesis training. On 3DPW, which neither NAVER's model nor Base saw before my fine-tune, the teacher is
 \FinalGainOverNAVERThreeDPW\,mm better (\FinalThreeDPW{} against \NAVERThreeDPW\,mm). For this reason it means little that
 the Student misses the AnnyOne bar (\BarNAVERAnnyOne\,mm). I did not repeat the run, and I have no labelled real photos
 on which to test the Student's hands and head.
@@ -109,8 +108,7 @@ On 3DPW the PVE went from \StudentThreeDPW{} to \StudentSixtyThreeDPW\,mm. This 
 60-epoch run still misses all four bars, at the same cost.
 
 Longer training helps on synthetic images and not on real ones. By this rule the 3DPW curve says stop,
-because its error has not improved since about epoch 25. This means the Student's gap to the teacher on real photos is
-not a training-length problem. I keep the 30-epoch run as the reported Student. These two runs have no validation loss,
+because its error has not improved since about epoch 25. These runs suggest that training duration alone does not explain the Student's real-image gap. I keep the 30-epoch run as the reported Student. These two runs have no validation loss,
 and I did not try a third training length.
 
 % -----------------------------------------------------------------------------
@@ -136,11 +134,12 @@ lowest errors and use it.
 
 The lines in Figure~\ref{fig:kd-temperature} are almost flat. Over $T = 1$ to 8 the holdout PVE moves by only
 \KDHoldRange\,mm (\KDOneHold{} to \KDFourHold\,mm) and the 3DPW PVE by \KDTPRange\,mm (\KDTwoTP{} to
-\KDFourTP\,mm). The sweep's own $T = 4$ run differs from the reported one by \KDNoiseHold\,mm on the holdout, so
-differences of this size are run-to-run noise. Formally $T = \KDPickT$ has the lowest combined error, but I would not
-call it better. No temperature brings the Student close to the 95\,\% bars (Table~\ref{tab:kd-temperature}). So the
-temperature is not what holds the Student back, and I keep $T = \MethodKDTemp$. The run with $T = \KDSweepMaxT$
-trained to the end, but a later evaluation step stopped on a network time-out, so it has no numbers.
+\KDFourTP\,mm). The sweep's own $T = 4$ run differs from the reported $T = 4$ run by \KDNoiseHold\,mm on the holdout.
+With one run per temperature, differences of this size cannot be told apart from that variation. Formally
+$T = \KDPickT$ has the lowest combined error, but I do not call it better. No temperature brings the Student close to
+the 95\,\% bars (Table~\ref{tab:kd-temperature}). So the temperature is not what holds the Student back, and I keep
+$T = \MethodKDTemp$. The run with $T = \KDSweepMaxT$ trained to the end, but a later evaluation step stopped on a
+network time-out, so it has no numbers.
 
 % -----------------------------------------------------------------------------
 
@@ -327,7 +326,7 @@ Predicted fingers are \BaseFingers\,deg off in Base and \ControlFingers\,deg in 
 rest (\BaseFingersRest\,deg; Table~\ref{tab:fingers}). Final, with the two flipped hand bones corrected, reaches
 \FinalFingers\,deg (Table~\ref{tab:final-annyone}), and the correction alone gave \NoTrainFingers. So about half of
 the finger error was two flipped bones, metacarpal1.L and finger4-1.R, and training keeps the gain. The rest is not
-explained. Real images add nothing to the fingers, because the hand mask removes the rotation terms of the
+explained. 3DPW provides no measured finger rotations, so the hand mask removes the supervised rotation terms of the
 \MethodHandMaskBones{} hand bones for 3DPW people, whose labels hold rest-pose hands.
 
 Figure~\ref{fig:fingers-demo} (Appendix~\ref{app:figures}) shows predicted fingers on real images, which every earlier demo set to rest pose. In
@@ -428,7 +427,8 @@ side (men \RHMenGenderPartial, women \RHWomenGenderPartial).
 
 Both masked models keep body errors close to Final's. The mask therefore changes only what the shape head predicts (the
 3DPW mesh targets still hold the neutral body). Without the mask, Final learned the seven constants and predicts nearly the same muscle, weight, cup size and firmness for everyone on real photos. With
-age supervised the children's gain stays, so the age label carries it. Gender accuracy falls although its label stays
+age supervised the age-group improvement remains in this run. This suggests an effect of the age
+target, but it does not establish the full mechanism. Gender accuracy falls although its label stays
 supervised. One reading I did not test is that Final's gender gain depends on the seven constants on the 3DPW men as
 much as on the gender label.
 

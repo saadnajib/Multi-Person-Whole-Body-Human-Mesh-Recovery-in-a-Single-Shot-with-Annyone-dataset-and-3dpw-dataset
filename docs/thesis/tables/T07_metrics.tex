@@ -10,8 +10,8 @@
 \toprule
 Metric & What it measures & Blind to \\
 \midrule
-PVE (mm) & vertex error after both pelvises are put at the same point & placement, depth, size \\
-PA-PVE (mm) & PVE after the best rotation, scale and shift (Procrustes) & also global orientation \\
+PVE (mm) & vertex error after both pelvises are put at the same point & absolute placement and depth \\
+PA-PVE (mm) & PVE after the best rotation, scale and shift (Procrustes) & also orientation and scale \\
 MPJPE (mm) & PVE on the \MethodNumBones{} Anny joints & as PVE \\
 Recall, precision (\%) & labelled people matched; detections matched & false detections; bystanders \\
 Root error (m) & 3D pelvis distance, no alignment & pose and shape \\
@@ -22,7 +22,7 @@ Head direction (deg) & camera-frame head orientation error & the chain below the
 Neck girth ratio & neck-skin radius, predicted over true (1 is right) & neck length \\
 PVE\textsubscript{neck} (mm) & vertex error over the neck skin, centred at neck01 & the rest of the body \\
 Child AUC & chance that a child gets a lower predicted age than an adult (0.5 = chance) & undetected people \\
-Gender accuracy (\%) & predicted gender on the right side of 0.5 (50 = chance) & undetected people \\
+Gender accuracy (\%) & predicted label using a threshold of 0.5 & undetected people \\
 \bottomrule
 \end{tabular}
 \caption[Metrics]{Metrics used in this thesis. All errors are means over matched people; the last two are on

@@ -7,20 +7,21 @@
 %   train.py sets no random seed.
 \begin{table}[!htb]
 \centering\footnotesize
-\begin{tabular}{@{}p{0.27\linewidth}p{0.36\linewidth}p{0.3\linewidth}@{}}
+\begin{tabular}{@{}p{0.28\linewidth}p{0.34\linewidth}p{0.31\linewidth}@{}}
 \toprule
-quantity & measured & one run resolves \\
+Quantity & Observed values & Interpretation \\
 \midrule
-two identical controls: PVE & 76.3 vs.\ 68.7\,mm (7.6\,mm) & about 10\,mm \\
-\quad head direction & 13.6 vs.\ 11.7\,deg (1.9\,deg) & about 3\,deg \\
-\quad recall & 0.8 points apart & about 2 points \\
-six arms, Base recipe & \multicolumn{2}{@{}l@{}}{PVE 68.7--76.3\,mm, recall 88.6--90.2\,\%, head 11.3--13.7\,deg} \\
-restart cost & 72.9 vs.\ 70.5\,mm for Base (2.4\,mm) & read against own control \\
-root error & no measured floor & fix 0.53--0.73, control 1.11--1.44\,m \\
+Two identical controls: PVE & 76.3 vs.\ 68.7\,mm & 7.6\,mm difference between these runs \\
+\quad Head direction & 13.6 vs.\ 11.7\,deg & 1.9\,deg difference \\
+\quad Recall & 0.8 points apart & different matched sets \\
+Six arms, Base recipe & PVE 68.7--76.3\,mm; recall 88.6--90.2\,\%; head 11.3--13.7\,deg & observed range, not a confidence interval \\
+Restart comparison & 72.9 vs.\ 70.5\,mm for Base & 2.4\,mm higher mean PVE after restart \\
+Root error & fix 0.53--0.73\,m; controls 1.11--1.44\,m & lower in every tested fix run \\
 \bottomrule
 \end{tabular}
-\caption[Pilot noise and restart cost]{Run-to-run variation of the 2-epoch pilots (fine-tunes of Base at learning
-rate $10^{-5}$, no seed). V1, 100-image AnnyOne holdout, matched people. Restart cost: what two more epochs of
-fine-tuning Base cost with nothing changed.}
+\caption[Pilot variation and restart comparison]{Observed variation in the 2-epoch pilots, fine-tuned from
+Base at learning rate $10^{-5}$ without a fixed seed. V1, 100-image AnnyOne holdout, matched people.
+The restart comparison uses the unchanged-recipe controls. Two repeated pilots do not establish a
+general significance threshold or predict the variation of the final models.}
 \label{tab:pilot-noise}
 \end{table}

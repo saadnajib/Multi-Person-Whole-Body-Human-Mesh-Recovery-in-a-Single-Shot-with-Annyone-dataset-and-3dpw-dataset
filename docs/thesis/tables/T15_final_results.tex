@@ -57,7 +57,7 @@ by \NoisePVE\,mm PVE, so the PVE gap between Control and Final (\ControlPVE{} vs
 variation, while PA-PVE, root error, neck and fingers are not. Depth pilot: depth fix, depth weight $\times$5, 10 epochs;
 neck pilot: bone correction and a 2-epoch fine-tune. 3DPW numbers are against our converted labels and are not
 comparable with published 3DPW results. $^{a}$Multi-HMR-Anny masks the helper bones by design, so its number is V1 and
-compares with Final's \FinalPVE{} in (a); it was most likely trained on these 100 images. $^{b}$Mean over all 163 Anny
+compares with Final's \FinalPVE{} in (a); its exposure to these 100 images is unverified, so the result is potentially in-sample. $^{b}$Mean over all 163 Anny
 joints, pelvis-centred. $^{c}$The same 100 images as (a) in setting V0 (helper bones unmasked).}
 \label{tab:final}
 \end{table}

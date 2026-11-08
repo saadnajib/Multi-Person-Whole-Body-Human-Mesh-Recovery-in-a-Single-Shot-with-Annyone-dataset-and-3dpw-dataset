@@ -180,8 +180,8 @@ All five fix runs reach a root error (the 3D distance between predicted and true
 \DiagRootErrFixLow--\DiagRootErrFixHigh\,m, while both controls stay at \DiagRootErrCtrlLow--\DiagRootErrCtrlHigh\,m.
 The drawn size rises from \DiagSizeCtrlLow--\DiagSizeCtrlHigh{} to \DiagSizeFixLow--\DiagSizeFixHigh, and the head
 lands within \DiagHeadPxFixLow--\DiagHeadPxFixHigh{} pixels of its true position instead of
-\DiagHeadPxCtrlLow--\DiagHeadPxCtrlHigh. Every fix run lies below every control, far outside the run-to-run
-variation. Two other checkpoints trained with pelvis targets carry the bug too. It stayed hidden for so long because
+\DiagHeadPxCtrlLow--\DiagHeadPxCtrlHigh. Every tested fix run has lower root error than either control, although repeated-run uncertainty
+was not estimated. Two other checkpoints trained with pelvis targets carry the bug too. It stayed hidden for so long because
 PVE aligns the pelvis first and the real-photo demos place each body from its detection box.
 
 The fix did not give correct depth. It moved the intercept and the body size, but barely the slope of predicted

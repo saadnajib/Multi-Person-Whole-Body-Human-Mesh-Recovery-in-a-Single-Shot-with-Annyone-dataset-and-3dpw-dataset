@@ -29,7 +29,7 @@ Teacher     & \FinalPVE & \FinalPAPVE & \FinalMPJPE & \FinalRecall & \FinalThree
 backbone tokens before the KL term (gradient scaled by $T^2$); the output distillation is an L1 term without a
 temperature and stays as it is. Everything else is the reported recipe (\StudentEpochs{} epochs). The row
 ``4 (reported)'' is the Student of Table~\ref{tab:student}; the sweep re-runs $T = 4$ so that its difference to the
-reported run gives the run-to-run noise: \KDNoiseHold\,mm holdout PVE and \KDNoiseTP\,mm 3DPW PVE. One run per
+reported run shows how much two runs of one setting differ: \KDNoiseHold\,mm holdout PVE and \KDNoiseTP\,mm 3DPW PVE. One run per
 temperature; the $T = \KDSweepMaxT$ run trained but stopped in a later step on a network time-out.}
 \label{tab:kd-temperature}
 \end{table}

@@ -31,8 +31,8 @@ $\mathbf Z^s=f_B(I)$. A trainable linear projector maps them to the teacher's wi
  \mathbf W\in\mathbb R^{C_t\times C_s},\quad C_t=\MethodWidthL .
  \label{eq:student-projection}
 \end{equation}
-So each student token gets the \MethodWidthL{} channels that the teacher's heads read, and this is what makes it
-possible to copy the heads. Most of the saving in parameters and running time comes from the smaller encoder. Using a
+The projector learns \MethodWidthL{} weighted combinations of each token's \MethodWidthB{} feature values,
+plus a bias. This gives the copied heads the width they expect; it adds no new image information. Most of the saving in parameters and running time comes from the smaller encoder. Using a
 ViT-B encoder, or distillation, is not new in itself.
 
 % -----------------------------------------------------------------------------
@@ -217,8 +217,9 @@ is never used for training.
 
 \paragraph{The hand mask.} The converter fits only the root and the bones that carry a mapped SMPL joint, so the
 fingers, thumbs and metacarpals of every 3DPW label are at rest. With \texttt{-{}-mask\_3dpw\_hands 1} the rotation terms
-skip these \MethodHandMaskBones{} bones for 3DPW people, and the fingers are learned from AnnyOne only. The mask removes
-the rotation terms only; the mesh terms still carry the rest-pose hands.
+skip these \MethodHandMaskBones{} bones for 3DPW people. Finger-rotation labels come from AnnyOne.
+The mesh terms still carry the rest-pose hands, and the student's output distillation uses the teacher's
+hand predictions. The mask therefore does not remove all hand-related training.
 
 \paragraph{The shape mask.} The converter leaves \MethodShapeMaskCount{} phenotypes at constants: age, muscle,
 weight, cup size, firmness and the three ethnicity values (Section~\ref{sec:data-limits}). With
@@ -295,7 +296,7 @@ every evaluation. A second run of the same recipe for \StudentSixtyEpochs{} epoc
 I also set a retention criterion beforehand, the 95\,\% rule: for an error metric $E$, the student passes if
 $E_s\le E_t/\MethodRuleFactor$, with $E_t$ the teacher's error. This rule only says in advance what would count
 as passing. It does not say that the student passes. I apply the same thresholds against Multi-HMR-Anny separately,
-because its AnnyOne error is most likely in-sample (Section~\ref{sec:data-annyone}) and it was not trained on my
+because its AnnyOne error is potentially in-sample (Section~\ref{sec:data-annyone}) and it was not trained on my
 converted 3DPW images.
 
 % -----------------------------------------------------------------------------
@@ -417,14 +418,15 @@ $\hat{\mathbf J}_j,\mathbf J_j$ ($J=\MethodNumBones$) and pelvis joints $\hat{\m
 \end{align}
 with $s^\ast,\mathbf R^\ast,\mathbf t^\ast$ the scale, rotation and translation of the least-squares fit of prediction to
 target. PVE is the mean distance between corresponding surface points once both pelvises sit at the same place.
+PVE still measures differences in the body's physical size.
 PA-PVE first turns, moves and resizes the prediction to fit the target (Procrustes alignment) and measures what remains.
 MPJPE is PVE on the Anny joints. TP counts the labelled people found and FN those missed; finding 9 of 10 gives
 90\,\% recall. For cost I report parameters, GFLOPs (one multiply-accumulate is two operations) and the median time of
 one forward pass on one GPU, at batch size 1 with one person.
 
 \paragraph{AnnyOne holdout.} The holdout is the last \MethodHoldoutN{} AnnyOne images (indices
-$\num{\MethodHoldoutFirst}$ to $\num{\MethodHoldoutLast}$). They were never trained on and contain no children
-(Chapter~\ref{ch:data}). The headline setting V1
+$\num{\MethodHoldoutFirst}$ to $\num{\MethodHoldoutLast}$). They were excluded from training in this thesis and contain no children
+(Chapter~\ref{ch:data}); the released baseline may have seen them. The headline setting V1
 masks the helper bones, as the demos do; V0 does not (Table~\ref{tab:metrics}). A trace script adds placement and
 per-bone metrics.
 
@@ -500,7 +502,7 @@ outputs share one forward pass. The constants are the pipeline defaults (the fiv
 \path{run.json} records). They are initial settings that I inspected on the video and did not tune.
 
 \paragraph{Landmark alignment.} The filter cannot move a body that sits at the wrong place or is drawn too large. For
-this I run MediaPipe Pose, an existing 2D landmark detector, once offline on the CPU over the original video. Its
+this I run MediaPipe Pose~\cite{mediapipecode}, an existing 2D landmark detector, once offline on the CPU over the original video. Its
 shoulders, elbows, wrists, hips, knees and ankles match the heads of the Anny bones upperarm01, lowerarm01, wrist,
 upperleg01, lowerleg01 and foot. A least-squares fit that down-weights outliers finds one 3D translation of the whole
 body so that the projected Anny points land on the landmarks. A body moved farther away looks smaller, so this corrects
@@ -509,8 +511,9 @@ an oversized or shifted mesh, but it cannot repair a wrongly bent arm or leg. A 
 a depth within \VideoDepthBoundLow--\VideoDepthBoundHigh{} times the current median joint depth; otherwise the frame
 stays unchanged and the depth history resets. Finally, the accepted depth is smoothed in log space (\VideoDepthTau\,s,
 at most \VideoDepthRate{} log-units per second), so the body grows and shrinks less between frames; a reset can still produce a visible
-size change. The alignment acts on the
-filtered body when the filter is on.
+size change. The alignment acts on the filtered body when the filter is on. The depth filter moves the whole body
+along the current pelvis camera ray, keeping that point at the same image position. Projection error is
+recomputed after filtering because smoothing can trade some current-frame alignment for less size flicker.
 
 \paragraph{What the two steps can and cannot show.} The landmarks are detector estimates, not ground truth, so a
 smaller landmark error means closer agreement with that detector, not a better 3D body. The clip has no 3D labels and
