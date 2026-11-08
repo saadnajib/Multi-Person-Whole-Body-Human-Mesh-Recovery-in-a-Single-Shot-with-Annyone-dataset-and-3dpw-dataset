@@ -93,8 +93,7 @@ differs between two runs of the same command. So does the number of optimiser st
 (\MethodFinalNaNSteps{} in Final, 10 in Control, out of $\num{\MethodFinalSteps}$).
 
 Two runs of one 2-epoch configuration differed by \NoisePVE\,mm PVE, \NoiseHeadDeg\,deg head direction and
-\DiagNoiseRecall{} recall points (Table~\ref{tab:pilot-noise}). A repeat of Final or Control should land within such
-a margin, not on the same numbers. Final and Control also ran on different GPU types (Final on an A100, Control on an A40,
+\DiagNoiseRecall{} recall points (Table~\ref{tab:pilot-noise}). These two pilots do not establish an expected interval for a repeat of Final or Control. Final and Control also ran on different GPU types (Final on an A100, Control on an A40,
 both with TF32). This changes the speed, and it can change the last digits of the arithmetic. Evaluating a fixed checkpoint
 involves no sampling. I did not test whether it repeats exactly across GPU types.
 

@@ -1,0 +1,43 @@
+Merged thesis validation — 8 November 2026
+Parents: latest main 5d61a7b and thesis editing branch e9f7e68.
+Compiled with latexmk, pdflatex and biber.
+Pages: 120, including front matter, appendices and bibliography.
+Previous main PDF: 120 pages. The older editing-branch PDF had 100 pages and lacked newer experiments.
+
+LaTeX errors: 0
+Undefined references/citations: 0
+Duplicate labels: 0
+Overfull boxes: 0
+Oversized floats: 0
+
+All numerical macro files preserved byte-for-byte from pre-merge main.
+New main result tables T22–T27 and figure assets preserved.
+Verified 60-epoch results and video timings present in the PDF.
+Existing pending temperature-sweep placeholders retained; this is not a submission-ready claim.
+No new cluster experiments ran for this merge.
+Original text size and page geometry retained.
+German hyphenation fallback warning remains in this TeX installation.
+
+PDF SHA256: eacb7c1e8fffde2752a53b0e053efba882a7688b8cf479e54442035dd637c3e6
+
+Top-level outline:
+page 2: Eigenständigkeitserklärung
+page 3: Abstract
+page 5: Contents
+page 9: 1 Introduction
+page 13: 2 Background and related work
+page 21: 3 Datasets and Anny label generation
+page 29: 4 Methodology
+page 45: 5 Experiments and results
+page 65: 6 Discussion
+page 69: 7 Conclusion and future work
+page 71: List of Figures
+page 73: List of Tables
+page 75: A Model names, runs and reproduction
+page 85: B SMPL–Anny joint correspondence
+page 87: C Flags and weights
+page 91: D Extra figures
+page 99: E Pilot results in full
+page 103: F Supporting diagnostic experiments
+page 113: G Supporting conversion experiments
+page 117: Bibliography

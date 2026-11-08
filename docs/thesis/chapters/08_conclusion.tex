@@ -28,9 +28,9 @@ beforehand (Section~\ref{sec:res-student}). Its 3DPW PVE is lower than the \NAVE
 Multi-HMR-Anny, but only my models were trained on converted 3DPW.
 
 I also trained the student for 60 epochs. The holdout PVE fell to \StudentSixtyPVE\,mm, but the 3DPW PVE moved only
-from \StudentThreeDPW{} to \StudentSixtyThreeDPW\,mm, far below the run-to-run noise on the holdout
+from \StudentThreeDPW{} to \StudentSixtyThreeDPW\,mm, with no repeated runs to measure the variation on 3DPW
 (Section~\ref{sec:res-training-length}). So longer training alone does not close the gap on real images, and I keep
-the 30-epoch student. I have not yet tested other distillation temperatures than $T = \MethodKDTemp$
+the 30-epoch student. The complete distillation-temperature comparison is still pending
 (Section~\ref{sec:res-kd-temperature}). \TODO{pending: temperature sweep result}
 
 On a walking clip of \VideoFrames{} frames, the student kept a tracked person in \VideoStudentMatched{} frames and the

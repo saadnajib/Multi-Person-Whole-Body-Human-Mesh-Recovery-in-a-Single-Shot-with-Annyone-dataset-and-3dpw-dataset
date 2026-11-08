@@ -4,9 +4,9 @@
 
 Every number in this thesis comes from one of the datasets below, and I describe them before the method.
 Table~\ref{tab:data-splits} lists each split, its size and its use. Most of the chapter is about converting 3DPW to
-Anny, because every real-image number in this thesis is measured against those converted labels. I follow two rules
-in every experiment. No test image is ever trained on, and I never put a number on the old 3DPW labels next to a
-number on the final v23 labels.
+Anny, because the 3DPW reconstruction scores use those converted labels. Relative Human and video
+measurements use their own protocols. I exclude test images from thesis training and keep old-label
+3DPW results separate from v23 results. The released baseline's earlier image exposure is not fully known.
 
 \begin{table}[htbp]
 \centering\footnotesize
@@ -16,8 +16,8 @@ number on the final v23 labels.
 \toprule
 split & size (images / people) & used for & chapters \\
 \midrule
-AnnyOne training & \DataAnnyOneTrainImages{} images & training of every model; \DataMixAnnyOne\% of each mixed batch & \ref{ch:method}, \ref{ch:results} \\
-AnnyOne holdout & \DataHoldoutImages{} images & headline synthetic evaluation (V1); never trained on & \ref{ch:diagnostics}, \ref{ch:results} \\
+AnnyOne training & \DataAnnyOneTrainImages{} images & training of thesis models; \DataMixAnnyOne\% of each mixed batch & \ref{ch:method}, \ref{ch:results} \\
+AnnyOne holdout & \DataHoldoutImages{} images & synthetic evaluation (V1); excluded from thesis training & \ref{ch:diagnostics}, \ref{ch:results} \\
 diagnostic manifest & \DataManifestTrain{} + \DataManifestHoldout{} entries & per-person diagnostics; excluded from every fine-tune & \ref{ch:diagnostics} \\
 3DPW-Anny train, v23 & \DataThreeDPWTrainImages{} / \DataThreeDPWTrainPeople & \DataMixThreeDPW\% of each mixed batch & \ref{ch:method}, \ref{ch:results} \\
 3DPW-Anny val., v23 & \DataThreeDPWValImages{} / \DataThreeDPWValPeople & \DataValImagesPerEpoch{} images scored after each epoch; monitoring only & \ref{ch:results} \\
@@ -50,8 +50,8 @@ For this reason training and evaluation use each image's own intrinsics.
 training set. The last \DataHoldoutImages{} images, indices \DataHoldoutFirstIndex{} to \DataHoldoutLastIndex, are
 my holdout, which no model trained in this thesis has seen. NAVER's model was trained on the AnnyOne release, which
 includes the \DataHoldoutImages{} images I hold out. Its \NAVERAnnyOne\,mm holdout PVE (the mean vertex error,
-Section~\ref{sec:method-eval}) is therefore most likely an in-sample number, in other words an error on images it had
-already seen during training. My models have never seen these images.
+Section~\ref{sec:method-eval}) is potentially in-sample: it may include images seen during its own training. I have not verified
+its exact image exposure. My models have never seen these images.
 
 The 3DPW test script also scores the last \DataHoldoutImages{} AnnyOne images, but in setting V0. In V0 the error
 counts Anny's helper bones (toes, breasts, face and subdivision bones); in my headline setting V1 they are masked out

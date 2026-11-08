@@ -37,7 +37,7 @@ Student is smaller and faster, but it is also less accurate.
 
 Longer training did not close the gap on real images. After \StudentSixtyEpochs{} epochs the holdout PVE fell from
 \StudentPVE{} to \StudentSixtyPVE\,mm, but on 3DPW it went from \StudentThreeDPW{} to \StudentSixtyThreeDPW\,mm, a
-change within the run-to-run variation (Section~\ref{sec:res-training-length}). I have not tested why. Possible
+small change whose repeatability was not measured on 3DPW (Section~\ref{sec:res-training-length}). I have not tested why. Possible
 reasons are the smaller backbone, the share of 3DPW in each batch and the teacher's own 3DPW error. The temperature
 sweep (Section~\ref{sec:res-kd-temperature}) will show whether $T = \MethodKDTemp$ was a good choice.
 \TODO{pending: temperature sweep results}
@@ -86,7 +86,7 @@ also says little about occlusion, people cut off by the frame or crowds.
 
 My 3DPW errors are measured against fitted Anny labels, with MPJPE over \MethodNumBones{} Anny joints, so they cannot
 be compared with published 3DPW results. The label discrepancy is not an offset that can be subtracted from them
-(Section~\ref{sec:data-limits}). My training never used the holdout, but for Multi-HMR-Anny it is most likely
+(Section~\ref{sec:data-limits}). My training never used the holdout, but for Multi-HMR-Anny it may be
 in-sample, that is, part of its training data (Section~\ref{sec:res-baseline}).
 
 Each model comes from one training run without a fixed seed, and I did not switch off the Student's loss terms one at

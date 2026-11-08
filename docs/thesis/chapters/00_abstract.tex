@@ -23,8 +23,7 @@ The student has \StudentParams\,million parameters and needs \StudentGFLOPs\,GFL
 But the student is also less accurate. Its per-vertex error (PVE, the mean distance to the true surface) was
 \StudentPVE\,mm on held-out AnnyOne images and \StudentThreeDPW\,mm on 3DPW, the teacher's \FinalPVE{} and
 \FinalThreeDPW\,mm. On 3DPW the student had a lower PVE than the released Multi-HMR-Anny baseline
-(\NAVERThreeDPW\,mm), which was not trained on my converted 3DPW labels. The baseline's AnnyOne result most likely
-comes from its training images. All 3DPW errors are against converted labels and not directly comparable
+(\NAVERThreeDPW\,mm), which was not trained on my converted 3DPW labels. The baseline's AnnyOne result may include images seen during training. All 3DPW errors are against converted labels and not directly comparable
 with published SMPL results.
 
 In a training-length experiment I trained the student for \StudentSixtyEpochs{} instead of \StudentEpochs{} epochs.

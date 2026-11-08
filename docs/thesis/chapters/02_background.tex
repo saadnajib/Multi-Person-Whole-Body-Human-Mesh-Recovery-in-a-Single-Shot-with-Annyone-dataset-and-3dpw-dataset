@@ -170,7 +170,7 @@ images~\cite{naver2024multihmrcode}. So a multi-person network for Anny already 
 first. This checkpoint, Multi-HMR-Anny, gives my teacher's backbone weights and is the baseline I compare against.
 On the same backbone its decoder has \BgNaverHeadLayers{}
 cross-attention blocks and \BgNaverHeadParams\,M parameters, against \BgOurHeadLayers{} blocks and
-\BgOurHeadParams\,M in mine. It was trained on AnnyOne, so it has most likely seen my AnnyOne test images
+\BgOurHeadParams\,M in mine. It was trained on AnnyOne, so it may have seen my AnnyOne test images
 during training (Section~\ref{sec:res-baseline}). Anny-Fit~\cite{bravo2026annyfit}, by the same group, refines such predictions per
 image by optimisation and adapts them to children at test time. My model stays a single forward pass. I did not use
 Anny-Fit. For future work on children it would be the first method to compare against.

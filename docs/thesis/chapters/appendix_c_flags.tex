@@ -41,7 +41,7 @@ Chapter~\ref{ch:method}. The commands that start Final, Control and the Student 
 \begin{longtable}{@{}>{\raggedright}p{3.55cm}>{\raggedright}p{1.5cm}>{\raggedright}p{2.55cm}>{\raggedright\arraybackslash}p{4.65cm}@{}}
 \caption[Training flags of Final and Control]{Training flags of Final and Control. ``Value'' is Final's. Where Control
 differs, its value follows in brackets. Paths are relative to the project folder on the cluster. Both runs start from
-Base and train for \MethodFinalEpochs{} epochs of 1,000 iterations at batch \MethodFinalBatch, that is 40,000 images, at a
+Base and train for \MethodFinalEpochs{} epochs of 1,000 iterations at batch \MethodFinalBatch, that is 40,000 sampled image presentations, at a
 constant learning rate.}
 \label{tab:flags-final}\\
 \toprule
@@ -90,7 +90,7 @@ Flag & Default & Value (Control) & Meaning \\
 \caption[Training flags of the Student]{Training flags of the Student where they differ from Final's. Every other flag
 is as in Table~\ref{tab:flags-final}. This includes the targets, the masks, the loss weights and the 3DPW mixing, so the
 Student also learns the corrected depth. There is no shape mask. The Student trains for \MethodStudentEpochs{} epochs
-of 1,000 iterations at batch \MethodStudentBatch, that is 240,000 images, with a 20-hour Slurm limit. The script passes
+of 1,000 iterations at batch \MethodStudentBatch, that is 240,000 sampled image presentations, with a 20-hour Slurm limit. The script passes
 the colour-jitter flags (\texttt{--brightness 0.2} and so on), but the code never reads them, so there was no
 augmentation. Of the flags below, the 60-epoch run of Section~\ref{sec:res-training-length} differs only in the two
 values in brackets. Its job settings also differ: it has its own run name, ending in \path{_e60}, and the script

@@ -100,17 +100,12 @@ the geodesic pilot's L1 control \\
 \end{longtable}
 \endgroup
 
-\paragraph{Pilot noise.} Each pilot is one run without a seed, so first I need to know how much two identical runs
-differ. Table~\ref{tab:pilot-noise} (Section~\ref{sec:diag-noise}) gives that. I trained one configuration twice with
-the same settings, and the two runs differed by \DiagNoisePVE\,mm PVE, \DiagNoiseHead\,deg head direction and
-\DiagNoiseRecall{} recall points. Restarting a fine-tune of Base cost about \DiagRestartCost\,mm on its own. In other
-words, a difference of less than about 10\,mm PVE, 3\,deg or 2 recall points between a pilot and its control can be
-training noise alone.
-
-In the pilots, the root error, the bone angles, the girth and the finger error changed by much more than this noise.
-The PVE and the recall of every pilot changed by less. For this reason I compared each pilot only with its own
-control. I chose the two changes that went into Final because of what the diagnostics showed, and not because of a
-PVE gain.
+\paragraph{Pilot variation.} Two runs of the same short configuration differed by \DiagNoisePVE\,mm PVE,
+\DiagNoiseHead\,deg head direction and \DiagNoiseRecall{} recall points
+(Table~\ref{tab:pilot-noise}). The restart comparison also showed higher average PVE than Base.
+These observations warn against reading too much into small single-run differences. They do not
+give a universal significance threshold. I selected the placement and bone corrections using their
+targeted diagnostics and matched controls, rather than a small PVE gain.
 
 \section{The ViT-S students and the stages that produced Base}
 \label{sec:method-kd-history}
@@ -138,8 +133,8 @@ the Student starts with a copy of the teacher's heads. The copied heads only wor
 input. With a new, randomly initialised input layer in front of them they did not. Heads at the teacher's width also
 did better than narrower ones. So the Student keeps every head of Final at its full width. The starting point
 mattered most. A backbone that NAVER had already trained for mesh recovery gave the largest gain, which is why
-the Student starts from NAVER's ViT-B. Last, the students were held back more by their data than by their size, so
-the Student trains on AnnyOne and on the 3DPW training images with the corrected labels.
+the Student starts from NAVER's ViT-B. Last, I increased the data budget and used corrected 3DPW labels alongside AnnyOne. The trials
+do not prove that data, rather than capacity, was the only limitation.
 
 Two settings made the ViT-S training steps faster. I ran the matrix products in TF32, a reduced-precision mode of the
 A100, and I kept the teacher's backbone in bfloat16, a 16-bit number format. Together they cut a ViT-S student's
