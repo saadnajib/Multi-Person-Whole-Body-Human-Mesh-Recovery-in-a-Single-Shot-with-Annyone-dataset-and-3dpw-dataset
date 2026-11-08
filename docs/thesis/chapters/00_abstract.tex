@@ -30,10 +30,9 @@ with published SMPL results.
 In a training-length experiment I trained the student for \StudentSixtyEpochs{} instead of \StudentEpochs{} epochs.
 Its holdout PVE fell from \StudentPVE{} to \StudentSixtyPVE\,mm, but its 3DPW PVE went from \StudentThreeDPW{} to
 \StudentSixtyThreeDPW\,mm. So longer training helps on synthetic images but not on real photos, and the student
-still did not reach the teacher's accuracy. I kept the \StudentEpochs-epoch student. I also submitted a temperature
-sweep over \KDSweepArms{} values of the distillation temperature, which softens the features before comparison;
-its result is pending.
-\TODO{temperature sweep result pending}
+still did not reach the teacher's accuracy. I kept the \StudentEpochs-epoch student. A sweep of the distillation
+temperature, which softens the features before they are compared, changed the errors only within the run-to-run
+noise.
 
 For video I added temporal filtering and landmark alignment, without retraining. An exponential moving average
 blends each tracked person's pose, shape and position with earlier frames, and then the body's position and depth

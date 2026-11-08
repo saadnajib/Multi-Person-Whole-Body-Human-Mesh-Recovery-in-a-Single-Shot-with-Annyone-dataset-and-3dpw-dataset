@@ -1,0 +1,7 @@
+temperature,run,holdout_pve,holdout_pa_pve,holdout_mpjpe,holdout_recall,threedpw_pve,threedpw_pa_pve,threedpw_mpjpe,threedpw_recall,source
+1,student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT1_sweep,116.0,77.8,123.1,85.0,109.9,71.0,111.6,100.0,sweep
+2,student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT2_sweep,116.7,80.2,124.1,85.0,106.8,71.3,108.0,100.0,sweep
+4,student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT4_sweep,117.1,81.4,124.2,85.8,110.1,72.0,111.5,100.0,sweep
+8,student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT8_sweep,117.1,77.8,124.8,82.5,107.1,71.0,108.4,99.0,sweep
+16,student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT16_sweep,,,,,,,,,sweep (post-step failed: HTTP 504)
+4,student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30,119.6,80.8,127.2,85.4,110.1,71.8,112.0,99.0,reported

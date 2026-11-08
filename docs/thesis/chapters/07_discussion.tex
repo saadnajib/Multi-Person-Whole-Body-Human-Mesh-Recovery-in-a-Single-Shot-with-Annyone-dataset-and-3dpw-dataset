@@ -38,9 +38,9 @@ Student is smaller and faster, but it is also less accurate.
 Longer training did not close the gap on real images. After \StudentSixtyEpochs{} epochs the holdout PVE fell from
 \StudentPVE{} to \StudentSixtyPVE\,mm, but on 3DPW it went from \StudentThreeDPW{} to \StudentSixtyThreeDPW\,mm, a
 change within the run-to-run variation (Section~\ref{sec:res-training-length}). I have not tested why. Possible
-reasons are the smaller backbone, the share of 3DPW in each batch and the teacher's own 3DPW error. The temperature
-sweep (Section~\ref{sec:res-kd-temperature}) will show whether $T = \MethodKDTemp$ was a good choice.
-\TODO{pending: temperature sweep results}
+reasons are the smaller backbone, the share of 3DPW in each batch and the teacher's own 3DPW error. The
+temperature is not the reason either: between $T = 1$ and 8 the errors changed by less than the run-to-run noise
+(Section~\ref{sec:res-kd-temperature}).
 
 Against Multi-HMR-Anny the Student is \ParamRatioStudentNAVER{} times smaller and has a lower 3DPW PVE
 (\StudentThreeDPW{} against \NAVERThreeDPW\,mm), but a slightly higher PA-PVE (\StudentPAThreeDPW{} against

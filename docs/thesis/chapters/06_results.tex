@@ -119,7 +119,7 @@ and I did not try a third training length.
 \label{sec:res-kd-temperature}
 
 % Design: slurm/experiments/exp9_kd_temperature.sh header; collector scripts/analysis/kd_temperature_sweep.py.
-% RESULTS PENDING: write no number here before kd_temperature_sweep.csv arrives.
+% Results 8 Nov: data/kd_temperature_sweep.csv, numbers_nov.tex (KD...), CLUSTER_ANSWERS.md.
 \IfFileExists{tables/T25_kd_temperature.tex}{\input{tables/T25_kd_temperature}}{\TODO{T25 temperature table missing}}
 \IfFileExists{figures/F27_kd_temperature.tex}{\input{figures/F27_kd_temperature}}{\TODO{F27 temperature figure missing}}
 
@@ -131,10 +131,16 @@ after every epoch and log a validation loss. Because the sweep trains $T = \Meth
 more measure of run-to-run noise.
 
 In Figure~\ref{fig:kd-temperature} the x-axis is the temperature on a log-2 scale and the y-axis the error in mm, one
-line per metric and test set, with the teacher dashed and the bars dotted. From the plot I can read off which
-temperature gives the lowest errors, and that is the one to pick. \TODO{Results pending: \KDSweepArms{} jobs submitted 6 November;
-fill in from kd\_temperature\_sweep.csv.} With one run per temperature, differences below the noise of
-Section~\ref{sec:diag-noise} will not be readable.
+line per metric and test set, with the teacher dashed and the bars dotted. The idea is to read off the temperature with the
+lowest errors and use it.
+
+The lines in Figure~\ref{fig:kd-temperature} are almost flat. Over $T = 1$ to 8 the holdout PVE moves by only
+\KDHoldRange\,mm (\KDOneHold{} to \KDFourHold\,mm) and the 3DPW PVE by \KDTPRange\,mm (\KDTwoTP{} to
+\KDFourTP\,mm). The sweep's own $T = 4$ run differs from the reported one by \KDNoiseHold\,mm on the holdout, so
+differences of this size are run-to-run noise. Formally $T = \KDPickT$ has the lowest combined error, but I would not
+call it better. No temperature brings the Student close to the 95\,\% bars (Table~\ref{tab:kd-temperature}). So the
+temperature is not what holds the Student back, and I keep $T = \MethodKDTemp$. The run with $T = \KDSweepMaxT$
+trained to the end, but a later evaluation step stopped on a network time-out, so it has no numbers.
 
 % -----------------------------------------------------------------------------
 

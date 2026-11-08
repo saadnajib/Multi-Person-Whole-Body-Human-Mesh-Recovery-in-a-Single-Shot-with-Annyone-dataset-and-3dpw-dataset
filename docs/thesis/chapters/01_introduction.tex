@@ -83,7 +83,7 @@ My work makes four practical contributions:
   settings, and I assess pose, placement and shape separately. Two smaller teacher experiments (ablations) test the
   effect of a consistent head-anchor label and of a fixed bone correction. Two more experiments study the
   student's training: \MethodStudentEpochs{} against \StudentSixtyEpochs{} epochs, and a sweep of the distillation
-  temperature, whose runs were still pending when I wrote this report (Section~\ref{sec:res-kd-temperature}).
+  temperature (Section~\ref{sec:res-kd-temperature}).
 \item \textbf{A video pipeline.} The student and the baseline process the same frames. For the student, an
   exponential moving average blends each frame's pose, shape and position with the same person's earlier frames.
   A second step then moves the body and adjusts its depth so that its joints line up with 2D landmarks detected in

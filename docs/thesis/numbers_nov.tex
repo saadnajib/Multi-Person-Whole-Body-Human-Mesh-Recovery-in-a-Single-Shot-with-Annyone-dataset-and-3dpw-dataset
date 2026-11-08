@@ -168,3 +168,22 @@
 \newcommand{\VideoRootSpeedAligned}{0.53}     % m/s, aligned Student; run.json student_aligned summary
 \newcommand{\VideoGenderStdRaw}{0.058}        % std of predicted gender over the clip, raw Student; run.json summary
 \newcommand{\VideoGenderStdTemporal}{0.024}   % same, temporal Student; run.json student_temporal summary
+
+% --- KD temperature sweep results (exp9), 8 Nov: data/kd_temperature_sweep.csv = the collector's table
+%     (scripts/analysis/kd_temperature_sweep.py, printed on login1 8 Nov); jobs 3717507 / 3717530 / 3717538 / 3717581.
+%     T = 16 (job 3717598) trained to the end (84 NaN/Inf steps skipped) but its post-training step stopped on an
+%     HTTP 504 Gateway Timeout (a download), so it has no final table.
+\newcommand{\KDSweepDone}{4}                  % finished arms (T = 1, 2, 4, 8)
+\newcommand{\KDOneHold}{116.0}\newcommand{\KDOneHoldPA}{77.8}\newcommand{\KDOneHoldMPJPE}{123.1}\newcommand{\KDOneHoldRec}{85.0}
+\newcommand{\KDOneTP}{109.9}\newcommand{\KDOneTPPA}{71.0}\newcommand{\KDOneTPMPJPE}{111.6}\newcommand{\KDOneTPRec}{100.0}
+\newcommand{\KDTwoHold}{116.7}\newcommand{\KDTwoHoldPA}{80.2}\newcommand{\KDTwoHoldMPJPE}{124.1}\newcommand{\KDTwoHoldRec}{85.0}
+\newcommand{\KDTwoTP}{106.8}\newcommand{\KDTwoTPPA}{71.3}\newcommand{\KDTwoTPMPJPE}{108.0}\newcommand{\KDTwoTPRec}{100.0}
+\newcommand{\KDFourHold}{117.1}\newcommand{\KDFourHoldPA}{81.4}\newcommand{\KDFourHoldMPJPE}{124.2}\newcommand{\KDFourHoldRec}{85.8}
+\newcommand{\KDFourTP}{110.1}\newcommand{\KDFourTPPA}{72.0}\newcommand{\KDFourTPMPJPE}{111.5}\newcommand{\KDFourTPRec}{100.0}
+\newcommand{\KDEightHold}{117.1}\newcommand{\KDEightHoldPA}{77.8}\newcommand{\KDEightHoldMPJPE}{124.8}\newcommand{\KDEightHoldRec}{82.5}
+\newcommand{\KDEightTP}{107.1}\newcommand{\KDEightTPPA}{71.0}\newcommand{\KDEightTPMPJPE}{108.4}\newcommand{\KDEightTPRec}{99.0}
+\newcommand{\KDHoldRange}{1.1}                % mm, max - min holdout PVE over T = 1, 2, 4, 8 (117.1 - 116.0)
+\newcommand{\KDTPRange}{3.3}                  % mm, max - min 3DPW PVE over T = 1, 2, 4, 8 (110.1 - 106.8)
+\newcommand{\KDNoiseHold}{2.5}                % mm, |sweep T=4 - reported T=4| holdout PVE (117.1 vs 119.6); collector
+\newcommand{\KDNoiseTP}{0.0}                  % mm, same on 3DPW (110.1 vs 110.1); collector
+\newcommand{\KDPickT}{2}                      % collector PICK (min holdout/77.6 + 3DPW/93.7)

@@ -192,3 +192,12 @@ T=16 3717598.
 123.6; 3DPW test 109.9 / 71.0 / 111.6; verdict FAIL (same four rows as the reported T=4 run). Compared with the reported
 T=4 run (119.6 / 80.8 / 127.2; 110.1 / 71.8 / 112.0): 3.6 mm better on the holdout, 0.2 mm on 3DPW, both within the
 run-to-run noise (7.6 mm PVE). T=2 (3717530) and T=4 sweep (3717538) running; T=8 (3717581) and T=16 (3717598) pending.
+
+## 8 Nov: exp9 temperature sweep done (collector output pasted on login1; data/kd_temperature_sweep.csv)
+
+T=1 3717507, T=2 3717530 (7h19), T=4 3717538 (13h17, RTX A6000), T=8 3717581 (13h28): COMPLETED. T=16 3717598 FAILED
+after 6h38: training finished ("NaN/Inf gradient steps skipped: 84"), then a post-training step raised
+urllib.error.HTTPError 504 Gateway Timeout (a download), so no final table. Holdout PVE 116.0 / 116.7 / 117.1 / 117.1;
+3DPW PVE 109.9 / 106.8 / 110.1 / 107.1. Collector PICK T=2 (holdout/77.6 + 3DPW/93.7 = 2.644); no arm meets a 95% bar.
+Noise (sweep T4 - reported T4): holdout PVE -2.5, 3DPW 0.0 mm. Teacher re-measured 73.7 / 88.9-89.0 in every arm.
+Reading: the temperature has no effect beyond the run-to-run noise; T=4 is kept.

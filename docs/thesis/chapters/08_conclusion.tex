@@ -30,8 +30,9 @@ Multi-HMR-Anny, but only my models were trained on converted 3DPW.
 I also trained the student for 60 epochs. The holdout PVE fell to \StudentSixtyPVE\,mm, but the 3DPW PVE moved only
 from \StudentThreeDPW{} to \StudentSixtyThreeDPW\,mm, far below the run-to-run noise on the holdout
 (Section~\ref{sec:res-training-length}). So longer training alone does not close the gap on real images, and I keep
-the 30-epoch student. I have not yet tested other distillation temperatures than $T = \MethodKDTemp$
-(Section~\ref{sec:res-kd-temperature}). \TODO{pending: temperature sweep result}
+the 30-epoch student. A sweep of the distillation temperature
+from 1 to 8 changed the errors by at most \KDTPRange\,mm, inside the run-to-run noise, so the temperature is not the
+limit either (Section~\ref{sec:res-kd-temperature}).
 
 On a walking clip of \VideoFrames{} frames, the student kept a tracked person in \VideoStudentMatched{} frames and the
 baseline in \VideoBaselineMatched{} (Section~\ref{sec:res-video}). By eye, the filter made the motion steadier, and the
