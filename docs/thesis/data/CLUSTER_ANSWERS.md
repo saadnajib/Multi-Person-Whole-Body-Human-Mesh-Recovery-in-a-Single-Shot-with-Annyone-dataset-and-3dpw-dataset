@@ -201,3 +201,33 @@ urllib.error.HTTPError 504 Gateway Timeout (a download), so no final table. Hold
 3DPW PVE 109.9 / 106.8 / 110.1 / 107.1. Collector PICK T=2 (holdout/77.6 + 3DPW/93.7 = 2.644); no arm meets a 95% bar.
 Noise (sweep T4 - reported T4): holdout PVE -2.5, 3DPW 0.0 mm. Teacher re-measured 73.7 / 88.9-89.0 in every arm.
 Reading: the temperature has no effect beyond the run-to-run noise; T=4 is kept.
+
+## PENDING exp10 (supervisor feedback 12 Nov: no-distillation ablation, validation-based sweep reporting, student on Relative Human; `docs/experiments_plan.md` "exp10")
+
+Commands: `docs/experiments_plan.md`, section "exp10", block **Commands** (after `git pull`, `conda activate multihmr`).
+Submitted 12 Nov [to be confirmed by the author: paste the job ids]. Send back:
+
+1. **Now, no GPU**: the stdout of `scripts/analysis/sweep_validation_table.py` over the five sweep runs + the reported
+   e30 run + the e60 run, and `results/experiments/exp10_kd_ablation/validation/sweep_validation_table.{csv,md}`
+   (final-epoch 3DPW-validation and holdout metrics per T incl. T 16, best epoch, the "lowest at T = ..., spread ..."
+   lines, the two "training length" lines).
+2. **Ablation arms** (`bash slurm/experiments/exp10_kd_ablation.sh`): the launcher output (two `submitted: job <id>`
+   lines) or `logs/exp10_kd_ablation_<date>.txt`; per job `logs/exp8_distill_vitb_<jobid>.out` (start-up lines,
+   `NaN/Inf gradient steps skipped`, the `=== 6. FINAL TABLE` block) and, from
+   `results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_{nokd,supervised}/`:
+   `final_table.json`, `settings.txt`, `train_lines.log`, `bone_fix.json`, `holdout_student/summary.json`,
+   `eval_3dpw_test_student.log`. Then the stdout of `scripts/analysis/kd_ablation_table.py` and
+   `results/experiments/exp10_kd_ablation/kd_ablation_table.{csv,md}`, and
+   `results/experiments/exp10_kd_ablation/loss_curves/*_{nokd,supervised}_loss_curves.{png,pdf,csv}` with the printed
+   slopes / VERDICT lines of `plot_loss_curves.py`.
+3. **T 16 sweep arm** (`POST_ONLY=1 KD_T=16 ... RUN=..._kdT16_sweep bash slurm/experiments/exp8_distill_vitb.sh`):
+   `logs/exp8_distill_vitb_<jobid>.out` (FINAL TABLE block), `<RUN>/final_table.json`, and the re-run collector
+   `scripts/analysis/kd_temperature_sweep.py` (stdout + `results/experiments/exp9_kd_temperature/kd_temperature_sweep.{csv,png,pdf}`),
+   which then has all five temperatures.
+4. **Student on Relative Human** (`MODEL=.../00029.pt BONE_FIX=.../bone_fix.json TAG=student_vitb_e30_00029 sbatch --array=0 slurm/diagnostics/eval_relative_human.sh`):
+   `results/diagnostics/relative_human_val_student_vitb_e30_00029/per_person.csv` and `summary.txt` (= the `[rh]`
+   summary lines of `logs/eval_rh_<jobid>_0.out`: the per-group table, the AUC line, the gender line, `overall recall`),
+   plus the log's `[load_model]` lines (`bone_fix: <path>`, `feat_proj=yes ... backbone=dinov2_vitb14 head_dim=1024`).
+   Then the stdout of `scripts/analysis/rh_recall_by_crowd.py student=... final=...` and
+   `results/analysis/rh_recall_by_crowd/rh_recall_by_crowd.{csv,md}`.
+   The released baseline (`multiHMR_672_L_anny.pt`) cannot be run through this evaluation (original model class).

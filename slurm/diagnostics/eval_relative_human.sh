@@ -5,6 +5,12 @@
 #   sbatch --array=0-1 slurm/diagnostics/eval_relative_human.sh          # both models, val split
 #   SPLIT=test sbatch --array=0-1 slurm/diagnostics/eval_relative_human.sh
 #   MODEL=/path/ckpt.pt BONE_FIX=none sbatch slurm/diagnostics/eval_relative_human.sh   # one explicit model
+#   MODEL=<exp8 run>/train/checkpoints/00029.pt BONE_FIX=<exp8 run>/bone_fix.json TAG=student_vitb_e30_00029 \
+#     sbatch --array=0 slurm/diagnostics/eval_relative_human.sh    # the ViT-B student with its own bone fix (JSON path)
+# Model class: model.py's Model only (diag_common.load_model, incl. projector-fed ViT-B / ViT-S students). The
+#   original-repo class (models/multiHMR/multiHMR_672_L_anny.pt, train.py --model_class multi_hmr_original) is refused
+#   by load_model ("not a model.py Model"): its output has no path through this script.
+# PRINT_ONLY=1 bash slurm/diagnostics/eval_relative_human.sh   # print the resolved MODEL / TAG / OUT line and exit
 # Re-score from the cache (no GPU): python scripts/diagnostics/eval_relative_human.py --score_only --out <OUT> --iou 0.5
 # Env: MODEL, BONE_FIX (''), SPLIT (val), N (0 = all), OUT (results/diagnostics/relative_human_<split>_<tag>), RH_ROOT, TAG.
 #SBATCH --job-name=eval-rh
@@ -18,7 +24,7 @@
 #SBATCH --output=/netscratch/najib/multi-hmr/logs/eval_rh_%A_%a.out
 #SBATCH --error=/netscratch/najib/multi-hmr/logs/eval_rh_%A_%a.err
 set -euo pipefail
-mkdir -p /netscratch/najib/multi-hmr/logs
+[ "${PRINT_ONLY:-0}" = 1 ] || mkdir -p /netscratch/najib/multi-hmr/logs
 export NVIDIA_DRIVER_CAPABILITIES=all
 DRI_MOUNT=""; [ -d /dev/dri ] && DRI_MOUNT=",/dev/dri:/dev/dri"
 
@@ -32,7 +38,11 @@ IDX="${SLURM_ARRAY_TASK_ID:-0}"
 if [ -z "${MODEL:-}" ]; then
   MODEL="${MODELS[$IDX]}"; TAG="${TAG:-${TAGS[$IDX]}}"
 elif [ "$(basename "$(dirname "$MODEL")")" = checkpoints ]; then
-  TAG="${TAG:-$(basename "$(dirname "$(dirname "$MODEL")")")_$(basename "$MODEL" .pt)}"
+  # <run>/checkpoints/<epoch>.pt and the exp7 / exp8 layout <run>/train/checkpoints/<epoch>.pt -> <run>_<epoch>
+  # (before 12 Nov the second layout gave train_<epoch> for every run: one shared OUT, i.e. one shared cache)
+  RUN_DIR_="$(dirname "$(dirname "$MODEL")")"
+  [ "$(basename "$RUN_DIR_")" = train ] && RUN_DIR_="$(dirname "$RUN_DIR_")"
+  TAG="${TAG:-$(basename "$RUN_DIR_")_$(basename "$MODEL" .pt)}"
 else
   TAG="${TAG:-$(basename "$MODEL" .pt)}"
 fi
@@ -42,6 +52,7 @@ N="${N:-0}"
 RH_ROOT="${RH_ROOT:-/netscratch/najib/data/Relative_Human/RelativeHuman}"
 OUT="${OUT:-results/diagnostics/relative_human_${SPLIT}_${TAG}}"
 echo "[eval_rh] idx=${IDX} MODEL=${MODEL} TAG=${TAG} BONE_FIX='${BONE_FIX}' SPLIT=${SPLIT} N=${N} OUT=${OUT}"
+[ "${PRINT_ONLY:-0}" = 1 ] && exit 0
 
 COMMAND=$(cat <<EOF2
 set -euo pipefail

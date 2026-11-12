@@ -132,9 +132,48 @@
 #   LOCAL_CHECK=1 bash slurm/experiments/exp8_distill_vitb.sh         # anywhere: print what would run
 #   KD_T=8 VAL_LOSS=1 EVAL_FREQ=1 bash slurm/experiments/exp8_distill_vitb.sh   # one KD-temperature arm with a validation
 #                                                                     # loss every epoch (RUN ..._e30_T8); exp9 submits these
+#   KD_MODE=nokd VAL_LOSS=1 EVAL_FREQ=1 bash slurm/experiments/exp8_distill_vitb.sh        # ablation arms (RUN ..._e30_nokd /
+#   KD_MODE=supervised VAL_LOSS=1 EVAL_FREQ=1 bash slurm/experiments/exp8_distill_vitb.sh  # ..._e30_supervised); exp10 submits these
+#   POST_ONLY=1 KD_T=16 RUN=<the run folder's name> bash slurm/experiments/exp8_distill_vitb.sh   # post-steps 2-6 of a fully
+#                                                                     # trained run whose post-steps failed; no training
+#
+# KD_MODE (the distillation ablation, supervisor feedback of 12 Nov: "ViT-B without distillation, same data and schedule"):
+#   full (default)  the recipe above, unchanged: same train.py command, same RUN names as before KD_MODE existed.
+#   nokd            the two distillation LOSSES off (--lambda_kd 0 --lambda_kd_out 0), everything else the recipe: the
+#                   teacher is still loaded, its heads are copied and frozen FREEZE_HEADS_EPOCHS epochs, its bone fix is
+#                   applied in training. train.py then never runs the teacher in a training step (no 0 x kd term); with
+#                   VAL_LOSS=1 the kd / kd_out values on the validation images are logged as monitors outside total.
+#                   Isolates what the distillation losses contribute. RUN ..._nokd.
+#   supervised      no teacher in training at all: no --distill_teacher_ckpt, so no KD loss, no head copy (INIT_HEADS 0:
+#                   every head and the projector start at model.py's fresh initialisation), no head freeze (nothing was
+#                   copied, and frozen random heads could not learn), --bone_fix none (STUDENT_TRAIN_FIX none: the
+#                   teacher's fix undoes half-turns that live in the TEACHER's head weights, exp6; fresh heads carry no
+#                   flip, and whatever they learn is measured by the same post-step 2, which estimates the model's own
+#                   fix from its raw output, or none). The architecture is unchanged (--head_dim 1024 alone makes
+#                   model.py build feat_proj 768 -> 1024 and teacher-width heads: same parameters and FLOPs), as are the
+#                   NAVER ViT-B backbone init, data, targets, augmentation, schedule (START_2D_EPOCH 0 as the recipe).
+#                   Isolates everything the teacher contributes (losses + head initialisation). RUN ..._supervised.
+#   In both ablation modes LAMBDA_KD / LAMBDA_KD_OUT must be 0 (set by the mode; another value is refused), a RUN given by
+#   hand must contain _<mode>, and KD_MODE=full refuses both weights 0 and a RUN containing _nokd / _supervised, so an
+#   ablation can never be written into (or read as) a distilled run's folder. The TEACHER is still needed for the
+#   post-steps (cost comparison, final table) and its recipe check still runs (same targets, same labels); with
+#   TEACHER_REMEASURE=0 its numbers are read from an earlier measurement (exp10 points at the reported run's).
+#   After training the job stops before the post-steps unless train.log shows the mode: nokd needs '[distill] NO
+#   distillation loss' and no 'kd:' term in the 'EPOCH=' loss lines; supervised needs no '[distill]' line at all, no
+#   '[bone_fix] ON' line, no 'kd:' term, and '[model] projector-fed heads, no teacher'.
+# POST_ONLY=1 (same environment as the original run, incl. RUN / KD_T / KD_MODE): nothing is trained. Refused unless
+#   <RUN>/train/checkpoints/<EPOCHS-1, 5 digits>.pt (the last epoch's checkpoint) and <RUN>/train.log exist and the
+#   train.py command recorded as the last line of <RUN>/settings.txt equals the one these settings compose
+#   (ALLOW_SETTINGS_MISMATCH=1 turns that into a WARNING). The job repeats the checks, re-derives train_lines.log, runs
+#   the start-up-line guards on it and then steps 2-6 exactly as after a training; --time covers the post-steps only.
+#   A job that fails after its training prints this command as a NOTE (the checkpoints stay where they are).
+# NETWORK: every model build used to ask github.com for DINOv2's default branch (torch.hub), and one HTTP 504 from that
+#   probe killed the post-steps of a trained run (job 3717598). dinov2_hub.py now loads the cached hub code locally (no
+#   request) and retries network errors; each build prints one '[dinov2_hub] ...' line.
 # ENV (defaults): TEACHER (exp7 fix arm 00009), STUDENT_BACKBONE (dinov2_vitb14 | dinov2_vits14), STUDENT_INIT
-#   (models/multiHMR/multiHMR_672_B.pt; _S for ViT-S | dinov2), HEAD_DIM (1024), INIT_HEADS (1), STUDENT_TRAIN_FIX
-#   (teacher | none), EPOCHS (30), N_ITERS (1000), BATCH (8), LR (3e-5), LR_DECAY_EVERY (2/5 of EPOCHS), LAMBDA_KD (1.0),
+#   (models/multiHMR/multiHMR_672_B.pt; _S for ViT-S | dinov2), HEAD_DIM (1024), INIT_HEADS (1; supervised: 0),
+#   STUDENT_TRAIN_FIX (teacher | none; supervised: none), KD_MODE (full | nokd | supervised), POST_ONLY (0),
+#   ALLOW_SETTINGS_MISMATCH (0), EPOCHS (30), N_ITERS (1000), BATCH (8), LR (3e-5), LR_DECAY_EVERY (2/5 of EPOCHS), LAMBDA_KD (1.0),
 #   LAMBDA_KD_OUT (1.0), KD_T (4.0), FREEZE_HEADS_EPOCHS (5, at most EPOCHS-1), START_2D_EPOCH (0), ALPHA_DIST /
 #   ALPHA_TRANSL (5), MIX_RATIO (0.3), LABELS (threedpw_anny_v23/labels), FITS (parent of LABELS), MASK_3DPW_HANDS (1),
 #   MASK_3DPW_SHAPE (0), VAL_3DPW_N (300), EVAL_FREQ (5), VAL_LOSS (0; 1 = train.py --val_loss 1: the training criterion
@@ -142,8 +181,9 @@
 #   NB_MAX_CKPT (3), NUM_WORKERS (12), N_EST (200), SEED (0),
 #   BONES (auto), ON_GLOBAL_RISE (continue | safe), N_VIS (12), EVAL_TEST (1), EVAL_3DPW_N (0 = all), TEACHER_REMEASURE (1;
 #   0 = reuse TEACHER_TRACE_DIR / TEACHER_EVAL_LOG, default the teacher run's holdout_ft/ and eval_3dpw_test.log), BENCH
-#   (1), RUN (student_<vitb|vits>_from_<teacher tag>_e<EPOCHS>[_it<N_ITERS>][_b<BATCH>][_T<KD_T>][_shpmask][_nofix][_dinov2][_smoke];
-#   _T<KD_T> only when KD_T is not 4, so the reported T 4 runs keep their names and a KD_T sweep never lands in them),
+#   (1), RUN (student_<vitb|vits>_from_<teacher tag>_e<EPOCHS>[_it<N_ITERS>][_b<BATCH>][_T<KD_T>][_shpmask][_nofix][_dinov2][_nokd|_supervised][_smoke];
+#   _T<KD_T> only when KD_T is not 4, so the reported T 4 runs keep their names and a KD_T sweep never lands in them;
+#   _nofix is not added in supervised mode, where no training fix is part of the mode),
 #   TIME (from EPOCHS, see above), SMOKE (0; 1 = EPOCHS 1, N_ITERS 20, VAL_3DPW_N 20, N_VIS 2, N_EST 20, EVAL_3DPW_N 50,
 #   EVAL_FREQ 1 unless set), PARTITIONS, TORCH_CACHE (/netscratch/najib/torch_cache), MANIFEST, TASKS, N_LABEL_CHECK (300),
 #   ALLOW_RECIPE_MISMATCH (0), CHECK_ONLY, DRY_RUN, OVERWRITE, TABLE_ONLY, LOCAL_CHECK, IGNORE_PLAIN_SBATCH.
@@ -218,6 +258,25 @@ esac
 STUDENT_INIT="${STUDENT_INIT:-${REPO}/models/multiHMR/${NAVER_INIT}}"
 [ "${STUDENT_INIT}" = dinov2 ] || STUDENT_INIT="$(abs "${STUDENT_INIT}")"
 HEAD_DIM="${HEAD_DIM:-1024}"; nonneg HEAD_DIM "${HEAD_DIM}"
+# KD_MODE: full = the distilled student (default, unchanged) | nokd | supervised = the two ablation arms (header)
+KD_MODE="${KD_MODE:-full}"
+case "${KD_MODE}" in full|nokd|supervised) ;; *) echo "ERROR: KD_MODE=${KD_MODE} (full | nokd | supervised)"; exit 1 ;; esac
+POST_ONLY="${POST_ONLY:-0}"; onezero POST_ONLY "${POST_ONLY}"
+ALLOW_SETTINGS_MISMATCH="${ALLOW_SETTINGS_MISMATCH:-0}"; onezero ALLOW_SETTINGS_MISMATCH "${ALLOW_SETTINGS_MISMATCH}"
+is_zero () { [ "$(awk -v x="$1" 'BEGIN { print (x + 0 == 0) ? 1 : 0 }')" = 1 ]; }
+if [ "${KD_MODE}" != full ]; then   # both ablation arms: no distillation loss
+  LAMBDA_KD="${LAMBDA_KD:-0}"; LAMBDA_KD_OUT="${LAMBDA_KD_OUT:-0}"
+  posnum LAMBDA_KD "${LAMBDA_KD}"; posnum LAMBDA_KD_OUT "${LAMBDA_KD_OUT}"
+  if ! is_zero "${LAMBDA_KD}" || ! is_zero "${LAMBDA_KD_OUT}"; then
+    echo "ERROR: KD_MODE=${KD_MODE} means no distillation loss, but LAMBDA_KD=${LAMBDA_KD} LAMBDA_KD_OUT=${LAMBDA_KD_OUT}: unset them"; exit 1
+  fi
+fi
+if [ "${KD_MODE}" = supervised ]; then   # no teacher in training: no head copy, no teacher bone fix
+  INIT_HEADS="${INIT_HEADS:-0}"; STUDENT_TRAIN_FIX="${STUDENT_TRAIN_FIX:-none}"; FREEZE_HEADS_EPOCHS="${FREEZE_HEADS_EPOCHS:-0}"
+  [ "${INIT_HEADS}" = 0 ] || { echo "ERROR: KD_MODE=supervised trains without the teacher: INIT_HEADS=${INIT_HEADS} must be 0 (KD_MODE=nokd keeps the head copy)"; exit 1; }
+  [ "${STUDENT_TRAIN_FIX}" = none ] || { echo "ERROR: KD_MODE=supervised trains without the teacher: STUDENT_TRAIN_FIX=${STUDENT_TRAIN_FIX} must be none"; exit 1; }
+  [ "${FREEZE_HEADS_EPOCHS}" = 0 ] || { echo "ERROR: KD_MODE=supervised copies no heads: FREEZE_HEADS_EPOCHS=${FREEZE_HEADS_EPOCHS} must be 0"; exit 1; }
+fi
 INIT_HEADS="${INIT_HEADS:-1}"; onezero INIT_HEADS "${INIT_HEADS}"
 STUDENT_TRAIN_FIX="${STUDENT_TRAIN_FIX:-teacher}"
 case "${STUDENT_TRAIN_FIX}" in teacher|none) ;; *) echo "ERROR: STUDENT_TRAIN_FIX=${STUDENT_TRAIN_FIX} (teacher | none)"; exit 1 ;; esac
@@ -230,6 +289,10 @@ LR_DECAY_EVERY="${LR_DECAY_EVERY:-$(( EPOCHS * 2 / 5 > 0 ? EPOCHS * 2 / 5 : 1 ))
 LAMBDA_KD="${LAMBDA_KD:-1.0}"; posnum LAMBDA_KD "${LAMBDA_KD}"
 LAMBDA_KD_OUT="${LAMBDA_KD_OUT:-1.0}"; posnum LAMBDA_KD_OUT "${LAMBDA_KD_OUT}"
 KD_T="${KD_T:-4.0}"; posnum KD_T "${KD_T}"
+if [ "${KD_MODE}" = full ] && is_zero "${LAMBDA_KD}" && is_zero "${LAMBDA_KD_OUT}"; then
+  echo "ERROR: LAMBDA_KD=${LAMBDA_KD} and LAMBDA_KD_OUT=${LAMBDA_KD_OUT}: no distillation loss is the ablation arm, use KD_MODE=nokd"
+  echo "       (own RUN name ..._nokd; KD_MODE=full would name the run like a distilled student)"; exit 1
+fi
 FREEZE_HEADS_EPOCHS="${FREEZE_HEADS_EPOCHS:-$(( EPOCHS - 1 < 5 ? EPOCHS - 1 : 5 ))}"; nonneg FREEZE_HEADS_EPOCHS "${FREEZE_HEADS_EPOCHS}"
 START_2D_EPOCH="${START_2D_EPOCH:-0}"; nonneg START_2D_EPOCH "${START_2D_EPOCH}"
 ALPHA_DIST="${ALPHA_DIST:-5}"; posnum ALPHA_DIST "${ALPHA_DIST}"
@@ -288,11 +351,21 @@ SUFFIX=""
 # reported T 4 runs (jobs 3614191, 3623342) keep their folder names and a sweep value never overwrites them
 [ "$(awk -v t="${KD_T}" 'BEGIN { print (t + 0 == 4) ? 1 : 0 }')" = 1 ] || SUFFIX="${SUFFIX}_T${KD_T}"
 [ "${MASK_3DPW_SHAPE}" = 1 ] && SUFFIX="${SUFFIX}${SHAPE_TAG}"
-[ "${STUDENT_TRAIN_FIX}" = none ] && SUFFIX="${SUFFIX}_nofix"
+[ "${STUDENT_TRAIN_FIX}" = none ] && [ "${KD_MODE}" != supervised ] && SUFFIX="${SUFFIX}_nofix"
 [ "${STUDENT_INIT}" = dinov2 ] && SUFFIX="${SUFFIX}_dinov2"
+[ "${KD_MODE}" = full ] || SUFFIX="${SUFFIX}_${KD_MODE}"
 [ "${SMOKE}" = 1 ] && SUFFIX="${SUFFIX}_smoke"
 RUN="${RUN:-student_${BB_SHORT}_from_${TEACHER_TAG}_e${EPOCHS}${SUFFIX}}"
 case "${RUN}" in ''|*/*|.|..) echo "ERROR: RUN=${RUN} (one folder name, no /)"; exit 1 ;; esac
+# an ablation arm never writes into (or is read as) a distilled run's folder, and the other way round
+case "${KD_MODE}:${RUN}" in
+  full:*_nokd*|full:*_supervised*)
+    echo "ERROR: RUN=${RUN} names an ablation arm but KD_MODE is full: set KD_MODE=nokd / supervised (the run's own mode)"; exit 1 ;;
+  nokd:*_nokd*|supervised:*_supervised*|full:*) ;;
+  *) echo "ERROR: KD_MODE=${KD_MODE} but RUN=${RUN} does not contain _${KD_MODE}: an ablation arm must be recognisable by its folder name"; exit 1 ;;
+esac
+FINAL_CKPT_NAME="$(printf '%05d' $(( EPOCHS - 1 ))).pt"   # train.py names a checkpoint after its 0-based epoch
+[ "${POST_ONLY}" = 1 ] && [ "${OVERWRITE:-0}" = 1 ] && { echo "ERROR: POST_ONLY=1 with OVERWRITE=1: POST_ONLY keeps the run folder"; exit 1; }
 OUT="results/experiments/exp8_distill_vitb/${RUN}"
 OUT_ABS="$(abs "${OUT}")"
 STUDENT_LABEL="exp8_${RUN}"
@@ -304,6 +377,7 @@ EPOCH_MIN=$(( (N_ITERS * BATCH + 359) / 360 + 1 ))
 EVAL_MIN=30; [ "${EVAL_3DPW_N}" = 0 ] || EVAL_MIN=10
 N_EVALS=0; [ "${EVAL_TEST}" = 1 ] && N_EVALS=$(( 1 + TEACHER_REMEASURE ))
 NEED_MIN=$(( 60 + N_EVALS * EVAL_MIN + EPOCHS * EPOCH_MIN ))
+[ "${POST_ONLY}" = 1 ] && NEED_MIN=$(( 60 + N_EVALS * EVAL_MIN ))   # the post-steps only
 TIME="${TIME:-$(printf '%02d:%02d:00' $(( NEED_MIN / 60 )) $(( NEED_MIN % 60 )))}"
 [ "${HEAD_DIM}" = 0 ] || [ "${HEAD_DIM}" = "${BB_WIDTH}" ] && PROJ_EXPECTED=0 || PROJ_EXPECTED=1
 if [ "${INIT_HEADS}" = 1 ] && [ "${HEAD_DIM}" = 0 ]; then
@@ -324,10 +398,13 @@ else TRAIN_FIX_ARG="--bone_fix none"; fi
 HANDS_ARG=""; [ "${MASK_3DPW_HANDS}" = 1 ] && HANDS_ARG="--mask_3dpw_hands 1"
 SHAPE_ARG=""; [ "${MASK_3DPW_SHAPE}" = 1 ] && SHAPE_ARG="--mask_3dpw_shape 1"
 [ -n "${SHAPE_NAMES}" ] && SHAPE_ARG="${SHAPE_ARG} --mask_3dpw_shape_names ${SHAPE_NAMES}"
+# full / nokd: the teacher is loaded (nokd: both weights 0); supervised: no teacher flag at all
+KD_ARGS="--distill_teacher_ckpt ${TEACHER} ${HEADS_ARGS} --teacher_bf16 1 \
+--lambda_kd ${LAMBDA_KD} --lambda_kd_out ${LAMBDA_KD_OUT} --kd_temperature ${KD_T} --kd_softmax_dim channel"
+[ "${KD_MODE}" = supervised ] && KD_ARGS=""
 TRAIN_CMD="python train.py --train_data AnnyOne --train_n 0 --val_anny_n 100 --person_center head \
 --backbone ${STUDENT_BACKBONE} --img_size 672 --head_dim ${HEAD_DIM} ${INIT_ARGS} --freeze_backbone 0 \
---distill_teacher_ckpt ${TEACHER} ${HEADS_ARGS} --teacher_bf16 1 \
---lambda_kd ${LAMBDA_KD} --lambda_kd_out ${LAMBDA_KD_OUT} --kd_temperature ${KD_T} --kd_softmax_dim channel \
+${KD_ARGS} \
 ${TRAIN_FIX_ARG} --mask_helper_joints_train 1 --use_anny_shape 1 \
 --alpha_shape 20 --alpha_j2d 0.1 --alpha_v2d 0.1 --boost_neck_weight 4 --boost_hand_weight 4 \
 --rotmat_loss l1 --alpha_rotmat 0.1 --alpha_global_rot 0 --start_2d_epoch ${START_2D_EPOCH} \
@@ -695,6 +772,12 @@ for sec, lab, t, s, kind, rule in rows:
         checks.append((sec + ' ' + lab, met))
 smoke = bool(inp.get('smoke'))
 print('=== exp8 FINAL TABLE: teacher %s vs student %s' % (inp['teacher'], inp['student']))
+if inp.get('kd_mode', 'full') != 'full':
+    print('    ABLATION KD_MODE=%s: %s. The 95%% verdict below is printed for information; the arm is read against the '
+          'distilled student (scripts/analysis/kd_ablation_table.py)'
+          % (inp['kd_mode'], {'nokd': 'no distillation loss; teacher heads copied and frozen, teacher bone fix in training',
+                              'supervised': 'no teacher in training (no distillation loss, no head copy, no training bone fix)'
+                              }.get(inp['kd_mode'], '?')))
 print('    student evaluated with bone fix: %s; teacher with its own (checkpoint args)' % inp.get('student_fix'))
 if smoke:
     print('    SMOKE TEST: 20 training iterations, %s 3DPW-test images, %s estimation images: NOT a result'
@@ -765,6 +848,15 @@ bash_checks () {
   done
   [ "${MASK_3DPW_SHAPE}" = 1 ] && ! grep -q -- "--mask_3dpw_shape" "${REPO}/loss.py" \
     && { echo "REFUSED: loss.py has no --mask_3dpw_shape (git pull)"; fail=1; }
+  # the network-robust DINOv2 loader (job 3717598 lost its post-steps to an HTTP 504 of torch.hub's branch probe)
+  if [ ! -f "${REPO}/dinov2_hub.py" ] || ! grep -q "load_dinov2" "${REPO}/blocks/dinov2.py"; then
+    echo "REFUSED: dinov2_hub.py / blocks/dinov2.py without load_dinov2 (old copy: git pull)"; fail=1
+  fi
+  if [ "${KD_MODE}" != full ]; then   # the ablation arms need train.py's exp10 changes
+    grep -q "def kd_terms_active" "${REPO}/train.py" && grep -q "NO distillation loss" "${REPO}/train.py" \
+      && grep -q "projector-fed heads, no teacher" "${REPO}/train.py" \
+      || { echo "REFUSED: train.py predates KD_MODE=${KD_MODE} (no kd_terms_active / '[model] projector-fed heads, no teacher': git pull)"; fail=1; }
+  fi
   grep -q "train_sample" "${REPO}/scripts/diagnostics/diag_holdout_trace.py" \
     || { echo "REFUSED: diag_holdout_trace.py has no --select train_sample (git pull)"; fail=1; }
   for f in scripts/diagnostics/compute_bone_fix.py scripts/analysis/model_cost.py bone_fix.py; do
@@ -844,9 +936,31 @@ bash_checks () {
     done
   fi
   # train.py keeps only the NB_MAX_CKPT highest epoch numbers in its checkpoint folder (exp7's guard)
-  local ck old
+  local ck old rec
   ck="${OUT_ABS}/train/checkpoints"
-  if compgen -G "${ck}/*.pt" >/dev/null; then
+  if [ "${POST_ONLY}" = 1 ]; then
+    # the reverse of the guard below: the run must be fully trained, and be the run these settings describe
+    if [ ! -s "${ck}/${FINAL_CKPT_NAME}" ]; then
+      old="$(cd "${ck}" 2>/dev/null && ls -1 -- *.pt 2>/dev/null | tr '\n' ' ' || true)"
+      echo "REFUSED: POST_ONLY=1 but ${ck}/${FINAL_CKPT_NAME} (the checkpoint of epoch ${EPOCHS}, the last) is missing"
+      echo "         (found: ${old:-no checkpoint}): the training did not finish, or RUN / EPOCHS differ from the run's"
+      fail=1
+    fi
+    [ -s "${OUT_ABS}/train.log" ] || { echo "REFUSED: POST_ONLY=1 but ${OUT_ABS}/train.log is missing or empty"; fail=1; }
+    if [ ! -s "${OUT_ABS}/settings.txt" ]; then
+      echo "REFUSED: POST_ONLY=1 but ${OUT_ABS}/settings.txt is missing: cannot check that these settings are the run's"; fail=1
+    else
+      rec="$(tail -n 1 "${OUT_ABS}/settings.txt")"
+      if [ "${rec}" != "${TRAIN_CMD}" ]; then
+        if [ "${ALLOW_SETTINGS_MISMATCH}" = 1 ]; then echo "WARNING (ALLOW_SETTINGS_MISMATCH=1): the train.py command recorded in settings.txt differs from these settings:"
+        else echo "REFUSED: POST_ONLY=1 needs the environment of the original run: the train.py command recorded in"
+             echo "         ${OUT_ABS}/settings.txt differs from the one these settings compose (< recorded, > now):"; fail=1; fi
+        diff <(printf '%s\n' "${rec}" | sed 's/ --/\n--/g') <(printf '%s\n' "${TRAIN_CMD}" | sed 's/ --/\n--/g') | grep '^[<>]' | sed 's/^/           /' || true
+      else
+        echo "    POST_ONLY=1: ${ck}/${FINAL_CKPT_NAME} present; settings.txt records the same train.py command"
+      fi
+    fi
+  elif compgen -G "${ck}/*.pt" >/dev/null; then
     old="$(cd "${ck}" && ls -1 -- *.pt | tr '\n' ' ')"; old="${old% }"
     if [ "${OVERWRITE}" = 1 ]; then
       echo "    OVERWRITE=1: ${ck} holds ${old}; the job moves ${OUT_ABS} to ${RUN}_replaced_<jobid> before training"
@@ -890,6 +1004,13 @@ print_settings () {
   echo "    post: bone fix on ${N_EST} training images (seed ${SEED}, BONES ${BONES}, ON_GLOBAL_RISE ${ON_GLOBAL_RISE});"\
        "3DPW test ${EVAL_TEST} (${EVAL_3DPW_N} images, 0 = all); teacher re-measured ${TEACHER_REMEASURE}; bench ${BENCH}"
   [ "${SMOKE}" = 1 ] && echo "    SMOKE=1: a start-up / pipeline test, not a result"
+  case "${KD_MODE}" in
+    nokd) echo "    KD_MODE=nokd (ABLATION): both distillation losses off; the teacher's heads are still copied (frozen"\
+               "${FREEZE_HEADS_EPOCHS} epochs) and its bone fix still applied in training; the teacher is not run in a training step" ;;
+    supervised) echo "    KD_MODE=supervised (ABLATION): no teacher in training: no distillation loss, no head copy, no head"\
+               "freeze, --bone_fix none; same architecture (head_dim ${HEAD_DIM}), init, data and schedule; teacher used by the post-steps only" ;;
+  esac
+  [ "${POST_ONLY}" = 1 ] && echo "    POST_ONLY=1: no training; post-steps 2-6 on ${OUT}/train/checkpoints/${FINAL_CKPT_NAME}"
   echo "    output ${OUT}"
 }
 
@@ -902,6 +1023,7 @@ write_table_inputs () {   # deterministic paths of every table input (bash only)
   cat > "${OUT_ABS}/table_inputs.json" <<EOF3
 {
   "run": "${RUN}",
+  "kd_mode": "${KD_MODE}",
   "teacher": "${TEACHER}",
   "student": "$(cat "${OUT_ABS}/last_checkpoint.txt" 2>/dev/null || echo "${OUT_ABS}/train/checkpoints/<last>.pt")",
   "student_fix": "$(cat "${OUT_ABS}/student_fix_arg.txt" 2>/dev/null || echo '?')",
@@ -925,7 +1047,7 @@ EOF3
 if [ "${LOCAL_CHECK}" = 1 ]; then
   print_settings
   echo "--- LOCAL_CHECK=1: no path / label / teacher / queue checks; composed commands only"
-  echo "--- train.py (job step 1):"
+  echo "--- train.py (job step 1$([ "${POST_ONLY}" = 1 ] && echo '; NOT run with POST_ONLY=1, compared with the last line of settings.txt' || true)):"
   pretty "${TRAIN_CMD}"
   echo "--- post-steps (job steps 2-5):"
   echo "python scripts/diagnostics/diag_holdout_trace.py --ckpt <last> --out ${OUT}/est_trace --select train_sample --n ${N_EST}"\
@@ -1014,6 +1136,7 @@ if [ "${MODE}" = submit ]; then
     echo "NOT SUBMITTED"; exit 1
   fi
   [ "${CHECK_ONLY}" = 1 ] && { echo "CHECK_ONLY=1: every check passed; nothing submitted"; exit 0; }
+  [ "${POST_ONLY}" = 1 ] && echo "    POST_ONLY=1: the job trains nothing; it runs post-steps 2-6 on ${OUT}/train/checkpoints/${FINAL_CKPT_NAME}"
   CMD=(sbatch --export=ALL,EXP8_JOB=1 --job-name="exp8-${RUN}" --time="${TIME}" --partition="${PARTITIONS}"
        --exclude=gifu,glendale "${SELF}")
   echo "--- submit: ${CMD[*]}   (from ${PWD}; the settings above travel as environment variables)"
@@ -1032,6 +1155,15 @@ export CONDA_ENV=multihmr
 print_settings
 echo "--- job ${SLURM_JOB_ID} on ${SLURMD_NODENAME:-$(hostname)}; checks before any GPU work"
 bash_checks || { echo "REFUSED: nothing trained"; exit 1; }
+post_only_hint () {   # EXIT trap: a failure after a finished training keeps the checkpoints; say how to finish
+  local rc=$?
+  if [ "${rc}" != 0 ] && [ -s "${OUT_ABS}/train/checkpoints/${FINAL_CKPT_NAME}" ] && [ ! -s "${OUT_ABS}/final_table.json" ]; then
+    echo "NOTE: exit ${rc}, but the last epoch's checkpoint ${OUT}/train/checkpoints/${FINAL_CKPT_NAME} exists: nothing"
+    echo "      trained is lost. Finish the post-steps without retraining (same environment variables as this run):"
+    echo "        POST_ONLY=1 <the variables of this run, e.g. KD_T / KD_MODE / RUN / EVAL_FREQ / VAL_LOSS> bash ${SELF}"
+  fi
+}
+trap post_only_hint EXIT
 if [ "${OVERWRITE}" = 1 ] && [ -e "${OUT_ABS}" ]; then
   mv "${OUT_ABS}" "${OUT_ABS}_replaced_${SLURM_JOB_ID}"
   echo "OVERWRITE=1: moved the old ${OUT} to ${OUT}_replaced_${SLURM_JOB_ID}"
@@ -1073,6 +1205,11 @@ with open(out, 'w') as f:
 print('wrote', out, ':', len(idx), 'images excluded')
 PY
 TRAIN_CMD="${TRAIN_CMD}"
+if [ "${POST_ONLY}" = 1 ]; then
+  echo "=== 1. TRAINING SKIPPED (POST_ONLY=1): post-steps on the finished run ${OUT}"
+  [ -s "${OUT}/train.log" ] || { echo "ERROR: ${OUT}/train.log missing"; exit 1; }
+  echo "POST_ONLY job ${SLURM_JOB_ID}, \$(date -Is), git \$(git rev-parse --short HEAD 2>/dev/null || echo ?): post-steps 2-6 re-run, nothing trained" >> "${OUT}/post_only.txt"
+else
 {
   echo "exp8_distill_vitb ${RUN}, job ${SLURM_JOB_ID}, \$(date -Is), git \$(git rev-parse --short HEAD 2>/dev/null || echo ?)"
   echo "TEACHER=${TEACHER} STUDENT_BACKBONE=${STUDENT_BACKBONE} STUDENT_INIT=${STUDENT_INIT} HEAD_DIM=${HEAD_DIM} INIT_HEADS=${INIT_HEADS}"
@@ -1080,7 +1217,7 @@ TRAIN_CMD="${TRAIN_CMD}"
   echo "LAMBDA_KD=${LAMBDA_KD} LAMBDA_KD_OUT=${LAMBDA_KD_OUT} KD_T=${KD_T} FREEZE_HEADS_EPOCHS=${FREEZE_HEADS_EPOCHS} START_2D_EPOCH=${START_2D_EPOCH}"
   echo "ALPHA_DIST=${ALPHA_DIST} ALPHA_TRANSL=${ALPHA_TRANSL} LABELS=${LABELS} MIX_RATIO=${MIX_RATIO} MASK_3DPW_HANDS=${MASK_3DPW_HANDS} MASK_3DPW_SHAPE=${MASK_3DPW_SHAPE}"
   echo "N_EST=${N_EST} SEED=${SEED} BONES=${BONES} ON_GLOBAL_RISE=${ON_GLOBAL_RISE} EVAL_TEST=${EVAL_TEST} EVAL_3DPW_N=${EVAL_3DPW_N} TEACHER_REMEASURE=${TEACHER_REMEASURE} SMOKE=${SMOKE} TIME=${TIME}"
-  echo "EVAL_FREQ=${EVAL_FREQ} VAL_LOSS=${VAL_LOSS} VAL_3DPW_N=${VAL_3DPW_N}"
+  echo "EVAL_FREQ=${EVAL_FREQ} VAL_LOSS=${VAL_LOSS} VAL_3DPW_N=${VAL_3DPW_N} KD_MODE=${KD_MODE}"
   echo "\${TRAIN_CMD}"
 } > "${OUT}/settings.txt"
 
@@ -1089,18 +1226,37 @@ T0=\$(date +%s)
 eval "\${TRAIN_CMD}" > "${OUT}/train.log" 2>&1 \\
     || { echo "ERROR: training failed; tail of ${OUT}/train.log:"; tail -n 40 "${OUT}/train.log"; exit 1; }
 echo "training wall time: \$(( \$(date +%s) - T0 )) s"
+fi
 tr '\r' '\n' < "${OUT}/train.log" > "${OUT}/train_lines.log"
-grep -E "^\[distill\]|^\[pretrained\]|^\[bone_fix\]|^\[mixed\]|^\[age_balance\]|^\[loss\] mask_3dpw|^\[speed\]|^Loaded .*3DPW-Anny|^3DPW-Anny val" "${OUT}/train_lines.log" || true
+grep -E "^\[distill\]|^\[model\] projector-fed|^\[dinov2_hub\]|^\[pretrained\]|^\[bone_fix\]|^\[mixed\]|^\[age_balance\]|^\[loss\] mask_3dpw|^\[speed\]|^Loaded .*3DPW-Anny|^3DPW-Anny val" "${OUT}/train_lines.log" || true
 echo "--- throughput and in-training evaluation (V0; student with its training fix)"
 grep -E "\[throughput\]|EVAL METRICS| - (pve|pa_pve|mpjpe|recall): |^\[val_loss\]|Error|Traceback" "${OUT}/train_lines.log" || true
 echo "NaN/Inf gradient steps skipped: \$(grep -c 'NaN/Inf GRADIENTS' "${OUT}/train_lines.log" || true)"
 MISSING=""
+if [ "${KD_MODE}" = supervised ]; then
+  # no teacher in training: not one '[distill]' line, no bone fix, the projector built from --head_dim alone
+  grep -qE "^\[distill\]" "${OUT}/train_lines.log" && MISSING="\${MISSING} (a '[distill]' line: a teacher was loaded, not the supervised arm);"
+  grep -qE "^\[bone_fix\] ON" "${OUT}/train_lines.log" && MISSING="\${MISSING} (a '[bone_fix] ON' line: a bone fix was applied in training);"
+  if [ "${PROJ_EXPECTED}" = 1 ] && ! grep -qE "^\[model\] projector-fed heads, no teacher" "${OUT}/train_lines.log"; then
+    MISSING="\${MISSING} '[model] projector-fed heads, no teacher' (no feat_proj, or an old train.py);"
+  fi
+else
 grep -qE "^\[distill\] teacher loaded from" "${OUT}/train_lines.log" || MISSING="\${MISSING} '[distill] teacher loaded from';"
 if [ "${INIT_HEADS}" = 1 ] && ! grep -qE "^\[distill\] heads initialised from teacher" "${OUT}/train_lines.log"; then
   MISSING="\${MISSING} '[distill] heads initialised from teacher';"
 fi
 if [ "${PROJ_EXPECTED}" = 1 ] && ! grep -qE "^\[distill\] projector-fed heads" "${OUT}/train_lines.log"; then
   MISSING="\${MISSING} '[distill] projector-fed heads' (no feat_proj);"
+fi
+fi
+if [ "${KD_MODE}" = nokd ] && ! grep -qE "^\[distill\] NO distillation loss" "${OUT}/train_lines.log"; then
+  MISSING="\${MISSING} '[distill] NO distillation loss' (the KD weights were not both 0, or an old train.py);"
+fi
+if [ "${KD_MODE}" != full ] && grep -qE "^EPOCH=[0-9]+ - i=.*[|] kd(_out)?: " "${OUT}/train_lines.log"; then
+  MISSING="\${MISSING} (a 'kd:' / 'kd_out:' term in the training loss lines: a distillation term was computed in training);"
+fi
+if [ "${KD_MODE}" = full ] && [ "${POST_ONLY}" = 1 ] && ! grep -qE "^EPOCH=[0-9]+ - i=.*[|] kd: " "${OUT}/train_lines.log"; then
+  MISSING="\${MISSING} a 'kd:' term in the training loss lines (this folder is not a distilled run: KD_MODE?);"
 fi
 if [ "${STUDENT_INIT}" != dinov2 ] && ! grep -qE "^\[pretrained\] backbone: " "${OUT}/train_lines.log"; then
   MISSING="\${MISSING} '[pretrained] backbone:' (student init not loaded);"
@@ -1127,6 +1283,9 @@ grep -qE "^\[age_balance\] exclusion-only" "${OUT}/train_lines.log" \\
 LAST=\$(ls "${OUT_ABS}/train/checkpoints/"*.pt 2>/dev/null | sort | tail -n 1 || true)
 [ -n "\${LAST}" ] || { echo "ERROR: training produced no checkpoint"; exit 1; }
 echo "last checkpoint: \${LAST}"
+if [ "${POST_ONLY}" = 1 ] && [ "\$(basename "\${LAST}")" != "${FINAL_CKPT_NAME}" ]; then
+  echo "ERROR: POST_ONLY=1 expects ${FINAL_CKPT_NAME} (epoch ${EPOCHS}) as the last checkpoint, found \$(basename "\${LAST}")"; exit 1
+fi
 
 trace () {   # \$1 = checkpoint, \$2 = output dir, rest = extra args
   local CK="\$1" OD="\$2"; shift 2
@@ -1173,6 +1332,23 @@ PY
        fi
      else
        echo "    continuing with the full fix (as the teacher's own exp6 fix)"
+     fi ;;
+  2) if [ "${KD_MODE}" = supervised ]; then
+       # fresh heads may detect nobody on the estimation images: the arm still gets its evaluation and its table, in
+       # the configuration it was trained in (no fix). Every other mode stops here, as before.
+       echo "WARNING: compute_bone_fix.py exit 2 (no usable estimation dump: no matched person in the ${N_EST} training images?)."
+       echo "    KD_MODE=supervised: no fix can be estimated; the arm is evaluated as trained, with --bone_fix none"
+       python - "${OUT}/bone_fix.json" "\${LAST}" <<'PY'
+import sys, datetime
+import bone_fix as bfl
+bfl.save(sys.argv[1], {}, status='NO_ESTIMATE', source=dict(ckpt=sys.argv[2]),
+         note='compute_bone_fix.py exit 2: no estimation dump (no matched person?); evaluated with --bone_fix none',
+         created=datetime.datetime.now().isoformat(timespec='seconds'))
+print('wrote', sys.argv[1], '(no bones)')
+PY
+       STUDENT_FIX=none
+     else
+       echo "ERROR: compute_bone_fix.py exit \${RC}"; exit 1
      fi ;;
   *) echo "ERROR: compute_bone_fix.py exit \${RC}"; exit 1 ;;
 esac

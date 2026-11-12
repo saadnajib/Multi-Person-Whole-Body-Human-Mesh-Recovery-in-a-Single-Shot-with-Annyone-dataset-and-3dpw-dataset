@@ -972,6 +972,119 @@ training wrapper does) and says so in a note line; `kd_out` is skipped on a batc
 rotmat shapes differ (then a `skipped` line). Nothing of this was run: the first job log must show
 `[val_loss] epoch=000 ds=annyone-holdout-1 ...` and `... ds=threedpw_anny-validation-1 ...` after the first epoch.
 
+### exp10: distillation ablation, validation-based sweep reporting, student on Relative Human (supervisor feedback, 12 Nov)
+
+**Why.** The supervisor's comments on the thesis draft: (1) "Knowledge distillation: missing important ablation: ViT-B
+without distillation. Same training data and schedule." (2) "Temperature sweep reports results on the 3DPW test set.
+Hyperparameter selection should use validation data. [...] Clarify how the final temperature and training duration
+were selected." (3) "Age/gender evaluation is only for the teacher. [...] evaluate the student on Relative Human too."
+(4) "Multi-person evaluation: [...] detection recall, occlusions, crowded scenes."
+
+**1. The ablation: `KD_MODE` in `slurm/experiments/exp8_distill_vitb.sh`, launcher `slurm/experiments/exp10_kd_ablation.sh`.**
+`KD_MODE=full` (default) composes the same `train.py` command and the same RUN names as before (tested against
+commit `fd7f182`). Two arms, each one exp8 job with every post-step (own bone fix, holdout traces, model cost,
+3DPW-test evaluation, `final_table.json`), `EVAL_FREQ=1` and `VAL_LOSS=1` as in the sweep:
+
+| arm | `train.py` differs from the reported recipe by | isolates | does not isolate |
+|---|---|---|---|
+| `nokd` (RUN `..._e30_nokd`) | `--lambda_kd 0 --lambda_kd_out 0`; nothing else (teacher loaded, its heads copied and frozen 5 epochs, its bone fix in training) | what the two distillation LOSSES (feature KL, output L1) add on top of the head transfer | the teacher as a whole: the 14.0 M head parameters still start as the teacher's |
+| `supervised` (RUN `..._e30_supervised`) | no `--distill_teacher_ckpt`, `--init_heads_from_teacher`, `--freeze_heads_epochs`, `--teacher_bf16`, `--lambda_kd*`, `--kd_*`; `--bone_fix none` | everything the teacher contributes (losses + head initialisation) | the two parts separately (that is `nokd`), and a schedule tuned for fresh heads (lr 3e-5, 2D terms from epoch 0, 30 epochs are the transferred-head recipe) |
+
+Unchanged in both: ViT-B backbone from NAVER's `multiHMR_672_B.pt` (backbone only), `--head_dim 1024` (model.py
+builds `feat_proj` 768 -> 1024 and teacher-width heads from that flag alone, so parameters and FLOPs equal the
+Student's: 101.38 M, 603.3 GFLOPs), data (AnnyOne without the 55 manifest images + 30% 3DPW-train, v23), targets,
+loss weights, colour jitter, seed 0, 30 x 1000 x batch 8, lr 3e-5 (x0.5 every 12 epochs).
+- *Why `--bone_fix none` in `supervised`:* the teacher's fix undoes half-turns that live in the TEACHER's head weights
+  (exp6: neck02 / head / metacarpal1.L / finger4-1.R of the v5 lineage; v10, trained from other heads, flipped other
+  bones). Fresh heads carry no flip, and passing the teacher's fix would be teacher information. Whatever the fresh
+  heads learn is measured by the same post-step 2 as for every model: the model's OWN fix is estimated from its raw
+  output on 200 training images (or none). If that estimate is impossible (no matched person on the estimation
+  images), the supervised arm is evaluated as trained, with `--bone_fix none`, and its table is still written.
+- *No head freeze in `supervised`:* nothing was copied (train.py freezes only tensors copied from the teacher), and
+  frozen random heads could not learn.
+- *`train.py` changes (default behaviour identical):* `kd_terms_active(args)`; with both weights 0 the teacher is not
+  run in the training step (no `0 x kd` term whose gradient could be `0 x inf`, one ViT-L forward saved per step) and
+  one line says so (`[distill] NO distillation loss: ...`); with `--val_loss 1` the `kd` / `kd_out` values on the
+  validation images are still logged, as monitors outside `total` (a `note kd:` line); without a teacher and with
+  `--head_dim`, one line `[model] projector-fed heads, no teacher: ...`. exp8 stops before the post-steps unless
+  train.log shows the mode (nokd: that line and no `kd:` term in the `EPOCH=` lines; supervised: no `[distill]`
+  line, no `[bone_fix] ON`, no `kd:` term, the `[model]` line).
+- *Teacher numbers:* exp10 sets `TEACHER_REMEASURE=0` and reads the reported run's `holdout_teacher/` and
+  `eval_3dpw_test_teacher.log` (exp8 refuses unless that log is this teacher on these labels); `TEACHER_REUSE=0`
+  re-measures.
+- *Guards:* an ablation mode refuses non-zero KD weights and a RUN without `_<mode>`; `full` refuses both weights 0
+  and a RUN containing `_nokd` / `_supervised`; a folder that already holds checkpoints is refused as before.
+
+**2. Robustness (the T 16 arm, job 3717598: trained, then `urllib.error.HTTPError: HTTP Error 504`).** Cause, read
+in `torch.hub._parse_repo_info`: `torch.hub.load('facebookresearch/dinov2', name)` without a branch opens
+`https://github.com/facebookresearch/dinov2/tree/main/` on EVERY model build, even with the code cached, and
+re-raises any HTTP error other than 404. Every post-step builds a model. Fix: `dinov2_hub.load_dinov2`
+(`blocks/dinov2.py`, `multi_hmr_anny/encoder.py`): the cached hub code is loaded with `source='local'` (no request),
+network errors are retried with backoff, one `[dinov2_hub] ...` line per build. `POST_ONLY=1` (exp8, same
+environment as the original run) re-runs only post-steps 2-6 of a fully trained run folder: refused unless the last
+epoch's checkpoint and train.log exist and the `train.py` command recorded in `settings.txt` equals the one the
+settings compose; a job that fails after its training prints the `POST_ONLY` command.
+
+**3. Validation-based reporting.** `scripts/analysis/sweep_validation_table.py`: per run folder the FINAL-epoch
+in-training validation PVE / PA-PVE / MPJPE / recall on `threedpw_anny-validation-1` (300 images of the 3DPW
+validation split) and `annyone-holdout-1` (100 images), the final validation loss, and the epoch with the lowest
+3DPW-validation PVE; then the T with the lowest final 3DPW-validation PVE and the spread across T, and the 30- vs
+60-epoch runs by training length. The T 16 arm has these numbers although its post-steps failed.
+`scripts/analysis/kd_ablation_table.py`: reported Student, the sweep's T 4 arm, `nokd`, `supervised` x (validation
+metrics, validation loss incl. the task part without the KD terms, final holdout V1 and 3DPW-test metrics), with the
+differences nokd - T4, supervised - nokd, supervised - T4 and the run-to-run noise T4 - reported; a missing run
+prints as `pending`.
+
+**4. Student on Relative Human; recall by crowding.** `slurm/diagnostics/eval_relative_human.sh` evaluates the
+ViT-B student as it is (`diag_common.load_model` rebuilds `feat_proj` and the 1024-wide heads from the saved args;
+`BONE_FIX=<json>` replaces the checkpoint's training fix by the student's own `bone_fix.json`, as the video
+pipeline does). The script's default TAG for `<run>/train/checkpoints/<epoch>.pt` was `train_<epoch>` for every run
+(one shared output folder and prediction cache); it is now `<run>_<epoch>`, and the command below names the folder
+explicitly. The released baseline `models/multiHMR/multiHMR_672_L_anny.pt` is NOT supported by this evaluation:
+`load_model` refuses the original Multi_HMR class, and its output dict has no path through the script.
+`scripts/analysis/rh_recall_by_crowd.py`: recall by labelled people per image (1, 2, 3-4, 5-8, 9+) from one or more
+`per_person.csv` (Final: overall 0.647; 0.762 / 0.785 / 0.678 / 0.566 / 0.453).
+
+**Cost.** [Likely] 6-7 h training per ablation arm on an L40S incl. the 30 in-training evaluations (sweep arms: 7.3 h
+total on an L40S, 13.3 h on an RTX A6000; these arms skip the teacher forward in training), plus ~40 min of
+post-steps; `--time 16:00:00`. T 16 `POST_ONLY`: ~1 h (`--time 02:00:00`). Relative Human: ~15 min. The three
+collectors: seconds on the login node.
+
+**Commands** (repo root on the cluster, after `git pull` and `conda activate multihmr`):
+
+```
+# now (CPU, login node): validation-based table of the sweep and of the training length
+python scripts/analysis/sweep_validation_table.py "results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT*_sweep" results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30 results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60 --out results/experiments/exp10_kd_ablation/validation
+# the two ablation arms
+CHECK_ONLY=1 bash slurm/experiments/exp10_kd_ablation.sh
+bash slurm/experiments/exp10_kd_ablation.sh
+# the T 16 sweep arm: post-steps only
+POST_ONLY=1 KD_T=16 VAL_LOSS=1 EVAL_FREQ=1 RUN=student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT16_sweep CHECK_ONLY=1 bash slurm/experiments/exp8_distill_vitb.sh
+POST_ONLY=1 KD_T=16 VAL_LOSS=1 EVAL_FREQ=1 RUN=student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT16_sweep bash slurm/experiments/exp8_distill_vitb.sh
+# the student on Relative Human (validation split), with its own bone fix
+MODEL=/netscratch/najib/multi-hmr/results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/train/checkpoints/00029.pt BONE_FIX=/netscratch/najib/multi-hmr/results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/bone_fix.json TAG=student_vitb_e30_00029 sbatch --array=0 slurm/diagnostics/eval_relative_human.sh
+# after the jobs end (CPU, login node)
+python scripts/analysis/kd_ablation_table.py --reported results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30 --sweep_t4 results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT4_sweep --nokd results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_nokd --supervised results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_supervised --out results/experiments/exp10_kd_ablation
+python scripts/analysis/plot_loss_curves.py results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_nokd results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_supervised --out results/experiments/exp10_kd_ablation/loss_curves
+python scripts/analysis/kd_temperature_sweep.py --runs "results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT*_sweep" --reported results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30 --out results/experiments/exp9_kd_temperature
+python scripts/analysis/rh_recall_by_crowd.py student=results/diagnostics/relative_human_val_student_vitb_e30_00029/per_person.csv final=results/diagnostics/relative_human_val_exp7_v5_final_00009/per_person.csv --out results/analysis/rh_recall_by_crowd
+```
+
+**Tests.** `python -m pytest -q tests/test_exp10_kd_ablation.py` (CPU): the default mode against commit `fd7f182`
+(whole LOCAL_CHECK output, 11 settings), each mode's flags / RUN / refusals, the exp10 launcher, exp8's job mode,
+POST_ONLY and a submission on a fake cluster (stub srun / sbatch / squeue / python; the real exp8 script runs end to
+end), `dinov2_hub` with a fake and the real `torch.hub`, `kd_terms_active`, the three collectors, the Relative
+Human TAG and a JSON bone-fix path.
+
+**Risks (nothing of this ran on a GPU).** (a) `supervised`: fresh heads at lr 3e-5 for 30 epochs may train poorly
+or skip many NaN steps; read `NaN/Inf gradient steps skipped` and the first epochs' validation recall. (b) the
+`kd` / `kd_out` monitor in the nokd validation loss is new code on the GPU path (`val_loss_step`). (c) `source='local'`
+of torch.hub is the documented path but was only run here against a toy hubconf, not the cached DINOv2 code; the
+first `[dinov2_hub] ... built from the local hub cache` line in a train.log proves it; `DINOV2_HUB_SOURCE=github`
+restores the old call (with retries). (d) POST_ONLY's settings check assumes the T 16 run's `settings.txt` ends
+with the train.py command exp8 composed on 6 Nov (exp8 has not changed since `fa6318d`);
+`ALLOW_SETTINGS_MISMATCH=1` turns a difference into a warning after reading the printed diff.
+
 ## 3. Verified in code
 
 Readers' facts. Line numbers refer to `89db760`, whose `.py` files are identical to `0d8ef72`. The experiment
