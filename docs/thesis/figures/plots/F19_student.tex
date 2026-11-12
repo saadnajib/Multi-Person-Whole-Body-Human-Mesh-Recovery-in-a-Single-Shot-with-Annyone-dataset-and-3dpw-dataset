@@ -17,7 +17,7 @@
   grid=major, grid style={gray!20},
   tick label style={font=\footnotesize}, label style={font=\small}, title style={font=\small},
 ]
-\nextgroupplot[title={AnnyOne holdout (in training, V0)}, ymin=70, ymax=180]
+\nextgroupplot[title={AnnyOne holdout (in training)}, ymin=70, ymax=180]
 \draw[densely dotted, blue!70!black] (axis cs:3,\HoldVzeroLastFinal) -- (axis cs:32,\HoldVzeroLastFinal)
   node[pos=0.98, anchor=south east, font=\scriptsize] {teacher (\HoldVzeroLastFinal)};
 \addplot[color=red!70!black, mark=triangle*, mark size=2pt, thick] coordinates {(5,165.1) (10,170.0) (15,139.5) (20,133.0) (25,130.5) (30,122.8)};
@@ -27,9 +27,8 @@
 \addplot[color=red!70!black, mark=triangle*, mark size=2pt, thick] coordinates {(5,104.9) (10,101.5) (15,93.0) (20,90.9) (25,88.0) (30,87.7)};
 \end{groupplot}
 \end{tikzpicture}
-\caption[The Student's error per epoch against the teacher's]{The Student's PVE during training, every five epochs:
-left the AnnyOne holdout as evaluated during training (setting V0), right the corrected 3DPW validation labels.
-Dotted: the teacher's value at the last epoch of its own training (Figure~\ref{fig:val-curves}). The heads were
-frozen in the first five epochs. One run, no seed; values from the training log.}
+\caption[The student's error per epoch against the teacher's]{The student's PVE during training, every five epochs,
+on the AnnyOne holdout (3DPW protocol) and the 3DPW validation images. Dotted: the teacher's value at the last epoch
+of its own training (Figure~\ref{fig:val-curves}).}
 \label{fig:student-curves}
 \end{figure}

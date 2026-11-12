@@ -8,45 +8,48 @@
 % Demo spread: jobs 3612078 (Final) vs 3613617 (Final-masked), 12 images, [shape] lines (H 0a); Base not reported.
 % Final-partial-mask = job 3616821 (logs/eval_rh_3616821_0.out; data/CLUSTER_ANSWERS.md "19 Oct, 01:20"): teen age 0.515,
 % heights adult 0.527 / kid 0.497 / baby 0.504, matched 1086 adults + 117 kids + 67 babies = 1,270 (all groups 1,341);
+% 12 Nov revision: descriptive names, pending Student column, caveats in the table note.
 % no demo run for it (not needed once gender failed the rule) -> n/m.
 \begin{table}[!tbp]
-\centering\footnotesize
-\begin{tabular}{@{}lrrrr@{}}
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrrc@{}}
 \toprule
- & Base & Final & \shortstack[r]{Final-\\masked} & \shortstack[r]{Final-\\partial-mask} \\
+ & \shortstack[r]{Initial\\model} & Teacher & \shortstack[r]{Teacher,\\full mask} & \shortstack[r]{Teacher,\\partial mask} & Student \\
 \midrule
-Recall (\%) & \RHRecallBase & \RHRecallFinal & \RHRecallMasked & \RHRecallPartial \\
-Gender accuracy (\%) & \RHGenderBase & \RHGenderFinal & \RHGenderMasked & \RHGenderPartial \\
-\quad mean gender, men (male = 0) & \RHMenGenderBase & \RHMenGenderFinal & \RHMenGenderMasked & \RHMenGenderPartial \\
-\quad mean gender, women (female = 1) & \RHWomenGenderBase & \RHWomenGenderFinal & \RHWomenGenderMasked & \RHWomenGenderPartial \\
-Child-vs-adult AUC & \RHAUCBase & \RHAUCFinal & \RHAUCMasked & \RHAUCPartial \\
-\addlinespace
-Mean age, adult & \RHAgeAdultBase & \RHAgeAdultFinal & \RHAgeAdultMasked & \RHAgeAdultPartial \\
-\quad teen & 0.597 & 0.524 & 0.616 & \RHAgeTeenPartial \\
-\quad kid & \RHAgeKidBase & \RHAgeKidFinal & \RHAgeKidMasked & \RHAgeKidPartial \\
-\quad baby & \RHAgeBabyBase & \RHAgeBabyFinal & \RHAgeBabyMasked & \RHAgeBabyPartial \\
-Babies with age $<$ 0.45 (\%) & \RHBabiesBelowBase & \RHBabiesBelowFinal & \RHBabiesBelowMasked & \RHBabiesBelowPartial \\
-Mean height, adult & \RHHeightAdultBase & 0.500 & 0.505 & 0.527 \\
-\quad kid & \RHHeightKidBase & 0.466 & 0.461 & 0.497 \\
-\quad baby & \RHHeightBabyBase & 0.464 & 0.478 & 0.504 \\
-Matched children + adults & 948 & 1,305 & 1,157 & 1,270 \\
+Recall (\%) & \RHRecallBase & \RHRecallFinal & \RHRecallMasked & \RHRecallPartial & \multirow{14}{*}{\rotatebox{90}{\TODO{pending: student run}}} \\
+Gender accuracy (\%) & \RHGenderBase & \RHGenderFinal & \RHGenderMasked & \RHGenderPartial & \\
+\quad mean, men (male = 0) & \RHMenGenderBase & \RHMenGenderFinal & \RHMenGenderMasked & \RHMenGenderPartial & \\
+\quad mean, women (female = 1) & \RHWomenGenderBase & \RHWomenGenderFinal & \RHWomenGenderMasked & \RHWomenGenderPartial & \\
+Child-vs-adult AUC & \RHAUCBase & \RHAUCFinal & \RHAUCMasked & \RHAUCPartial & \\
+\addlinespace[2pt]
+Mean age, adult & \RHAgeAdultBase & \RHAgeAdultFinal & \RHAgeAdultMasked & \RHAgeAdultPartial & \\
+\quad teen & 0.597 & 0.524 & 0.616 & \RHAgeTeenPartial & \\
+\quad kid & \RHAgeKidBase & \RHAgeKidFinal & \RHAgeKidMasked & \RHAgeKidPartial & \\
+\quad baby & \RHAgeBabyBase & \RHAgeBabyFinal & \RHAgeBabyMasked & \RHAgeBabyPartial & \\
+Babies with age $<$ 0.45 (\%) & \RHBabiesBelowBase & \RHBabiesBelowFinal & \RHBabiesBelowMasked & \RHBabiesBelowPartial & \\
+Mean height, adult & \RHHeightAdultBase & 0.500 & 0.505 & 0.527 & \\
+\quad kid & \RHHeightKidBase & 0.466 & 0.461 & 0.497 & \\
+\quad baby & \RHHeightBabyBase & 0.464 & 0.478 & 0.504 & \\
+Matched children + adults & 948 & 1,305 & 1,157 & 1,270 & \\
 \midrule
-\multicolumn{5}{@{}l}{\emph{Demo images: standard deviation of the prediction}} \\
-Muscle & -- & \SpreadMuscleFinal & \SpreadMuscleMasked & n/m \\
-Weight & -- & \SpreadWeightFinal & \SpreadWeightMasked & n/m \\
-Cup size & -- & \SpreadCupFinal & \SpreadCupMasked & n/m \\
-Firmness & -- & \SpreadFirmFinal & \SpreadFirmMasked & n/m \\
-Age & -- & \SpreadAgeFinal & \SpreadAgeMasked & n/m \\
+\multicolumn{6}{@{}l}{\emph{Demo images: standard deviation of the prediction}} \\
+Muscle & -- & \SpreadMuscleFinal & \SpreadMuscleMasked & n/m & \\
+Weight & -- & \SpreadWeightFinal & \SpreadWeightMasked & n/m & \\
+Cup size & -- & \SpreadCupFinal & \SpreadCupMasked & n/m & \\
+Firmness & -- & \SpreadFirmFinal & \SpreadFirmMasked & n/m & \\
+Age & -- & \SpreadAgeFinal & \SpreadAgeMasked & n/m & \\
 \bottomrule
+\multicolumn{6}{@{}p{0.97\linewidth}@{}}{\scriptsize Upper part: detected people only, matched to the labelled
+boxes at IoU $\geq$ 0.3, so the matched sets differ between models. Ages and heights are Anny phenotype values in
+$[0, 1]$, not years; ``child-shaped'' means a predicted age below 0.45; the AUC ranks kids and babies against adults by
+predicted age (0.5 = chance). Lower part: spread of the predicted phenotypes over all detected people of the 12 demo
+images (4 photos and 8 3DPW test frames), not matched to people; -- not reported, n/m not measured. The full mask
+covers all eight constant 3DPW phenotypes, the partial mask the seven at 0.5 (age kept supervised;
+Section~\ref{sec:res-mask}). The neck pilot (bone correction and a 2-epoch fine-tune) equals the initial model within
+run-to-run variation (AUC 0.613).}
 \end{tabular}
-\caption[Body shape on real photos: Relative Human and the demo images]{Body shape on real photos. Upper part:
-Relative Human validation split (635 images, 2,130 labelled people), detected people only, matched to the labelled
-boxes at IoU $\geq$ 0.3; ages and heights are Anny phenotype values in $[0, 1]$, not years; ``child-shaped'' means a
-predicted age below 0.45; the AUC ranks kids and babies against adults by predicted age (0.5 = chance). The matched
-sets differ between models because recall differs. Lower part: spread of the predicted phenotypes over all detected
-people of the 12 demo images (4 photos and 8 3DPW test frames), not matched to people; not reported for Base, not
-measured (n/m) for Final-partial-mask. Final-masked masks all eight constant 3DPW phenotypes, Final-partial-mask the
-seven at 0.5 (age kept supervised; Section~\ref{sec:res-mask}). One run per model, no seed. The neck pilot (bone correction and a 2-epoch fine-tune) is the same as Base within run-to-run
-variation (AUC 0.613).}
+\caption[Body shape on real photos: Relative Human and the demo images]{Body shape of the teacher variants on real
+photos: Relative Human validation split (635 images, 2,130 labelled people) and the demo images. One run per model;
+the student's evaluation is pending.}
 \label{tab:relhuman}
 \end{table}

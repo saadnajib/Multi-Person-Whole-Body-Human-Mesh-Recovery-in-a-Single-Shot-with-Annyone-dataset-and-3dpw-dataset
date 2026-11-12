@@ -8,16 +8,9 @@
 \centering
 \IfFileExists{figures/img/F25_video_panels.jpg}{%
   \includegraphics[width=\linewidth]{F25_video_panels.jpg}}{\fbox{\TODO{F25 image missing}}}
-\caption[Video comparison: Student variants and Multi-HMR-Anny]{One frame (\VideoFigureFrame{} of \VideoFrames) of
-the video comparison. Top left: the input (playback \VideoPlaybackFPS\,FPS). Top right: the raw Student, one
-prediction per frame (inference \VideoStudentRawFPS\,FPS). Middle left: the Student with temporal smoothing, a causal
-exponential moving average per track on the bone rotations (blended on the rotation sphere), the shape and the 3D
-position, with the mesh decoded again through Anny (model and filter \VideoStudentTemporalFPS\,FPS). Middle right: the
-Student with landmark alignment: MediaPipe shoulders, hips, knees and ankles, the mesh position and depth fitted so the
-projected joints match them, then the corrected depth smoothed (model and refinement \VideoStudentAlignedFPS\,FPS;
-landmarks extracted offline). Bottom: the original Multi-HMR-Anny of NAVER (inference \VideoNAVERFPS\,FPS). The FPS
-labels are burned into the video; their definitions are in Table~\ref{tab:video-fps}. Neither variant retrains the
-Student. In this frame the raw Student mesh is drawn ahead of the person; the aligned mesh follows the person more
-closely.}
+\caption[Video comparison: student variants and the released baseline]{Frame \VideoFigureFrame{} of
+\VideoFrames{} of the walking clip: input, raw student, student with temporal filtering, student with landmark
+alignment, and the released baseline (bottom). The printed FPS values are model-inference speeds without
+preprocessing, landmark extraction or video input and output (Table~\ref{tab:video-fps}).}
 \label{fig:video-panels}
 \end{figure}

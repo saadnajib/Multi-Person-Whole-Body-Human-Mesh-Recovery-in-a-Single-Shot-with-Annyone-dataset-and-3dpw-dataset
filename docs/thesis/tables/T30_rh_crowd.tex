@@ -1,0 +1,24 @@
+% T30 Detection recall by number of labelled people per image, Relative Human validation (Section 5.5,
+% sec:res-multiperson). New 12 Nov 2026. Source: data/rh_recall_by_crowd.csv, macros \Crowd... in numbers_rev.tex
+% (computed from data/rh_per_person_{base,final}.csv, matched at IoU >= 0.3). Totals: \RHRecallBase, \RHRecallFinal
+% (numbers_results.tex). Student: Relative Human run pending -> \TODO.
+\begin{table}[!tbp]
+\centering\footnotesize
+\begin{tabular}{@{}lrrrrc@{}}
+\toprule
+\shortstack[l]{Labelled people\\per image} & Images & People & \shortstack[r]{Initial model\\recall (\%)} & \shortstack[r]{Teacher\\recall (\%)} & \shortstack{Student\\recall (\%)} \\
+\midrule
+1              & \CrowdOneImages       & \CrowdOnePeople       & \CrowdBaseOneRec       & \CrowdFinalOneRec       & \multirow{6}{*}{\TODO{pending}} \\
+2              & \CrowdTwoImages       & \CrowdTwoPeople       & \CrowdBaseTwoRec       & \CrowdFinalTwoRec       & \\
+3--4           & \CrowdThreeFourImages & \CrowdThreeFourPeople & \CrowdBaseThreeFourRec & \CrowdFinalThreeFourRec & \\
+5--8           & \CrowdFiveEightImages & \CrowdFiveEightPeople & \CrowdBaseFiveEightRec & \CrowdFinalFiveEightRec & \\
+9 or more      & \CrowdNinePlusImages  & \CrowdNinePlusPeople  & \CrowdBaseNinePlusRec  & \CrowdFinalNinePlusRec  & \\
+All            & \MethodRHImages       & \num{\MethodRHPeople} & \RHRecallBase          & \RHRecallFinal          & \\
+\bottomrule
+\end{tabular}
+\caption[Detection recall by crowd size on Relative Human]{Detection recall on the Relative Human validation split
+by the number of labelled people per image, with a detection counted at IoU $\geq$ \MethodRHIoU{} with a labelled
+box. The teacher's recall falls from \CrowdFinalTwoRec\,\% with two people to \CrowdFinalNinePlusRec\,\% with nine or
+more.}
+\label{tab:rh-crowd}
+\end{table}

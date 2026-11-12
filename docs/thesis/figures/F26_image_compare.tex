@@ -2,14 +2,16 @@
 % Image: slide 11 of the author's final presentation (5 Nov), ppt/media/image16.png (2016 x 736, three 672-px panels),
 % produced by demo_image_compare.py (docs/image_comparison.md: FOV 55 degrees along the longer side, panel size 672);
 % black letterbox bars cut (scratchpad script make_images.py), labels unchanged. Saved as figures/img/F26_image_compare.jpg
-% (2016 px wide, JPEG quality 85). "3 visible detection(s)" per model = the panel labels.
+% (2016 px wide, JPEG quality 85). 12 Nov revision: the three 672-px panels are shown as 1 + 2 at half text width
+% (trim in bp = px at 72 dpi), so that the two model panels are larger. "3 visible detection(s)" per model = the panel labels.
 \begin{figure}[!tbp]
 \centering
 \IfFileExists{figures/img/F26_image_compare.jpg}{%
-  \includegraphics[width=\linewidth]{F26_image_compare.jpg}}{\fbox{\TODO{F26 image missing}}}
-\caption[Image comparison: Student and Multi-HMR-Anny]{One real photo of three people on a stage. Left: the input.
-Middle: the Student (ViT-B). Right: the original Multi-HMR-Anny of NAVER. Both models find all
-\ImageCompareDetections{} people. No ground truth exists for this photo, so the figure shows only how the meshes sit
-on the people.}
+  \includegraphics[width=0.49\linewidth, trim=0 0 1344 0, clip]{F26_image_compare.jpg}\\[3pt]
+  \includegraphics[width=0.49\linewidth, trim=672 0 672 0, clip]{F26_image_compare.jpg}\hfill
+  \includegraphics[width=0.49\linewidth, trim=1344 0 0 0, clip]{F26_image_compare.jpg}}{\fbox{\TODO{F26 image missing}}}
+\caption[Image comparison: student and released baseline]{A real photo of three people on a stage: input (top),
+the student (bottom left) and the released baseline (bottom right). Both models detect all \ImageCompareDetections{} people;
+the photo has no ground truth.}
 \label{fig:image-compare}
 \end{figure}

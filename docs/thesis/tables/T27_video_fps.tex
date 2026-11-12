@@ -5,29 +5,34 @@
 % speed" (lines ~384-409) and the TEMPORAL / ALIGNMENT paragraphs (lines ~422-439).
 % Values confirmed 7 Nov against timing.csv and run.json of job 3657550 (NVIDIA A40, fp32 with TF32, 672 px, 346 timed
 % frames after 10 warm-up frames); the slide-18 overlay shows the same values.
+% 12 Nov revision (supervisor: distinguish inference speed from end-to-end speed): model-inference FPS (burned into
+% the video, numbers_nov.tex) and per-frame time including preprocessing and output transfer (numbers_rev.tex
+% \Video...Pipe..., timing.csv of job 3657550) in separate columns. The temporal-only panel has no per-frame total in
+% the relayed timing (n/m). Not timed in this run: offline landmark extraction (MediaPipe, CPU) and video decoding/encoding.
 \begin{table}[!tbp]
 \centering\footnotesize
-\begin{tabular}{@{}lr>{\raggedright\arraybackslash}p{0.52\linewidth}@{}}
+\begin{tabular}{@{}lr>{\raggedright}p{0.33\linewidth}rr@{}}
 \toprule
-Panel & FPS & What the FPS includes \\
+ & \multicolumn{2}{c}{Model inference$^a$} & \multicolumn{2}{c@{}}{With preprocessing$^b$} \\
+\cmidrule(lr){2-3}\cmidrule(l){4-5}
+Panel & FPS & included & ms/frame & FPS \\
 \midrule
-Input & \VideoPlaybackFPS & playback rate of the source video \\
-Student, raw & \VideoStudentRawFPS & average model inference: detection, pose and shape, Anny mesh decoding \\
-Student, temporal & \VideoStudentTemporalFPS & model inference plus the temporal filter and the Anny re-decode \\
-Student, aligned & \VideoStudentAlignedFPS & model inference, the temporal work if enabled, and the alignment fit; offline landmark extraction excluded \\
-Multi-HMR-Anny (NAVER) & \VideoNAVERFPS & average model inference, same definition as the raw Student \\
+Student, raw & \VideoStudentRawFPS & network and mesh decoding & \VideoStudentPipeMs & \VideoStudentPipeFPS \\
+Student, filtered & \VideoStudentTemporalFPS & plus filter and re-decoding & n/m & n/m \\
+Student, aligned & \VideoStudentAlignedFPS & plus filter and alignment fit & \VideoAlignedPipeMs & \VideoAlignedPipeFPS \\
+Released baseline & \VideoNAVERFPS & network and mesh decoding & \VideoNAVERPipeMs & \VideoNAVERPipeFPS \\
 \bottomrule
-\multicolumn{3}{@{}p{0.95\linewidth}@{}}{\scriptsize All FPS are batch-one, sequential timings on one \VideoGPU{} (fp32 with
-TF32, 672-pixel input) over the same \VideoMeasuredFrames{} frames after \VideoWarmup{} warm-up frames. None of them includes image preprocessing, rendering or video decoding and encoding, so
-none is end-to-end video throughput.}
+\multicolumn{5}{@{}p{0.97\linewidth}@{}}{\scriptsize Batch-one sequential timings on one \VideoGPU{} (fp32 with
+TF32, 672-pixel input) over \VideoMeasuredFrames{} frames after \VideoWarmup{} warm-up frames; input playback
+\VideoPlaybackFPS\,FPS. $^a$The values printed in the video (Figure~\ref{fig:video-panels}). $^b$Including image
+preprocessing (\VideoPreMs\,ms) and output transfer; with rendering the aligned student reaches
+\VideoAlignedRenderFPS\,FPS. Not timed: offline landmark extraction (MediaPipe on the CPU) and video decoding and
+encoding. n/m: not measured. No column is end-to-end throughput.}
 \end{tabular}
-\caption[Video comparison: frames, matches and speed]{Video comparison on one walking clip
-(\VideoFrames{} frames). The Student matched a person in \VideoStudentMatched{} of \VideoFrames{} frames,
-Multi-HMR-Anny in \VideoBaselineMatched{} of \VideoFrames; these are tracker matches, not labelled accuracy. The FPS
-values come from the run's timing file (job \VideoJob) and are also printed in the comparison video
-(Figure~\ref{fig:video-panels}). The raw Student runs about
-\VideoSpeedRatioNAVER{} times as fast as Multi-HMR-Anny; temporal smoothing and landmark alignment cost part of that
-gain.}
+\caption[Video run: inference speed and per-frame time]{Speed of the student variants and the released baseline on
+the walking clip (\VideoFrames{} frames), separated into model inference and per-frame processing including
+preprocessing. Neither column includes landmark extraction or video input and output, so neither is an end-to-end
+speed.}
 \label{tab:video-fps}
-\label{tab:video-run}% the older run table of the 19 Oct draft; its counts live on here
+\label{tab:video-run}% the older run table of the 19 Oct draft; its counts are in the text of Section 5.6
 \end{table}

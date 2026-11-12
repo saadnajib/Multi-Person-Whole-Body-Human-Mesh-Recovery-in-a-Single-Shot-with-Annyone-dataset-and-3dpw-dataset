@@ -7,17 +7,17 @@
 \centering\footnotesize
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
- & Final & Final-masked & \shortstack[r]{Final-\\partial-mask} & Rule \\
+ & Teacher & \shortstack[r]{Teacher,\\full mask} & \shortstack[r]{Teacher,\\partial mask} & Rule \\
 \midrule
 Masked 3DPW phenotypes & none & \MethodShapeMaskCount{} (age + 7) & \MethodShapeMaskPartial{} (age kept) & \\
 \addlinespace
-\multicolumn{5}{@{}l}{\emph{AnnyOne holdout, V1}} \\
+\multicolumn{5}{@{}l}{\emph{AnnyOne holdout}} \\
 PVE (mm) & \FinalPVE & \FinalMaskedPVE & \FinalPartialPVE & \\
 PA-PVE (mm) & \FinalPAPVE & \FinalMaskedPAPVE & \FinalPartialPAPVE & \\
 Recall (\%) & \FinalRecall & \FinalMaskedRecall & \FinalPartialRecall & \\
 Root error (mm) & \FinalRootErr & \FinalMaskedRootErr & \FinalPartialRootErr & \\
 \addlinespace
-\multicolumn{5}{@{}l}{\emph{3DPW test, v23 labels, V0}} \\
+\multicolumn{5}{@{}l}{\emph{3DPW test}} \\
 PVE (mm) & \FinalThreeDPW & \FinalMaskedThreeDPW & \FinalPartialThreeDPW & \\
 PA-PVE (mm) & \FinalPAThreeDPW & \FinalMaskedPAThreeDPW & \FinalPartialPAThreeDPW & \\
 \addlinespace
@@ -31,13 +31,14 @@ Babies with age $<$ 0.45 (\%) & \RHBabiesBelowFinal & \RHBabiesBelowMasked & \RH
 Muscle & \SpreadMuscleFinal & \SpreadMuscleMasked & n/m & $>$ \SpreadRuleThreshold \\
 Weight & \SpreadWeightFinal & \SpreadWeightMasked & n/m & $>$ \SpreadRuleThreshold \\
 \bottomrule
+\multicolumn{5}{@{}p{0.97\linewidth}@{}}{\scriptsize The full mask covers the \MethodShapeMaskCount{} constants of
+the converted labels (age 0.55 and seven values at 0.5), the partial mask only the seven at 0.5; gender stays
+supervised in all three. Relative Human: matched people of the validation split (full columns in
+Table~\ref{tab:relhuman}); demo: 12 images, not matched to people; n/m: not measured. Rule: thresholds fixed before
+the first masked run that a masked model had to meet to replace the teacher.}
 \end{tabular}
-\caption[The shape-mask arms: Final, Final-masked, Final-partial-mask]{The three shape-mask arms. Final supervises
-all converted 3DPW phenotypes; Final-masked masks the \MethodShapeMaskCount{} constants of the converted labels (age
-0.55 and seven values at 0.5); Final-partial-mask masks only the seven at 0.5 and keeps age supervised. Gender stays
-supervised in all three. AnnyOne holdout: 100 images, setting V1; 3DPW test: all 8,190 images, corrected labels,
-setting V0; Relative Human: validation split, matched people (full columns in Table~\ref{tab:relhuman}); demo: 12
-images, not matched to people; n/m: not measured. Rule: the thresholds, fixed before the first masked run, that a
-masked arm had to meet to replace Final. One run per arm, no seed; two identical runs differed by \NoisePVE\,mm PVE.}
+\caption[The shape-mask arms]{The teacher without, with full and with partial shape mask on the AnnyOne holdout,
+the 3DPW test set, Relative Human and the demo images (one run per model). Both masked models fail the gender
+threshold of the replacement rule.}
 \label{tab:mask-arms}
 \end{table}

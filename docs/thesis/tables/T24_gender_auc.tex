@@ -11,7 +11,7 @@
 \centering\footnotesize
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
- & Base & Final & Final-masked & \shortstack[r]{Final-\\partial-mask} \\
+ & \shortstack[r]{Initial\\model} & Teacher & \shortstack[r]{Teacher,\\full mask} & \shortstack[r]{Teacher,\\partial mask} \\
 \midrule
 People with a gender tag   & \RHGenderNBase & \num{\RHGenderNFinal} & \num{\RHGenderNMasked} & \num{\RHGenderNPartial} \\
 Gender AUC                 & \RHGenderAUCBase & \RHGenderAUCFinal & \RHGenderAUCMasked & \RHGenderAUCPartial \\
@@ -35,9 +35,8 @@ holdout either: its gender labels only span \HoldGenderLabelMin{} to \HoldGender
 \HoldGenderLabelAboveHalf\,\% above 0.5, so it has no fully male body.
 \end{minipage}
 \caption[Gender on Relative Human: accuracy, AUC and shape spread]{Gender on the Relative Human validation split
-(people matched to a labelled box with a male or female tag; Anny's gender 0 is the male end). The AUC does not
-depend on a cut-off (0.5 = chance); accuracy uses the cut-off 0.5. The masked models still rank women above men but
-moved both sexes up, so at 0.5 most men are called women. The partial mask keeps most of the ranking and doubles the
-weight spread on real photos compared with Final; muscle spread does not come back. One run per model.}
+(matched people with a male or female tag; Anny's gender 0 is the male end): the AUC needs no cut-off (0.5 = chance),
+accuracy uses the cut-off 0.5. The masked models still rank women above men but move both sexes up, so at 0.5 most
+men are classified as women.}
 \label{tab:gender-auc}
 \end{table}

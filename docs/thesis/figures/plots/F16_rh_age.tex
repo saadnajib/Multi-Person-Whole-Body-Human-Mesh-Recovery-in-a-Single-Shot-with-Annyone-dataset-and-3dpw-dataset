@@ -48,11 +48,11 @@
     /tikz/every even column/.append style={column sep=0.8em}},
   legend image code/.code={\draw[#1] (0cm,-0.1cm) rectangle (0.3cm,0.1cm);},
 ]
-\addlegendimage{color=plBase!85!black, fill=plBase!35}\addlegendentry{Base}
-\addlegendimage{color=plFinal!85!black, fill=plFinal!35}\addlegendentry{Final}
-\addlegendimage{color=plMasked!85!black, fill=plMasked!35}\addlegendentry{Final-masked}
+\addlegendimage{color=plBase!85!black, fill=plBase!35}\addlegendentry{Initial model}
+\addlegendimage{color=plFinal!85!black, fill=plFinal!35}\addlegendentry{Teacher}
+\addlegendimage{color=plMasked!85!black, fill=plMasked!35}\addlegendentry{Teacher, full shape mask}
 \draw[dashed, thick, red!60!black] (axis cs:0.5,0.45) -- (axis cs:4.5,0.45);
-\node[anchor=south west, font=\scriptsize, text=red!60!black, inner sep=1.5pt] at (axis cs:0.52,0.45) {child line};
+\node[anchor=south west, font=\scriptsize, text=red!60!black, inner sep=1.5pt] at (axis cs:0.52,0.45) {child threshold};
 % Base
 \addplot[plbox, color=plBase!85!black, fill=plBase!35, boxplot prepared={draw position=0.73, lower whisker=0.553, lower quartile=0.580, median=0.606, upper quartile=0.699, upper whisker=0.756}] coordinates {}; % adult, n = 821
 \addplot[plbox, color=plBase!85!black, fill=plBase!35, boxplot prepared={draw position=1.73, lower whisker=0.542, lower quartile=0.558, median=0.579, upper quartile=0.605, upper whisker=0.719}] coordinates {}; % teen, n = 53

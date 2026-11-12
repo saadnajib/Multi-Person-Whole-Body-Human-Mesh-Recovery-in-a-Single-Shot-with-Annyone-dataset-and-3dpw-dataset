@@ -3,17 +3,16 @@
 \begin{figure}[!tbp]
 \centering
 \IfFileExists{figures/img/F27_kd_temperature.pdf}{%
-  \includegraphics[width=0.8\linewidth]{F27_kd_temperature.pdf}%
+  \includegraphics[width=\linewidth]{F27_kd_temperature.pdf}%
 }{%
   \fbox{\parbox[c][5cm][c]{0.75\linewidth}{\centering
     \TODO{figure pending}\\[1ex]
     \small KD temperature sweep, $T \in \{1, 2, 4, 8, \KDSweepMaxT\}$: error against temperature.\\
     Copy \texttt{kd\_temperature\_sweep.pdf} to \texttt{figures/img/F27\_kd\_temperature.pdf}.}}%
 }
-\caption[Distillation temperature sweep (plot)]{Student error against the feature-distillation temperature $T$
-(logarithmic axis): PVE and MPJPE on the AnnyOne holdout (V1) and on the 3DPW test set; $T = \KDSweepMaxT$ has no
-result. Dashed lines: the
-teacher's PVE (\FinalPVE{} and \FinalThreeDPW\,mm); dotted lines: the 95\,\% bars (\BarPVE{} and \BarThreeDPW\,mm);
-stars: the reported $T = \MethodKDTemp$ run. Numbers in Table~\ref{tab:kd-temperature}.}
+\caption[Distillation temperature sweep (plot)]{Test-set evaluation of the student against the
+feature-distillation temperature $T$ (logarithmic axis): PVE and MPJPE on the AnnyOne holdout and the 3DPW test set,
+with the teacher's PVE (dashed) and the 95\,\% thresholds (dotted). Stars mark the reported $T = \MethodKDTemp$ run;
+$T = \KDSweepMaxT$ has no result.}
 \label{fig:kd-temperature}
 \end{figure}

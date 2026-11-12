@@ -1,0 +1,28 @@
+% T29 Sensitivity analyses judged on validation data (Section 5.4, sec:res-training-length / sec:res-kd-temperature).
+% New 12 Nov 2026. In-training evaluation at the LAST epoch of each run (last checkpoint, no early stopping).
+% 30 / 60 epochs: 3DPW validation \SelThirtyValPVE, \SelSixtyValPVE (numbers_rev.tex); holdout monitor
+% \ResSelThirtyHoldPVE, \ResSelSixtyHoldPVE (numbers_results.tex, rounded from \LossThirtyHoldLast, \LossSixtyHoldLast).
+% Temperature sweep (exp9; jobs 3717507, 3717530, 3717538, 3717581, 3717598): per-epoch validation logged by the runs,
+% values pending from the cluster -> \TODO cells.
+\begin{table}[!tbp]
+\centering\footnotesize
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Run & $T$ & Epochs & \shortstack[r]{3DPW validation\\PVE (mm)} & \shortstack[r]{AnnyOne holdout\\monitor PVE (mm)} \\
+\midrule
+Student (reported)   & \MethodKDTemp & \StudentEpochs      & \SelThirtyValPVE & \ResSelThirtyHoldPVE \\
+60-epoch student     & \MethodKDTemp & \StudentSixtyEpochs & \SelSixtyValPVE  & \ResSelSixtyHoldPVE \\
+\addlinespace
+Temperature sweep    & 1  & \StudentEpochs & \multicolumn{2}{c@{}}{\TODO{pending}} \\
+                     & 2  & \StudentEpochs & \multicolumn{2}{c@{}}{\TODO{pending}} \\
+                     & 4  & \StudentEpochs & \multicolumn{2}{c@{}}{\TODO{pending}} \\
+                     & 8  & \StudentEpochs & \multicolumn{2}{c@{}}{\TODO{pending}} \\
+                     & \KDSweepMaxT & \StudentEpochs & \multicolumn{2}{c@{}}{\TODO{pending}} \\
+\bottomrule
+\end{tabular}
+\caption[Sensitivity analyses on validation data]{Training length and distillation temperature judged on validation
+data: PVE at the last epoch on the \SelValImages{} 3DPW validation images and on the AnnyOne holdout as monitored
+during training (3DPW protocol). One run per setting; these are the values on which the sensitivity analyses of
+Section~\ref{sec:res-sensitivity} are judged.}
+\label{tab:sweep-validation}
+\end{table}

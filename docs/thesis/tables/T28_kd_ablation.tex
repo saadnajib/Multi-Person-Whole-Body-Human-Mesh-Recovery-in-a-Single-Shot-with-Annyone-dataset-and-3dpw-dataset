@@ -1,0 +1,28 @@
+% T28 Distillation ablation (Section 5.3, sec:res-kd-ablation). New 12 Nov 2026 (supervisor feedback: ViT-B without
+% distillation, same data and schedule). Rows: reported student (numbers_results.tex \Student...); the temperature
+% sweep's repeat of T = 4 (numbers_nov.tex \KDFour..., data/kd_temperature_sweep.csv); two ablation arms submitted
+% 12 Nov (REVISION_BRIEF section 5): (a) distillation losses off, teacher heads copied; (b) no teacher (no losses,
+% no head copy). Their results are pending: fill the \TODO cells when the runs are evaluated.
+\begin{table}[!tbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lccrrrr@{}}
+\toprule
+ & & & \multicolumn{2}{c}{AnnyOne holdout} & \multicolumn{2}{c@{}}{3DPW test} \\
+\cmidrule(lr){4-5}\cmidrule(l){6-7}
+Model & \shortstack{Distillation\\losses} & \shortstack{Teacher\\heads} & PVE & PA-PVE & PVE & PA-PVE \\
+\midrule
+Student (reported)              & yes & yes & \StudentPVE & \StudentPAPVE & \StudentThreeDPW & \StudentPAThreeDPW \\
+Student, repeat run             & yes & yes & \KDFourHold & \KDFourHoldPA & \KDFourTP & \KDFourTPPA \\
+Without distillation losses     & no  & yes & \multicolumn{4}{c@{}}{\TODO{pending}} \\
+Without teacher                 & no  & no  & \multicolumn{4}{c@{}}{\TODO{pending}} \\
+\midrule
+Teacher (ViT-L)& --  & --  & \FinalPVE & \FinalPAPVE & \FinalThreeDPW & \FinalPAThreeDPW \\
+\bottomrule
+\end{tabular}
+\caption[Distillation ablation]{Distillation ablation: ViT-B models with the student's data, schedule and
+architecture, with and without the teacher's distillation losses and copied heads (errors in mm, one run each). The
+repeat run is the $T = \MethodKDTemp$ run of the temperature sweep and indicates the run-to-run difference of one
+setting.}
+\label{tab:kd-ablation}
+\end{table}

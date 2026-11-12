@@ -9,7 +9,7 @@
 \centering\footnotesize
 \begin{tabular}{@{}lrrrrrrrr@{}}
 \toprule
- & \multicolumn{2}{c}{Base} & \multicolumn{2}{c}{Control} & \multicolumn{2}{c}{Final} & \multicolumn{2}{c@{}}{Final: spread (sd)} \\
+ & \multicolumn{2}{c}{Initial model} & \multicolumn{2}{c}{\shortstack{Uncorrected\\teacher}} & \multicolumn{2}{c}{Teacher} & \multicolumn{2}{c@{}}{Teacher: spread (sd)} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(l){8-9}
 Phenotype & $r$ & slope & $r$ & slope & $r$ & slope & prediction & label \\
 \midrule
@@ -28,11 +28,9 @@ muscle      & \PhenoRBaseMuscle & 0.21 & 0.35 & 0.16 & \PhenoRFinalMuscle & 0.13
 People      & \multicolumn{2}{c}{\PhenoNBase} & \multicolumn{2}{c}{\PhenoNControl} & \multicolumn{2}{c}{\PhenoNFinal} & & \\
 \bottomrule
 \end{tabular}
-\caption[Phenotype correlation on the AnnyOne holdout]{How well each model follows the phenotype labels on the
-AnnyOne holdout (100 images, setting V1, matched people). $r$: Pearson correlation between prediction and label;
-slope: least-squares slope of the prediction on the label (1 would mean no pull towards the middle). The last two
-columns compare the spread of Final's predictions with the spread of the labels. Every slope is below 1, so all
-three models pull their predictions towards the middle. Final follows weight, gender and cup size best ($r$ between
-\PhenoRFinalCupsize{} and \PhenoRFinalWeight), while muscle is the weakest phenotype and got weaker from Base to Final. One run per model.}
+\caption[Phenotype correlation on the AnnyOne holdout]{Agreement of predicted and labelled phenotypes on the
+AnnyOne holdout (matched people): Pearson $r$, least-squares slope of prediction on label (1 = no shrinkage towards
+the middle), and the spread of the teacher's predictions and of the labels. Every slope is below 1. One run per
+model.}
 \label{tab:pheno-corr}
 \end{table}

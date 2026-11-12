@@ -1,26 +1,31 @@
 % Source macros retain the measured results and provenance in numbers_results.tex.
 % Split the former 12-column table for readable reconstruction/cost comparisons.
+% 12 Nov revision: descriptive model names (Final = teacher, Control = uncorrected teacher, Base = initial model);
+% protocol names (V1/V0, v23) removed from the heads; caveats moved into the note below the table and into
+% Section 5.2 (sec:res-fairness).
 \begin{table}[!tbp]
 \centering\small
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lrrrrrrc@{}}
 \toprule
-& \multicolumn{3}{c}{AnnyOne holdout (V1)} & \multicolumn{3}{c}{3DPW test (v23)} & \\
+& \multicolumn{3}{c}{AnnyOne holdout} & \multicolumn{3}{c}{3DPW test} & \\
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
 Model & PVE & PA-PVE & Recall & PVE & PA-PVE & Recall & \shortstack{3DPW\\training} \\
 \midrule
 Released baseline & \NAVERAnnyOne$^a$ & \NAVERPAAnnyOne$^a$ & \NAVERRecallAnnyOne$^a$ & \NAVERThreeDPW & \NAVERPAThreeDPW & \NAVERRecallThreeDPW & no \\
-Teacher (Final) & \FinalPVE & \FinalPAPVE & \FinalRecall & \textbf{\FinalThreeDPW} & \textbf{\FinalPAThreeDPW} & \FinalRecallThreeDPW & yes \\
-Student (ViT-B) & \StudentPVE & \StudentPAPVE & \StudentRecall & \StudentThreeDPW & \StudentPAThreeDPW & \StudentRecallThreeDPW & yes \\
-Control & \ControlPVE & \ControlPAPVE & \ControlRecall & \ControlThreeDPW & \ControlPAThreeDPW & 99 & yes \\
-Base & \BasePVE & \BasePAPVE & \BaseRecall & \BaseThreeDPW & \BasePAThreeDPW & 100 & no \\
+Teacher & \FinalPVE & \FinalPAPVE & \FinalRecall & \textbf{\FinalThreeDPW} & \textbf{\FinalPAThreeDPW} & \FinalRecallThreeDPW & yes \\
+Student & \StudentPVE & \StudentPAPVE & \StudentRecall & \StudentThreeDPW & \StudentPAThreeDPW & \StudentRecallThreeDPW & yes \\
+Uncorrected teacher & \ControlPVE & \ControlPAPVE & \ControlRecall & \ControlThreeDPW & \ControlPAThreeDPW & 99 & yes \\
+Initial model & \BasePVE & \BasePAPVE & \BaseRecall & \BaseThreeDPW & \BasePAThreeDPW & 100 & no \\
 \bottomrule
+\multicolumn{8}{@{}p{0.97\linewidth}@{}}{\scriptsize $^a$Potentially in-sample: the released baseline was trained
+on the AnnyOne release, which contains the holdout images. 3DPW errors are measured against the converted Anny
+labels and are not comparable with published SMPL-space results (Section~\ref{sec:data-limits}).}
 \end{tabular}
-\caption[Reconstruction comparison of student and reference models]{Reconstruction comparison. Errors are in mm;
-recall is in percent. One checkpoint is evaluated per model; thesis-trained models were not repeated across seeds. 3DPW errors use converted Anny labels and are not
-comparable with published SMPL-space results. $^a$The released baseline was trained on the AnnyOne release,
-which includes these holdout images, so its synthetic result is potentially in-sample. The real-image
-training exposure differs between released baseline and student/teacher.}
+\caption[Reconstruction of the student, the teacher and the released baseline]{Reconstruction of the student, its
+teacher and the released baseline on the AnnyOne holdout and the 3DPW test set (errors in mm, recall in \%; one run
+per model). The models differ in their training data, and the released baseline may have seen the holdout, so a
+lower PVE does not show a better architecture (Section~\ref{sec:res-fairness}).}
 \label{tab:baseline}
 \end{table}
 
@@ -31,14 +36,15 @@ training exposure differs between released baseline and student/teacher.}
 Model & Params (M) & GFLOPs & \shortstack{Latency\\L40S (ms)} & \shortstack{Latency\\A100 (ms)} \\
 \midrule
 Released baseline & \NAVERParams & $\geq$\NAVERBackboneGFLOPs$^b$ & n/m & n/m \\
-Teacher (Final) & \FinalParams & \FinalGFLOPs & \TeacherMsLFortyS & \TeacherMsAHundred \\
-Student (ViT-B) & \StudentParams & \StudentGFLOPs & \StudentMsLFortyS & n/m \\
+Teacher & \FinalParams & \FinalGFLOPs & \TeacherMsLFortyS & \TeacherMsAHundred \\
+Student & \StudentParams & \StudentGFLOPs & \StudentMsLFortyS & n/m \\
 \bottomrule
+\multicolumn{5}{@{}p{0.8\linewidth}@{}}{\scriptsize One multiply-add counts as two FLOPs. Latency: median batch-one
+forward time in fp32 with TF32; the student and teacher L40S times come from the same job. n/m: not measured.
+$^b$Backbone only; the total is higher. The initial model and the uncorrected teacher share the teacher
+architecture, and the fixed rotation corrections add no trainable parameters.}
 \end{tabular}
-\caption[Model size, computation and recorded forward latency]{Model cost at 672\,px input and one person.
-One multiply-add counts as two FLOPs. Latency is median batch-one forward time in fp32 with TF32; compare
-only within a GPU column. The student/teacher L40S pair was measured in the same job. n/m: not measured.
-$^b$The baseline figure counts only its backbone, so total computation is higher. Base and Control share
-the teacher architecture; fixed rotation corrections add no trainable parameters.}
+\caption[Model size, computation and forward latency]{Model cost at 672\,px input with one person. Latencies are
+comparable only within a GPU column.}
 \label{tab:model-cost}
 \end{table}

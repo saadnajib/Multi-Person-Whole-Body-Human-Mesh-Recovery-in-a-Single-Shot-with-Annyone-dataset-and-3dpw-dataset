@@ -4,31 +4,28 @@
 % Numbers: data/CLUSTER_ANSWERS.md "6 Nov: loss curves" (slopes over the last 20% of the epochs) -> numbers_nov.tex.
 % Plot readings (visible in the images): holdout PVE rises from epoch 5 to 10 (copied heads unfrozen after epoch 5,
 % CA "STUDENT DONE"); the training loss drops after each LR halving (every 12 epochs in e30, 24 in e60; exp9 header).
+% 12 Nov revision: the PNG title line (run identifier) is clipped off (trim top 26 bp); caption shortened, the
+% slope values (\Loss...Slope, ...Last) are in the text of Section 5.4 and in T29.
 % PNGs re-rendered 7 Nov with the fixed plot_loss_curves.py (four distinct line styles), tensorboard source.
 \begin{figure}[!p]
 \centering
 \begin{subfigure}[t]{\linewidth}\centering
   \IfFileExists{figures/img/F23_student_loss_curves_e30.png}{%
-    \includegraphics[width=0.62\linewidth]{F23_student_loss_curves_e30.png}}{\fbox{\TODO{F23 e30 image missing}}}
+    \includegraphics[width=0.78\linewidth, trim=0 0 0 26, clip]{F23_student_loss_curves_e30.png}}{\fbox{\TODO{F23 e30 image missing}}}
   \caption{Student, \StudentEpochs{} epochs (reported)}\label{fig:loss-curves-e30}
 \end{subfigure}
 
 \medskip
 \begin{subfigure}[t]{\linewidth}\centering
   \IfFileExists{figures/img/F23_student_loss_curves_e60.png}{%
-    \includegraphics[width=0.62\linewidth]{F23_student_loss_curves_e60.png}}{\fbox{\TODO{F23 e60 image missing}}}
-  \caption{Student, \StudentSixtyEpochs{} epochs}\label{fig:loss-curves-e60}
+    \includegraphics[width=0.78\linewidth, trim=0 0 0 26, clip]{F23_student_loss_curves_e60.png}}{\fbox{\TODO{F23 e60 image missing}}}
+  \caption{60-epoch student}\label{fig:loss-curves-e60}
 \end{subfigure}
-\caption[Training curves of the 30- and 60-epoch students]{Training curves of the Student. Top of each panel: the
-training loss per epoch, total and its terms (log scale). Bottom: the validation PVE measured during training every
-\LossEvalEvery{} epochs on the AnnyOne holdout and on \LossValImages{} 3DPW-validation images. These runs were
-trained before a validation loss was logged, so the validation PVE stands in for it. Over the last 20\,\% of the
-epochs (\LossThirtyWindow{} and \LossSixtyWindow) the training loss still falls (\LossThirtyTrainSlope{} and
-\LossSixtyTrainSlope\,\% per epoch) and so does the holdout PVE (\LossThirtyHoldSlope{} and
-\LossSixtyHoldSlope\,\% per epoch, ending at \LossThirtyHoldLast{} and \LossSixtyHoldLast\,mm), while the 3DPW
-validation PVE is flat (\LossThirtyValSlope{} and \LossSixtyValSlope\,\% per epoch, ending at \LossThirtyValLast{} and
-\LossSixtyValLast\,mm). The holdout PVE rises between epochs 5 and 10, after the copied heads are unfrozen, and the
-large drops follow the learning-rate halvings (every \LossLRHalfThirty{} and \LossLRHalfSixty{} epochs).}
+\caption[Training curves of the 30- and 60-epoch students]{Training curves of the two students: training loss
+per epoch with its terms (top, log scale) and the PVE evaluated every \LossEvalEvery{} epochs during training on the
+AnnyOne holdout and on \LossValImages{} 3DPW validation images (bottom). Over the last 20\,\% of the epochs
+(\LossThirtyWindow{} and \LossSixtyWindow) the training loss and the holdout PVE still fall, while the 3DPW
+validation PVE is flat.}
 \label{fig:loss-curves}
 \label{fig:student-curves}% replaces F19 (in-training curves of the 30-epoch Student)
 \end{figure}
