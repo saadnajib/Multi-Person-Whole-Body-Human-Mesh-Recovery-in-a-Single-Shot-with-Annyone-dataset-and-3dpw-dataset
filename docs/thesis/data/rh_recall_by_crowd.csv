@@ -1,0 +1,11 @@
+model,bin,images,people,recall
+base,One,21,21,0.333
+base,Two,314,628,0.510
+base,ThreeFour,190,630,0.476
+base,FiveEight,82,509,0.444
+base,NinePlus,28,342,0.439
+final,One,21,21,0.762
+final,Two,314,628,0.785
+final,ThreeFour,190,630,0.678
+final,FiveEight,82,509,0.566
+final,NinePlus,28,342,0.453

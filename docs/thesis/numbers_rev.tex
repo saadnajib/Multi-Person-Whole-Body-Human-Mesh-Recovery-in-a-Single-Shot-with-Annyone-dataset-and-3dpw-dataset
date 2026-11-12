@@ -1,0 +1,40 @@
+% =============================================================================
+% numbers_rev.tex -- numbers added for the revision of 12 Nov 2026 (supervisor feedback on the draft)
+% Convention as in numbers.tex: one macro per value, source in the comment.
+% =============================================================================
+
+% --- Detection recall by number of labelled people per image, Relative Human validation (635 images, 2,130 people),
+%     computed 12 Nov from data/rh_per_person_{base,final}.csv (column matched, IoU >= 0.3); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdBaseOneRec}{33.3}   % percent recall, RH val, images with 1-1 labelled people (21 images, 21 people); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdBaseTwoRec}{51.0}   % percent recall, RH val, images with 2-2 labelled people (314 images, 628 people); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdBaseThreeFourRec}{47.6}   % percent recall, RH val, images with 3-4 labelled people (190 images, 630 people); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdBaseFiveEightRec}{44.4}   % percent recall, RH val, images with 5-8 labelled people (82 images, 509 people); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdBaseNinePlusRec}{43.9}   % percent recall, RH val, images with 9-999 labelled people (28 images, 342 people); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdFinalOneRec}{76.2}   % percent recall, RH val, images with 1-1 labelled people (21 images, 21 people); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdOneImages}{21}\newcommand{\CrowdOnePeople}{21}   % RH val, bin 1-1 people per image
+\newcommand{\CrowdFinalTwoRec}{78.5}   % percent recall, RH val, images with 2-2 labelled people (314 images, 628 people); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdTwoImages}{314}\newcommand{\CrowdTwoPeople}{628}   % RH val, bin 2-2 people per image
+\newcommand{\CrowdFinalThreeFourRec}{67.8}   % percent recall, RH val, images with 3-4 labelled people (190 images, 630 people); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdThreeFourImages}{190}\newcommand{\CrowdThreeFourPeople}{630}   % RH val, bin 3-4 people per image
+\newcommand{\CrowdFinalFiveEightRec}{56.6}   % percent recall, RH val, images with 5-8 labelled people (82 images, 509 people); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdFiveEightImages}{82}\newcommand{\CrowdFiveEightPeople}{509}   % RH val, bin 5-8 people per image
+\newcommand{\CrowdFinalNinePlusRec}{45.3}   % percent recall, RH val, images with 9-999 labelled people (28 images, 342 people); data/rh_recall_by_crowd.csv
+\newcommand{\CrowdNinePlusImages}{28}\newcommand{\CrowdNinePlusPeople}{342}   % RH val, bin 9-999 people per image
+
+% --- Video run 3657550 (NVIDIA A40): per-frame times beyond model inference; timing.csv / run.json relayed 7 Nov
+%     (data/CLUSTER_ANSWERS.md "7 Nov: five-panel video run"). Offline landmark extraction (MediaPipe, CPU) and video
+%     decoding/encoding were NOT timed in this run.
+\newcommand{\VideoPreMs}{10.1}                % ms, image preprocessing per frame (student 10.13, baseline 10.02); timing.csv
+\newcommand{\VideoRenderMs}{21.1}             % ms, mesh rendering per frame, raw student panel; timing.csv render_mean_ms
+\newcommand{\VideoStudentPipeMs}{64.9}        % ms, preprocessing + inference + output transfer, raw student (10.13 + 54.51 + 0.24)
+\newcommand{\VideoStudentPipeFPS}{15.4}       % 1000 / 64.9
+\newcommand{\VideoNAVERPipeMs}{127.9}         % ms, same for the released baseline (10.02 + 117.65 + 0.23)
+\newcommand{\VideoNAVERPipeFPS}{7.8}          % 1000 / 127.9
+\newcommand{\VideoAlignedPipeMs}{87.8}        % ms, preprocessing + inference + filter + alignment + transfer (10.13 + 77.39 + 0.24), aligned student
+\newcommand{\VideoAlignedPipeFPS}{11.4}       % 1000 / 87.8; excludes offline landmark extraction, rendering and video I/O
+\newcommand{\VideoAlignedRenderFPS}{9.3}      % 1000 / (87.8 + 20.1 render); still excludes landmark extraction and video I/O
+
+% --- Model-selection protocol (exp8_distill_vitb.sh header; data/CLUSTER_ANSWERS.md "6 Nov: loss curves")
+\newcommand{\SelValImages}{300}               % 3DPW validation images of the in-training evaluation
+\newcommand{\SelThirtyValPVE}{87.8}           % mm, in-training 3DPW-validation PVE at epoch 30, reported student (87.75)
+\newcommand{\SelSixtyValPVE}{86.0}            % mm, same at epoch 60, 60-epoch student (85.96)
