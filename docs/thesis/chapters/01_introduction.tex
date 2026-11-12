@@ -1,4 +1,4 @@
-% Revised 6 November 2026 following STYLE_GUIDE.md.
+% Revised 12 November 2026 (REVISION_BRIEF_2026-11-12.md): academic register, research questions, contributions.
 \chapter{Introduction}
 \label{ch:intro}
 
@@ -6,110 +6,77 @@
 \label{sec:intro-task}
 \label{sec:intro-anny}
 
-The problem in this thesis is to turn one photo of several people into a 3D body for each person, using less
-computation. A body model builds each body as a mesh, a surface of small triangles, from a list of numbers for pose
-and shape. A 3D body per person is useful, for example, to show how people move or to understand a scene through the
-people in it.
+Human mesh recovery estimates the pose and shape parameters of a parametric body model for each person in an
+image; the body model turns them into a triangle mesh of the body surface. Such meshes support the analysis of
+human motion and of scenes. This thesis addresses the multi-person, whole-body variant:
+pose, shape and distance from the camera for every person, including people who overlap or are partly occluded.
 
-The first of three difficulties is to recover the whole body: its pose, its shape and its distance from the camera.
-People can overlap or be partly hidden, and the model still has to find each of them.
+Multi-HMR~\cite{baradel2024multihmr} solves this task in a single forward pass. A Vision Transformer (ViT) encodes the
+image, a detection head selects one keypoint per person, and a Human Perception Head regresses each body and its
+distance. A released version predicts bodies in the Anny body model~\cite{bregier2025anny,naver2024multihmrcode};
+multi-person Anny prediction is therefore not new, and this model serves as the baseline.
 
-Multi-HMR~\cite{baradel2024multihmr} does this for all people in one forward pass. A Vision Transformer (ViT) encodes
-the image, a detection head picks one keypoint per person, and a Human Perception Head predicts each body and its
-distance. NAVER has released a version of Multi-HMR that predicts bodies in Anny, a newer body model that I describe
-below~\cite{bregier2025anny,naver2024multihmrcode}. So predicting Anny bodies for several people is not new in my
-work. I use that released model as the baseline.
+SMPL~\cite{loper2015smpl} represents shape by statistical coefficients learned from scans of adults, usually the
+first \BgSmplBetas{}, which carry no direct semantic meaning. Anny instead uses \MethodNumPheno{} named phenotype
+parameters, such as age and height, and \MethodNumBones{} bones for the whole body
+(Section~\ref{sec:bg-bodymodels}, Table~\ref{tab:body-models}). Anny can therefore represent a child directly, which
+does not imply that a network recognises a child in a photograph.
 
-The second difficulty is the data. AnnyOne~\cite{bregier2025anny} has synthetic images, made by a computer, so the
-exact body of every person is known. But these images look different from real photos. 3DPW~\cite{vonmarcard2018_3dpw}
-has real video frames, but its labels use another body model, SMPL~\cite{loper2015smpl}, and my network predicts
-Anny. Think of SMPL and Anny as two differently built digital mannequins. Before I can train on 3DPW, I have to
-convert its SMPL labels into Anny's format.
+Two difficulties remain. The first is supervision: AnnyOne~\cite{bregier2025anny} provides synthetic images with
+exact Anny labels but an appearance unlike real photographs, while 3DPW~\cite{vonmarcard2018_3dpw} provides real
+video frames labelled in SMPL; no real images with Anny labels exist. The second is cost: large image encoders
+have many parameters and long inference times. Knowledge distillation, in which a large
+trained teacher guides the training of a smaller student, reduces the cost and keeps single-pass inference.
 
-SMPL describes shape with statistical coefficients learned from body scans of adults, and these numbers have no
-everyday meaning on their own. Most methods use the first \BgSmplBetas{} of them. Anny instead uses \MethodNumPheno{}
-named values, called phenotypes, such as age and height, and it has \MethodNumBones{} bones for the whole body
-(Section~\ref{sec:bg-bodymodels}, Table~\ref{tab:body-models}). So Anny can represent a child directly, but that does
-not mean a network can recognise a child in a photo.
-
-The third difficulty is cost. A large image encoder gives good features, but it has many parameters and takes longer
-to run. For this reason I train a smaller student network with help from a larger trained teacher. This is called
-knowledge distillation: the larger model guides the smaller one during training. The student still handles all
-people in one forward pass, and I measure how much accuracy it gives up.
-
-\section{Problem statement and scope}
+\section{Problem statement and research questions}
 \label{sec:intro-requirements}
 
-The input is an RGB image and the camera intrinsics (focal length and image centre). Camera information tells the
-model which direction each image location points into 3D space. For each detected person the model predicts an Anny
-body: its bone rotations, its phenotype values and the position of one head joint relative to the camera. I call
-this joint the anchor.
-
-The model I deploy is the ViT-B \emph{Student}. Its teacher is a larger ViT-L model, which my experiment records call
-\emph{Final}. The teacher is also my accuracy reference, so I compare the student's error with the teacher's.
-NAVER's released
-\emph{Multi-HMR-Anny} is the external baseline.
-
-Three questions define the scope:
+The input is an RGB image with its camera intrinsics (focal length and principal point), which define the viewing
+ray of each pixel. For each detected person the model predicts an Anny body: bone rotations, phenotype values and the
+camera-space position of one head joint, the anchor. The deployed model is a ViT-B student; its ViT-L teacher, trained
+in this thesis, is the accuracy reference, and the released Multi-HMR-Anny model the external baseline. Four research
+questions structure the thesis:
 \begin{enumerate}
-\item \textbf{Real-image supervision.} How can the SMPL labels of 3DPW be converted into Anny labels, and which parts
-  of pose and shape do the converted labels really pin down?
-\item \textbf{Compact reconstruction.} How much smaller, cheaper and faster is a ViT-B student that starts from the
-  teacher's prediction heads and learns from the teacher's features and outputs? And how much more error does it
-  make than the teacher and the released baseline?
-\item \textbf{Video.} Can the image-based student run on a clear single-person video? And does smoothing its
-  predictions over frames (temporal filtering) and moving the body onto detected 2D landmarks (landmark alignment)
-  make its output steadier and better placed, without retraining?
+\item \textbf{Real-image supervision.} How can the SMPL labels of 3DPW be converted into Anny labels, and which
+  aspects of pose and shape do they constrain?
+\item \textbf{Compact reconstruction.} How much smaller, cheaper and faster is a ViT-B student distilled from a ViT-L
+  teacher, how much accuracy does it lose against the teacher and the released baseline, and what does distillation
+  contribute?
+\item \textbf{Multi-person detection.} How does detection recall depend on the number of people in an image?
+\item \textbf{Video.} Can the image-based student process a video, and do inference-time temporal filtering and
+  landmark alignment make its output steadier and better placed?
 \end{enumerate}
 
-I do not train a network that looks at several frames at once. The student always sees one frame at a time. I
-evaluate reconstruction on AnnyOne and on converted 3DPW. For age and gender I use Relative Human, a set of real
-photos that come with age and gender tags. I do not collect new shape labels for real images, and I do not try to
-estimate a person's age in years from a photo.
+The student processes one frame at a time; no multi-frame network is trained. Reconstruction is evaluated on a
+held-out part of AnnyOne and on converted 3DPW, age and gender on Relative Human photographs with age-group and
+gender tags. No new shape labels for real images are collected, and age in years is not estimated.
 
 \section{Contributions}
 \label{sec:intro-contrib}
 
-My work makes four practical contributions:
+The contributions are as follows.
 \begin{enumerate}
 \item \textbf{Anny labels for real images.} A joint-based fitting pipeline converts the standard 3DPW splits into
-  Anny labels. It matches body points that mean the same thing in both models and adds virtual torso joints. I
-  checked the converted labels independently, with mesh overlays on the images and a separate joint comparison.
-\item \textbf{A compact reconstruction system.} The ViT-B student gets a copy of the teacher's prediction heads at
-  the start of training. A small learned projector turns the student's features into the width those heads expect.
-  During training the student also imitates the teacher's features and outputs. It has \StudentParams\,M
-  parameters, against \FinalParams\,M in its teacher and \NAVERParams\,M in the baseline.
-\item \textbf{A controlled evaluation.} I compare the three models with the same labels and the same evaluation
-  settings, and I assess pose, placement and shape separately. Two smaller teacher experiments (ablations) test the
-  effect of a consistent head-anchor label and of a fixed bone correction. Two more experiments study the
-  student's training: \MethodStudentEpochs{} against \StudentSixtyEpochs{} epochs, and a sweep of the distillation
-  temperature (Section~\ref{sec:res-kd-temperature}).
-\item \textbf{A video pipeline.} The student and the baseline process the same frames. For the student, an
-  exponential moving average blends each frame's pose, shape and position with the same person's earlier frames.
-  A second step then moves the body and adjusts its depth so that its joints line up with 2D landmarks detected in
-  the image (Section~\ref{sec:method-temporal}). I also compare the two models on a still photo of several people on
-  a stage.
+  Anny labels by matching geometrically corresponding points and adding virtual torso joints; the labels were checked
+  independently with mesh overlays and a joint comparison (Chapter~\ref{ch:data}).
+\item \textbf{A compact reconstruction system.} A ViT-L teacher is trained on AnnyOne and converted 3DPW with two
+  corrections to its supervision, consistent head-anchor targets and a fixed output rotation correction for flipped
+  bones, both identified by diagnostic experiments (Appendix~\ref{ch:diagnostics}). A ViT-B student receives a copy
+  of the teacher's prediction heads, which read its features through a learned projector, and imitates the teacher's
+  features and outputs.
+\item \textbf{A controlled evaluation.} All models are evaluated with the same labels and settings, with pose,
+  placement and shape assessed separately, ablations of the teacher corrections and of distillation, sensitivity
+  analyses of training length and temperature, and detection recall by the number of people per image.
+\item \textbf{A video pipeline.} The pose, shape and position of each tracked person are filtered over time, and
+  position and depth are aligned to detected 2D landmarks, without retraining (Section~\ref{sec:method-temporal}). Student and baseline are compared on the same frames
+  and on a still photograph of several people.
 \end{enumerate}
-
-The student has \ParamRatioStudent{} times fewer parameters than its teacher. It also ran \SpeedRatioStudent{} times
-faster when I timed both on the same L40S GPU. PVE is the mean distance between matching surface points of the
-predicted body and the labelled body, after both are aligned at the pelvis. The student's PVE was \StudentPVE\,mm on
-held-out synthetic AnnyOne images and \StudentThreeDPW\,mm on converted 3DPW. The teacher stayed more accurate on
-both, with \FinalPVE\,mm and \FinalThreeDPW\,mm. On 3DPW the student had a lower PVE than the baseline
-(\NAVERThreeDPW\,mm). But only my models were trained on 3DPW frames with converted Anny labels, so this does not
-show a better network design.
-
-Multi-HMR reconstructs several complete bodies from one image. My work builds on this framework with Anny, converted
-3DPW labels and a smaller distilled student, and adds temporal filtering and landmark alignment to improve the video
-outputs.
 
 \section{Thesis structure}
 \label{sec:intro-outline}
 
-Chapter~\ref{ch:background} introduces the two body models and the related work on mesh recovery, knowledge
-distillation and video. Chapter~\ref{ch:data} describes the datasets, how I convert the 3DPW labels and what the
-converted labels can and cannot test. Both come before the method in Chapter~\ref{ch:method}, because the method
-depends on them. Chapter~\ref{ch:results} gives the reconstruction and efficiency results, the training length
-(Section~\ref{sec:res-training-length}), the temperature sweep (Section~\ref{sec:res-kd-temperature}) and the video
-results (Section~\ref{sec:res-video}). Chapter~\ref{ch:discussion} interprets them and Chapter~\ref{ch:conclusion}
-concludes. The appendices give reproduction details, the joint correspondence, settings and diagnostics.
+Chapter~\ref{ch:background} introduces the body models and related work. Chapter~\ref{ch:data} describes the
+datasets and the label conversion, on which the method of Chapter~\ref{ch:method} depends. Chapter~\ref{ch:results} reports the experiments, from the comparison
+of student, teacher and baseline to the analysis of the teacher. Chapter~\ref{ch:discussion} answers the research questions and states
+the limitations; Chapter~\ref{ch:conclusion} concludes. The appendices give reproduction details, settings,
+additional figures, earlier models and the diagnostic experiments.

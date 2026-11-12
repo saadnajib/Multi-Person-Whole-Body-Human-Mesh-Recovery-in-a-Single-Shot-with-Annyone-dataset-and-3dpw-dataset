@@ -1,66 +1,51 @@
-% Revised 22 October 2026: completed final system and bounded future work.
-% Revised 6 November 2026: plain-language rewrite (STYLE_GUIDE.md) with the new results.
+% Revised 12 November 2026 (REVISION_BRIEF_2026-11-12.md): four-question conclusion, compact future work.
 \chapter{Conclusion and future work}
 \label{ch:conclusion}
 
 \section{Conclusion}
 \label{sec:concl}
 
-Multi-HMR reconstructs several complete human bodies from one image. My project builds on this framework with the
-Anny body model, converted 3DPW labels and a smaller distilled student. I also added temporal filtering and landmark
-alignment to improve the video outputs.
+This thesis addressed multi-person whole-body mesh recovery from a single image in the Anny body model at reduced
+inference cost, for which no real images with Anny labels existed. The solution has four parts: 3DPW's SMPL
+labels were converted to Anny by joint-based fitting with virtual torso joints; a ViT-L teacher was trained on
+AnnyOne and converted 3DPW with consistent head anchors and a fixed bone rotation correction; a ViT-B student
+inherited the teacher's heads through a learned projector and was distilled from its features and outputs; and
+temporal filtering and landmark alignment were added for video at inference time.
 
-To train on real photos, I converted 3DPW's SMPL labels into Anny labels. The converter matches the joints of the two
-body models, adds virtual torso joints and keeps one median shape per person and sequence. In an independent check the
-converted joints lie a median \DataCheckJointsNew\,mm from 3DPW's, and some phenotypes are the same for every person
-(Section~\ref{sec:data-limits}).
+The student has \ParamRatioStudent{} times fewer parameters than its teacher and ran \SpeedRatioStudent{} times faster, but its PVE is \StudentPVE{} against \FinalPVE\,mm on the
+AnnyOne holdout and \StudentThreeDPW{} against \FinalThreeDPW\,mm on converted 3DPW, so it misses the retention
+criterion set in advance. Its 3DPW PVE is below the \NAVERThreeDPW\,mm of the released baseline, which was trained on
+different data. Neither longer training nor another distillation temperature closed the gap.
+The teacher's detection recall on Relative Human falls from \CrowdFinalOneRec--\CrowdFinalTwoRec\,\% for one or two people
+per image to \CrowdFinalNinePlusRec\,\% for nine or more. On video, filtering and alignment produced visibly
+steadier and better placed output, and the student's model inference ran at \VideoStudentRawFPS{} against
+\VideoNAVERFPS\,FPS for the baseline.
 
-The ViT-B student trains on AnnyOne and converted 3DPW. It reuses the prediction heads of its ViT-L teacher, Final,
-through a learned projector, and learns to imitate the teacher's features and outputs. Both models use consistent
-head anchors and one fixed output rotation correction, which I analyse in the appendices. At inference only the
-student and the Anny decoding layer run.
-
-The student is cheaper: \StudentParams\,M parameters and \StudentGFLOPs\,GFLOPs against the teacher's \FinalParams\,M
-and \FinalGFLOPs\,GFLOPs, and \StudentMsLFortyS{} against \TeacherMsLFortyS\,ms per forward pass on the L40S GPU. The
-teacher is more accurate. On the AnnyOne holdout and the converted 3DPW test set its PVE was \FinalPVE{} and
-\FinalThreeDPW\,mm, against \StudentPVE{} and \StudentThreeDPW\,mm for the student. So the student failed the 95\,\% rule I set
-beforehand (Section~\ref{sec:res-student}). Its 3DPW PVE is lower than the \NAVERThreeDPW\,mm of the released
-Multi-HMR-Anny, but only my models were trained on converted 3DPW.
-
-I also trained the student for 60 epochs. The holdout PVE fell to \StudentSixtyPVE\,mm, but the 3DPW PVE moved only
-from \StudentThreeDPW{} to \StudentSixtyThreeDPW\,mm, with no repeated runs to measure the variation on 3DPW
-(Section~\ref{sec:res-training-length}). So longer training alone does not close the gap on real images, and I keep
-the 30-epoch student. A sweep of the distillation temperature
-from 1 to 8 changed the errors by at most \KDTPRange\,mm, no more than the variation between two runs of the same
-setting, so the temperature is not the limit either (Section~\ref{sec:res-kd-temperature}).
-
-On a walking clip of \VideoFrames{} frames, the student kept a tracked person in \VideoStudentMatched{} frames and the
-baseline in \VideoBaselineMatched{} (Section~\ref{sec:res-video}). By eye, the filter made the motion steadier, and the
-alignment improved the mesh's position and size, so it followed the person more closely. The network still works frame
-by frame, and neither step is a learned temporal model (Section~\ref{sec:method-temporal}). The clip has no ground truth, so this shows
-steadier output, not better 3D accuracy.
+Unresolved are the cause of the accuracy gap and the share of it that distillation recovers, body shape on real
+photographs (children, men), the compression of predicted depth, and a learned temporal model; the evaluation is
+bounded by a small synthetic holdout, single runs and the absence of a fairly trained baseline
+(Section~\ref{sec:disc-limitations}).
 
 \section{Future work}
 \label{sec:future}
 
 \paragraph{Temporal evaluation and modelling.}
-I would run the filter and the alignment on the 3DPW test sequences, whose converted labels exist at \DataLabelFps{}
-frames per second, and measure PVE per frame against the raw student, so that steadiness and accuracy are measured
-together. Then I would test clips with occlusion, a moving camera or several people, and report each frame rate
-with its GPU, precision and input resolution. A learned temporal model (Section~\ref{sec:bg-temporal}) is a separate
-project.
+Running the filter and the alignment on the 3DPW test sequences, whose converted labels exist at \DataLabelFps{}
+frames per second, would measure steadiness and per-frame PVE together; clips with occlusion, a moving camera or
+several people, timed end to end, would follow. A learned temporal model (Section~\ref{sec:bg-temporal}) is a
+separate project.
 
 \paragraph{Accuracy at reduced cost.}
-After the temperature sweep, I would try other weights for the distillation losses, other ways of transferring the
-teacher's features and more real images per batch. A fair comparison also needs Multi-HMR-Anny fine-tuned on the same
-3DPW data.
+Other distillation loss weights, other forms of feature transfer and more real images per batch are the next
+candidates for narrowing the gap. A released baseline fine-tuned on the same converted 3DPW data would separate the
+effect of architecture and distillation from that of the training data.
 
 \paragraph{Real-image shape.}
-To replace the constant phenotypes, I would use age-group labels, body measurements or more Anny fits on real photos.
-Tests with children should keep two questions apart: can Anny make child proportions, and does the network recognise a
-child in a photo?
+Age-group labels, body measurements or further Anny fits on real photographs could replace the constant phenotypes.
+Tests with children should separate whether Anny can represent child proportions from whether the network
+recognises a child in a photograph.
 
 \paragraph{Reliability and reproducibility.}
-Each model comes from one run. I would repeat the runs, with uncertainty estimates and a larger holdout set, to see
-which differences are real. A portable configuration with release checks would make the system easier to verify. I
-have not run any of these.
+Repeated runs with uncertainty estimates and a larger, randomly drawn holdout that includes children would show
+which differences are real and how far the results generalise. A portable configuration with release checks would
+make the system easier to verify.
