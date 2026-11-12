@@ -12,6 +12,8 @@
 % Cross-checks: Base 74.3 / 57.5 / recall 90 and Mixed-L 78.5 / 57.4 / 89 equal the AnnyOne test-100
 % V0 numbers of the v23 3DPW-test logs (3612073:25-32, 3612074:25-32; H 0b).
 % Names: stages as in Chapter 4 (stage 4 = Base); students S1-S8 = v1-v8 in the code (numbers_method.tex).
+% 12 Nov 2026: V0 -> unmasked protocol; captions to at most three sentences, variant descriptions moved to a table
+% note; Base row labelled as the initial model.
 \begin{table}[!htbp]
 \centering\footnotesize
 \setlength{\tabcolsep}{2pt}
@@ -28,8 +30,8 @@ L-stage 4 & + neck and hand loss $\times$4 & 73.6 & 56.5 & 73.2 & -- \\
 Base & + shape loss weight 20 & \BaseVzeroPVE & 57.5 & 74.4 & 90 \\
 \bottomrule
 \end{tabular}
-\caption{The transfer schedule that produced Base (Table~\ref{tab:model-names}); recall (Rec.) in \%. L-stages 2--4:
-evaluation during training; Base: the standalone script.}
+\caption{The transfer schedule that produced the initial model, Base (Table~\ref{tab:model-names}); recall (Rec.)
+in \%. L-stages 2--4 are evaluated during training, the initial model with the standalone script.}
 \label{tab:history-stages}
 \end{subtable}
 
@@ -38,7 +40,7 @@ evaluation during training; Base: the standalone script.}
 \centering
 \begin{tabular}{@{}llrrrrrrrr@{}}
 \toprule
- & & & \multicolumn{5}{c}{AnnyOne holdout, V0} & \multicolumn{2}{c@{}}{3DPW test, v23$^{c}$} \\
+ & & & \multicolumn{5}{c}{AnnyOne holdout, unmasked} & \multicolumn{2}{c@{}}{3DPW test, v23$^{c}$} \\
 \cmidrule(lr){4-8}\cmidrule(l){9-10}
 Model & Teacher & Params & PVE & PA-PVE & MPJPE & Prec. & Rec. & PVE & PA-PVE \\
 \midrule
@@ -52,15 +54,19 @@ Student-S/mixed$^{b}$ & Base & 37 & 120.6 & 88.2 & 125.2 & 78 & 87 & -- & -- \\
 Student-S/final$^{b}$ & Mixed-L & 37 & 120.6 & 86.9 & 125.0 & 76 & 87 & \StudentSFinalThreeDPW & \StudentSFinalPAThreeDPW \\
 \bottomrule
 \end{tabular}
+
+\smallskip
+\parbox{\linewidth}{\scriptsize Student-S/2: feature distillation only; Student-S/6b: heads fed through a projector at
+the teacher's width; Student-S/6c: Student-S/6b at batch 16; Student-S/mixed and Student-S/final: continued with 3DPW
+images. $^{a}$Evaluation during training. $^{b}$30\,\% 3DPW images per batch, old labels. $^{c}$Corrected labels,
+the script of Table~\ref{tab:final-3dpw}; the teacher (Final) reaches \FinalThreeDPW{} / \FinalPAThreeDPW\,mm.}
 \caption{The ViT-S students against their ViT-L teachers; parameters in millions, precision (Prec.) and recall
-(Rec.) in \%. Student-S/2: feature distillation only; Student-S/6b: heads fed through a projector at the teacher's
-width; Student-S/6c: Student-S/6b at batch 16; Student-S/mixed and Student-S/final: continued with 3DPW images.
-$^{a}$Evaluation during training. $^{b}$30\,\% 3DPW images per batch, old labels. $^{c}$Corrected labels, the script
-of Table~\ref{tab:final-3dpw}; Final: \FinalThreeDPW{} / \FinalPAThreeDPW\,mm.}
+(Rec.) in \%.}
 \label{tab:history-students}
 \end{subtable}
-\caption[History: the schedule to Base and the ViT-S students (V0)]{History, before the depth fix, the bone
-correction and the corrected 3DPW labels. AnnyOne holdout (100 images), setting V0, errors in mm; one run per model,
-no seed. ``--'': not measured with the same script. The students' old-label 3DPW numbers are retired.}
+\caption[History: the schedule to the initial model and the ViT-S students]{Earlier models, measured before the
+depth fix, the bone correction and the corrected 3DPW labels, on the AnnyOne holdout (100 images) in the unmasked
+protocol (helper bones scored as predicted); errors in mm, single runs without a seed. ``--'': not measured with the
+same script; the students' old-label 3DPW numbers are retired.}
 \label{tab:history}
 \end{table}

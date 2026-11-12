@@ -21,36 +21,37 @@
 %   terms: age bias = mean(pred - GT) of the age phenotype, scripts/diagnostics/diag_report.py:206,314;
 %   flagged = docs/experiments_plan.md:404-405; geodesic = 05_diagnostics sec:diag-neck.
 % 7 Nov: audit fixes. The draft's "six times more images" had no source (and T19's sample counts do not give it):
-%   replaced by the Student's data (A+P, v23 labels; T19). Typed 71.5 / 89.2 may become \DiagRulePVE /
-%   \DiagRuleRecall at integration (not in BASE).
+%   replaced by the Student's data (A+P, v23 labels; T19).
+% 12 Nov 2026 (REVISION_BRIEF): academic register, descriptive names first, V1/V0 replaced by the described protocols;
+%   typed 71.5 / 89.2 in the table now \DiagRulePVE / \DiagRuleRecall; the pilot-variation paragraph condensed to one
+%   sentence (full report: Appendix F, sec:diag-noise).
 
 \chapter{Pilot results in full}
 \label{app:pilots}
 
-Before the final runs I tested six changes in pilots. A pilot is a short run, usually a 2-epoch fine-tune of Base,
-that tests one change. I compare each pilot with a control, which is the same training without the change, and
-Table~\ref{tab:pilots-all} names the control of each pilot. Appendix~\ref{ch:diagnostics} explains what each result
-means. The second section is older history, the ViT-S students I trained first and the stages that produced Base.
+Six candidate changes were tested in pilots before the final runs. A pilot is a short run, usually a 2-epoch
+fine-tune of the initial model (Base), that tests one change against a control, the same training without the change
+(Table~\ref{tab:pilots-all}). Appendix~\ref{ch:diagnostics} interprets the results;
+Section~\ref{sec:res-history} records the earlier stages that produced the initial model and the ViT-S students.
 
 \section{The six pilots}
 
-Every pilot fine-tuned Base on AnnyOne only, at learning rate $10^{-5}$ and batch 4, for 2 epochs (8,000 images)
-unless noted. I evaluated all of them on the 100-image AnnyOne holdout in setting V1. Table~\ref{tab:pilots-all} gives the success
-rule that I wrote into each script before the run. The full depth runs are in Table~\ref{tab:depth-runs}.
-
-The table uses three terms that have not come up before. The geodesic angle is the angle of the single rotation that
-turns the predicted bone into the true one. The loss I normally train with does not use this angle. It compares the
-two rotation matrices element by element with L1. A flagged bone is one that the per-bone dump of Base in
-Appendix~\ref{ch:diagnostics} marks as flipped or as turned by a constant offset. Age bias is the mean of the
-predicted minus the true age phenotype, so it says whether the predicted age is too high or too low on average.
+Unless noted, each pilot fine-tuned the initial model on AnnyOne only (learning rate $10^{-5}$, batch 4, 2 epochs or
+8,000 images) and was evaluated on the 100-image AnnyOne holdout in the masked protocol, in which the helper bones
+(face, toes, breasts) are set to rest pose (Table~\ref{tab:metrics}). The success rule of each pilot was written into
+its script before the run; the full depth runs are in Table~\ref{tab:depth-runs}. The geodesic angle is the angle of
+the single rotation that maps the predicted bone onto the true one, whereas the standard loss compares the rotation
+matrices element-wise with L1. A flagged bone is one that the per-bone dump of the initial model
+(Section~\ref{sec:diag-neck}) marks as flipped or as rotated by a constant offset. Age bias is the mean of predicted
+minus true age phenotype.
 
 \begingroup
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \begin{longtable}{@{}>{\raggedright}p{1.6cm}>{\raggedright}p{2.6cm}>{\raggedright}p{2.7cm}>{\raggedright}p{2.95cm}>{\raggedright\arraybackslash}p{2.1cm}@{}}
-\caption[Pilot experiments: change, rule, result, control]{The six pilot experiments. V1, 100-image AnnyOne holdout,
-matched people; fine-tunes of Base, one run each, without a seed. The rule is the success rule written into each
-script before the run. Head direction is the global head orientation error.}
+\caption[Pilot experiments: change, rule, result, control]{The six pilot experiments, each a single fine-tune of the
+initial model (Base) without a seed, on the 100-image AnnyOne holdout (masked protocol, matched people). The success
+rule was written into each script before the run. Head direction is the global head orientation error.}
 \label{tab:pilots-all}\\
 \toprule
 Pilot & What changed & Success rule & Result & Control \\
@@ -64,19 +65,19 @@ Pilot & What changed & Success rule & Result & Control \\
 \endfoot
 Depth pilots (2 and 10 epochs) &
 training targets at the head joint instead of the pelvis; depth and translation weights $\times$1, $\times$5, $\times$20 &
-slope toward 1 and intercept toward 0\,m, with PVE $\le$ 71.5\,mm and recall $\ge$ 89.2\,\% &
+slope toward 1 and intercept toward 0\,m, with PVE $\le$ \DiagRulePVE\,mm and recall $\ge$ \DiagRuleRecall\,\% &
 rule not met (PVE or recall missed in every run, controls too); root error \DiagRootErrBase{} $\to$ \DiagXFiveTenRoot\,m, size \DiagSizeBase{} $\to$ 0.84, slope \DiagDepthSlopeBase{} $\to$ \DiagSlopeStrongLow{} ($\times$5, 10 epochs) &
-same schedule, targets at the pelvis, weight $\times$1 (one 2-epoch, one 10-epoch) \\
+same schedule, targets at the pelvis, weight $\times$1 (2 and 10 epochs) \\
 \addlinespace
 Sampler pilot &
 age-balanced sampling: children (age $<$ 0.3) per batch \DiagSamplerBefore{} $\to$ \DiagSamplerAfterLow--\DiagSamplerAfterHigh\,\% &
-10 manifest children: PVE $<$ \DiagChildSwapBefore\,mm and $|$age bias$|$ $<$ 0.078; holdout PVE $\le$ 71.5, recall $\ge$ 89.2 &
+10 manifest children: PVE $<$ \DiagChildSwapBefore\,mm and $|$age bias$|$ $<$ 0.078; holdout PVE $\le$ \DiagRulePVE, recall $\ge$ \DiagRuleRecall &
 inconclusive: children \DiagSamplerChildPVE{} vs.\ \DiagSamplerChildPVECtrl\,mm, age bias 0.078 vs.\ 0.085; baby age floor \DiagSamplerBabyBefore{} $\to$ \DiagSamplerBabyAfter &
-same run with the sampler off (age $\times$3 and height $\times$2 shape weights in both) \\
+sampler off (age $\times$3 and height $\times$2 shape weights in both) \\
 \addlinespace
 Head-loss pilot &
 L1 loss on the camera-frame orientation of head, neck03 and both wrists, weight 5 &
-head direction $<$ 12.0\,deg; PVE $\le$ 71.5\,mm, recall $\ge$ 89.2\,\% &
+head direction $<$ 12.0\,deg; PVE $\le$ \DiagRulePVE\,mm, recall $\ge$ \DiagRuleRecall\,\% &
 head direction \DiagGlobalHeadArm\,deg, within the controls' \DiagGlobalHeadCtrlA--\DiagGlobalHeadCtrlB; safety limit missed (71.8\,mm, 89.0\,\%) &
 two identical runs at weight 0 \\
 \addlinespace
@@ -84,61 +85,57 @@ Finger pilot &
 region-normalised rotation loss (body, hands, head-neck averaged separately); a test-time person crop &
 fingers below the rest-pose floor \DiagFingersRest\,deg without a PVE cost &
 no effect: fingers \DiagFingersRegion{} vs.\ \DiagFingersRegionCtrl\,deg; crop \DiagFingersZoom\,deg at body PVE \DiagZoomPVE\,mm &
-same run with the loss off (one of the two identical runs above) \\
+loss off (one of the two identical runs above) \\
 \addlinespace
 Geodesic pilot &
 geodesic angle instead of L1 on the rotation matrices &
 flagged bones down by $\ge$ 3\,deg more than the control, or neck and head under 15\,deg &
 no movement: neck02 \DiagNeckTwoBase{} $\to$ \DiagGeodesicNeckTwo, head \DiagDumpHead{} $\to$ \DiagGeodesicHead\,deg &
-same run with the L1 loss \\
+the same run with the L1 loss \\
 \addlinespace
 Bone-correction pilot &
 constant output rotation on neck02, head, metacarpal1.L, finger4-1.R; no training, then a 2-epoch fine-tune &
-bones $<$ 15\,deg, girth $\ge$ 0.9; no training: head direction $\le$ Base + 3\,deg; fine-tuned: guards against the control &
+bones $<$ 15\,deg, girth $\ge$ 0.9; no training: head direction $\le$ initial model + 3\,deg; fine-tuned: guards against the control &
 no training: fails (head direction \DiagHeadDirNoTrain{} vs.\ limit 15.0\,deg); fine-tuned: passes (neck02 4.7\,deg, girth 0.997, fingers \DiagFingersFixFT\,deg) &
 the geodesic pilot's L1 control \\
 \end{longtable}
 \endgroup
 
-\paragraph{Pilot variation.} Two runs of the same short configuration differed by \DiagNoisePVE\,mm PVE,
-\DiagNoiseHead\,deg head direction and \DiagNoiseRecall{} recall points
-(Table~\ref{tab:pilot-noise}). The restart comparison also showed higher average PVE than Base.
-These observations warn against reading too much into small single-run differences. They do not
-give a universal significance threshold. I selected the placement and bone corrections using their
-targeted diagnostics and matched controls, rather than a small PVE gain.
+Two identical pilot configurations differed by \DiagNoisePVE\,mm PVE (Section~\ref{sec:diag-noise}); the placement and
+bone corrections were therefore adopted on their targeted diagnostics against matched controls, not on a small PVE
+gain.
 
-\section{The ViT-S students and the stages that produced Base}
+\section{The ViT-S students and the stages that produced the initial model}
 \label{sec:method-kd-history}
 \label{sec:res-history}
 
 \input{tables/T20_history}
 
-I trained Base in stages (the names are in Table~\ref{tab:names}, the numbers in Table~\ref{tab:history-stages}).
-L-stage 1 trained new Anny heads together with every block of NAVER's ViT-L backbone. I did not continue it, and no
-checkpoint of it is kept. L-stage 2 started again from NAVER's backbone, kept it frozen and trained only new Anny
-heads. From there each stage started from the one before. L-stage 3 unfroze the last 4 of the 24 blocks and added the
-helper mask. L-stage 4 weighted the loss on the neck and hand bones four times. Finally, Base added the shape loss
-weight of 20.
+The initial model was trained in stages (names in Table~\ref{tab:names}, numbers in
+Table~\ref{tab:history-stages}). L-stage~1 trained new Anny heads together with every block of NAVER's ViT-L backbone;
+it was discontinued, and no checkpoint is kept. L-stage~2 restarted from NAVER's backbone, kept it frozen and trained
+only new Anny heads; each later stage started from its predecessor. L-stage~3 unfroze the last 4 of the 24 blocks and
+added the helper mask, L-stage~4 weighted the loss on the neck and hand bones four times, and the initial model added
+the shape-loss weight of 20.
 
-Before the ViT-B Student I tried smaller students to meet the size requirement. I trained a series of ViT-S students,
-Student-S/1 to Student-S/final, with Base as their teacher. ViT-S is the vision transformer one size below the
-Student's ViT-B. All runs in Table~\ref{tab:history}, the stages and the students, came before the depth fix, the bone
-correction and the corrected 3DPW labels. So the table shows the numbers I measured at the time, in setting V0 (the
-students are in Table~\ref{tab:history-students}). The best student, Student-S/6c, had \StudentSixcRatio{} times the
-PVE of its teacher.
+Before the ViT-B student, ViT-S students (Student-S/1 to Student-S/final; ViT-S is one size below ViT-B) were trained
+with the initial model as teacher to meet the size requirement. All runs of Table~\ref{tab:history} predate the depth
+fix, the bone correction and the corrected 3DPW labels and report the values measured at the time, in the unmasked
+protocol (helper bones scored as predicted). The best of them, Student-S/6c, reached \StudentSixcRatio{} times the PVE
+of its teacher.
 
-Four things I learned from these students went into the Student's training. With feature distillation alone, nothing
-trains the heads, and Student-S/2 has by far the largest error in Table~\ref{tab:history-students}. For this reason
-the Student starts with a copy of the teacher's heads. The copied heads only worked when the projector fed them their
-input. With a new, randomly initialised input layer in front of them they did not. Heads at the teacher's width also
-did better than narrower ones. So the Student keeps every head of Final at its full width. The starting point
-mattered most. A backbone that NAVER had already trained for mesh recovery gave the largest gain, which is why
-the Student starts from NAVER's ViT-B. Last, I increased the data budget and used corrected 3DPW labels alongside AnnyOne. The trials
-do not prove that data, rather than capacity, was the only limitation.
+Four observations from these runs shaped the student's training. With feature distillation alone nothing trains the
+heads, and Student-S/2 has by far the largest error (Table~\ref{tab:history-students}); the student therefore starts
+with a copy of the teacher's heads. The copied heads worked only when fed by the projector, not behind a newly
+initialised input layer, and heads at the teacher's width outperformed narrower ones; the student therefore keeps every
+head of the teacher (Final) at full width. The starting point mattered most: a backbone already trained by NAVER
+for mesh recovery gave the largest gain, so the student starts from NAVER's ViT-B. Finally, the data budget was
+increased, with corrected 3DPW labels alongside AnnyOne; the trials do not show that data, rather than capacity, was
+the only limitation.
 
-Two settings made the ViT-S training steps faster. I ran the matrix products in TF32, a reduced-precision mode of the
-A100, and I kept the teacher's backbone in bfloat16, a 16-bit number format. Together they cut a ViT-S student's
-training step from \MethodItTimeBefore{} to \MethodItTimeAfter\,s on an A100, and the evaluation numbers did not
-change. The Student's run keeps both settings: TF32 as in Final (Table~\ref{tab:flags-final}) and the teacher in
-bfloat16 (Table~\ref{tab:flags-student}). I took these two step times from an earlier version of this report; the
-training log behind them was not kept.
+Matrix products in TF32, a reduced-precision mode of the A100, and the teacher's backbone in bfloat16, a 16-bit
+format, reduced the ViT-S step time from \MethodItTimeBefore{} to \MethodItTimeAfter\,s on an A100 without changing
+the evaluation numbers. The student's run
+keeps both (TF32 as in the teacher, Table~\ref{tab:flags-final}; the teacher in bfloat16,
+Table~\ref{tab:flags-student}). The step times come from an earlier version of this report; their training log was not
+kept.
