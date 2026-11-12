@@ -7,7 +7,7 @@
   node distance=4mm and 4mm,
   box/.style={draw, rounded corners=2pt, align=center, inner sep=3pt, minimum height=10mm},
   frozen/.style={box, fill=gray!15},
-  ours/.style={box, fill=teal!12, draw=teal!60!black},
+  newbox/.style={box, fill=teal!12, draw=teal!60!black},
   arr/.style={-{Stealth[length=2mm]}, semithick},
   loss/.style={draw=red!60!black, dashed, {Stealth[length=2mm]}-{Stealth[length=2mm]}, semithick},
   lname/.style={font=\scriptsize, text=red!50!black, align=center, fill=white, inner sep=1pt},
@@ -19,10 +19,10 @@
 \node[frozen, text width=17mm, right=of ttok] (thead) {teacher heads\\ (frozen)};
 \node[frozen, text width=14mm, right=of thead] (tout) {$R^{t}$, $\phi^{t}$, $d^{t}$};
 % student row
-\node[ours, text width=19mm, below right=4mm and 6mm of img] (svit) {student ViT-B\\ trained};
-\node[ours, text width=14mm, right=of svit] (sproj) {projector\\ $\MethodWidthB\to\MethodWidthL$};
-\node[ours, text width=17mm, right=of sproj] (shead) {student heads};
-\node[ours, text width=14mm, right=of shead] (sout) {$R^{s}$, $\phi^{s}$, $d^{s}$};
+\node[newbox, text width=19mm, below right=4mm and 6mm of img] (svit) {student ViT-B\\ trained};
+\node[newbox, text width=14mm, right=of svit] (sproj) {projector\\ $\MethodWidthB\to\MethodWidthL$};
+\node[newbox, text width=17mm, right=of sproj] (shead) {student heads};
+\node[newbox, text width=14mm, right=of shead] (sout) {$R^{s}$, $\phi^{s}$, $d^{s}$};
 % data flow
 \draw[arr] (img) |- (tvit);
 \draw[arr] (img) |- (svit);

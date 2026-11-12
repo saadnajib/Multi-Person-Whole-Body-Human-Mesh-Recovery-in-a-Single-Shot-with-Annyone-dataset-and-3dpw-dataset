@@ -6,7 +6,7 @@
   node distance=5mm and 4mm,
   box/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, inner sep=3pt,
               minimum height=13mm},
-  ours/.style={box, fill=teal!12, draw=teal!60!black},
+  newbox/.style={box, fill=teal!12, draw=teal!60!black},
   arr/.style={-{Stealth[length=2mm]}, semithick},
   tag/.style={font=\scriptsize\itshape, text=teal!50!black, align=left},
 ]
@@ -16,10 +16,10 @@
 \node[box, text width=27mm, right=of vit] (det) {per token: detection score and 2D offset of the anchor joint (head)};
 % row 2 (right to left): HPH -> Anny head -> bone correction
 \node[box, text width=27mm, below=7mm of det] (hph) {HPH: cross-attention, \MethodHPHDepth{} blocks, \MethodHPHHeads{} heads, width \MethodHPHDim; one query per person};
-\node[ours, text width=25mm, left=of hph] (out) {Anny head: $\MethodNumBones\times\MethodRotDims$ rotation values, \MethodNumPheno{} phenotypes, depth};
-\node[ours, text width=19mm, left=of out] (fix) {bone correction\\ $R_b \leftarrow R_b C_b$\\ 0 parameters};
+\node[newbox, text width=25mm, left=of hph] (out) {Anny head: $\MethodNumBones\times\MethodRotDims$ rotation values, \MethodNumPheno{} phenotypes, depth};
+\node[newbox, text width=19mm, left=of out] (fix) {bone correction\\ $R_b \leftarrow R_b C_b$\\ 0 parameters};
 % row 3: body model
-\node[ours, text width=44mm, below=6mm of out.south west, anchor=north] (body) {Anny body layer: mesh and joints, anchor joint placed at the predicted 2D position and depth};
+\node[newbox, text width=44mm, below=6mm of out.south west, anchor=north] (body) {Anny body layer: mesh and joints, anchor joint placed at the predicted 2D position and depth};
 % arrows
 \draw[arr] (img) -- (vit);
 \draw[arr] (vit) -- (det);
@@ -32,7 +32,7 @@
 \node[draw, dashed, rounded corners=3pt, fit=(vit), inner sep=4pt,
       label={[font=\scriptsize, align=center]above:distillation: frozen ViT-L teacher,\\ ViT-B student with a $\MethodWidthB\to\MethodWidthL$ projector (Sec.~\ref{sec:method-kd})}] {};
 % tags for what this thesis changed
-\node[tag, right=2mm of det, text width=24mm] {ours: targets built at the same joint (Sec.~\ref{sec:method-depth})};
-\node[tag, right=2mm of hph, text width=24mm] {ours: output resized for Anny, correction on four bones (Sec.~\ref{sec:method-bonefix})};
+\node[tag, right=2mm of det, text width=24mm] {this thesis: targets built at the same joint (Sec.~\ref{sec:method-depth})};
+\node[tag, right=2mm of hph, text width=24mm] {this thesis: output resized for Anny, correction on four bones (Sec.~\ref{sec:method-bonefix})};
 \node[tag, right=2mm of body, text width=40mm] {shaded = changed or added in this thesis; the rest is Multi-HMR};
 \end{tikzpicture}

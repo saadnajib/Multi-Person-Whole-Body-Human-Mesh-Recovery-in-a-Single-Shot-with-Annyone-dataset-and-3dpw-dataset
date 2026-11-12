@@ -12,7 +12,7 @@
   note/.style={align=left, font=\scriptsize},
 ]
 % ---- row 1: Base, before the correction
-\node[font=\footnotesize\bfseries, anchor=west] at (-0.9,1.35) {Base, raw output};
+\node[font=\footnotesize\bfseries, anchor=west] at (-0.9,1.35) {Initial model, raw output};
 \node[bone] (a1) at (0,0) {neck01};
 \node[flip] (b1) at (2.4,0) {neck02};
 \node[bone] (c1) at (4.8,0) {neck03};
@@ -24,7 +24,7 @@
 \node[red!60!black, note, above=4mm of b1] {$\approx$\,180$^\circ$ twist (\MethodBaseNeckTwo$^\circ$)};
 \draw[turn, red!60!black] ([xshift=4mm]d1.north) arc[start angle=0, end angle=180, radius=4mm];
 \node[red!60!black, note, above=4mm of d1] {$\approx$\,180$^\circ$ back (\MethodBaseHead$^\circ$)};
-\node[note, text width=3.0cm, anchor=west] at (8.3,0) {the two half-turns cancel: the head points right (\MethodBaseGlobalHead$^\circ$ error)};
+\node[note, text width=3.0cm, anchor=west] at (8.3,0) {the two half-turns cancel: head direction nearly correct (\MethodBaseGlobalHead$^\circ$ error)};
 \node[note, red!60!black, anchor=north] at (3.6,-0.55) {skin between neck02 and head twisted thin: girth \MethodBaseGirth{} of the true value};
 % ---- row 2: with the correction
 \node[font=\footnotesize\bfseries, anchor=west] at (-0.9,-1.75) {With the correction $R_b \leftarrow R_b C_b$};
@@ -36,5 +36,5 @@
 \draw[arr] (b2) -- (c2);
 \draw[arr] (c2) -- (d2);
 \node[note, text width=3.0cm, anchor=west] at (8.3,-3.0) {both bones turned back by one constant each; 0 parameters};
-\node[note, teal!50!black, anchor=north] at (3.6,-3.6) {girth \MethodFixGirth{} with no training; \MethodFinalGirth{} in Final};
+\node[note, teal!50!black, anchor=north] at (3.6,-3.6) {girth \MethodFixGirth{} with no training; \MethodFinalGirth{} in the teacher};
 \end{tikzpicture}

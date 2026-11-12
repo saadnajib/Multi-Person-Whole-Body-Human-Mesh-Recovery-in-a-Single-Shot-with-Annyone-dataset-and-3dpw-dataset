@@ -1,39 +1,33 @@
-% Chapter 4 (Method), 6 Nov revision. Moved out: loss shares and CornerNet remark -> 05 sec:diag-checks;
-% anchor/bone-fix measurements -> 05; ViT-S step time and transfer stages -> appendix_e.
+% Chapter 4 (Method), revised 12 Nov 2026.
 \chapter{Methodology}
 \label{ch:method}
-
-The model I deploy is the ViT-B Student. It learns from a larger ViT-L teacher, which my experiment records call
-Final. The teacher gives the student two things: a copy of its prediction heads at the start of training, and targets
-to imitate during training.
 
 \section{System overview}
 \label{sec:method-overview}
 
-The real 3DPW training images come with SMPL labels, and the converter of Chapter~\ref{ch:data} turns these into
-Anny labels. With these labels I train the teacher on synthetic and real images together. The student then learns from the labels and from the teacher, which stays frozen, meaning
-training does not update its weights. Only the student runs at deployment (Figure~\ref{fig:distillation}).
+The deployed model is a ViT-B student distilled from a ViT-L teacher. The teacher is trained on AnnyOne and on 3DPW
+training images whose SMPL labels the converter of Chapter~\ref{ch:data} turns into Anny labels. The student is trained
+on the same labels and on feature and output targets of the frozen teacher, which also provides the initial weights of
+the student's heads. Only the student runs at deployment (Figure~\ref{fig:distillation}).
 
 \begin{figure}[!htb]
 \centering
 \input{figures/tikz/F05_distillation}
-\caption[Teacher--student training and the deployed model]{Teacher--student training (schematic). Both branches see
-the same image. The student's ViT-B features pass through a \MethodWidthB{}-to-\MethodWidthL{} projector into heads
-copied from the frozen teacher, and the student is trained with the supervised and two distillation losses. At
-inference only the student runs; its projector stays, because the heads read its output.}
+\caption[Teacher--student training and the deployed model]{Teacher--student training (schematic). Student and frozen teacher receive the same
+image; the student is trained with the supervised and two distillation losses. At inference only the student,
+including its projector, runs.}
 \label{fig:distillation}
 \end{figure}
 
-The student's ViT-B encoder $f_B$ turns an image $I$ into $N_p$ tokens of $C_s=\MethodWidthB$ channels,
-$\mathbf Z^s=f_B(I)$. A trainable linear projector maps them to the teacher's width:
+The student's encoder $f_B$ maps an image $I$ to $N_p$ tokens $\mathbf Z^s=f_B(I)$ of $C_s=\MethodWidthB$
+channels, and a trainable linear projector maps them to the teacher's width:
 \begin{equation}
  \widetilde{\mathbf Z}^s=\mathbf Z^s\mathbf W^\top+\mathbf b,\qquad
  \mathbf W\in\mathbb R^{C_t\times C_s},\quad C_t=\MethodWidthL .
- \label{eq:student-projection}
+\label{eq:student-projection}
 \end{equation}
-The projector learns \MethodWidthL{} weighted combinations of each token's \MethodWidthB{} feature values,
-plus a bias. This gives the copied heads the width they expect; it adds no new image information. Most of the saving in parameters and running time comes from the smaller encoder. Using a
-ViT-B encoder, or distillation, is not new in itself.
+The projector adds no image information; the savings come mainly from the smaller encoder. Neither a ViT-B encoder nor
+distillation is new in itself.
 
 % -----------------------------------------------------------------------------
 \section{Multi-HMR for Anny}
@@ -42,88 +36,71 @@ ViT-B encoder, or distillation, is not new in itself.
 \subsection{The task}
 \label{sec:method-task}
 
-The input is one RGB image with camera intrinsics $\mathbf{K}$, the matrix of focal length and image centre. It shows
-an unknown number of people. For each person $i$ the network predicts the rotations
+The input is one RGB image with intrinsics $\mathbf{K}$ showing an unknown number of people. For each person $i$ the
+network predicts the rotations
 $\mathbf{R}_i\in SO(3)^{\MethodNumBones}$ of Anny's bones, the phenotypes $\boldsymbol{\phi}_i\in[0,1]^{\MethodNumPheno}$,
 and the image position $(u_i,v_i)$ and depth $z_i$ of one anchor joint $a$, the head. The Anny body model
-$M$~\cite{bregier2025anny} turns $(\mathbf{R}_i,\boldsymbol{\phi}_i)$ into vertices $M_V$ and joints, and the mesh is
-moved so that its anchor joint $M_{J,a}$ sits at the back-projected anchor pixel:
+$M$~\cite{bregier2025anny} maps $(\mathbf{R}_i,\boldsymbol{\phi}_i)$ to vertices $M_V$ and joints, and the mesh is
+translated so that its anchor joint $M_{J,a}$ lies at the back-projected anchor pixel:
 \begin{equation}
-  \mathbf{V}_i = M_V(\mathbf{R}_i,\boldsymbol{\phi}_i) - M_{J,a}(\mathbf{R}_i,\boldsymbol{\phi}_i) + \mathbf{t}_i,
-  \qquad
-  \mathbf{t}_i = z_i\,\mathbf{K}^{-1}\,(u_i, v_i, 1)^{\top}.
-  \label{eq:method-placement}
+ \mathbf{V}_i=M_V(\mathbf{R}_i,\boldsymbol{\phi}_i) - M_{J,a}(\mathbf{R}_i,\boldsymbol{\phi}_i)+\mathbf{t}_i,
+ \qquad
+ \mathbf{t}_i=z_i\,\mathbf{K}^{-1}\,(u_i, v_i, 1)^{\top}.
+\label{eq:method-placement}
 \end{equation}
-So the head is first moved to the origin, and then the whole body is shifted so that the head lands at depth
-$z_i$ on the camera ray through its pixel.
-
 \subsection{Architecture}
 \label{sec:method-architecture}
 
 The teacher follows Multi-HMR~\cite{baradel2024multihmr} with outputs for Anny (Figure~\ref{fig:architecture}). A
-DINOv2 ViT-L~\cite{oquab2023dinov2} with weights from NAVER's Anny checkpoint turns the image into tokens. One MLP scores
-each token for the anchor joint (the head, \texttt{-{}-person\_center head}), and a second predicts the anchor's 2D
-offset inside the token. Each detected token becomes a query of the Human Perception Head (HPH, Section~\ref{sec:bg-hmr}), which lets the
-people attend to each other and to all image tokens.
+DINOv2 ViT-L~\cite{oquab2023dinov2} from NAVER's Anny checkpoint encodes the image into tokens; one MLP scores each
+token for the head anchor, a second predicts the anchor's offset inside the token. Each detected token becomes a query of the Human Perception Head (HPH, Section~\ref{sec:bg-hmr}), which
+attends to the other people and to all image tokens.
 
 \begin{figure}[!htb]
   \centering
   \input{figures/tikz/F01_architecture}
-  \caption[Teacher decoding architecture]{Teacher architecture (schematic): $\MethodImgSize$-pixel input,
-  $\MethodTokenGrid\times\MethodTokenGrid$ ViT-L tokens with a head-anchor score and offset, then per person
-  $\MethodNumBones\times\MethodRotDims$ rotation values, \MethodNumPheno{} phenotypes and a depth, the constant
-  correction of four bones and the Anny layer. Shaded boxes are new in this thesis; the dashed box is what distillation
-  replaces.}
+  \caption[Teacher decoding architecture]{Teacher architecture (schematic). Shaded boxes are new in this thesis; the
+  dashed box marks the part that distillation replaces.}
   \label{fig:architecture}
 \end{figure}
 
-The Anny head is the part that differs from the SMPL-X version. Each rotation is predicted as \MethodRotDims{} numbers,
-which Gram--Schmidt orthogonalisation turns into a valid rotation matrix~\cite{zhou2019continuity}. A sigmoid keeps the
-phenotypes between 0 and 1, and the depth is Multi-HMR's logarithm of the distance, normalised by the focal length.
-Right after Gram--Schmidt, four bones are multiplied by one constant rotation each (Section~\ref{sec:method-bonefix}).
-Then a fixed mask sets \MethodHelperBones{} helper bones (toes, breasts, face and subdivision bones) to the identity,
-both in the prediction and in the label, and keeps the other \MethodActiveBones{} bones.
+In the Anny head, which replaces the SMPL-X head, each rotation is predicted as \MethodRotDims{} values and
+orthogonalised by Gram--Schmidt~\cite{zhou2019continuity}; a sigmoid bounds the phenotypes to $[0,1]$, and the depth
+is Multi-HMR's focal-normalised log-distance. Four bones are then multiplied by one constant rotation each
+(Section~\ref{sec:method-bonefix}), and a fixed mask sets \MethodHelperBones{} helper bones (toes, breasts, face and
+subdivision bones) to the identity in prediction and label, keeping \MethodActiveBones{}. The Anny layer, with the same
+full rig as the target builder, is part of the network, so the 3D and 2D losses are computed on the placed mesh and
+their gradients propagate through it. The student keeps everything after the encoder, replaces the encoder by ViT-B and adds the projector
+(Table~\ref{tab:student-recipe}).
 
-The Anny layer runs inside the network. It uses the same full rig as the code that builds the training targets, and it
-places the body with Equation~\eqref{eq:method-placement}. This means the 3D and 2D losses are computed on the mesh,
-and their gradients flow back into the network through this layer. The student keeps everything after the encoder, replaces the encoder by
-ViT-B and adds the projector (sizes and cost in Table~\ref{tab:student-recipe}).
-
-\subsection{What the model predicts at inference}
+\subsection{Outputs at inference}
 \label{sec:method-inference}
 
-At inference there are no labels, so the model estimates everything from the image and $\mathbf K$. Camera information
-tells the model which direction each image location points into 3D space. When the calibration is unknown, as for the
-demo photos and the video, I build $\mathbf K$ from an assumed field of view, and a wrong guess changes the recovered
-depth. Per detected person the network gives a detection score, a 2D offset, \MethodNumBones{} bone rotations (how the
-body bends), \MethodNumPheno{} phenotypes (its proportions) and the head-anchor depth. Anny turns these into a mesh and
-joints, placed by Equation~\eqref{eq:method-placement}.
+At inference the model receives only the image and $\mathbf K$. When the calibration is unknown, as for the
+demonstration photos and the video, $\mathbf K$ is built from an assumed field of view; an incorrect assumption changes
+the recovered depth.
 
 % -----------------------------------------------------------------------------
 \section{Supervised training objective}
 \label{sec:method-losses}
 
-A loss is a numerical penalty for a mismatch during training. The target vertices and joints come from running Anny on
-each person's true parameters, and the anchor targets come from one joint, the head (Section~\ref{sec:method-depth}). The total loss is
+Target vertices and joints are decoded from each person's labelled parameters; the anchor targets refer to the head
+joint (Section~\ref{sec:method-depth}). The total loss is
 \begin{equation}
 \begin{split}
-\mathcal{L} = {}& \alpha_{\text{det}}\mathcal{L}_{\text{det}}
-  + \alpha_{\text{off}}\mathcal{L}_{\text{off}}
-  + \alpha_{\text{rot}}\mathcal{L}_{\text{rot}}
-  + \alpha_{\text{shape}}\mathcal{L}_{\text{shape}} \\
-  &+ \alpha_{\text{dist}}\mathcal{L}_{\text{dist}}
-  + \alpha_{\text{t}}\mathcal{L}_{\text{t}}
-  + \alpha_{\text{j3d}}\mathcal{L}_{\text{j3d}}
-  + \alpha_{\text{v3d}}\mathcal{L}_{\text{v3d}} \\
-  &+ \mathbb{1}[e \ge e_{\text{2D}}]\left(\alpha_{\text{j2d}}\mathcal{L}_{\text{j2d}}
-  + \alpha_{\text{v2d}}\mathcal{L}_{\text{v2d}}\right)
-  + \lambda_{\text{kd}}\mathcal{L}_{\text{kd}} + \lambda_{\text{kd-out}}\mathcal{L}_{\text{kd-out}},
+ \mathcal{L}={}&\alpha_{\text{det}}\mathcal{L}_{\text{det}}+\alpha_{\text{off}}\mathcal{L}_{\text{off}}
+ +\alpha_{\text{rot}}\mathcal{L}_{\text{rot}}+\alpha_{\text{shape}}\mathcal{L}_{\text{shape}}\\
+ &+\alpha_{\text{dist}}\mathcal{L}_{\text{dist}}+\alpha_{\text{t}}\mathcal{L}_{\text{t}}
+ +\alpha_{\text{j3d}}\mathcal{L}_{\text{j3d}}+\alpha_{\text{v3d}}\mathcal{L}_{\text{v3d}}\\
+ &+\mathbb{1}[e\ge e_{\text{2D}}]\left(\alpha_{\text{j2d}}\mathcal{L}_{\text{j2d}}
+ +\alpha_{\text{v2d}}\mathcal{L}_{\text{v2d}}\right)
+ +\lambda_{\text{kd}}\mathcal{L}_{\text{kd}}+\lambda_{\text{kd-out}}\mathcal{L}_{\text{kd-out}},
 \end{split}
 \label{eq:method-loss}
 \end{equation}
-with $e$ the epoch, $e_{\text{2D}}$ the first epoch of the 2D terms, and weights $\alpha$ and $\lambda$; the two
-distillation terms exist only for a student. So every wrong part of the prediction costs something, and the weights
-decide how much. Table~\ref{tab:loss-weights} gives what each term compares and its weights.
+with $e$ the epoch, $e_{\text{2D}}$ the first epoch of the 2D terms and weights $\alpha$ and $\lambda$; the two
+distillation terms exist only for the student. Table~\ref{tab:loss-weights} lists the weights, which were not tuned in
+this thesis.
 
 \input{tables/T02_loss_weights}
 
@@ -134,49 +111,46 @@ term is the focal loss of CornerNet~\cite{law2018cornernet}:
 \begin{equation}
  \mathcal L_{\mathrm{det}}=
  -\frac{1}{\max(1,N_+)}\sum_q
- \begin{cases}
+\begin{cases}
  (1-s_q)^2\log(s_q+\epsilon), & y_q=1,\\
  s_q^2\log(1-s_q+\epsilon), & y_q=0 .
- \end{cases}
- \label{eq:loss-detection}
+\end{cases}
+\label{eq:loss-detection}
 \end{equation}
-The sum runs over all tokens of the batch. A positive token is one that holds a head anchor. The squared factors make
-the easy background tokens count less. The loss is large when the network misses a person or fires on background. For
+The sum runs over all tokens of the batch; positive tokens contain a head anchor, and the squared factors down-weight
+well-classified tokens. The term penalises missed people and background detections. For
 $N_h$ supervised people with sub-token offsets $\mathbf o_i$,
 \begin{equation}
  \mathcal L_{\mathrm{off}}=\frac{1}{N_h}\sum_i
-    \|\widehat{\mathbf o}_i-\mathbf o_i\|_1
- \label{eq:loss-offset}
+ \|\widehat{\mathbf o}_i-\mathbf o_i\|_1
+\label{eq:loss-offset}
 \end{equation}
-grows when the anchor sits at the wrong place inside its token.
+penalises the localisation error of the anchor within its token.
 
 \subsection{Pose, shape and placement}
 
-For predicted and target rotation matrices $\widehat{\mathbf R}_{ib}$ and $\mathbf R_{ib}$ of bone $b$ of person $i$,
-pose and shape use an L1 loss, the sum of absolute differences:
+With rotation matrices $\widehat{\mathbf R}_{ib}$, $\mathbf R_{ib}$ of bone $b$ of person $i$, pose and shape use L1
+losses:
 \begin{equation}
  \mathcal L_{\mathrm{rot}}=\frac{1}{N_h}\sum_i\sum_b
-    m_{ib}w_b\|\widehat{\mathbf R}_{ib}-\mathbf R_{ib}\|_1,\qquad
+ m_{ib}w_b\|\widehat{\mathbf R}_{ib}-\mathbf R_{ib}\|_1,\qquad
  \mathcal L_{\mathrm{shape}}=\frac{1}{N_h}\sum_i\sum_k
-    |\widehat{\phi}_{ik}-\phi_{ik}|.
- \label{eq:loss-parameters}
+ |\widehat{\phi}_{ik}-\phi_{ik}|.
+\label{eq:loss-parameters}
 \end{equation}
-Here $m_{ib}$ is 0 for unlabelled 3DPW hand bones (Section~\ref{sec:method-real}) and $w_b$ is the normalised bone
-weight. The two terms penalise wrongly turned bones and wrong proportions. Helper rotations are the identity on both
-sides. Final supervises all phenotypes, including the ones that the converter leaves at a constant. The two shape-mask models
-(Section~\ref{sec:method-real}) test that choice. The code first sums over the bones (or phenotypes) of one person and
-only then averages over people, so the size of each term, and with it the meaning of its weight, depends on this order
-of summing. An L1 loss is smallest at the median of the plausible answers, so weak image cues pull the shape toward the
-training median (Appendix~\ref{ch:diagnostics}).
+Here $m_{ib}$ is 0 for unlabelled 3DPW hand bones (Section~\ref{sec:method-real}), $w_b$ the normalised bone weight. The teacher supervises all phenotypes, including those the converter leaves constant; the shape-mask variants
+(Section~\ref{sec:method-real}) test this choice. Both terms sum over a person's bones (or phenotypes) before
+averaging over people, so the scale of each term, and hence the meaning of its weight, depends on this order. An L1
+loss is minimised by the conditional median, so weak image cues pull the predicted shape towards the training median
+(Appendix~\ref{ch:diagnostics}).
 
 For predicted and target log-depth $d_i$ and camera-space anchor translation $\mathbf t_i$,
 \begin{equation}
  \mathcal L_{\mathrm{dist}}=\frac{1}{N_h}\sum_i|\widehat d_i-d_i|,\qquad
  \mathcal L_{\mathrm t}=\frac{1}{N_h}\sum_i\|\widehat{\mathbf t}_i-\mathbf t_i\|_1 .
- \label{eq:loss-placement}
+\label{eq:loss-placement}
 \end{equation}
-These penalise a wrong distance and a wrong position in the image. They are the only terms that see the absolute
-placement directly; the 2D terms see it indirectly.
+Only these terms supervise the absolute placement directly; the 2D terms constrain it indirectly.
 
 \subsection{Geometric and reprojection supervision}
 
@@ -186,220 +160,205 @@ $\overline{\mathbf X}_{i\ell}=\mathbf X_{i\ell}-\mathbf J_{i,\mathrm{root}}$. Wi
 \begin{equation}
  \mathcal L_{X3D}=\frac{1}{N_hK_X}\sum_i\sum_{\ell=1}^{K_X}
  w_\ell\|\widehat{\overline{\mathbf X}}_{i\ell}-\overline{\mathbf X}_{i\ell}\|_1 .
- \label{eq:loss-geometry}
+\label{eq:loss-geometry}
 \end{equation}
-This compares posture and body geometry independently of where the person stands, which is also why it cannot replace
+This term measures pose and geometry independently of the global position and cannot replace
 Equation~\eqref{eq:loss-placement}. The 2D terms project the uncentred camera-space points:
 \begin{equation}
  \mathcal L_{X2D}=\frac{1}{|\Omega_X|}
  \sum_{(i,\ell)\in\Omega_X}
  \|\pi_{\mathbf K}(\widehat{\mathbf X}_{i\ell})-\pi_{\mathbf K}(\mathbf X_{i\ell})\|_1 ,
- \label{eq:loss-reprojection}
+\label{eq:loss-reprojection}
 \end{equation}
-where $\pi_{\mathbf K}$ projects a point into the image and $\Omega_X$ holds the target points inside it. In plain words,
-the projected mesh must line up with the photo. If one of these terms comes out as NaN or infinite, that term is
-skipped.
+where $\pi_{\mathbf K}$ is the perspective projection and $\Omega_X$ the target points inside the image; the term
+penalises the pixel misalignment of the projected mesh. A term that evaluates to NaN or infinity is skipped.
 
-These L1 losses are related to PVE (Section~\ref{sec:method-eval}) but are not the same measure, because PVE averages
-Euclidean distances. Training runs in 32-bit floats (fp32) with the faster TF32 format for matrix products, because
-mixed precision gave NaN (not-a-number) values in the Anny layer, and steps with NaN or Inf gradients are skipped
-(\MethodFinalNaNSteps{} of $\num{\MethodFinalSteps}$ in Final). I did not tune any of the loss weights in
-Table~\ref{tab:loss-weights}.
+Unlike these L1 losses, PVE (Section~\ref{sec:method-eval}) averages Euclidean distances. Training uses 32-bit floats
+with TF32 matrix products, because mixed precision produced NaN values in the Anny layer; steps with NaN or Inf gradients are skipped (\MethodFinalNaNSteps{} of
+$\num{\MethodFinalSteps}$ for the teacher).
 
 % -----------------------------------------------------------------------------
 \section{Training with real images}
 \label{sec:method-real}
 
-A weighted sampler draws on average \MethodMixRatio\% of each batch from 3DPW-train converted to
-Anny (v23 labels, $\num{\MethodTrainThreeDPWImages}$ images) and \MethodSynthRatio\% from AnnyOne. AnnyOne images hold
-more people, so by my estimate only about \MethodThreeDPWPeopleShare\% of the supervised people are real. The test split
-is never used for training.
+A weighted sampler draws on average \MethodMixRatio\% of each batch from converted 3DPW-train (v23 labels,
+$\num{\MethodTrainThreeDPWImages}$ images) and \MethodSynthRatio\% from AnnyOne; since AnnyOne images contain more
+people, an estimated \MethodThreeDPWPeopleShare\% of the supervised people are real. The 3DPW test split is never used
+for training.
 
-\paragraph{The hand mask.} The converter fits only the root and the bones that carry a mapped SMPL joint, so the
-fingers, thumbs and metacarpals of every 3DPW label are at rest. With \texttt{-{}-mask\_3dpw\_hands 1} the rotation terms
-skip these \MethodHandMaskBones{} bones for 3DPW people. Finger-rotation labels come from AnnyOne.
-The mesh terms still carry the rest-pose hands, and the student's output distillation uses the teacher's
-hand predictions. The mask therefore does not remove all hand-related training.
+\paragraph{Hand mask.} The converter fits only the root and the bones carrying a mapped SMPL joint, so fingers,
+thumbs and metacarpals of every 3DPW label are at rest. In all models trained on 3DPW, the rotation and global-rotation
+terms skip these \MethodHandMaskBones{} bones for 3DPW people; finger rotations are supervised by AnnyOne only. The mesh terms still contain the rest-pose hands, and the output distillation uses the teacher's hand
+predictions.
 
-\paragraph{The shape mask.} The converter leaves \MethodShapeMaskCount{} phenotypes at constants: age, muscle,
-weight, cup size, firmness and the three ethnicity values (Section~\ref{sec:data-limits}). With
-\texttt{-{}-mask\_3dpw\_shape 1} the shape term ignores them for 3DPW people (Final-masked); the partial variant masks the
-\MethodShapeMaskPartial{} values other than age (Final-partial-mask). The mesh terms still carry the neutral body. I kept the
-unmasked model as Final and as the teacher, because on real photos both masked models lost the improvement in predicted
-gender that Final has over Base (Section~\ref{sec:res-mask}).
-
-% -----------------------------------------------------------------------------
-\section{Knowledge distillation}
-\label{sec:method-kd}
-
-Knowledge distillation means using a larger trained model to guide a smaller one (Section~\ref{sec:bg-kd}). The frozen
-teacher sees the same image and guides the student through its features and its outputs.
-
-\paragraph{Feature distillation.} For image $u$ and token $n$, the teacher token and the projected student token become
-distributions over the $C_t$ channels, $p^t_{unc}=\operatorname{softmax}_c(\mathbf z^t_{un}/T)$ and
-$p^s_{unc}=\operatorname{softmax}_c(\widetilde{\mathbf z}^s_{un}/T)$. With batch size $B$, the loss is their
-Kullback--Leibler (KL) divergence, summed over tokens and averaged over images:
-\begin{equation}
- \mathcal L_{\mathrm{kd}}=
- \frac{T^2}{B}\sum_{u=1}^{B}\sum_{n=1}^{N_p}\sum_{c=1}^{C_t}
- p^t_{unc}\log\frac{p^t_{unc}}{p^s_{unc}} .
- \label{eq:method-kd}
-\end{equation}
-The loss works in three steps. The channel values are divided by the temperature $T$. A softmax then turns them into
-positive weights that add up to 1. Finally the KL divergence measures how differently the teacher and the student
-spread these weights. A larger $T$ gives softer
-weights, so the student also learns from the smaller responses (example in Section~\ref{sec:bg-kd}); $T^2$ keeps the
-gradient size comparable~\cite{hinton2015distilling}. I set $T=\MethodKDTemp$ without tuning it;
-Section~\ref{sec:res-kd-temperature} sweeps \KDSweepArms{} values up to \KDSweepMaxT. Feature
-distillation follows the idea of FitNets~\cite{romero2015fitnets}; here the student side is exactly the projected
-tokens the heads read, and the teacher side is detached, so no gradient reaches the teacher.
-
-\paragraph{Head transfer and output distillation.} The student starts with a copy of every teacher head tensor whose
-name and shape match. Both models run on the true person locations, so person $i$ of one is person $i$ of the other, and
-\begin{equation}
-\begin{split}
-\mathcal{L}_{\text{kd-out}}=\frac{1}{N_h}\sum_i\Big[
- &\alpha_{\text{rot}}\sum_b\|\mathbf R^s_{ib}-\mathbf R^t_{ib}\|_1\\
- &+\alpha_{\text{shape}}\sum_k|\phi^s_{ik}-\phi^t_{ik}|
- +\alpha_{\text{dist}}|d^s_i-d^t_i|\Big]
-\end{split}
-\label{eq:method-kdout}
-\end{equation}
-pulls the student's outputs toward the detached teacher's. It is a plain L1 difference with no temperature, and its
-rotation term has no per-bone boost and no hand mask, because the teacher predicts hands even where a converted label
-has none. The teacher can be wrong, so the supervised terms stay. Both weights are $\lambda_{\mathrm{kd}}=\MethodKDLambda$
-and $\lambda_{\mathrm{kd-out}}=\MethodKDOutLambda$.
-
-\paragraph{Warm-up freeze.} The copied heads already know how to predict bodies, but at first the student's features
-differ from the teacher's. If the heads are trained on these features from the start, they give confident but wrong
-outputs, and the gradients from those outputs can damage the copied weights. For this reason I keep the heads frozen
-for the first epochs, so that the backbone and the projector can adapt first. After that, everything trains.
-Every head is built at the teacher's width (\texttt{-{}-head\_dim}), so all head tensors transfer
-(earlier designs: Section~\ref{sec:method-kd-history}).
+\paragraph{Shape mask.} The converter leaves \MethodShapeMaskCount{} phenotypes constant: age, muscle, weight, cup
+size, firmness and the three ethnicity values (Section~\ref{sec:data-limits}). The teacher with full shape mask
+excludes all of them from the shape term for 3DPW people, the teacher with partial shape mask the
+\MethodShapeMaskPartial{} other than age; the mesh terms still contain the neutral body. The mask is off in all other
+models. The unmasked model was kept as the teacher because both masked variants lost, on real photos, the improvement in
+predicted gender that the teacher shows over the initial model (Section~\ref{sec:res-mask}).
 
 % -----------------------------------------------------------------------------
-\section{The ViT-B student of Final}
-\label{sec:method-student}
-
-The Student uses this design with a ViT-B backbone (Table~\ref{tab:student-recipe}). The backbone starts from NAVER's
-Multi-HMR ViT-B, which is already trained for mesh recovery, and all of its weights are trained. The copied heads stay
-frozen for \MethodStudentFreeze{} epochs, and the targets are exactly the teacher's. There is no data augmentation. The
-job script names colour jitter, but no code reads that setting. The copied heads also carry the half-turn that the
-teacher's constant bone correction undoes (Section~\ref{sec:method-bonefix}), so the student trains with the teacher's
-correction. Afterwards I estimate the student's own correction on \MethodBoneFixImages{} training images and use it in
-every evaluation. A second run of the same recipe for \StudentSixtyEpochs{} epochs (its learning rate halves every
-\LossLRHalfSixty{} epochs, the same two-fifths rule) is only the training-length experiment
-(Section~\ref{sec:res-training-length}); the reported Student is the \MethodStudentEpochs-epoch run.
-
-\input{tables/T11_student_recipe}
-
-I also set a retention criterion beforehand, the 95\,\% rule: for an error metric $E$, the student passes if
-$E_s\le E_t/\MethodRuleFactor$, with $E_t$ the teacher's error. This rule only says in advance what would count
-as passing. It does not say that the student passes. I apply the same thresholds against Multi-HMR-Anny separately,
-because its AnnyOne error is potentially in-sample (Section~\ref{sec:data-annyone}) and it was not trained on my
-converted 3DPW images.
-
-% -----------------------------------------------------------------------------
-\section{Training schedule and model names}
+\section{Teacher training and its two corrections}
 \label{sec:method-schedule}
 
-The teacher's ViT-L backbone starts from NAVER's checkpoint, and its Anny heads were trained on AnnyOne; the result is
-Base, the start of every fine-tune (earlier stages in Appendix~\ref{app:pilots}).
-
-\paragraph{Final and Control.} Final trains from Base for \MethodFinalEpochs{} epochs of $\num{\MethodFinalIters}$
-iterations at batch \MethodFinalBatch{} with a constant learning rate of \MethodFinalLR; only the last
-\MethodUnfrozenBlocks{} backbone blocks and the heads train. Three changes come on together: the depth fix with
-distance and translation weight \MethodWDist{} (Section~\ref{sec:method-depth}), the bone correction
+The initial model combines NAVER's ViT-L backbone with Anny heads trained on AnnyOne and is the starting point of every
+fine-tune (earlier stages: Appendix~\ref{app:pilots}). The teacher is fine-tuned from it for \MethodFinalEpochs{} epochs of $\num{\MethodFinalIters}$ iterations at batch size
+\MethodFinalBatch{} with a constant learning rate of \MethodFinalLR; only the last \MethodUnfrozenBlocks{} backbone
+blocks and the heads are trained. Three changes are introduced together: head-anchor targets with distance and
+translation weight \MethodWDist{} (Section~\ref{sec:method-depth}), the bone correction
 (Section~\ref{sec:method-bonefix}), and \MethodMixRatio\% real images per batch with the hand mask. The
-\MethodManifestImages{} images of the diagnostic manifest (Chapter~\ref{ch:data}) are never sampled. Training took
-$\num{\MethodFinalTrainSec}$\,s on one A100. Control is identical but keeps the pelvis targets with weight
-\MethodWDistDefault{} and has no bone correction. So the difference between Control and Final comes from
-the two fixes alone, and the difference between Base and Control comes from the real images, together with whatever
-restarting the training from Base costs. I tested each fix alone only in short pilots
-(Appendix~\ref{ch:diagnostics}).
-
-\paragraph{Model names.} Table~\ref{tab:model-names} is the key to the names used from here on;
-Table~\ref{tab:names} in Appendix~\ref{app:reproduction} gives each run's checkpoint, data, schedule and flags.
-
-\begin{table}[!htb]
-\centering\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}>{\raggedright}p{2.8cm}>{\raggedright\arraybackslash}p{9.2cm}@{}}
-\toprule
-Name & Meaning \\
-\midrule
-Multi-HMR-Anny & NAVER's released ViT-L model for Anny; external reference and source of the teacher backbone \\
-Base & end of the schedule, AnnyOne only; the start of every fine-tune \\
-Control & Base, \MethodFinalEpochs{} epochs, \MethodMixRatio\% 3DPW (v23 labels), hand mask, neither fix \\
-Final & larger ViT-L teacher: Control plus consistent head anchors and bone correction \\
-Final-masked & Final plus the shape mask on all \MethodShapeMaskCount{} converter constants \\
-Final-partial-mask & Final plus the shape mask on the \MethodShapeMaskPartial{} constants other than age \\
-Student & deployed ViT-B model distilled from Final, \MethodStudentEpochs{} epochs \\
-Student, \StudentSixtyEpochs{} epochs & the same recipe for \StudentSixtyEpochs{} epochs; training-length experiment only \\
-\bottomrule
-\end{tabular}
-\caption[Model names used in this thesis]{Model names used in this thesis. Every name is one run; no run was repeated
-with another seed. Full definitions: Table~\ref{tab:names} (Appendix~\ref{app:reproduction}).}
-\label{tab:model-names}
-\end{table}
+\MethodManifestImages{} diagnostic-manifest images (Chapter~\ref{ch:data}) are never sampled; training took
+$\num{\MethodFinalTrainSec}$\,s on one A100. The uncorrected teacher differs only by pelvis targets with
+weight \MethodWDistDefault{} and no bone correction. Its difference from the teacher is therefore due
+to the two corrections, and its difference from the initial model to the real images together with the cost of
+restarting training; each correction was tested in isolation only in short pilots (Appendix~\ref{ch:diagnostics}).
 
 \subsection{Consistent head-anchor supervision}
 \label{sec:method-depth}
 
 The body is placed by its head joint (Equation~\eqref{eq:method-placement}), so the detection, offset, depth and
-translation targets must all describe that joint. In Final the target builder decodes the labelled body and takes the
-head's camera-space position and image projection; the visibility checks and the one-person-per-token assignment use it
-too. Base and Control build these targets at the pelvis, so targets and decoder disagree about where the body is, and
-the pelvis-centred losses cannot see it (Figure~\ref{fig:anchor}; measurements in Section~\ref{sec:diag-depth}). Control
-and Final differ in both the anchor and the placement weight (\MethodWDist{} against \MethodWDistDefault), so this
-comparison changes the two together.
+translation targets must refer to that joint. For the teacher, the target builder decodes the labelled body and takes
+the head's camera-space position and projection, also used for visibility checks and one-person-per-token assignment. The initial model and the uncorrected teacher build these targets at the pelvis, so targets and decoder disagree
+about the body's position, which the pelvis-centred losses cannot detect (Figure~\ref{fig:anchor}; measurements in
+Section~\ref{sec:diag-depth}). The anchor and the placement weight (\MethodWDist{} against \MethodWDistDefault) change
+together.
 
 \begin{figure}[!htb]
 \centering
 \input{figures/tikz/F03_anchor}
-\caption[Consistent supervision of the placement anchor]{The body is placed by its head joint, so detection, offset
-and depth targets must refer to that point (schematic; pelvis targets against head-anchor targets). The measured depth
-scatter is in Figure~\ref{fig:depth-scatter}.}
+\caption[Consistent supervision of the placement anchor]{Placement anchor of the model and of the training targets
+(schematic). Measured depth scatter: Figure~\ref{fig:depth-scatter}.}
 \label{fig:anchor}
 \end{figure}
 
 \subsection{Fixed output rotation correction}
 \label{sec:method-bonefix}
 
-In Base, neck02 and the head bone are each turned by about half a turn (Section~\ref{sec:diag-neck}). I do not know where
-this flip comes from. I correct it with one constant rotation per affected bone, applied to the pose output before decoding:
+In the initial model, neck02 and the head bone are each rotated by approximately $180^\circ$
+(Section~\ref{sec:diag-neck}); the origin of this flip was not identified. It is corrected by one constant rotation
+per affected bone, applied to the pose output before decoding:
 \begin{equation}
  \mathbf R^{\mathrm{corr}}_{ib}=\widehat{\mathbf R}_{ib}\mathbf C_b,\qquad
  \mathbf C_b=\operatorname{Proj}_{SO(3)}
  \left(\frac{1}{N_{\mathrm{cal}}}\sum_i
-       \widehat{\mathbf R}_{ib}^{\top}\mathbf R^{\mathrm{target}}_{ib}\right),
- \label{eq:bone-calibration}
+ \widehat{\mathbf R}_{ib}^{\top}\mathbf R^{\mathrm{target}}_{ib}\right),
+\label{eq:bone-calibration}
 \end{equation}
-where $\operatorname{Proj}_{SO(3)}$ gives the nearest proper rotation to the mean residual over $N_{\mathrm{cal}}$
-people. So $\mathbf C_b$ is the average turn from the prediction of bone $b$ to its label. I estimate it on
-\MethodBoneFixImages{} random training images, never on evaluation images, and only for bones whose offset stays above
-\MethodBoneFixThr$^\circ$. For the teacher these are neck02, head, metacarpal1.L and finger4-1.R
-(Figure~\ref{fig:neck-chain}).
-The correction acts before helper masking, decoding and the loss, and adds no parameters. A constant cannot fix an error
-that differs per image, so I fine-tuned the teacher with it in place. The student trains with the teacher's correction,
-and I use its own correction, estimated after training, for its evaluation and the video
-(Section~\ref{sec:method-student}).
+with $\operatorname{Proj}_{SO(3)}$ the nearest rotation to the mean residual over $N_{\mathrm{cal}}$ people, estimated on
+\MethodBoneFixImages{} random training images, never on evaluation images, and only for bones whose mean offset
+exceeds \MethodBoneFixThr$^\circ$: for the teacher, neck02, head, metacarpal1.L and finger4-1.R
+(Figure~\ref{fig:neck-chain}). It acts before helper masking, decoding and the loss and has no parameters. Because a constant cannot remove an error that varies per image, the teacher was fine-tuned with the
+correction in place (student: Section~\ref{sec:method-student}).
 
 \begin{figure}[!htb]
   \centering
   \input{figures/tikz/F04_neck_chain}
-  \caption[The neck chain and its correction]{The neck chain neck01--neck02--neck03--head (schematic). Top: in Base,
-  neck02 and the head bone are each turned about half a turn; the turns cancel, so the head points right, but the skin
-  between them is twisted to \MethodBaseGirth{} of its true girth. Bottom: one constant rotation per bone turns both
-  back. Girth on the AnnyOne holdout, setting V1.}
+  \caption[The neck chain and its correction]{The neck chain of the initial model (top) and with the constant
+  correction of neck02 and head (bottom), schematic. Girth ratios are measured on the AnnyOne holdout.}
   \label{fig:neck-chain}
 \end{figure}
+
+% -----------------------------------------------------------------------------
+\section{Knowledge distillation}
+\label{sec:method-kd}
+
+\paragraph{Feature distillation.} For image $u$ and token $n$, the teacher token and the projected student token are
+converted into distributions over the $C_t$ channels, $p^t_{unc}=\operatorname{softmax}_c(\mathbf z^t_{un}/T)$ and
+$p^s_{unc}=\operatorname{softmax}_c(\widetilde{\mathbf z}^s_{un}/T)$. With batch size $B$, the loss is their
+Kullback--Leibler (KL) divergence, summed over tokens and averaged over images:
+\begin{equation}
+ \mathcal L_{\mathrm{kd}}=
+ \frac{T^2}{B}\sum_{u=1}^{B}\sum_{n=1}^{N_p}\sum_{c=1}^{C_t}
+ p^t_{unc}\log\frac{p^t_{unc}}{p^s_{unc}} .
+\label{eq:method-kd}
+\end{equation}
+A higher $T$ flattens both distributions, so small channel responses contribute (Section~\ref{sec:bg-kd}); $T^2$ keeps
+the gradient magnitude comparable across temperatures~\cite{hinton2015distilling}. Following FitNets~\cite{romero2015fitnets}, the student side is the projected
+tokens that the heads read; the teacher side is detached.
+
+\paragraph{Head transfer and output distillation.} The student is initialised with a copy of every teacher head tensor
+whose name and shape match. Both models are queried at the true person locations, so person $i$ corresponds in both,
+and
+\begin{equation}
+\begin{split}
+ \mathcal{L}_{\text{kd-out}}=\frac{1}{N_h}\sum_i\Big[
+ &\alpha_{\text{rot}}\sum_b\|\mathbf R^s_{ib}-\mathbf R^t_{ib}\|_1\\
+ &+\alpha_{\text{shape}}\sum_k|\phi^s_{ik}-\phi^t_{ik}|
+ +\alpha_{\text{dist}}|d^s_i-d^t_i|\Big]
+\end{split}
+\label{eq:method-kdout}
+\end{equation}
+penalises the L1 deviation of the student's outputs from the detached teacher's. It uses no temperature, and its
+rotation term has neither the per-bone boost nor the hand mask, because the teacher predicts hands where a converted
+label has none. The supervised terms are retained because the teacher can be wrong. The weights are
+$\lambda_{\mathrm{kd}}=\MethodKDLambda$ and $\lambda_{\mathrm{kd-out}}=\MethodKDOutLambda$.
+
+\paragraph{Warm-up freeze.} Initially the student's features differ from the teacher's, and the copied heads produce
+confident but wrong outputs whose gradients can corrupt the copied weights. The heads are therefore frozen for the first
+\MethodStudentFreeze{} epochs while backbone and projector adapt; afterwards all parameters are trained. Every head is built at the teacher's width, so all head tensors transfer (earlier designs:
+Section~\ref{sec:method-kd-history}).
+
+\paragraph{Choice of temperature and schedule.} Before training, $T=\MethodKDTemp$ and the distillation weights were
+taken over from the earlier ViT-S distillation recipe, and the \MethodStudentEpochs-epoch schedule was fixed by the
+compute budget; neither was tuned on test data (selection protocol: Section~\ref{sec:res-selection}).
+Section~\ref{sec:res-kd-temperature} varies $T$ over \KDSweepArms{} values up to \KDSweepMaxT{} as a sensitivity
+analysis, and Section~\ref{sec:res-kd-ablation} isolates the contribution of the distillation terms.
+
+% -----------------------------------------------------------------------------
+\section{The ViT-B student}
+\label{sec:method-student}
+
+The student's ViT-B backbone (Table~\ref{tab:student-recipe}) is initialised from NAVER's Multi-HMR ViT-B, already
+trained for mesh recovery, and fully trained. The supervised targets are the teacher's, and no data augmentation is applied (a colour-jitter option in the configuration is not read by the code). The copied heads contain the half-turn
+that the teacher's correction undoes (Section~\ref{sec:method-bonefix}), so the student trains with that correction;
+its own correction, estimated after training on \MethodBoneFixImages{} training images, is used in every evaluation and
+in the video pipeline. The reported student is the \MethodStudentEpochs-epoch run; a \StudentSixtyEpochs-epoch run of
+the same recipe (learning rate halved every \LossLRHalfSixty{} epochs, the same two-fifths rule) serves only the
+training-length analysis (Section~\ref{sec:res-training-length}).
+
+\input{tables/T11_student_recipe}
+
+A retention criterion (the 95\,\% rule) was fixed before training: $E_s\le E_t/\MethodRuleFactor$ for an error
+metric $E$ with teacher error $E_t$, together with fewer parameters, fewer FLOPs and a faster forward pass. It defines
+retention in advance and does not imply that it is met. Read as
+``error at most 1.05 times the teacher's'', the bars would be \MethodBarHoldoutAlt{} and \MethodBarThreeDPWAlt\,mm. The
+same thresholds are applied separately against the released baseline (comparison not training-matched;
+Section~\ref{sec:res-fairness}).
+
+\subsection{Models compared}
+\label{sec:method-models}
+
+Table~\ref{tab:model-names} defines the compared models; their run identifiers are listed in Table~\ref{tab:names}
+(Appendix~\ref{app:reproduction}). Earlier models are in Appendix~\ref{app:pilots}, the models without distillation in
+Section~\ref{sec:res-kd-ablation}.
+
+\begin{table}[!htb]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright}p{2.7cm}>{\raggedright}p{1.4cm}>{\raggedright}p{2.85cm}>{\raggedright\arraybackslash}p{4.85cm}@{}}
+\toprule
+Name in the text & Backbone & Training data & Distinguishing feature \\
+\midrule
+Initial model & ViT-L & AnnyOne & start of every fine-tune; pelvis targets, no bone correction \\
+Uncorrected teacher & ViT-L & \mbox{AnnyOne + 3DPW} & initial model fine-tuned with hand mask; otherwise as above \\
+Teacher & ViT-L & \mbox{AnnyOne + 3DPW} & head-anchor targets and bone correction \\
+Teacher with full / partial shape mask & ViT-L & \mbox{AnnyOne + 3DPW} & teacher; shape term ignores the \MethodShapeMaskCount{} (\MethodShapeMaskPartial{}: all but age) converter constants for 3DPW people \\
+Student & ViT-B & \mbox{AnnyOne + 3DPW} & distilled from the teacher, \MethodStudentEpochs{} epochs; the deployed model \\
+60-epoch student & ViT-B & \mbox{AnnyOne + 3DPW} & same recipe, \StudentSixtyEpochs{} epochs; training-length analysis only \\
+Released baseline (Multi-HMR-Anny) & ViT-L & AnnyOne release & NAVER's release; external reference, source of the teacher backbone \\
+\bottomrule
+\end{tabular}
+\caption[Models compared]{Models compared in this thesis. Each name denotes one training run; 3DPW is the converted
+training split (v23 labels, \MethodMixRatio\% of each batch).}
+\label{tab:model-names}
+\end{table}
 
 % -----------------------------------------------------------------------------
 \section{Evaluation protocol}
 \label{sec:method-eval}
 
-Errors are means over matched people: a greedy 2D matcher pairs each labelled person with at most one detection
+A greedy 2D matcher pairs each labelled person with at most one detection, and errors are means over matched people
 (Table~\ref{tab:metrics}).
 
 \input{tables/T07_metrics}
@@ -407,118 +366,116 @@ Errors are means over matched people: a greedy 2D matcher pairs each labelled pe
 For one person with predicted and target vertices $\hat{\mathbf v}_k,\mathbf v_k$ ($N_V$ of them), joints
 $\hat{\mathbf J}_j,\mathbf J_j$ ($J=\MethodNumBones$) and pelvis joints $\hat{\mathbf p},\mathbf p$,
 \begin{align}
-\mathrm{PVE} &= \tfrac{1}{N_V}\textstyle\sum_{k}\big\|(\hat{\mathbf v}_k-\hat{\mathbf p})-(\mathbf v_k-\mathbf p)\big\|_2 ,
- \label{eq:metric-pve}\\
-\mathrm{PA\text{-}PVE} &= \tfrac{1}{N_V}\textstyle\sum_{k}\big\|s^\ast\mathbf R^\ast\hat{\mathbf v}_k+\mathbf t^\ast-\mathbf v_k\big\|_2 ,
- \label{eq:metric-papve}\\
-\mathrm{MPJPE} &= \tfrac{1}{J}\textstyle\sum_{j}\big\|(\hat{\mathbf J}_j-\hat{\mathbf p})-(\mathbf J_j-\mathbf p)\big\|_2 ,
- \label{eq:metric-mpjpe}\\
-\mathrm{Recall} &= \mathrm{TP}/(\mathrm{TP}+\mathrm{FN}) ,
- \label{eq:metric-recall}
+ \mathrm{PVE} &= \tfrac{1}{N_V}\textstyle\sum_{k}\big\|(\hat{\mathbf v}_k-\hat{\mathbf p})-(\mathbf v_k-\mathbf p)\big\|_2 ,
+\label{eq:metric-pve}\\
+ \mathrm{PA\text{-}PVE} &= \tfrac{1}{N_V}\textstyle\sum_{k}\big\|s^\ast\mathbf R^\ast\hat{\mathbf v}_k+\mathbf t^\ast-\mathbf v_k\big\|_2 ,
+\label{eq:metric-papve}\\
+ \mathrm{MPJPE} &= \tfrac{1}{J}\textstyle\sum_{j}\big\|(\hat{\mathbf J}_j-\hat{\mathbf p})-(\mathbf J_j-\mathbf p)\big\|_2 ,
+\label{eq:metric-mpjpe}\\
+ \mathrm{Recall} &= \mathrm{TP}/(\mathrm{TP}+\mathrm{FN}) ,
+\label{eq:metric-recall}
 \end{align}
-with $s^\ast,\mathbf R^\ast,\mathbf t^\ast$ the scale, rotation and translation of the least-squares fit of prediction to
-target. PVE is the mean distance between corresponding surface points once both pelvises sit at the same place.
-PVE still measures differences in the body's physical size.
-PA-PVE first turns, moves and resizes the prediction to fit the target (Procrustes alignment) and measures what remains.
-MPJPE is PVE on the Anny joints. TP counts the labelled people found and FN those missed; finding 9 of 10 gives
-90\,\% recall. For cost I report parameters, GFLOPs (one multiply-accumulate is two operations) and the median time of
-one forward pass on one GPU, at batch size 1 with one person.
+with $s^\ast,\mathbf R^\ast,\mathbf t^\ast$ the least-squares (Procrustes) similarity fit of prediction to target,
+and TP and FN the matched and missed labelled people. PVE, after pelvis alignment, includes differences in body size;
+PA-PVE is the residual after the similarity fit. Cost is
+reported as parameters, GFLOPs (one multiply-accumulate counted as two operations) and the median forward time on one
+GPU at batch size 1 with one person.
 
-\paragraph{AnnyOne holdout.} The holdout is the last \MethodHoldoutN{} AnnyOne images (indices
-$\num{\MethodHoldoutFirst}$ to $\num{\MethodHoldoutLast}$). They were excluded from training in this thesis and contain no children
-(Chapter~\ref{ch:data}); the released baseline may have seen them. The headline setting V1
-masks the helper bones, as the demos do; V0 does not (Table~\ref{tab:metrics}). A trace script adds placement and
-per-bone metrics.
+\paragraph{AnnyOne holdout.} The last \MethodHoldoutN{} AnnyOne images (indices $\num{\MethodHoldoutFirst}$ to
+$\num{\MethodHoldoutLast}$) are excluded from all training in this thesis; its
+limitations: Section~\ref{sec:data-limits}. Before decoding, the helper bones (face, toes, breasts and
+subdivision bones) are set to rest pose in prediction and target, as in the qualitative results, so that the error
+covers the \MethodActiveBones{} supervised bones; without this step PVE is \MethodVzeroGap\,mm higher on the same
+people. A trace script adds placement and per-bone metrics.
 
-\paragraph{3DPW test.} I evaluate on all $\num{\MethodTestImages}$ test images ($\num{\MethodTestPeople}$ people)
-with the v23 labels, with one script for every model and setting V0. The targets are converted labels and MPJPE averages all \MethodNumBones{} Anny
-joints, so these numbers are not comparable with published 3DPW numbers (Section~\ref{sec:data-limits}).
+\paragraph{3DPW test.} All $\num{\MethodTestImages}$ test images ($\num{\MethodTestPeople}$ people) are evaluated
+against the v23 labels with one script for every model, without the helper-bone step. With converted targets and
+MPJPE over all \MethodNumBones{} Anny joints, these numbers are not comparable with published 3DPW results
+(Section~\ref{sec:data-limits}).
 
-\paragraph{Relative Human and demo images.} I use the Relative Human validation split (\MethodRHImages{} images, $\num{\MethodRHPeople}$ people) for evaluation only, with
-boxes from the projected vertices and matching at IoU $\ge$ \MethodRHIoU. I count a prediction as child-shaped when its
-predicted age is below \MethodChildThr. The \MethodDemoPhotos{} demo photos and \MethodDemoFrames{} 3DPW test frames place each body from its
-detection box, which hides depth errors, and I judge them by eye.
+\paragraph{Relative Human and demonstration images.} The Relative Human validation split (\MethodRHImages{} images,
+$\num{\MethodRHPeople}$ people) is used for evaluation only, with boxes from the projected vertices and matching at
+IoU $\ge$ \MethodRHIoU; a prediction counts as child-shaped when its predicted age is below \MethodChildThr. The
+\MethodDemoPhotos{} demonstration photos and \MethodDemoFrames{} 3DPW test frames place each body from its detection
+box, which hides depth errors, and are assessed visually.
 
-\paragraph{Training variation.} Each model is one training run without a fixed seed; I did not repeat the Student or
-Final. Two identical short pilots differed by \NoisePVE\,mm PVE and \NoiseHeadDeg$^\circ$ head direction
-(Section~\ref{sec:diag-noise}), which gives no confidence interval but means I read small differences between single
-runs with care.
+\paragraph{Run-to-run variation.}
+\label{sec:method-variation}
+Each model is a single training run without a fixed seed; no confidence intervals were computed. Two identical
+short training runs differed by \NoisePVE\,mm PVE and \NoiseHeadDeg$^\circ$ head direction
+(Section~\ref{sec:diag-noise}). The two students trained with the same setting ($T=\MethodKDTemp$; the reported run
+and the repeat within the temperature sweep) differ by \KDNoiseHold\,mm PVE on the AnnyOne holdout and \KDNoiseTP\,mm
+on 3DPW. Differences of a few millimetres between single runs are therefore not interpreted.
 
 % -----------------------------------------------------------------------------
 \section{Applying the student to video}
 \label{sec:method-video}
 
-The network works on single images, so for a video I run it frame by frame. Each selected frame is letterboxed (resized
-and padded without distortion) to the checkpoint's input size, with an assumed field of view of \VideoFov$^\circ$ along
-the longer side for every model. The raw outputs keep the model's own camera-space placement; nothing is placed from a
-detection box. A geometric tracker follows one person by box overlap and normalised centre distance. A frame
-without a prediction is left empty, and when the track breaks, no frame-to-frame difference is computed across the
-break. The pipeline also records the
-pelvis-relative joint velocity and acceleration ($\mathbf q_{tj}=\mathbf J_{tj}-\mathbf J_{t,\mathrm{root}}$, frame
-spacing $\Delta t$)
+The network is applied to a video frame by frame. Each selected frame is letterboxed (resized and padded without
+distortion), with an assumed field of view of \VideoFov$^\circ$ along the longer side for every
+model. The raw outputs keep the model's camera-space placement. A geometric
+tracker follows one person by box overlap and normalised centre distance; a frame without a prediction is left empty,
+and no frame-to-frame difference is computed across a track break. It records pelvis-relative joint velocity and
+acceleration ($\mathbf q_{tj}=\mathbf J_{tj}-\mathbf J_{t,\mathrm{root}}$, frame spacing $\Delta t$)
 \begin{equation}
  \mathbf v_{tj}=\frac{\mathbf q_{tj}-\mathbf q_{t-1,j}}{\Delta t},\qquad
  \mathbf a_{tj}=\frac{\mathbf q_{tj}-2\mathbf q_{t-1,j}+\mathbf q_{t-2,j}}{\Delta t^2}
- \label{eq:video-motion}
+\label{eq:video-motion}
 \end{equation}
-and the phenotype spread and frame-to-frame change. These describe predicted motion only, not an error against ground
-truth, and natural or camera motion raises them too.
+and the phenotype spread and change; these describe predicted motion, not error, and also grow with genuine or camera
+motion.
 
-The input, the student and Multi-HMR-Anny are shown side by side on the same frames. Playback FPS is the source rate
-divided by the frame stride. Inference FPS uses batch size 1 and a clock synchronised with the GPU around the model call:
+Input, student and released baseline are shown side by side. Playback FPS is the source rate divided by the frame
+stride. Inference FPS is measured at batch size 1 with a GPU-synchronised clock around the
+model call:
 \begin{equation}
  \mathrm{FPS}_{\mathrm{infer}}=\frac{N_{\mathrm{timed}}}
  {\sum_{t\in\mathcal T}s_t},\qquad
  s_t=\text{forward seconds of frame } t ,
- \label{eq:video-fps}
+\label{eq:video-fps}
 \end{equation}
-where $\mathcal T$ holds the $N_{\mathrm{timed}}$ frames after a warm-up of \VideoWarmupFrames{} frames, which stay in
-the videos and the measurements. The time $s_t$ includes detection and Anny decoding and excludes preprocessing, transfers outside the model,
-rendering and video input and output. I time rendering separately. Wherever I give a speed, I also give the device,
-the precision, the resolution and the number of people it was measured with.
+where $\mathcal T$ holds the $N_{\mathrm{timed}}$ frames after a warm-up of \VideoWarmupFrames{} frames (which remain
+in the videos and measurements). The time $s_t$ includes detection and Anny decoding and excludes
+preprocessing, transfers outside the model, rendering (timed separately), the offline landmark pass and video decoding
+and encoding; $\mathrm{FPS}_{\mathrm{infer}}$ is therefore an inference speed, not an end-to-end speed. Each reported
+speed states device, precision, resolution and number of people; the values are in Section~\ref{sec:res-video}.
 
 \subsection{Temporal filtering and landmark alignment}
 \label{sec:method-temporal}
 
-Each frame is predicted on its own, so the body can change from frame to frame, and the raw student mesh sometimes
-extends beyond the person (Section~\ref{sec:res-video}). I added two inference-time steps; the student is not retrained
-and has no learned temporal information. First, the student predicts a body per frame. Then an exponential moving
-average blends it with the track's earlier predictions. Then 2D landmarks from a separate detector correct its position
-and depth. Finally, that depth is smoothed.
+Independent per-frame predictions vary between frames, and the raw student mesh sometimes extends beyond the person
+(Section~\ref{sec:res-video}). Two inference-time steps, neither a learned temporal model, address
+this without retraining: an exponential moving average over the track, and a landmark-based correction of position and
+depth followed by depth smoothing.
 
-\paragraph{Temporal filter.} The filter is causal: it uses only the current and earlier frames. For each smoothed
-quantity it keeps a value $\bar x$ and updates it with each new prediction $x_t$:
+\paragraph{Temporal filter.} The filter is causal. For each smoothed quantity it keeps a state $\bar x$ and updates it
+with each new prediction $x_t$:
 \begin{equation*}
- \bar x_t = (1-\alpha)\,\bar x_{t-1} + \alpha\,x_t,\qquad \alpha = 1-\exp(-\Delta t/\tau_c),
+ \bar x_t=(1-\alpha)\,\bar x_{t-1}+\alpha\,x_t,\qquad \alpha=1-\exp(-\Delta t/\tau_c),
 \end{equation*}
-with $\Delta t$ the time between source frames and $\tau_c$ the time constant of quantity $c$. A longer time constant
-gives the new frame less weight, so the output is steadier but lags behind fast movement. The filter smooths the bone rotations
-($\tau_c=\VideoPoseTau$\,s), the camera-space head anchor that places the mesh (\VideoTranslTau\,s) and the
-phenotypes (\VideoShapeTau\,s). Rotations are blended by shortest-arc quaternion interpolation, which keeps them
-valid; a plain average of turns of almost $+180^\circ$ and $-180^\circ$ would give no rotation at all. The filtered
-parameters are decoded again through Anny, so vertices are never averaged. The state resets after a missed detection, a
-new track or a gap above \VideoMaxGap\,s, and a missed frame is never filled with an old body. Raw and filtered
-outputs share one forward pass. The constants are the pipeline defaults (the five-panel run used exactly these, as its
-\path{run.json} records). They are initial settings that I inspected on the video and did not tune.
+with $\Delta t$ the source frame spacing and $\tau_c$ the time constant of quantity $c$; a longer $\tau_c$ reduces
+jitter at the cost of lag. The time constants are \VideoPoseTau\,s for the bone rotations,
+\VideoTranslTau\,s for the camera-space head anchor and \VideoShapeTau\,s for the phenotypes. Rotations are blended by
+shortest-arc quaternion interpolation, which keeps them valid where averaging rotations near $\pm180^\circ$ would
+yield approximately the identity. The filtered parameters are decoded again, so vertices are never averaged.
+The state resets after a missed detection, a new track or a gap above \VideoMaxGap\,s; a missed frame is never filled
+with an earlier body. Raw and filtered outputs share one forward pass. The constants are pipeline defaults (recorded in
+the five-panel video's configuration), inspected visually and not tuned.
 
-\paragraph{Landmark alignment.} The filter cannot move a body that sits at the wrong place or is drawn too large. For
-this I run MediaPipe Pose~\cite{mediapipecode}, an existing 2D landmark detector, once offline on the CPU over the original video. Its
-shoulders, elbows, wrists, hips, knees and ankles match the heads of the Anny bones upperarm01, lowerarm01, wrist,
-upperleg01, lowerleg01 and foot. A least-squares fit that down-weights outliers finds one 3D translation of the whole
-body so that the projected Anny points land on the landmarks. A body moved farther away looks smaller, so this corrects
-an oversized or shifted mesh, but it cannot repair a wrongly bent arm or leg. A fit counts only with at least
-\VideoMinLandmarks{} landmarks of confidence \VideoMinConf{} or more, covering a shoulder, a hip and a knee or ankle, and
-a depth within \VideoDepthBoundLow--\VideoDepthBoundHigh{} times the current median joint depth; otherwise the frame
-stays unchanged and the depth history resets. Finally, the accepted depth is smoothed in log space (\VideoDepthTau\,s,
-at most \VideoDepthRate{} log-units per second), so the body grows and shrinks less between frames; a reset can still produce a visible
-size change. The alignment acts on the filtered body when the filter is on. The depth filter moves the whole body
-along the current pelvis camera ray, keeping that point at the same image position. Projection error is
-recomputed after filtering because smoothing can trade some current-frame alignment for less size flicker.
+\paragraph{Landmark alignment.} To correct a misplaced or oversized body, which the filter cannot do, the 2D landmark
+detector MediaPipe Pose~\cite{mediapipecode} runs as a separate offline pass on the CPU over the original video. Its shoulders, elbows, wrists, hips, knees and ankles correspond to the heads of the Anny bones
+upperarm01, lowerarm01, wrist, upperleg01, lowerleg01 and foot. A robust least-squares fit estimates one 3D translation of
+the body that aligns the projected Anny points with the landmarks; since depth changes the projected size, this corrects
+an oversized or shifted mesh, but not a wrongly articulated limb. A fit is accepted only with at least
+\VideoMinLandmarks{} landmarks of confidence $\ge$\,\VideoMinConf{} covering a shoulder, a hip and a knee or ankle, and
+a depth within \VideoDepthBoundLow--\VideoDepthBoundHigh{} times the current median joint depth; otherwise the frame is
+left unchanged and the depth history resets. The accepted depth is smoothed in log space (\VideoDepthTau\,s, at most
+\VideoDepthRate{} log-units per second), moving the body along the current pelvis camera ray; a reset can still cause a
+visible change in size. The alignment acts on the filtered body when the filter is on. The projection error is recomputed after smoothing,
+which trades some current-frame alignment for less size fluctuation.
 
-\paragraph{What the two steps can and cannot show.} The landmarks are detector estimates, not ground truth, so a
-smaller landmark error means closer agreement with that detector, not a better 3D body. The clip has no 3D labels and
-gives no PVE, and a steady body can still be wrong. A visible gain in the aligned output comes from this refinement,
-not from a new network. The panels also time different things: the raw panels show the inference FPS of
-Equation~\eqref{eq:video-fps}, the filtered panel adds filtering and decoding, the aligned panel adds the fit but not the
-offline landmark extraction, and the input panel shows playback FPS. These are not one comparable number
+\paragraph{Scope of the two steps.} The landmarks are detector estimates, so a lower landmark error indicates agreement
+with that detector, not a more accurate 3D body; the clip has no 3D labels, and a stable body can still be wrong. Any
+improvement of the aligned output stems from this refinement, not from the network. The video panels report different timings (raw: Equation~\eqref{eq:video-fps}; filtered: plus filtering and decoding;
+aligned: plus the fit, without landmark extraction; input: playback FPS), which are not comparable
 (Table~\ref{tab:video-fps}, Figure~\ref{fig:video-panels}).

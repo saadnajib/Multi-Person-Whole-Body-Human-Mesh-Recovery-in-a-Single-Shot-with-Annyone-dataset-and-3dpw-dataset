@@ -22,7 +22,7 @@
 \draw[red!70!black, thin] (0.65,1.6) -- (1.05,1.6);
 \node[lab=2.6cm, anchor=west] at (1.05,1.35) {token, offset and depth describe the head joint; the mesh hangs from it};
 % ---- panel B: what the targets said
-\node[title] at (4.15,3.1) {(b) Targets before the fix: pelvis};
+\node[title] at (4.15,3.1) {(b) Targets of the initial model: pelvis};
 \pic[thick] at (4.65,0) {stick};
 \node[dot, blue!70!black] at (4.65,0.8) {};
 \draw[blue!70!black, thin] (4.8,0.8) -- (5.2,0.8);
@@ -54,9 +54,9 @@
   \draw[very thick, teal!60!black, densely dotted] (0.5,{\MethodFinalSlope*0.5+\MethodFinalIntercept}) -- (6,{\MethodFinalSlope*6+\MethodFinalIntercept});
 \end{scope}
 \node[lab=7.2cm, anchor=north west, text=red!70!black] at (5.4,-1.5)
-  {Base (solid): predicted $= \MethodBaseSlope \times$ true $+\ \MethodBaseIntercept$\,m; all \MethodHoldoutPeople{} holdout people are placed too far.};
+  {Initial model (solid): predicted $= \MethodBaseSlope \times$ true $+\ \MethodBaseIntercept$\,m; all \MethodHoldoutPeople{} holdout people are placed too far.};
 \node[lab=7.2cm, anchor=north west, text=teal!50!black] at (5.4,-2.4)
-  {Final (dotted), after the fix: $\MethodFinalSlope \times$ true $+\ \MethodFinalIntercept$\,m; offset and drawn size moved, the slope stayed far from 1.};
+  {Teacher (dotted): $\MethodFinalSlope \times$ true $+\ \MethodFinalIntercept$\,m; offset and drawn size improve, the slope remains far from 1.};
 \node[lab=7.2cm, anchor=north west] at (5.4,-3.3)
-  {Why: the head joint is put where the pelvis target is, so the mesh hangs too low in the image; the 2D terms shrink that misfit by moving the body away.};
+  {Cause: the head joint is placed at the pelvis target, so the mesh sits too low in the image; the 2D terms reduce this misfit by moving the body away.};
 \end{tikzpicture}
