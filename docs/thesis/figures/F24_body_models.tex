@@ -9,15 +9,15 @@
 %   SMPL = schematic 24-joint tree (positions illustrative; tree from smpl_to_anny.py SMPL_JOINT_NAMES);
 %   Anny = bone heads of the real 163-bone rest rig, figures/anny_rest_skeleton.json (anny 0.6.2, all phenotypes 0.5),
 %   front view, coloured by region; large dots = the 24 bones of smpl_to_anny_name_mapping.
-% (d) re-rendered 12 Nov at its printed width (0.38 linewidth = 1.94 in) so that the legend is set at 7 pt:
-%   scratchpad script fig23/mk_anny_skel.py, same JSON, same content (bone heads by region, 24 fitted points).
+% (d) re-rendered 12 Nov at its printed size (0.40 linewidth = 2.05 x 1.85 in), legend at 7 pt beside the skeleton:
+%   script figures/scripts/mk_anny_skel2.py, same JSON, same content (bone heads by region, 24 fitted points).
 \begin{figure}[!tbp]
 \centering
 \begin{subfigure}[b]{0.13\linewidth}\centering
   \IfFileExists{figures/img/F24_smpl_mesh_crop.jpg}{\includegraphics[width=\linewidth]{F24_smpl_mesh_crop.jpg}}{}
   \caption{SMPL}\label{fig:body-models-smpl-mesh}
 \end{subfigure}\hfill
-\begin{subfigure}[b]{0.33\linewidth}\centering
+\begin{subfigure}[b]{0.30\linewidth}\centering
   \IfFileExists{figures/img/F24_smpl_skeleton.png}{\includegraphics[width=\linewidth]{F24_smpl_skeleton.png}}{}
   \caption{SMPL, schematic}\label{fig:body-models-smpl-skel}
 \end{subfigure}\hfill
@@ -25,7 +25,7 @@
   \IfFileExists{figures/img/F24_anny_mesh_crop.jpg}{\includegraphics[width=\linewidth]{F24_anny_mesh_crop.jpg}}{}
   \caption{Anny}\label{fig:body-models-anny-mesh}
 \end{subfigure}\hfill
-\begin{subfigure}[b]{0.38\linewidth}\centering
+\begin{subfigure}[b]{0.40\linewidth}\centering
   \IfFileExists{figures/img/F24_anny_skeleton.png}{\includegraphics[width=\linewidth]{F24_anny_skeleton.png}}{}
   \caption{Anny rest rig}\label{fig:body-models-anny-skel}
 \end{subfigure}

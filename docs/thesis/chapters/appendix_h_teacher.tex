@@ -5,6 +5,8 @@
 % draft of 8 Nov (commit ae2c88b, 06_results.tex lines 202-441), condensed in wording only.
 % Run identifiers: the teacher = Final, uncorrected teacher = Control, initial model = Base, teacher with full /
 % partial shape mask = Final-masked / Final-partial-mask (Table~\ref{tab:names}).
+% Fix pass 12 Nov 2026: full teacher table with pilot columns (tab:final-full), T23, T24 and T25 moved here from
+% Chapter 5 (labels kept); protocol names per Section 4.8.
 % =============================================================================
 
 \chapter{Additional teacher results}
@@ -26,16 +28,80 @@ Image & Ground truth & Initial model & Teacher \\
 \includegraphics[width=\linewidth, trim=0 0 0 16, clip]{F12_holdout_579871_img_gt_base_final}
 \caption[Two further holdout images]{Two further AnnyOne holdout images (579860 top, 579871 bottom), arranged as in
 Figure~\ref{fig:holdout-montage}. The ground truth is drawn with the dataset camera, the predictions of the initial
-model (Base) and the teacher (Final) with the holdout protocol, each body at its model's predicted depth.}
+model and the teacher with the holdout protocol, each body at its model's predicted depth.}
 \label{fig:holdout-montage-more}
 \end{figure}
 
 Figure~\ref{fig:holdout-montage-more} shows the two holdout images of the earlier four-image figure that are not
-repeated in Section~\ref{sec:res-final}; in the original renderings the prediction panels carry the label
-``V1\_eval\_masked''. In all four images mesh colours mark detections, not identities; people without a
+repeated in Section~\ref{sec:res-final}; the label printed on the prediction panels (``V1\_eval\_masked'') is
+the identifier of the holdout protocol. In all four images mesh colours mark detections, not identities; people without a
 ground-truth mesh (the foreground arm in 579862) are not scored, and people a model misses (the two lying in the
 foreground of 579865) have no mesh. During training the teacher stayed below the uncorrected teacher at all ten
 epochs on 3DPW validation, whereas on the holdout the two alternated (Figure~\ref{fig:val-curves}).
+
+\begin{table}[!tbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{subtable}{\linewidth}
+\centering
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+ & \shortstack[r]{Initial\\model} & \shortstack[r]{Depth\\pilot} & \shortstack[r]{Neck\\pilot} & \shortstack[r]{Uncorrected\\teacher} & Teacher \\
+\midrule
+PVE (mm) & \BasePVE & 74.8 & 68.8 & \ControlPVE & \FinalPVE \\
+PA-PVE (mm) & \BasePAPVE & 54.0 & 50.9 & \ControlPAPVE & \FinalPAPVE \\
+Recall (\%) & \BaseRecall & 87.8 & 89.4 & \ControlRecall & \FinalRecall \\
+Root error (mm) & \BaseRootErr & \DepthPilotRootErr & 1429 & \ControlRootErr & \FinalRootErr \\
+Depth slope & \BaseSlope & 0.38 & 0.34 & \ControlSlope & \FinalSlope \\
+Depth intercept (m) & \BaseIntercept & 1.59 & 2.56 & \ControlIntercept & \FinalIntercept \\
+Size ratio & \BaseSize & 0.84 & 0.58 & \ControlSize & \FinalSize \\
+Neck girth pred/GT & \BaseGirth & 0.457 & 0.997 & \ControlGirth & \FinalGirth \\
+PVE\textsubscript{neck} (mm) & 27.3 & 27.7 & 10.7 & \ControlNeckSkin & \FinalNeckSkin \\
+Global head direction (deg) & \BaseHeadDir & 12.7 & \NeckPilotHeadDir & \ControlHeadDir & \FinalHeadDir \\
+Fingers (deg) & \BaseFingers & 17.4 & 8.3 & \ControlFingers & \FinalFingers \\
+neck02 bone (deg) & \BaseNeckTwo & 175.5 & 4.7 & \ControlNeckTwo & \FinalNeckTwo \\
+head bone (deg) & 177.9 & 178.0 & 11.2 & \ControlHeadBone & \FinalHeadBone \\
+\bottomrule
+\end{tabular}
+\caption{AnnyOne holdout (100 images, holdout protocol, matched people); placement metrics with each body at its model's predicted depth.}
+
+\end{subtable}
+
+\vspace{1em}
+\begin{subtable}{\linewidth}
+\centering
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+ & \shortstack[r]{Initial\\model} & \shortstack[r]{Earlier\\model$^{d}$} & \shortstack[r]{Neck\\pilot} & \shortstack[r]{Uncorrected\\teacher} & Teacher & \shortstack[r]{Released\\baseline} \\
+\midrule
+PVE (mm) & \BaseThreeDPW & \BaseOldThreeDPW & \NeckPilotThreeDPW & \ControlThreeDPW & \FinalThreeDPW & \NAVERThreeDPW \\
+PA-PVE (mm) & \BasePAThreeDPW & \BaseOldPAThreeDPW & 68.7 & \ControlPAThreeDPW & \FinalPAThreeDPW & \NAVERPAThreeDPW \\
+MPJPE (mm)$^{b}$ & 126.9 & 94.8 & 124.8 & \ControlMPJPEThreeDPW & \FinalMPJPEThreeDPW & \NAVERMPJPEThreeDPW \\
+Precision (\%) & \BasePrecThreeDPW & \BaseOldPrecThreeDPW & 53 & 62 & \FinalPrecThreeDPW & \NAVERPrecThreeDPW \\
+Recall (\%) & 100 & \BaseOldRecallThreeDPW & 100 & 99 & \FinalRecallThreeDPW & \NAVERRecallThreeDPW \\
+\addlinespace
+Holdout PVE, 3DPW protocol$^{c}$ & \BaseVzeroPVE & \BaseOldVzeroPVE & 72.7 & 81.2 & \FinalTestHundredPVE & (\NAVERAnnyOne)$^{a}$ \\
+\bottomrule
+\multicolumn{7}{@{}p{0.97\linewidth}@{}}{\scriptsize $^{a}$The released baseline masks the helper bones by design, so
+this value follows the holdout protocol and compares with the teacher's \FinalPVE{} in (a); it is potentially
+in-sample. $^{b}$Mean over all 163 Anny joints, pelvis-centred. $^{c}$The 100 images of (a) with the 3DPW protocol
+(helper bones predicted). $^{d}$Earlier ViT-L model trained on the labels before their correction
+(Appendix~\ref{app:pilots}), tested on the corrected ones like every model here. Depth pilot: depth fix, depth weight
+$\times$5, 10 epochs; neck pilot: bone correction and a 2-epoch fine-tune.}
+\end{tabular}
+\caption{3DPW test (corrected labels, all 8,190 images, 3DPW protocol), the same evaluation code for every model.}
+
+\end{subtable}
+\caption[The teacher, the uncorrected teacher, the initial model and the pilots]{Full version of
+Table~\ref{tab:final}, with the depth pilot, the neck pilot and the earlier model (Appendix~\ref{app:pilots}) on the
+AnnyOne holdout and the 3DPW test set.}
+\label{tab:final-full}
+\end{table}
+
+Table~\ref{tab:final-full} adds the pilot columns to Table~\ref{tab:final}. The depth pilot (depth fix, depth weight
+$\times$5, 10 epochs) has the lowest root error, and the neck pilot (bone correction and a 2-epoch fine-tune) has
+neck errors close to the teacher's; the earlier model was trained on the 3DPW labels before their correction and is tested on the
+corrected ones like every model here.
 
 The comparison of the teacher with the uncorrected teacher has four gaps. The matched sets differ in size
 (\FinalMatched, \ControlMatched{} and \BaseMatched{} people) and PVE was not compared on the same people, recall was
@@ -45,10 +111,17 @@ cell), no bootstrap intervals were computed, and there is no second run of the t
 On the 3DPW overlays (Figure~\ref{fig:3dpw-overlays}) most men receive male bodies from the teacher and
 female-looking ones from the initial model, the teacher's bodies are slightly larger, and the seated guitar player is
 reconstructed poorly by both. The low 3DPW precision arises because every detected bystander and every ghost body on
-a half-visible person counts as a false positive. The run-to-run variation on 3DPW was not measured. The 3DPW result was not broken down by sequence, and only 8 frames were inspected
-visually.
+a half-visible person counts as a false positive. On 3DPW the only repeated setting is the pair of
+$T=\MethodKDTemp$ students (Section~\ref{sec:method-variation}); the teacher was not repeated. The 3DPW result was not
+broken down by sequence, and only 8 frames were inspected visually.
 
 \section{Placement}
+
+The Pearson correlation of predicted with true root depth rises from \ControlDepthR{} for the uncorrected teacher to
+\FinalDepthR{} for the teacher, computed over the matched people of Figure~\ref{fig:depth-scatter}; the fits are
+$\FinalSlope\times\text{true} + \FinalIntercept$\,m (teacher), $\ControlSlope\times\text{true} + \ControlIntercept$\,m
+(uncorrected teacher) and $\BaseSlope\times\text{true} + \BaseIntercept$\,m (initial model), and the teacher's fit
+crosses the identity at \FinalIdentityCross\,m.
 
 The teacher's pelvis lands farther from its true pixel than the uncorrected teacher's (\FinalPelvisPx{} against
 \ControlPelvisPx{} pixels), probably because the head is pinned while the body is still drawn too small. Its root
@@ -60,8 +133,10 @@ not the teacher.
 
 \section{Bone correction}
 
-On the real frame of Figure~\ref{fig:neck-3dpw-bar}, which no model trained on, the initial model draws both
-necks as thin stalks under the head and the corrected model draws them at normal width. The frame shows the neck
+The neck-region joint error falls from \ControlNeckRegion{} deg for the uncorrected teacher to
+\FinalNeckRegion{} deg for the teacher (per-region evaluation of the same holdout runs). On the real frame of
+Figure~\ref{fig:neck-3dpw-bar}, which no model trained on, the initial model draws both necks as thin stalks under
+the head and the neck pilot draws them at normal width. The frame shows the neck
 pilot, not the teacher, and its columns also differ
 by the fine-tune. On the holdout, however, the same fine-tune without the correction keeps the girth at
 \BaseGirth{} (Table~\ref{tab:neck-bones}), so the correction is the likely cause of the wider necks. Flips that
@@ -77,6 +152,17 @@ fretting in the guitar frame, and bend over the edge of the bar in the bar frame
 (Figure~\ref{fig:fingers-all}) cannot be judged at print size.
 
 \section{Body shape}
+
+\input{tables/T24_gender_auc}
+\input{tables/T23_phenotype_corr}
+
+Table~\ref{tab:gender-auc} gives the gender measures on Relative Human; the masked models still rank women above men
+but move both sexes above 0.5. Table~\ref{tab:pheno-corr} gives the phenotype agreement on the AnnyOne holdout: the
+teacher follows weight (\PhenoRFinalWeight), gender (\PhenoRFinalGender) and cup size (\PhenoRFinalCupsize) best and
+muscle worst (\PhenoRFinalMuscle, down from \PhenoRBaseMuscle{} for the initial model, likely because the converter
+fixes muscle for every 3DPW person), and the largest slope (\PhenoSlopeMaxFinal, for weight) is still below 1, so all
+three models regress towards the mean. Ages are not converted to years, because the code uses three age scales that
+disagree, and the holdout contains no children to check them against.
 
 On the demo photos (Figures~\ref{fig:real-photos} and~\ref{fig:photo-montages}) most men look male with the teacher,
 and the boy keeps an adult body. The gender gain is consistent with the corrected 3DPW gender labels, which supervise
@@ -97,9 +183,23 @@ the weakened muscle correlation by the converter's constant muscle value of \Met
 
 \section{Shape-supervision masking}
 
+The full mask covers age (\MethodConstAge) and the seven values at \MethodConstOther; on the demo images it raises the
+spread of weight, cup size and firmness from \SpreadWeightFinal--\SpreadCupFinal{} to \SpreadWeightMasked. The partial
+mask leaves \RHBabiesBelowPartial\,\% of babies child-shaped and doubles the weight spread on Relative Human
+(\RHSpreadWeightFinal{} to \RHSpreadWeightPartial). Without a mask, the teacher learned the seven constants and
+predicts nearly the same muscle, weight, cup size and firmness for everyone on real photographs.
+
 The 3DPW mesh targets still hold the neutral body under both masks, which is why the body errors barely change. With
 age supervised (partial mask) the age-group improvement remains in this run; this suggests an effect of the age
 target but does not establish the mechanism. Gender accuracy falls under both masks although the gender label stays
 supervised. One untested reading is that the teacher's gender gain depends on the seven constants on the 3DPW men as
 much as on the gender label. The partial-mask model had no demo run, so it is not known whether it restores variety on
 the demo images, and the reason why gender falls remains open.
+
+\section{Distillation temperature: test-set values}
+
+\input{tables/T25_kd_temperature}
+
+Table~\ref{tab:kd-temperature} lists the final test-set evaluation of each temperature of the sweep, plotted in
+Figure~\ref{fig:kd-temperature}. Only the feature-distillation temperature changes; the values were not used to
+select $T$ (Section~\ref{sec:res-selection}).

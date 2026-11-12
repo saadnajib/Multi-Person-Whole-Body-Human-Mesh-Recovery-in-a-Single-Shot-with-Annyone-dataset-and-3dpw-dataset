@@ -51,11 +51,13 @@ Recall (\%) & 100 & 99 & \FinalRecallThreeDPW & \NAVERRecallThreeDPW \\
 \addlinespace
 Holdout PVE, 3DPW protocol$^{c}$ & \BaseVzeroPVE & 81.2 & \FinalTestHundredPVE & (\NAVERAnnyOne)$^{a}$ \\
 \bottomrule
-\multicolumn{5}{@{}p{0.97\linewidth}@{}}{\scriptsize $^{a}$The released baseline masks the helper bones by design, so
+\end{tabular}
+
+\smallskip
+\parbox{\linewidth}{\scriptsize $^{a}$The released baseline masks the helper bones by design, so
 this value follows the holdout protocol and compares with the teacher's \FinalPVE{} in (a); it is potentially
 in-sample. $^{b}$Mean over all 163 Anny joints, pelvis-centred. $^{c}$The 100 images of (a) with the 3DPW protocol
 (helper bones predicted). Pilot columns: Table~\ref{tab:final-full}.}
-\end{tabular}
 \caption{3DPW test (corrected labels, all 8,190 images, 3DPW protocol), the same evaluation code for every model.}
 \label{tab:final-3dpw}
 \end{subtable}

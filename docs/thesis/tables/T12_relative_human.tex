@@ -40,7 +40,10 @@ Cup size & -- & \SpreadCupFinal & \SpreadCupMasked & n/m \\
 Firmness & -- & \SpreadFirmFinal & \SpreadFirmMasked & n/m \\
 Age & -- & \SpreadAgeFinal & \SpreadAgeMasked & n/m \\
 \bottomrule
-\multicolumn{5}{@{}p{0.97\linewidth}@{}}{\scriptsize Upper part: detected people only, matched to the labelled
+\end{tabular}
+
+\smallskip
+\parbox{\linewidth}{\scriptsize Upper part: detected people only, matched to the labelled
 boxes at IoU $\geq$ 0.3, so the matched sets differ between models. Ages and heights are Anny phenotype values in
 $[0, 1]$, not years; ``child-shaped'' means a predicted age below 0.45; the AUC ranks kids and babies against adults by
 predicted age (0.5 = chance). Lower part: spread of the predicted phenotypes over all detected people of the 12 demo
@@ -48,7 +51,6 @@ images (4 photos and 8 3DPW test frames), not matched to people; -- not reported
 covers all eight constant 3DPW phenotypes, the partial mask the seven at 0.5 (age kept supervised;
 Section~\ref{sec:res-mask}). The neck pilot (bone correction and a 2-epoch fine-tune; Appendix~\ref{app:teacher-extra})
 equals the initial model within run-to-run variation (AUC 0.613).}
-\end{tabular}
 \caption[Body shape on real photos: Relative Human and the demo images]{Body shape of the teacher variants on real
 photos: Relative Human validation split (635 images, 2,130 labelled people) and the demo images. The student was not
 evaluated on Relative Human; all values are teacher results.}

@@ -172,7 +172,7 @@ SMPL mesh, and the two joint sets lie close together.
   \centering
   % Panels of the 22a226c render, cropped to the actors and re-arranged (12 Nov).
   \IfFileExists{figures/img/F14_label_check_downtown_walking_00771.jpg}{%
-    \includegraphics[width=0.9\textwidth]{figures/img/F14_label_check_downtown_walking_00771.jpg}%
+    \includegraphics[width=\textwidth]{figures/img/F14_label_check_downtown_walking_00771.jpg}%
   }{}
   \caption[A converted 3DPW label]{Converted label (not a network prediction) for 3DPW test frame 771 of
     \texttt{downtown\_walking\_00}, corrected labels. Top: image; bottom left: 3DPW's SMPL label (orange) with
@@ -187,8 +187,8 @@ SMPL mesh, and the two joint sets lie close together.
 
 Neither the AnnyOne holdout nor 3DPW contains children. Relative Human, introduced with BEV~\cite{sun2022bev},
 contains \DataRHImages{} real photographs, many of them crowded and with children. Each person has a box, an age group
-(adult, teen, kid, baby) and a gender coded 0 for male, as in Anny; there are no 3D labels. The licence terms of the copy used were not verified
-(Section~\ref{sec:disc-limitations}). Only the validation split is used: \DataRHValImages{} images with \DataRHValPeople{} labelled people (\DataRHValAdults{} adults,
+(adult, teen, kid, baby) and a gender coded 0 for male, as in Anny; there are no 3D labels. The licence terms of the copy used were not verified.
+Only the validation split is used: \DataRHValImages{} images with \DataRHValPeople{} labelled people (\DataRHValAdults{} adults,
 \DataRHValTeens{} teens, \DataRHValKids{} kids, \DataRHValBabies{} babies, \DataRHValUnknownAge{} of unknown age).
 
 The model runs once on each whole photo with a field of view of \DataRHFov$^\circ$, and detections are matched to

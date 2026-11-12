@@ -31,12 +31,14 @@ Babies with age $<$ 0.45 (\%) & \RHBabiesBelowFinal & \RHBabiesBelowMasked & \RH
 Muscle & \SpreadMuscleFinal & \SpreadMuscleMasked & n/m & $>$ \SpreadRuleThreshold \\
 Weight & \SpreadWeightFinal & \SpreadWeightMasked & n/m & $>$ \SpreadRuleThreshold \\
 \bottomrule
-\multicolumn{5}{@{}p{0.97\linewidth}@{}}{\scriptsize The full mask covers the \MethodShapeMaskCount{} constants of
+\end{tabular}
+
+\smallskip
+\parbox{\linewidth}{\scriptsize The full mask covers the \MethodShapeMaskCount{} constants of
 the converted labels (age 0.55 and seven values at 0.5), the partial mask only the seven at 0.5; gender stays
 supervised in all three. Relative Human: matched people of the validation split (full columns in
 Table~\ref{tab:relhuman}); demo: 12 images, not matched to people; n/m: not measured. Rule: thresholds fixed before
 the first masked run that a masked model had to meet to replace the teacher.}
-\end{tabular}
 \caption[The shape-mask arms]{The teacher without, with full and with partial shape mask on the AnnyOne holdout,
 the 3DPW test set, Relative Human and the demo images. Both masked models fail the gender
 threshold of the replacement rule.}
