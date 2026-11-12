@@ -34,15 +34,18 @@ ids and recorded run names appear only in this appendix.
 \label{sec:app-names}
 
 The ViT-L line (``L'') comprises every model that keeps the ViT-L backbone. L-stage 1 to 4 are the steps of the
-transfer schedule that turned NAVER's released model into the initial model (Base), which is the end of that
+transfer schedule that turned the released Multi-HMR-Anny checkpoint (the released baseline) into the initial model (Base), which is the end of that
 schedule and the start of every later fine-tune. The teacher (Final) and the teacher without corrections (Control)
 are the two arms of the last teacher experiment (exp7): the same \MethodFinalEpochs-epoch fine-tune of Base, with and
 without the two corrections. The number after ``Student-S/'' is the old version number of a ViT-S student; the
 student (Student) is the ViT-B model distilled from the teacher. The 60-epoch student (Student-60) is the student's
-recipe trained twice as long, for the analysis of Section~\ref{sec:res-training-length}; it is not the reported model.
-The sweep of Section~\ref{sec:res-kd-temperature} trains the same recipe at \KDSweepArms{} distillation temperatures.
-The two arms of the distillation ablation (Section~\ref{sec:res-kd-ablation}), Student-noKD and ViT-B-noTeacher,
-are defined in the last rows of the table.
+training configuration trained twice as long (Section~\ref{sec:res-training-length}); it is not the reported model.
+The sweep of Section~\ref{sec:res-kd-temperature} trains the same configuration at \KDSweepArms{} temperatures.
+The two arms of the distillation ablation (Section~\ref{sec:res-kd-ablation}), the student without distillation
+losses (Student-noKD) and the ViT-B model without teacher (ViT-B-noTeacher), are the last rows of the table.
+Two evaluation protocols are used (Section~\ref{sec:method-eval}): the holdout protocol, with the helper bones set to
+rest pose before decoding, and the 3DPW protocol, with the helper bones scored as predicted. File and log names use V1
+for the holdout protocol and V0 for the 3DPW protocol.
 
 In Table~\ref{tab:names}, ``ep.''\ is the epoch kept. Backbone: L, B, S = DINOv2 ViT-L, ViT-B, ViT-S with 14-pixel
 patches; ``all'' = every block trained, ``last 4'' = the last 4 of 24 blocks, ``+p'' = a linear projector to the
@@ -96,12 +99,11 @@ project folder on the cluster. The log of job $j$ is \path{logs/<log name>_}$j$\
 \path{_}$j$\path{_<task>.out}; the video and image jobs: \path{logs/<log name>-}$j$\path{.out}, with a hyphen).
 \textsf{E7} stands for \path{results/experiments/exp7_final_model/}, \textsf{M} for \path{models/multiHMR/}.
 
-All recorded jobs have finished. Of the \KDSweepArms{} temperature-sweep jobs (submitted 6 November), four completed;
-the $T = \KDSweepMaxT$ job (3717598) trained to the end, but its post-training evaluation failed on a network
-time-out, so it has no final table. The per-temperature validation values of the sweep are
-\TODO{pending: validation values from the cluster}. Three runs of this revision are still open: the two arms of the
-distillation ablation, submitted on 12 November (\TODO{pending: job ids}), and the evaluation of the student on
-Relative Human (\TODO{pending: job id}).
+Of the \KDSweepArms{} temperature-sweep jobs (submitted 6 November), four completed; the $T = \KDSweepMaxT$ job
+(3717598) trained to the end, but its post-training evaluation failed on a network time-out, so it has no final table.
+The per-temperature validation values of the sweep were logged by the runs but are not reported in this thesis. Two
+runs of this revision had not completed at submission and contribute no number: the two arms of the distillation
+ablation, submitted on 12 November.
 
 \input{tables/T13_runs}
 
@@ -128,16 +130,16 @@ whether it repeats exactly across GPU types was not tested.
 
 Apart from the temperature, the sweep runs evaluate after every epoch instead of every fifth and also compute the
 training loss on the validation images (\texttt{-{}-val\_loss 1}). Both additions only read values out of the model
-and change no weight. The sweep's own $T=4$ run therefore repeats the reported recipe and gives a second estimate of
+and change no weight. The sweep's own $T=4$ run therefore repeats the reported training configuration and gives a second estimate of
 run-to-run variation (Section~\ref{sec:method-variation}).
 
 Three further items cannot be repeated. The history scripts of the L line and of Student-S were edited after their
-runs, so their recipes in Table~\ref{tab:names} are as recorded there, not re-run. \path{train.py} keeps only the
+runs, so their training configurations in Table~\ref{tab:names} are as recorded there, not re-run. \path{train.py} keeps only the
 last two or three checkpoints of a run, so intermediate epochs are lost. The checkpoints, the AnnyOne and 3DPW data
 and the Relative Human annotations are not in the repository, and 3DPW and Relative Human come with their own
 licences.
 
-\section{Evidence that the video comparison ran}
+\section{Records of the video comparison}
 \label{sec:app-video}
 
 The video comparison of job 3642415 is documented by the log \path{video-compare-3642415.out} and the matching error

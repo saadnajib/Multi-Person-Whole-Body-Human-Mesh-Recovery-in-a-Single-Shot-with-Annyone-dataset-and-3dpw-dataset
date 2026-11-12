@@ -5,7 +5,7 @@
 % Multi-HMR-Anny, Final-masked, Final-partial-mask, Mixed-L, Fresh-heads-L, L-stage 1-4, Student-S/*). First column =
 % descriptive name, identifier in bold below it. Rows for the two distillation-ablation arms added (brief section 5:
 % (a) distillation losses off, teacher heads still copied; (b) no teacher, no losses, no head copy; submitted 12 Nov,
-% run names and job ids pending). Student-60 was called "Student, 60 epochs" before 12 Nov. The table key moved from
+% run names fixed by slurm/experiments/exp10_kd_ablation.sh "RUN NAMES"; not completed at submission, fix pass D1). Student-60 was called "Student, 60 epochs" before 12 Nov. The table key moved from
 % the caption into the paragraph before the table (appendix_a_reproduction.tex, sec:app-names).
 % Same content as docs/model_names.md (for the deck and the handover).
 % Trimmed 19 Oct to one longtable (was two: part 2 held the full flag lists and checkpoint paths; recover with
@@ -61,7 +61,7 @@ Main-text name, \textbf{identifier} & Recorded run / checkpoint name & Starting 
 \bottomrule
 \endfoot
 \multicolumn{6}{@{}l}{\emph{Released starting point and baseline}} \\
-the released baseline\newline\textbf{Multi-HMR-Anny} & \path{multiHMR_672_L_anny} (NAVER's release) & trained by NAVER & L, own decoder & A, BEDLAM, COCO, MPII & not recorded; evaluated with its own model class \\
+the released baseline\newline\textbf{Multi-HMR-Anny} & \path{multiHMR_672_L_anny} (released checkpoint) & trained by NAVER & L, own decoder & A, BEDLAM, COCO, MPII & not recorded; evaluated with its own model class \\
 \addlinespace
 \multicolumn{6}{@{}l}{\emph{ViT-L line (``L''): the transfer schedule and the initial model}} \\
 earlier model\newline\textbf{L-stage 1} & \path{anny_s1_pretrained_bb_v2} & Multi-HMR-Anny backbone, fresh heads & L, all & A & 150 $\times$ 1,000 $\times$ 4, $10^{-4}$, from epoch 177 at $3\cdot10^{-5}$; side branch, no checkpoint kept \\
@@ -90,13 +90,13 @@ earlier model\newline\textbf{Student-S/6c} & v6c, \path{anny_distill_vits_v6c}, 
 earlier model\newline\textbf{Student-S/mixed} & v7, \path{anny_distill_vits_v7_mixed}, ep.~130 & Student-S/6b, epoch 140 & S+p & A+P, old & 150 $\times$ 1,000 $\times$ 8, $2\cdot10^{-5}$, halved every 60 \\
 earlier model\newline\textbf{Student-S/final} & v8, \path{anny_distill_vits_v8_final}, ep.~52 & Student-S/6c, epoch 149; teacher Mixed-L & S+p & A+P, old & 150 $\times$ 1,000 $\times$ 16, $3\cdot10^{-5}$, halved every 60 \\
 \addlinespace
-\multicolumn{6}{@{}l}{\emph{ViT-B student (requirement 1b) and its sensitivity runs}} \\
-the student\newline\textbf{Student} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30}; job 3614191 (done 19 Oct) & NAVER's \path{multiHMR_672_B} backbone; every head tensor from Final; teacher Final & B+p, all & A+P, v23 & 30 $\times$ 1,000 $\times$ 8, $3\cdot10^{-5}$, halved every 12; Final's targets and masks; holdout \StudentPVE, 3DPW \StudentThreeDPW\,mm, 95\,\% rule not met; the reported model \\
-the 60-epoch student\newline\textbf{Student-60} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60}, ep.~59; job 3623342 & as Student & B+p, all & A+P, v23 & as Student, but \StudentSixtyEpochs{} epochs, halved every \LossLRHalfSixty; holdout \StudentSixtyPVE, 3DPW \StudentSixtyThreeDPW\,mm, 95\,\% rule not met; training-length analysis, not the reported model \\
+\multicolumn{6}{@{}l}{\emph{ViT-B student and its sensitivity runs}} \\
+the student\newline\textbf{Student} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30}; job 3614191 (done 19 Oct) & NAVER's \path{multiHMR_672_B} backbone; every head tensor from Final; teacher Final & B+p, all & A+P, v23 & 30 $\times$ 1,000 $\times$ 8, $3\cdot10^{-5}$, halved every 12; Final's targets and masks; holdout \StudentPVE, 3DPW \StudentThreeDPW\,mm, 95\,\% retention thresholds not met; the reported model \\
+the 60-epoch student\newline\textbf{Student-60} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60}, ep.~59; job 3623342 & as Student & B+p, all & A+P, v23 & as Student, but \StudentSixtyEpochs{} epochs, halved every \LossLRHalfSixty; holdout \StudentSixtyPVE, 3DPW \StudentSixtyThreeDPW\,mm, 95\,\% retention thresholds not met; training-length analysis, not the reported model \\
 the student at temperature $t$\newline\textbf{Student, $T=t$} & exp8 (submitted by exp9) \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT<t>_sweep}; jobs in Table~\ref{tab:runs} & as Student & B+p, all & A+P, v23 & as Student, with feature-distillation temperature $t \in \{1, 2, 4, 8, 16\}$; evaluation after every epoch and validation loss on (both only measure); temperature analysis \\
 \addlinespace
-\multicolumn{6}{@{}l}{\emph{Distillation ablation (submitted 12 November, results pending)}} \\
-the student without distillation losses\newline\textbf{Student-noKD} & exp8 variant, \TODO{pending: run name, job id} & as Student (teacher heads copied) & B+p, all & A+P, v23 & as Student, with both distillation losses off; arm (a) of Section~\ref{sec:res-kd-ablation} \\
-ViT-B without teacher\newline\textbf{ViT-B-noTeacher} & exp8 variant, \TODO{pending: run name, job id} & NAVER's \path{multiHMR_672_B} backbone, fresh heads & B+p, all & A+P, v23 & as Student, with no teacher: no distillation losses, no head copy; arm (b) of Section~\ref{sec:res-kd-ablation} \\
+\multicolumn{6}{@{}l}{\emph{Distillation ablation (submitted 12 November, not completed at submission)}} \\
+the student without distillation losses\newline\textbf{Student-noKD} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_nokd}; not completed & as Student (teacher heads copied) & B+p, all & A+P, v23 & as Student, with both distillation losses off; arm (a) of Section~\ref{sec:res-kd-ablation} \\
+the ViT-B model without teacher\newline\textbf{ViT-B-noTeacher} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_supervised}; not completed & NAVER's \path{multiHMR_672_B} backbone, fresh heads & B+p, all & A+P, v23 & as Student, with no teacher: no distillation losses, no head copy or freeze, no bone correction in training; arm (b) of Section~\ref{sec:res-kd-ablation} \\
 \end{longtable}
 \endgroup

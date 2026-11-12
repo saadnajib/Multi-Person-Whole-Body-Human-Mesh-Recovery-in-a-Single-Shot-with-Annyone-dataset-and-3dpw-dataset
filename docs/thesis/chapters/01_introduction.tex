@@ -7,14 +7,14 @@
 \label{sec:intro-anny}
 
 Human mesh recovery estimates the pose and shape parameters of a parametric body model for each person in an
-image; the body model turns them into a triangle mesh of the body surface. Such meshes support the analysis of
-human motion and of scenes. This thesis addresses the multi-person, whole-body variant:
+image; the body model turns them into a triangle mesh of the body surface. This thesis addresses the multi-person, whole-body variant:
 pose, shape and distance from the camera for every person, including people who overlap or are partly occluded.
 
 Multi-HMR~\cite{baradel2024multihmr} solves this task in a single forward pass. A Vision Transformer (ViT) encodes the
 image, a detection head selects one keypoint per person, and a Human Perception Head regresses each body and its
-distance. A released version predicts bodies in the Anny body model~\cite{bregier2025anny,naver2024multihmrcode};
-multi-person Anny prediction is therefore not new, and this model serves as the baseline.
+distance. The released Multi-HMR-Anny checkpoint (the released baseline) predicts bodies in the Anny body
+model~\cite{bregier2025anny,naver2024multihmrcode}; multi-person Anny prediction is therefore not new, and this
+checkpoint serves as the external baseline.
 
 SMPL~\cite{loper2015smpl} represents shape by statistical coefficients learned from scans of adults, usually the
 first \BgSmplBetas{}, which carry no direct semantic meaning. Anny instead uses \MethodNumPheno{} named phenotype
@@ -34,7 +34,7 @@ trained teacher guides the training of a smaller student, reduces the cost and k
 The input is an RGB image with its camera intrinsics (focal length and principal point), which define the viewing
 ray of each pixel. For each detected person the model predicts an Anny body: bone rotations, phenotype values and the
 camera-space position of one head joint, the anchor. The deployed model is a ViT-B student; its ViT-L teacher, trained
-in this thesis, is the accuracy reference, and the released Multi-HMR-Anny model the external baseline. Four research
+in this thesis, is the accuracy reference, and the released baseline the external reference. Four research
 questions structure the thesis:
 \begin{enumerate}
 \item \textbf{Real-image supervision.} How can the SMPL labels of 3DPW be converted into Anny labels, and which
@@ -43,40 +43,43 @@ questions structure the thesis:
   teacher, how much accuracy does it lose against the teacher and the released baseline, and what does distillation
   contribute?
 \item \textbf{Multi-person detection.} How does detection recall depend on the number of people in an image?
-\item \textbf{Video.} Can the image-based student process a video, and do inference-time temporal filtering and
+\item \textbf{Video.} Can the image-based student process a single-person video, and do inference-time temporal filtering and
   landmark alignment make its output steadier and better placed?
 \end{enumerate}
 
 The student processes one frame at a time; no multi-frame network is trained. Reconstruction is evaluated on a
-held-out part of AnnyOne and on converted 3DPW, age and gender on Relative Human photographs with age-group and
-gender tags. No new shape labels for real images are collected, and age in years is not estimated.
+held-out part of AnnyOne and on converted 3DPW, age and gender for the teacher on Relative Human photographs with
+age-group and gender tags. No new shape labels for real images are collected, and age in years is not estimated.
 
 \section{Contributions}
 \label{sec:intro-contrib}
 
-The contributions are as follows.
+I implemented the Anny output head and its target construction on top of the
+Multi-HMR code, the SMPL-to-Anny converter, the training and evaluation pipeline, the distillation set-up and the
+video filter and alignment; the pretrained backbone weights come from the released checkpoints.
 \begin{enumerate}
 \item \textbf{Anny labels for real images.} A joint-based fitting pipeline converts the standard 3DPW splits into
-  Anny labels by matching geometrically corresponding points and adding virtual torso joints; the labels were checked
-  independently with mesh overlays and a joint comparison (Chapter~\ref{ch:data}).
+  Anny labels by fitting corresponding joints and virtual torso joints; the labels were checked with mesh overlays
+  and a joint comparison (Chapter~\ref{ch:data}).
 \item \textbf{A compact reconstruction system.} A ViT-L teacher is trained on AnnyOne and converted 3DPW with two
   corrections to its supervision, consistent head-anchor targets and a fixed output rotation correction for flipped
   bones, both identified by diagnostic experiments (Appendix~\ref{ch:diagnostics}). A ViT-B student receives a copy
   of the teacher's prediction heads, which read its features through a learned projector, and imitates the teacher's
   features and outputs.
-\item \textbf{A controlled evaluation.} All models are evaluated with the same labels and settings, with pose,
-  placement and shape assessed separately, ablations of the teacher corrections and of distillation, sensitivity
+\item \textbf{An evaluation under one protocol.} All models are evaluated with the same labels and settings, with
+  pose, placement and shape assessed separately, ablations of the teacher corrections, sensitivity
   analyses of training length and temperature, and detection recall by the number of people per image.
 \item \textbf{A video pipeline.} The pose, shape and position of each tracked person are filtered over time, and
-  position and depth are aligned to detected 2D landmarks, without retraining (Section~\ref{sec:method-temporal}). Student and baseline are compared on the same frames
-  and on a still photograph of several people.
+  position and depth are aligned to detected 2D landmarks, without retraining (Section~\ref{sec:method-temporal}). The student and the released baseline are compared on
+  the same frames.
 \end{enumerate}
 
 \section{Thesis structure}
 \label{sec:intro-outline}
 
 Chapter~\ref{ch:background} introduces the body models and related work. Chapter~\ref{ch:data} describes the
-datasets and the label conversion, on which the method of Chapter~\ref{ch:method} depends. Chapter~\ref{ch:results} reports the experiments, from the comparison
-of student, teacher and baseline to the analysis of the teacher. Chapter~\ref{ch:discussion} answers the research questions and states
-the limitations; Chapter~\ref{ch:conclusion} concludes. The appendices give reproduction details, settings,
-additional figures, earlier models and the diagnostic experiments.
+datasets and the label conversion, on which the method of Chapter~\ref{ch:method} depends.
+Chapter~\ref{ch:results} reports the experiments. Chapter~\ref{ch:discussion} answers the research questions and states the
+limitations; Chapter~\ref{ch:conclusion} concludes. The appendices give reproduction details, the joint
+correspondence, settings, additional figures, earlier models, the diagnostic experiments, the conversion history and
+additional teacher results.

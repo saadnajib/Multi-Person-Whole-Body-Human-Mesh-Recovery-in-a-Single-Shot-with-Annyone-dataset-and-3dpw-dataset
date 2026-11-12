@@ -26,8 +26,7 @@ channels, and a trainable linear projector maps them to the teacher's width:
  \mathbf W\in\mathbb R^{C_t\times C_s},\quad C_t=\MethodWidthL .
 \label{eq:student-projection}
 \end{equation}
-The projector adds no image information; the savings come mainly from the smaller encoder. Neither a ViT-B encoder nor
-distillation is new in itself.
+The projector adds no image information; the savings come mainly from the smaller encoder.
 
 % -----------------------------------------------------------------------------
 \section{Multi-HMR for Anny}
@@ -52,7 +51,7 @@ translated so that its anchor joint $M_{J,a}$ lies at the back-projected anchor 
 \label{sec:method-architecture}
 
 The teacher follows Multi-HMR~\cite{baradel2024multihmr} with outputs for Anny (Figure~\ref{fig:architecture}). A
-DINOv2 ViT-L~\cite{oquab2023dinov2} from NAVER's Anny checkpoint encodes the image into tokens; one MLP scores each
+DINOv2 ViT-L~\cite{oquab2023dinov2} taken from the released baseline encodes the image into tokens; one MLP scores each
 token for the head anchor, a second predicts the anchor's offset inside the token. Each detected token becomes a query of the Human Perception Head (HPH, Section~\ref{sec:bg-hmr}), which
 attends to the other people and to all image tokens.
 
@@ -67,8 +66,10 @@ attends to the other people and to all image tokens.
 In the Anny head, which replaces the SMPL-X head, each rotation is predicted as \MethodRotDims{} values and
 orthogonalised by Gram--Schmidt~\cite{zhou2019continuity}; a sigmoid bounds the phenotypes to $[0,1]$, and the depth
 is Multi-HMR's focal-normalised log-distance. Four bones are then multiplied by one constant rotation each
-(Section~\ref{sec:method-bonefix}), and a fixed mask sets \MethodHelperBones{} helper bones (toes, breasts, face and
-subdivision bones) to the identity in prediction and label, keeping \MethodActiveBones{}. The Anny layer, with the same
+(Section~\ref{sec:method-bonefix}). During training a fixed mask sets \MethodHelperBones{} helper bones (toes, breasts, face and
+subdivision bones) to the identity in prediction and label, so only \MethodActiveBones{} bones are supervised; the
+network still outputs helper-bone rotations, which are unsupervised and are set to rest pose at evaluation only in the
+holdout protocol (Section~\ref{sec:method-eval}). The Anny layer, with the same
 full rig as the target builder, is part of the network, so the 3D and 2D losses are computed on the placed mesh and
 their gradients propagate through it. The student keeps everything after the encoder, replaces the encoder by ViT-B and adds the projector
 (Table~\ref{tab:student-recipe}).
@@ -77,7 +78,7 @@ their gradients propagate through it. The student keeps everything after the enc
 \label{sec:method-inference}
 
 At inference the model receives only the image and $\mathbf K$. When the calibration is unknown, as for the
-demonstration photos and the video, $\mathbf K$ is built from an assumed field of view; an incorrect assumption changes
+demo images and the video, $\mathbf K$ is built from an assumed field of view; an incorrect assumption changes
 the recovered depth.
 
 % -----------------------------------------------------------------------------
@@ -182,37 +183,37 @@ $\num{\MethodFinalSteps}$ for the teacher).
 \label{sec:method-real}
 
 A weighted sampler draws on average \MethodMixRatio\% of each batch from converted 3DPW-train (corrected labels,
-$\num{\MethodTrainThreeDPWImages}$ images) and \MethodSynthRatio\% from AnnyOne; since AnnyOne images contain more
-people, an estimated \MethodThreeDPWPeopleShare\% of the supervised people are real. The 3DPW test split is never used
+$\num{\MethodTrainThreeDPWImages}$ images) and \MethodSynthRatio\% from AnnyOne (share of real people:
+Section~\ref{sec:data-limits}). The 3DPW test split is never used
 for training.
 
-\paragraph{Hand mask.} The converter fits only the root and the bones carrying a mapped SMPL joint, so fingers,
-thumbs and metacarpals of every 3DPW label are at rest. In all models trained on 3DPW, the rotation and global-rotation
-terms skip these \MethodHandMaskBones{} bones for 3DPW people; finger rotations are supervised by AnnyOne only. The mesh terms still contain the rest-pose hands, and the output distillation uses the teacher's hand
+\paragraph{Hand mask.} Fingers, thumbs and metacarpals of every converted 3DPW label are at rest
+(Section~\ref{sec:data-limits}). In all models trained on 3DPW, the rotation term skips these
+\MethodHandMaskBones{} bones for 3DPW people; finger rotations are supervised by AnnyOne only. The mesh terms still contain the rest-pose hands, and the output distillation uses the teacher's hand
 predictions.
 
-\paragraph{Shape mask.} The converter leaves \MethodShapeMaskCount{} phenotypes constant: age, muscle, weight, cup
-size, firmness and the three ethnicity values (Section~\ref{sec:data-limits}). The teacher with full shape mask
+\paragraph{Shape mask.} The converter leaves \MethodShapeMaskCount{} phenotypes constant, among them age
+(Section~\ref{sec:data-limits}). The teacher with full shape mask
 excludes all of them from the shape term for 3DPW people, the teacher with partial shape mask the
 \MethodShapeMaskPartial{} other than age; the mesh terms still contain the neutral body. The mask is off in all other
-models. The unmasked model was kept as the teacher because both masked variants lost, on real photos, the improvement in
+models. The model without shape mask was retained as the teacher because both masked variants lost, on real photographs, the improvement in
 predicted gender that the teacher shows over the initial model (Section~\ref{sec:res-mask}).
 
 % -----------------------------------------------------------------------------
 \section{Teacher training and its two corrections}
 \label{sec:method-schedule}
 
-The initial model combines NAVER's ViT-L backbone with Anny heads trained on AnnyOne and is the starting point of every
+The initial model combines the released baseline's ViT-L backbone with Anny heads trained on AnnyOne and is the starting point of every
 fine-tune (earlier stages: Appendix~\ref{app:pilots}). The teacher is fine-tuned from it for \MethodFinalEpochs{} epochs of $\num{\MethodFinalIters}$ iterations at batch size
 \MethodFinalBatch{} with a constant learning rate of \MethodFinalLR; only the last \MethodUnfrozenBlocks{} backbone
 blocks and the heads are trained. Three changes are introduced together: head-anchor targets with distance and
 translation weight \MethodWDist{} (Section~\ref{sec:method-depth}), the bone correction
 (Section~\ref{sec:method-bonefix}), and \MethodMixRatio\% real images per batch with the hand mask. The
 \MethodManifestImages{} diagnostic-manifest images (Chapter~\ref{ch:data}) are never sampled; training took
-$\num{\MethodFinalTrainSec}$\,s on one A100. The uncorrected teacher differs only by pelvis targets with
+$\num{\MethodFinalTrainSec}$\,s on one A100. The teacher without corrections (uncorrected teacher) differs only by pelvis targets with
 weight \MethodWDistDefault{} and no bone correction. Its difference from the teacher is therefore due
 to the two corrections, and its difference from the initial model to the real images together with the cost of
-restarting training; each correction was tested in isolation only in short pilots (Appendix~\ref{ch:diagnostics}).
+restarting training (Section~\ref{sec:diag-noise}); each correction was tested in isolation only in short pilots (Appendix~\ref{ch:diagnostics}).
 
 \subsection{Consistent head-anchor supervision}
 \label{sec:method-depth}
@@ -300,10 +301,11 @@ confident but wrong outputs whose gradients can corrupt the copied weights. The 
 Section~\ref{sec:method-kd-history}).
 
 \paragraph{Choice of temperature and schedule.} Before training, $T=\MethodKDTemp$ and the distillation weights were
-taken over from the earlier ViT-S distillation recipe, and the \MethodStudentEpochs-epoch schedule was fixed by the
+taken over from the earlier ViT-S distillation training configuration, and the \MethodStudentEpochs-epoch schedule was fixed by the
 compute budget; neither was tuned on test data (selection protocol: Section~\ref{sec:res-selection}).
 Section~\ref{sec:res-kd-temperature} varies $T$ over \KDSweepArms{} values up to \KDSweepMaxT{} as a sensitivity
-analysis, and Section~\ref{sec:res-kd-ablation} isolates the contribution of the distillation terms.
+analysis; the ablation designed to isolate the contribution of the distillation terms
+(Section~\ref{sec:res-kd-ablation}) had not completed at submission.
 
 % -----------------------------------------------------------------------------
 \section{The ViT-B student}

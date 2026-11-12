@@ -12,18 +12,18 @@ AnnyOne and converted 3DPW with consistent head anchors and a fixed bone rotatio
 inherited the teacher's heads through a learned projector and was distilled from its features and outputs; and
 temporal filtering and landmark alignment were added for video at inference time.
 
-The student has \ParamRatioStudent{} times fewer parameters than its teacher and ran \SpeedRatioStudent{} times faster, but its PVE is \StudentPVE{} against \FinalPVE\,mm on the
-AnnyOne holdout and \StudentThreeDPW{} against \FinalThreeDPW\,mm on converted 3DPW, so it misses the retention
-criterion set in advance. Its 3DPW PVE is below the \NAVERThreeDPW\,mm of the released baseline, which was trained on
-different data. Neither longer training nor another distillation temperature closed the gap.
-The teacher's detection recall on Relative Human falls from \CrowdFinalOneRec--\CrowdFinalTwoRec\,\% for one or two people
-per image to \CrowdFinalNinePlusRec\,\% for nine or more. On video, filtering and alignment produced visibly
-steadier and better placed output, and the student's model inference ran at \VideoStudentRawFPS{} against
-\VideoNAVERFPS\,FPS for the baseline.
+The student has \ParamRatioStudent{} times fewer parameters than its teacher and ran \SpeedRatioStudent{} times
+faster, at a higher error: \StudentThreeDPW{} against \FinalThreeDPW\,mm PVE on converted 3DPW, outside the
+95\,\% retention thresholds set in advance. On 3DPW it is more accurate than the released baseline, which was
+trained on different data, and neither longer training nor another distillation temperature closed the gap to the
+teacher. For the teacher, detection recall on real photographs decreases as the number of people per image grows.
+On video, filtering and alignment produced visibly steadier and better placed output, and model inference of the
+student was faster than that of the released baseline.
 
-Unresolved are the cause of the accuracy gap and the share of it that distillation recovers, body shape on real
-photographs (children, men), the compression of predicted depth, and a learned temporal model; the evaluation is
-bounded by a small synthetic holdout, single runs and the absence of a fairly trained baseline
+Unresolved are the cause of the accuracy gap and the contribution of distillation, which the unfinished ablation
+did not isolate; the student's behaviour on real photographs with many people and its shape predictions there;
+body shape on real photographs (children, men); the compression of predicted depth; and a learned temporal model.
+The evaluation is bounded by a small synthetic holdout, single runs and the absence of a fairly trained baseline
 (Section~\ref{sec:disc-limitations}).
 
 \section{Future work}
@@ -32,8 +32,8 @@ bounded by a small synthetic holdout, single runs and the absence of a fairly tr
 \paragraph{Temporal evaluation and modelling.}
 Running the filter and the alignment on the 3DPW test sequences, whose converted labels exist at \DataLabelFps{}
 frames per second, would measure steadiness and per-frame PVE together; clips with occlusion, a moving camera or
-several people, timed end to end, would follow. A learned temporal model (Section~\ref{sec:bg-temporal}) is a
-separate project.
+several people, timed end to end, would follow. A learned temporal model (Section~\ref{sec:bg-temporal}) is left
+to future work.
 
 \paragraph{Accuracy at reduced cost.}
 Other distillation loss weights, other forms of feature transfer and more real images per batch are the next
