@@ -1,11 +1,11 @@
-% Chapter 3: Data. Numbers: numbers_data.tex. Long version: git show 76aa1a4:docs/thesis/chapters/03_data.tex.
+% Chapter 3: Data. Numbers: numbers_data.tex. Long version: commit 76aa1a4.
 \chapter{Datasets and Anny label generation}
 \label{ch:data}
 
 This chapter describes the datasets and the conversion of 3DPW's SMPL labels to Anny, against which all 3DPW
 errors are computed. Table~\ref{tab:data-splits} lists each split and its use. No test image is used for training,
-and results on earlier 3DPW label sets are kept apart from those on the corrected labels. Section~\ref{sec:data-limits}
-collects the limitations of the evaluation data.
+and results on earlier 3DPW label sets are kept apart from those on the corrected labels
+(Appendix~\ref{app:conversion}). Section~\ref{sec:data-limits} collects the limitations of the evaluation data.
 
 \begin{table}[htbp]
 \centering\footnotesize
@@ -17,19 +17,16 @@ Split & Size (images / people) & Use & Chapters \\
 \midrule
 AnnyOne training & \DataAnnyOneTrainImages{} images & training of all models of this thesis; \DataMixAnnyOne\% of each mixed batch & \ref{ch:method}, \ref{ch:results} \\
 AnnyOne holdout & \MethodHoldoutN{} / \MethodHoldoutPeople & synthetic test set and in-training monitor; excluded from training & \ref{ch:diagnostics}, \ref{ch:results} \\
-Diagnostic manifest & \DataManifestTrain{} + \DataManifestHoldout{} entries & per-person diagnostics; excluded from every fine-tuning run & \ref{ch:diagnostics} \\
-3DPW-Anny training & \DataThreeDPWTrainImages{} / \DataThreeDPWTrainPeople & \DataMixThreeDPW\% of each mixed batch & \ref{ch:method}, \ref{ch:results} \\
-3DPW-Anny validation & \DataThreeDPWValImages{} / \DataThreeDPWValPeople & \DataValImagesPerEpoch{} images scored after each epoch; monitoring only & \ref{ch:results} \\
-3DPW-Anny test & \DataThreeDPWTestImages{} / \DataThreeDPWTestPeople & reported 3DPW results; never used for training & \ref{ch:results} \\
-3DPW-Anny, old labels & \DataOldTotalImages{} / \DataOldTotalPeople & earlier models only; not used by the student & \ref{app:pilots} \\
-Relative Human val. & \DataRHValImages{} / \DataRHValPeople & age and gender on real photos; evaluation only & \ref{ch:diagnostics}, \ref{ch:results} \\
+Converted 3DPW training & \DataThreeDPWTrainImages{} / \DataThreeDPWTrainPeople & \DataMixThreeDPW\% of each mixed batch & \ref{ch:method}, \ref{ch:results} \\
+Converted 3DPW validation & \DataThreeDPWValImages{} / \DataThreeDPWValPeople & \DataValImagesPerEpoch{} images scored during training (teacher every epoch, student every 5 epochs); monitoring only & \ref{ch:results} \\
+Converted 3DPW test & \DataThreeDPWTestImages{} / \DataThreeDPWTestPeople & reported 3DPW results; never used for training & \ref{ch:results} \\
+Relative Human val. & \DataRHValImages{} / \DataRHValPeople & age and gender on real photographs; evaluation only & \ref{ch:diagnostics}, \ref{ch:results} \\
 Demo images & \DataDemoTotal{} images & visual comparison; no metric & \ref{ch:diagnostics}, \ref{ch:results} \\
-Walking video & \VideoFrames{} frames & \texttt{man\_walking.mp4}; video comparison, no labels & \ref{ch:results} \\
+Walking video & \VideoFrames{} frames & the walking clip; video comparison, no labels & \ref{ch:results} \\
 \bottomrule
 \end{tabular}
-\caption[Data splits and their use]{Data splits used in this thesis, their sizes and their use. 3DPW-Anny sizes
-are images / labelled people after the drop rules, for the corrected labels. Reported models use the last
-checkpoint of their schedule; validation data only monitor training.}
+\caption[Data splits and their use]{Data splits used in this thesis, their sizes and their use. Converted 3DPW
+sizes are images / labelled people after the drop rules, for the corrected labels.}
 \label{tab:data-splits}
 \end{table}
 
@@ -45,12 +42,10 @@ each image resized to \DataInputPx{} pixels. The field of view varies between im
 (\DataAnnyOneFovMin{}$^\circ$ to \DataAnnyOneFovMax{}$^\circ$ on a sample of \DataAnnyOneFovSample{} images), so
 training and evaluation use each image's own intrinsics.
 
-\paragraph{Split.} AnnyOne has no official split. Indices 0 to \DataAnnyOneLastTrainIndex{} form the training set.
-The last \MethodHoldoutN{} images (indices \DataHoldoutFirstIndex{} to \DataHoldoutLastIndex), with
-\MethodHoldoutPeople{} people, form the holdout, which no model trained in this thesis has seen. The holdout was taken
-from the end of the dataset, not sampled at random, contains no children, and serves both as the in-training
-monitor and as the synthetic test set (Section~\ref{sec:data-limits}). All holdout errors use the protocol of Section~\ref{sec:method-eval}
-(helper bones masked).
+\paragraph{Split.} AnnyOne has no official split. The last \MethodHoldoutN{} images, with \MethodHoldoutPeople{}
+people, form the holdout (indices in Section~\ref{sec:method-eval}; limitations in Section~\ref{sec:data-limits}),
+which no model trained in this thesis has seen; all earlier images form the training set. Unless stated otherwise,
+holdout errors use the holdout protocol (Section~\ref{sec:method-eval}).
 
 \paragraph{Age distribution.} Anny produces a child shape below an age value of about \DataChildAgeLow{} to
 \DataChildAgeHigh{} (Section~\ref{sec:bg-bodymodels}). Only \DataAnnyOneAgeBelowThree\% of AnnyOne's people are
@@ -72,17 +67,15 @@ Bystanders are not labelled. 3DPW's splits are kept. One validation sequence,
 \texttt{outdoors\_crosscountry\_00}, yields no labels in any label set (Section~\ref{sec:data-defects}), which leaves
 \DataThreeDPWValUsableSeq{} validation sequences.
 
-\paragraph{Why 3DPW must be converted.} The network predicts Anny parameters. AnnyOne is the only dataset with Anny
-labels, and it is synthetic. 3DPW provides real frames, but its labels are SMPL bodies, which differ from Anny in
-skeleton and shape parameterisation (Table~\ref{tab:body-models}). Real-image training and testing therefore require
-an Anny body fitted to every labelled 3DPW person and stored in AnnyOne's label format.
+\paragraph{Need for conversion.} As 3DPW's labels are SMPL bodies (Table~\ref{tab:body-models}), real-image
+training and testing require an Anny body fitted to every labelled 3DPW person and stored in AnnyOne's label format.
 
 % -----------------------------------------------------------------------------
 \section{Converting SMPL to Anny}
 \label{sec:data-converter}
 
 Anny's skinning has no analytic inverse, so pose and shape are recovered from joint positions by optimisation.
-This section describes the final converter; Appendix~\ref{app:conversion} documents earlier versions.
+Appendix~\ref{app:conversion} documents earlier versions.
 
 \paragraph{Input and correspondence.} For each person and frame the targets are the \DataSmplJoints{} joints
 $\hat{\mathbf{J}}^{S}$ of 3DPW's per-frame \texttt{jointPositions}, together with gender, camera and frame index. The
@@ -138,8 +131,8 @@ loader pads the portrait images to a square and shifts the principal point accor
 \section{Geometric correspondence and virtual joints}
 \label{sec:data-history}
 
-SMPL and Anny place several joints at different anatomical points; the hip joints, for example, do not coincide.
-Pairing joints by name would force the fitter to distort the body; the correspondence is therefore geometric: both skeletons are placed in their rest pose and aligned at the hip midpoint and along the body
+SMPL and Anny place several joints, the hips among them, at different anatomical points, so the correspondence is
+geometric rather than by name, which would force the fitter to distort the body: both skeletons are placed in their rest pose and aligned at the hip midpoint and along the body
 axes. Each Anny hip bone is then chosen by distance and each spine bone by its normalised height along the torso.
 Appendix~\ref{app:joints} gives the full correspondence.
 
@@ -159,35 +152,32 @@ remain anatomically different.
 \section{Label construction and validation}
 \label{sec:data-validation}
 
-The corrected labels use Anny's gender convention and the shared frame grid, and every label has its image. Each
-actor has one shape for the whole sequence and a pose per frame. Table~\ref{tab:label-sets} compares them with the
-two earlier label sets.
+The corrected labels comprise \DataThreeDPWTotalImages{} images and \DataThreeDPWTotalPeople{} people. They use
+Anny's gender convention and one frame grid per sequence, and every label has its image. The two earlier label sets, their defects and the re-fit that removed them
+are documented in Appendix~\ref{app:conversion} (Tables~\ref{tab:label-sets} and~\ref{tab:label-check}).
 
-\input{tables/T04_label_sets}
-
-The fitting loss does not show whether the finished labels are correct. A separate check therefore reads the finished label files and compares four properties with 3DPW's source
-data: body-joint positions, projected keypoints, the presence of every actor, and the gender convention. Because it
-samples images, the check cannot prove that every label is free of error. On the corrected labels the median
-body-joint discrepancy is \DataCheckJointsNew\,mm and the overall grade is WARN (Table~\ref{tab:label-check}). The
-remaining warnings come from limb proportions and from joints that SMPL and Anny define differently, the hip among
-them; they are not the defects of the earlier label sets, which the re-fit removed (Appendix~\ref{app:conversion}).
+The fitting loss does not show whether the finished labels are correct. A separate check therefore compares four properties of the
+finished label files with 3DPW's source data: body-joint positions, projected keypoints, the
+presence of every actor, and the gender convention. Because it samples images, the check cannot prove that every
+label is free of error. On the corrected labels the median body-joint discrepancy is \DataCheckJointsNew\,mm, and the
+check passes with two remaining warnings (Table~\ref{tab:label-check-corrected}). These come from limb proportions
+and from joints that SMPL and Anny define differently, the hip among them.
 
 \input{tables/T05_label_check}
 
-On visual inspection of Figure~\ref{fig:label-check}, the converted Anny mesh covers the same two people as 3DPW's
-SMPL mesh, and the two joint sets lie close together. All main experiments use the corrected labels only.
+In Figure~\ref{fig:label-check}, the converted Anny mesh covers the same two people as 3DPW's
+SMPL mesh, and the two joint sets lie close together.
 
 \begin{figure}[tbp]
   \centering
+  % Panels of the 22a226c render, cropped to the actors and re-arranged (12 Nov).
   \IfFileExists{figures/img/F14_label_check_downtown_walking_00771.jpg}{%
-    \includegraphics[width=\textwidth]{figures/img/F14_label_check_downtown_walking_00771.jpg}%
-  }{%
-    \fbox{\parbox[c][3cm][c]{0.9\textwidth}{\centering
-      \TODO{F14 placeholder for \texttt{figures/img/F14\_label\_check\_downtown\_walking\_00771.jpg}}}}%
-  }
+    \includegraphics[width=0.9\textwidth]{figures/img/F14_label_check_downtown_walking_00771.jpg}%
+  }{}
   \caption[A converted 3DPW label]{Converted label (not a network prediction) for 3DPW test frame 771 of
-    \texttt{downtown\_walking\_00}, corrected labels. Left: image; middle: 3DPW's SMPL label (orange) with OpenPose 2D
-    keypoints (yellow); right: converted Anny label (blue) with 3DPW's SMPL joints (red) and Anny joints (green).}
+    \texttt{downtown\_walking\_00}, corrected labels. Top: image; bottom left: 3DPW's SMPL label (orange) with
+    OpenPose 2D keypoints (yellow); bottom right: converted Anny label (blue) with 3DPW's SMPL joints (red) and Anny
+    joints (green).}
   \label{fig:label-check}
 \end{figure}
 
@@ -196,9 +186,9 @@ SMPL mesh, and the two joint sets lie close together. All main experiments use t
 \label{sec:data-rh}
 
 Neither the AnnyOne holdout nor 3DPW contains children. Relative Human, introduced with BEV~\cite{sun2022bev},
-contains \DataRHImages{} real photos, many of them crowded and with children. Each person has a box, an age group
-(adult, teen, kid, baby) and a gender coded 0 for male, as in Anny; there are no 3D labels. The copy used here came
-without a licence file, and its redistribution terms remain to be checked. Only the validation split is used: \DataRHValImages{} images with \DataRHValPeople{} labelled people (\DataRHValAdults{} adults,
+contains \DataRHImages{} real photographs, many of them crowded and with children. Each person has a box, an age group
+(adult, teen, kid, baby) and a gender coded 0 for male, as in Anny; there are no 3D labels. The licence terms of the copy used were not verified
+(Section~\ref{sec:disc-limitations}). Only the validation split is used: \DataRHValImages{} images with \DataRHValPeople{} labelled people (\DataRHValAdults{} adults,
 \DataRHValTeens{} teens, \DataRHValKids{} kids, \DataRHValBabies{} babies, \DataRHValUnknownAge{} of unknown age).
 
 The model runs once on each whole photo with a field of view of \DataRHFov$^\circ$, and detections are matched to
@@ -212,7 +202,7 @@ reported next to recall.
 \section{Limitations of the evaluation data}
 \label{sec:data-limits}
 
-The evaluation data limit the conclusions of this thesis in four ways.
+The evaluation data limit the conclusions of this thesis in three ways.
 
 \paragraph{AnnyOne holdout.} The synthetic test set consists of only \MethodHoldoutN{} images
 (\MethodHoldoutPeople{} people). They were taken from the end of the dataset rather than sampled at random, the
@@ -233,8 +223,8 @@ teach nor test children. The bones \texttt{neck02}, \texttt{neck03} and
 bones of Appendix~\ref{ch:diagnostics}. SMPL has no finger joints, so every label has rest-pose hands, and training
 masks their rotation terms for 3DPW people (Section~\ref{sec:method-real}). The labels differ from 3DPW's source
 joints by \DataCheckJointsNew\,mm at the median and \DataCheckJointsNewPn\,mm at the 95th percentile. Networks are
-compared with the fitted targets, not the source joints, so this residual is no error floor and must not be
-subtracted from a PVE. The targets are Anny meshes rather than the original SMPL meshes, they
+compared with the fitted targets, not the source joints, so this residual is no error floor and is not
+subtracted from reported PVE values. The targets are Anny meshes rather than the original SMPL meshes, they
 carry this residual, and MPJPE averages all \DataBones{} Anny joints (Section~\ref{sec:method-eval}). The 3DPW
 results are therefore not comparable with published 3DPW results. Because
 bystanders are unlabelled, a correct detection of a bystander counts as false, and the measured 3DPW precision is
@@ -243,21 +233,14 @@ only a lower bound.
 \paragraph{Relative Human.} The labels are 2D boxes with age-group and gender tags, without 3D ground
 truth, so pose and shape error cannot be measured.
 
-\paragraph{Released baseline.} The released baseline may have been trained on the holdout images, so its holdout
-PVE of \NAVERAnnyOne\,mm may be in-sample; its exact image exposure was not verified
-(Section~\ref{sec:res-fairness}).
-
 % -----------------------------------------------------------------------------
-\section{The diagnostic manifest and the demo images}
+\section{Demo images and the diagnostic manifest}
 \label{sec:data-manifest}
 
-The checks of Appendix~\ref{ch:diagnostics} use \DataManifestTotal{} fixed (image, person) entries drawn from the
-AnnyOne labels with a fixed random seed: \DataManifestTrain{} from the training range and \DataManifestHoldout{}
-from the holdout (groups in Table~\ref{tab:diag-checks}). The initial model saw the training entries; all later runs give
-their images zero sampling weight, so they remain the same already-seen reference. The manifest children therefore
-show whether a model fits a child it has seen, not whether it generalises.
-
-Visual comparisons use \DataDemoTotal{} real images: \DataDemoPhotos{} photos and the middle frame of each of
+The diagnostic checks use a fixed sample of \DataManifestTotal{} AnnyOne (image, person) entries, which all runs
+after the initial model exclude from sampling, so that their exposure is identical for all later models
+(Appendix~\ref{ch:diagnostics}). Visual comparisons use \DataDemoTotal{} demo images: \DataDemoPhotos{} real
+photographs and the middle frame of each of
 \DataDemoFrames{} 3DPW test sequences. No model is trained on them and no metric is computed on them. The photo
 comparison with the released baseline (Section~\ref{sec:res-image-compare}) and the walking video
 (Section~\ref{sec:res-video}) are likewise unlabelled and permit no reconstruction error.

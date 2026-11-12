@@ -14,7 +14,7 @@
 \newcommand{\BgSmplJoints}{24}          % SMPL joints (23 + root); draft main.tex:123
 \newcommand{\BgSmplBetas}{10}           % SMPL shape coefficients used by most HMR work; draft main.tex:124
 \newcommand{\BgSmplxJoints}{55}         % SMPL-X joints; draft main.tex:129
-\newcommand{\BgSmplxVertices}{10475}    % SMPL-X mesh vertices; Pavlakos et al. 2019 % TODO verify against the paper
+\newcommand{\BgSmplxVertices}{10475}    % SMPL-X mesh vertices; Pavlakos et al. 2019 (the SMPL-X paper states 10,475)
 \newcommand{\BgManoHandJoints}{15}      % articulated joints per hand in SMPL-H / MANO; draft main.tex:126
 
 % --- Anny --------------------------------------------------------------------
@@ -22,7 +22,7 @@
 \newcommand{\BgAnnyHelperBones}{88}     % helper bones kept at rest in training; H 1
 \newcommand{\BgAnnyActiveBones}{75}     % bones actually predicted; H 1
 \newcommand{\BgAnnyPhenotypes}{11}      % phenotype values used here; H 1
-\newcommand{\BgAnnyVertices}{13718}     % mesh vertices as loaded by the repo (unattached vertices kept); draft main.tex:133 and draft_io.tex:20 % TODO verify with anny 0.6.1
+\newcommand{\BgAnnyVertices}{13718}     % mesh vertices as loaded by the repo (unattached vertices kept); draft main.tex:133 and draft_io.tex:20; unverified against anny 0.6.1, deliberately not printed
 \newcommand{\BgAnnyDefaultRigBones}{104}% bones of the pruned "anny" rig, default since anny v0.6; ANNY-README
 \newcommand{\BgAnnyVersion}{0.6.1}      % anny package version read for this chapter; CE section 1; ANNY-README CHANGELOG
 \newcommand{\BgStatureGenderZero}{1.753}% m, rest stature at gender 0 (male end); H 3.5 defect 1 (3575369:24, :313)

@@ -3,8 +3,10 @@
 \chapter{Supporting conversion experiments}
 \label{app:conversion}
 
-Chapter~\ref{ch:data} describes the final converter, version 2.3; this appendix documents its development. No earlier
-version produced labels used for the main results.
+Chapter~\ref{ch:data} describes the final converter, version 2.3; this appendix documents its development and the
+history of the 3DPW label sets. No earlier version produced labels used for the main results. The corrected labels of
+Chapter~\ref{ch:data} are those built from the version 2.3 fits; ``v23'' in file names and in the appendix tables
+denotes these corrected labels.
 
 \section{Development of the converter}
 \label{sec:conversion-history}
@@ -70,7 +72,45 @@ therefore reads the finished label files. On sampled images from every sequence 
 labels with 3DPW's joints, surface and 2D keypoints, confirms that the data loader passes them on unchanged, and
 tests that the gender is not reversed, that every valid actor has a label and that the head turn is preserved. On the
 first label set (old labels, v2.2 fits, about \DataOldCheckImages{} images) it returned FAIL with three defects
-(Table~\ref{tab:label-check}).
+(Table~\ref{tab:label-check}). Table~\ref{tab:label-sets} lists the three label sets.
+
+\input{tables/T04_label_sets}
+
+% Moved 12 Nov from tables/T05_label_check.tex (Chapter 3) to Appendix G. T5 Label quality before and after the re-fit. Plan REWRITE_PLAN.md section 4, T5; H 0b table; H 3.5.
+% Columns: old labels = check job 3575369 (15 Oct, v2.2 fits); v23 labels = check job 3611284 (18 Oct, v2.3 fits).
+% Re-fit post-check rows: logs/check_refit_all_v23.log (H 3.5 "Re-fit v2.3 result").
+\begin{table}[tbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{6.1cm}>{\raggedright\arraybackslash}p{2.9cm}>{\raggedright\arraybackslash}p{3.2cm}@{}}
+\toprule
+Check & Old labels & Corrected labels \\
+\midrule
+Overall grade & FAIL & WARN \\
+Body joints vs 3DPW, median / p95 (mm) & \DataCheckJointsOld{} / \DataCheckJointsOldPn & \DataCheckJointsNew{} / \DataCheckJointsNewPn \\
+Surface, Anny$\to$SMPL / SMPL$\to$Anny (mm) & \DataCheckSurfAOld{} / \DataCheckSurfBOld & \DataCheckSurfANew{} / \DataCheckSurfBNew \\
+2D error over raw 3DPW (px) & $\DataCheckTwoDOld$ & $\DataCheckTwoDNew$ \\
+Gender labels & reversed & men 0, women 1 \\
+\quad refit with gender flipped & better for \DataGenderFlipMen{} of \DataGenderFlipMenOf{} men & worse: men \DataCheckFlipMenLabel{} $\to$ \DataCheckFlipMenFlipped\,mm \\
+Two-person images, an actor unlabelled & \DataMissingActor{} of \DataTwoPersonChecked & 0 of \DataCheckGapNewOf \\
+Fitted frames; median frame error (mm) & \DataOldFrames; \DataOldFitMedian & \DataCheckFramesNew; \DataCheckFitMedianNew \\
+Head turn vs chest, labels / SMPL ($^\circ$) & \DataCheckHeadLabelOld{} / \DataCheckHeadSmplOld & \DataCheckHeadLabelNew{} / \DataCheckHeadSmplNew \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Post-check of the re-fit, all fitted frames, \DataThreeDPWPersonSeq{} people}} \\
+Mean joint error, men / women (mm) & \DataRefitMenBefore{} / \DataRefitWomenBefore & \DataRefitMenAfter{} / \DataRefitWomenAfter \\
+Two-person frames, a valid actor unfitted & \DataRefitGapBefore{} of \DataRefitGapBeforeOf & 0 of \DataRefitGapAfterOf \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Remaining warnings on the corrected labels}} \\
+Limb ratio Anny / SMPL, forearm / thigh & & \DataCheckForearm{} / \DataCheckThigh \\
+People with a joint more than \DataCheckFarMm\,mm off & & \DataCheckFarPct\% \\
+\bottomrule
+\end{tabular}
+\caption[Conversion check before and after the re-fit]{Independent check of the converted 3DPW labels before and
+after the re-fit, on images sampled from every sequence and compared with 3DPW's joints, surface and 2D keypoints.
+The middle block is the re-fit's own post-check over all fitted frames. Old and corrected fits cover different
+frames, so this block is not a paired comparison.}
+\label{tab:label-check}
+\end{table}
 
 \paragraph{Defect 1: gender reversed.} The converter wrote 1.0 for men and 0.0 for women, MakeHuman's convention and
 the reverse of Anny's, so every 3DPW man was labelled with a female body. A refit with the flipped value lowered the
@@ -125,7 +165,7 @@ the largest single-joint discrepancy; the value printed in the panel is that per
   \begin{subfigure}[b]{0.72\textwidth}\centering
     \IfFileExists{figures/img/F14_label_check_courtyard_arguing_00024.jpg}{%
       \includegraphics[width=0.9\linewidth]{figures/img/F14_label_check_courtyard_arguing_00024.jpg}%
-    }{\fbox{\parbox[c][3cm][c]{0.9\linewidth}{\centering\TODO{F14 panel arguing}}}}
+    }{}
     \caption{\texttt{courtyard\_arguing\_00}, image 24 (training split), two people}
   \end{subfigure}
 
@@ -133,7 +173,7 @@ the largest single-joint discrepancy; the value printed in the panel is that per
   \begin{subfigure}[b]{0.72\textwidth}\centering
     \IfFileExists{figures/img/F14_label_check_climbing_00633.jpg}{%
       \includegraphics[width=0.9\linewidth]{figures/img/F14_label_check_climbing_00633.jpg}%
-    }{\fbox{\parbox[c][3cm][c]{0.9\linewidth}{\centering\TODO{F14 panel climbing}}}}
+    }{}
     \caption{\texttt{outdoors\_climbing\_02}, image 633 (training split), one of the check's worst cases}
   \end{subfigure}
 
@@ -141,7 +181,7 @@ the largest single-joint discrepancy; the value printed in the panel is that per
   \begin{subfigure}[b]{0.72\textwidth}\centering
     \IfFileExists{figures/img/F14_label_check_basketball_00570.jpg}{%
       \includegraphics[width=0.9\linewidth]{figures/img/F14_label_check_basketball_00570.jpg}%
-    }{\fbox{\parbox[c][3cm][c]{0.9\linewidth}{\centering\TODO{F14 panel basketball}}}}
+    }{}
     \caption{\texttt{courtyard\_basketball\_01}, image 570 (validation split), a typical frame}
   \end{subfigure}
   \caption[More converted 3DPW labels]{Three further converted labels from the v23 set (labels, not network
