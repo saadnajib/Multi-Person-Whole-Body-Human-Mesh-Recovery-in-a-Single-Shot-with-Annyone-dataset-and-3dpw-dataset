@@ -12,27 +12,25 @@
 \begin{figure}[!tbp]
 \centering
 \begin{subfigure}[b]{0.14\linewidth}\centering
-  \IfFileExists{figures/img/F24_smpl_mesh_crop.jpg}{\includegraphics[width=\linewidth]{F24_smpl_mesh_crop.jpg}}{\fbox{\TODO{image}}}
+  \IfFileExists{figures/img/F24_smpl_mesh_crop.jpg}{\includegraphics[width=\linewidth]{F24_smpl_mesh_crop.jpg}}{}
   \caption{SMPL}\label{fig:body-models-smpl-mesh}
 \end{subfigure}\hfill
 \begin{subfigure}[b]{0.335\linewidth}\centering
-  \IfFileExists{figures/img/F24_smpl_skeleton.png}{\includegraphics[width=\linewidth]{F24_smpl_skeleton.png}}{\fbox{\TODO{image}}}
+  \IfFileExists{figures/img/F24_smpl_skeleton.png}{\includegraphics[width=\linewidth]{F24_smpl_skeleton.png}}{}
   \caption{SMPL, schematic}\label{fig:body-models-smpl-skel}
 \end{subfigure}\hfill
 \begin{subfigure}[b]{0.14\linewidth}\centering
-  \IfFileExists{figures/img/F24_anny_mesh_crop.jpg}{\includegraphics[width=\linewidth]{F24_anny_mesh_crop.jpg}}{\fbox{\TODO{image}}}
+  \IfFileExists{figures/img/F24_anny_mesh_crop.jpg}{\includegraphics[width=\linewidth]{F24_anny_mesh_crop.jpg}}{}
   \caption{Anny}\label{fig:body-models-anny-mesh}
 \end{subfigure}\hfill
 \begin{subfigure}[b]{0.335\linewidth}\centering
-  \IfFileExists{figures/img/F24_anny_skeleton.png}{\includegraphics[width=\linewidth]{F24_anny_skeleton.png}}{\fbox{\TODO{image}}}
+  \IfFileExists{figures/img/F24_anny_skeleton.png}{\includegraphics[width=\linewidth]{F24_anny_skeleton.png}}{}
   \caption{Anny rest rig}\label{fig:body-models-anny-skel}
 \end{subfigure}
-\caption[SMPL and Anny: label meshes and skeletons]{The two body models. (a)~The 3DPW SMPL label of one person
-(courtyard\_basketball\_01, image 570); the yellow dots are OpenPose 2D points of the image, not SMPL joints.
-(b)~SMPL's \BgSmplJoints{} joints as a schematic (positions not taken from the model file). (c)~My converted Anny
-label of the same person and frame; red dots are the 3DPW SMPL joints, green dots the Anny joints. (d)~The bone heads
-of Anny's \BgAnnyBones{}-bone rest rig, coloured by region with the number of bones per region; the large dots are the
-\BodyMatchedPoints{} points fitted to the SMPL joints during the conversion. (a) and (c) are labels, not model
-predictions. Side by side in Table~\ref{tab:body-models}.}
+\caption[SMPL and Anny: label meshes and skeletons]{(a)~3DPW SMPL label of one person
+(courtyard\_basketball\_01, image 570; yellow: OpenPose 2D points) and (c)~the converted Anny label of the same person
+and frame (red: 3DPW SMPL joints; green: Anny joints); both are labels, not predictions. (b)~Schematic of SMPL's
+\BgSmplJoints{} joints (positions illustrative). (d)~Bone heads of Anny's \BgAnnyBones{}-bone rest rig, coloured by
+region, with the \BodyMatchedPoints{} points fitted to the SMPL joints in the conversion enlarged.}
 \label{fig:body-models}
 \end{figure}
