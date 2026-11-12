@@ -1,12 +1,12 @@
 % =============================================================================
-% Chapter 2. Numbers: numbers_background.tex (Bg). Draft's unchecked MPJPE pair dropped; README numbers used.
+% Chapter 2. Numbers: numbers_background.tex (Bg).
 % =============================================================================
 
 \chapter{Background and related work}
 \label{ch:background}
 
 The network of this thesis predicts bodies in the Anny body model, whereas its real images, 3DPW, are labelled in
-SMPL; both models are therefore described first. The contributions are listed in Section~\ref{sec:intro-contrib}.
+SMPL; both models are therefore described first.
 
 \section{The body models SMPL and Anny}
 \label{sec:bg-bodymodels}
@@ -22,9 +22,7 @@ blend skinning (LBS) transfers its motion to the surface:
 \end{equation}
 where $\mathbf{v}_i(\boldsymbol{\beta})$ is the shaped rest vertex, $w_{ik}$ the skinning weight of bone $k$ and
 $\mathbf{G}_k$ the world transform of bone $k$, obtained by composing the rotations along the kinematic chain from the
-root to $k$. A rotation error near the root therefore propagates to every bone below it; in
-Appendix~\ref{ch:diagnostics}, two neck bones rotated by half a turn each leave the head correctly oriented but twist
-the skin between them.
+root to $k$. A rotation error near the root therefore propagates to every bone below it.
 
 \paragraph{The SMPL family.}
 SMPL~\cite{loper2015smpl}, the body model of most prior work and of the 3DPW labels, has \num{\BgSmplVertices}
@@ -35,8 +33,8 @@ and BEV~\cite{sun2022bev} blend the adult template towards an infant one with on
 SMPL-H~\cite{romero2017mano} adds MANO hands with \BgManoHandJoints{} joints each, and SMPL-X~\cite{pavlakos2019smplx}
 also a face, for \BgSmplxJoints{} joints on \num{\BgSmplxVertices} vertices. SMPL has a research licence; assets,
 datasets and trained weights carry separate terms. Multi-HMR~\cite{baradel2024multihmr} was published for SMPL-X; a
-later NAVER release replaced its output layer with Anny, and the teacher is initialised from that release's backbone
-weights with its own heads (Appendix~\ref{app:reproduction}).
+later checkpoint released by NAVER replaced its output layer with Anny (Section~\ref{sec:bg-hmr}), and the teacher is
+initialised from its backbone weights with its own heads (Appendix~\ref{app:reproduction}).
 
 \paragraph{Anny.}
 Anny~\cite{bregier2025anny}, developed at NAVER LABS Europe, is derived from the open, artist-made MakeHuman
@@ -58,7 +56,7 @@ and 1 the old adult. The newborn anchor lies below 0 and is unreachable for a ne
 
 At the mean AnnyOne shape, increasing age from 0 to 1 raises the skeletal height from \BgSweepHeightAgeZero\,m to
 \BgSweepHeightAgeOne\,m (\BgSweepHeightAgeHalf\,m at 0.5; Figure~\ref{fig:bg-age-sweep}), so most growth occurs below
-about 0.5. Low stature alone does not produce a child: at age 0.6 the smallest reachable body is
+about 0.5. A low height value alone does not yield child proportions: at age 0.6 the smallest reachable body is
 \BgSmallestAdultStature\,m tall with adult proportions. Child proportions are marked by narrow shoulders relative to
 the head; the shoulder-to-head width ratio is \BgShoulderHeadChild{} at age 0.1 and \BgShoulderHeadAdult{} at 0.6, and
 only a low age value produces the former. Ages are not converted to years, because three scales in the code disagree;
@@ -66,13 +64,18 @@ a person is called \emph{child-shaped} if the age value is below about \BgChildS
 
 \begin{figure}[t]
   \centering
+  % Panels 1,3,5,7,9 of diag_bodymodel_probe.py AGES (render of 22a226c), cropped, equal height.
   \IfFileExists{figures/img/F21_age_sweep.jpg}{%
     \includegraphics[width=\textwidth]{figures/img/F21_age_sweep.jpg}%
-  }{}%
-  \caption[Anny with age swept from 0 to 1]{Anny at the mean AnnyOne shape in rest pose with only age varied from 0
-    to 1, rendered from one fixed camera; skeletal height (head joint to mean ankle) grows from
-    \BgSweepHeightAgeZero\,m to \BgSweepHeightAgeOne\,m. The approximate years in the panel titles come from one of
-    three disagreeing age scales and are not used in this thesis.}
+  }{}\par\vspace{2pt}
+  {\small\setlength{\tabcolsep}{0pt}%
+  \begin{tabular}{@{}*{5}{>{\centering\arraybackslash}p{0.2\textwidth}}@{}}
+    age 0 & age 0.2 & age 0.4 & age 0.6 & age 1 \\
+  \end{tabular}}
+  \caption[Anny with age swept from 0 to 1]{Anny at the mean AnnyOne shape in rest pose with only the age phenotype
+    varied, each body scaled to the same displayed height so that its proportions can be compared. The skeletal
+    height (head joint to mean ankle) grows from \BgSweepHeightAgeZero\,m at age 0 to \BgSweepHeightAgeOne\,m at
+    age 1.}
   \label{fig:bg-age-sweep}
 \end{figure}
 
@@ -81,9 +84,7 @@ Table~\ref{tab:body-models} and Figure~\ref{fig:body-models} compare the two mod
 (\BgSmplJoints{} joints against \BgAnnyBones{} bones) and in the shape parameterisation (\BgSmplBetas{} unnamed
 principal-component coefficients against \BgAnnyPhenotypes{} named phenotypes). SMPL represents pose as one axis-angle
 vector per joint (direction: rotation axis; norm: angle); the network of this thesis predicts each Anny rotation in the
-continuous 6D form (\MethodRotDims{} numbers), mapped to a valid rotation matrix. The only Anny-labelled dataset,
-AnnyOne, is synthetic, while the real images, 3DPW (Section~\ref{sec:bg-labels}), carry SMPL labels;
-Chapter~\ref{ch:data} therefore converts 3DPW to Anny.
+continuous 6D form (\MethodRotDims{} numbers), mapped to a valid rotation matrix.
 
 \IfFileExists{tables/T26_body_models.tex}{\input{tables/T26_body_models}}{}
 \IfFileExists{figures/F24_body_models.tex}{\input{figures/F24_body_models}}{}
@@ -120,7 +121,7 @@ Human mesh recovery (HMR) estimates the parameters of a body model from an image
 HMR~\cite{kanazawa2018hmr} regressed body-model parameters for one cropped person with a convolutional encoder, an
 iterative regressor and an adversarial pose prior, a discriminator separating plausible from implausible poses.
 HMR~2.0~\cite{goel2023humans4d} replaced the encoder with a ViT and showed that a large ViT trained on a broad dataset
-mixture performs well without further components. Multi-HMR and the models of this thesis follow this recipe and
+mixture performs well without further components. Multi-HMR and the models of this thesis follow this approach and
 regress the parameters directly, without test-time optimisation. SMPLify~\cite{bogo2016smplify} instead fits SMPL to
 2D keypoints by optimisation, and SPIN~\cite{kolotouros2019spin} places such a fit in the training loop. The 3DPW
 converter (Chapter~\ref{ch:data}) is a SMPLify-type optimisation, but in 3D, between two body models, run once offline.
@@ -149,8 +150,7 @@ used for evaluation only (Section~\ref{sec:data-rh}).
 
 \paragraph{Multi-HMR-Anny and Anny-Fit.}
 NAVER has released a Multi-HMR checkpoint that predicts Anny, trained on BEDLAM, AnnyOne and further real
-images~\cite{naver2024multihmrcode}; a multi-person network for Anny therefore already exists, and this thesis does not
-claim to be the first. This checkpoint, Multi-HMR-Anny (the released baseline), provides the teacher's backbone weights
+images~\cite{naver2024multihmrcode}; multi-person Anny prediction is therefore prior work. This checkpoint, Multi-HMR-Anny (the released baseline), provides the teacher's backbone weights
 and serves as baseline. On the same backbone its decoder has \BgNaverHeadLayers{} cross-attention blocks
 and \BgNaverHeadParams\,M parameters, against \BgOurHeadLayers{} blocks and \BgOurHeadParams\,M in the models of this
 thesis; trained on AnnyOne, it may have seen the AnnyOne holdout (Section~\ref{sec:res-fairness}).
@@ -188,8 +188,7 @@ large, trained \emph{teacher}, originally by matching its class probabilities so
 distillation). FitNets~\cite{romero2015fitnets} also match an intermediate teacher representation through a small
 learned regressor (feature distillation). DINOv2~\cite{oquab2023dinov2} distilled its smaller ViTs from its largest,
 making a DINOv2 ViT-B a suitable student initialisation. The student uses both forms (Section~\ref{sec:method-kd}).
-It has \BgStudentParams\,M parameters against the teacher's \BgFinalParams\,M and should retain at least
-\BgNinetyFive\,\% of the teacher's accuracy on both test sets.
+It has \BgStudentParams\,M parameters against the teacher's \BgFinalParams\,M.
 
 \paragraph{The projector.}
 The student is initialised with a copy of the teacher's prediction heads. Its features have \BgProjIn{} channels,

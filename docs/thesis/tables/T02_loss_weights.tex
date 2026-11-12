@@ -8,35 +8,35 @@
 % dist 344, transl 345, global_rot 350-363, j3d 367-377, v3d 378, v2d 381-382, j2d 383-384.
 % 12 Nov: caption cut to three sentences; mask and bone-correction notes moved to sec:method-real / sec:method-student.
 % Boost renormalisation x4 -> x2.41 / x0.60: H 1 "x4 boost"; loss.py configure_joint_weights.
+% 12 Nov fix pass: log-name and Default columns and the zero-weight global-rotation row removed (review C1 13 / C4);
+% defaults: Distance/Translation default = \MethodWDistDefault, Shape \MethodWShapeDefault, 2D \MethodWTwoDDefault from epoch \MethodStartTwoDDefault.
 \begin{table}[!htb]
 \centering\footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}>{\raggedright}p{2.7cm}>{\raggedright}p{4.85cm}cccc@{}}
+\begin{tabular}{@{}>{\raggedright}p{2.7cm}>{\raggedright}p{5.6cm}ccc@{}}
 \toprule
-Term (log name) & Supervised quantity & Default & Teacher & \shortstack{Uncorr.\\teacher} & Student \tabularnewline
+Term & Supervised quantity & Teacher & \shortstack{Uncorr.\\teacher} & Student \tabularnewline
 \midrule
-Detection (\texttt{bce}) & focal loss on the per-token score ``an anchor lies here'' & \MethodWDet & \MethodWDet & \MethodWDet & \MethodWDet \tabularnewline
-Offset (\texttt{offset}) & L1 on the anchor's position inside its token & \MethodWOffset & \MethodWOffset & \MethodWOffset & \MethodWOffset \tabularnewline
-Rotations (\texttt{rotmat}) & L1 over the 9 entries of each predicted/target bone rotation & \MethodWRot & \MethodWRot & \MethodWRot & \MethodWRot \tabularnewline
-\quad neck and hand boost & renormalised: $\times$\MethodBoostOn{} neck, head, hands; $\times$\MethodBoostOff{} rest & 1 & \MethodBoost & \MethodBoost & \MethodBoost \tabularnewline
-Shape (\texttt{shape}) & L1 on the \MethodNumPheno{} phenotypes after the sigmoid & \MethodWShapeDefault & \MethodWShape & \MethodWShape & \MethodWShape \tabularnewline
-Distance (\texttt{dist}) & L1 on the anchor's focal-normalised log-depth & \MethodWDistDefault & \MethodWDist & \MethodWDistDefault & \MethodWDist \tabularnewline
-Translation (\texttt{transl}) & L1 on the anchor's 3D position in the camera frame & \MethodWDistDefault & \MethodWDist & \MethodWDistDefault & \MethodWDist \tabularnewline
-3D joints (\texttt{j3d}) & L1 on the \MethodNumBones{} joints, each at its own pelvis & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD \tabularnewline
-3D vertices (\texttt{v3d}) & the same for the mesh vertices & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD \tabularnewline
-2D joints (\texttt{j2d}) & L1 in pixels on the joints projected from anchor and depth & \MethodWTwoDDefault & \MethodWTwoD & \MethodWTwoD & \MethodWTwoD \tabularnewline
-2D vertices (\texttt{v2d}) & the same for the projected vertices & \MethodWTwoDDefault & \MethodWTwoD & \MethodWTwoD & \MethodWTwoD \tabularnewline
-\quad first 2D epoch & epoch $e_{\text{2D}}$ at which the 2D terms start & \MethodStartTwoDDefault & \MethodStartTwoD & \MethodStartTwoD & \MethodStartTwoD \tabularnewline
-Global rot.\ (\texttt{global\_rot}) & L1 on camera-frame head, neck03, wrist orientation & 0 & 0 & 0 & 0 \tabularnewline
-Feature KD (\texttt{kd}) & KL of softened student and teacher tokens, $T=\MethodKDTemp$ & -- & -- & -- & \MethodKDLambda \tabularnewline
-Output KD (\texttt{kd\_out}) & L1 to the teacher's rotations, phenotypes, depth & -- & -- & -- & \MethodKDOutLambda \tabularnewline
+Detection & focal loss on the per-token anchor score & \MethodWDet & \MethodWDet & \MethodWDet \tabularnewline
+Offset & L1 on the anchor's position inside its token & \MethodWOffset & \MethodWOffset & \MethodWOffset \tabularnewline
+Rotations & L1 over the 9 entries of each predicted/target bone rotation & \MethodWRot & \MethodWRot & \MethodWRot \tabularnewline
+\quad neck and hand boost & renormalised: $\times$\MethodBoostOn{} neck, head, hands; $\times$\MethodBoostOff{} rest & \MethodBoost & \MethodBoost & \MethodBoost \tabularnewline
+Shape & L1 on the \MethodNumPheno{} phenotypes after the sigmoid & \MethodWShape & \MethodWShape & \MethodWShape \tabularnewline
+Distance & L1 on the anchor's focal-normalised log-depth & \MethodWDist & \MethodWDistDefault & \MethodWDist \tabularnewline
+Translation & L1 on the anchor's 3D position in the camera frame & \MethodWDist & \MethodWDistDefault & \MethodWDist \tabularnewline
+3D joints & L1 on the \MethodNumBones{} joints, each at its own pelvis & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD \tabularnewline
+3D vertices & the same for the mesh vertices & \MethodWThreeD & \MethodWThreeD & \MethodWThreeD \tabularnewline
+2D joints & L1 in pixels on the joints projected from anchor and depth & \MethodWTwoD & \MethodWTwoD & \MethodWTwoD \tabularnewline
+2D vertices & the same for the projected vertices & \MethodWTwoD & \MethodWTwoD & \MethodWTwoD \tabularnewline
+\quad first 2D epoch & epoch $e_{\text{2D}}$ at which the 2D terms start & \MethodStartTwoD & \MethodStartTwoD & \MethodStartTwoD \tabularnewline
+Feature distillation & KL of softened student and teacher tokens, $T=\MethodKDTemp$ & -- & -- & \MethodKDLambda \tabularnewline
+Output distillation & L1 to the teacher's rotations, phenotypes, depth & -- & -- & \MethodKDOutLambda \tabularnewline
 \midrule
-Target joint & joint of the four anchor targets & pelvis & head & pelvis & head \tabularnewline
-Bone correction & neck02, head, metacarpal1.L, finger4-1.R & none & on & none & on \tabularnewline
+Target joint & joint of the four anchor targets & head & pelvis & head \tabularnewline
+Bone correction & neck02, head, metacarpal1.L, finger4-1.R & on & none & on \tabularnewline
 \bottomrule
 \end{tabular}
-\caption[Loss terms and their weights]{Loss terms and their weights. ``Default'' is the value in the training code;
-the other columns give the values used for the teacher, the uncorrected teacher and the student
-(Table~\ref{tab:model-names}). The total loss is the weighted sum of all rows above the rule.}
+\caption[Loss terms and their weights]{Loss terms and their weights for the teacher, the uncorrected teacher and the
+student (Table~\ref{tab:model-names}). The total loss is the weighted sum of all rows above the rule.}
 \label{tab:loss-weights}
 \end{table}

@@ -1,4 +1,4 @@
-% T11 Student recipe and the 95% bars (Method 4.7.2; Results 6.10 refers to it). Owner: Method writer.
+% T11 Student training configuration (12 Nov fix pass: part B, the 95% thresholds, cut; it duplicated T17 tab:student) (Method 4.7.2; Results 6.10 refers to it). Owner: Method writer.
 % Part A sources: slurm/experiments/exp8_distill_vitb.sh header (RECIPE: teacher, student, heads, bone fix, targets,
 % KD, schedule) and :224 (LR_DECAY_EVERY = 2/5 of EPOCHS = 12), :319-331 (train.py flags);
 % Final: exp7_final_model.sh:191-192, :224-225, :759-771. Cost: job 3613926 (exp8 smoke, A40) via H 0a; ViT-B
@@ -11,7 +11,6 @@
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}>{\raggedright}p{3.1cm}>{\raggedright}p{4.4cm}>{\raggedright\arraybackslash}p{4.6cm}@{}}
 \toprule
-\multicolumn{3}{@{}l}{\emph{A. Recipe}} \\
  & Teacher & Student \\
 \midrule
 Backbone & ViT-L/14 (width \MethodWidthL) from the initial model; last \MethodUnfrozenBlocks{} of \MethodBlocksL{} blocks trained; frozen in bf16 when teaching & ViT-B/14 (width \MethodWidthB) from NAVER's HMR-trained Multi-HMR ViT-B; fully trained \\
@@ -21,21 +20,11 @@ Schedule & \MethodFinalEpochs{} epochs $\times$ \num{\MethodFinalIters} iteratio
 Learning rate & \MethodFinalLR, constant & \MethodStudentLR, halved every \MethodStudentLRDecay{} epochs \\
 Targets & head anchor, depth weight \MethodWDist, \MethodMixRatio\% 3DPW (corrected labels), hand mask & identical \\
 Distillation & -- & feature KL $\lambda=\MethodKDLambda$, $T=\MethodKDTemp$; output L1 $\lambda=\MethodKDOutLambda$ \\
-Bone correction & four bones, estimated on the initial model & teacher's in training; own one afterwards \\
-\midrule
-\multicolumn{3}{@{}l}{\emph{B. The 95\% bars: student error $\le$ reference error / \MethodRuleFactor}} \\
- & against the teacher & against the released baseline \\
-\midrule
-AnnyOne holdout PVE & \MethodTeacherHoldoutPVE{} $\to$ \textbf{\MethodBarHoldout} & \MethodNaverHoldoutPVE{} $\to$ \MethodBarNaverHoldout{} (possibly in-sample) \\
-% Final holdout V1 MPJPE 77.9 re-measured in the student job, bar 82.0 = 77.9/0.95: 3614191:259-263 (macros \FinalMPJPE, \BarMPJPE in numbers_results.tex)
-AnnyOne holdout MPJPE & \FinalMPJPE{} $\to$ \textbf{\BarMPJPE} & \MethodNaverHoldoutMPJPE{} $\to$ \MethodBarNaverHoldoutMPJPE \\
-3DPW test PVE & \MethodTeacherThreeDPWPVE{} $\to$ \textbf{\MethodBarThreeDPW} & \MethodNaverThreeDPWPVE{} $\to$ \MethodBarNaverThreeDPW \\
-3DPW test MPJPE & \MethodTeacherThreeDPWMPJPE{} $\to$ \MethodBarThreeDPWMPJPE & \MethodNaverThreeDPWMPJPE{} $\to$ \MethodBarNaverThreeDPWMPJPE \\
+Bone correction & four bones, estimated on the initial model & the teacher's during training; its own, estimated after training, at evaluation \\
 \bottomrule
 \end{tabular}
-\caption[The student's recipe and the 95\,\% bars]{Recipe and cost of the student next to its teacher (A) and the
-error bars of the 95\,\% rule in mm (B). Cost is measured at \MethodImgSize\,px with one person on one L40S at batch
-size 1, both models in the same job; the bars use the teacher re-measured in that job and are given for orientation.
-The student's own errors are reported in Chapter~\ref{ch:results}.}
+\caption[Training configuration of the student]{Training configuration and cost of the student next to its teacher.
+Cost is measured at \MethodImgSize\,px with one person on one L40S at batch size 1, both models in the same job. The
+student's errors and the 95\,\% retention thresholds are reported in Table~\ref{tab:student}.}
 \label{tab:student-recipe}
 \end{table}

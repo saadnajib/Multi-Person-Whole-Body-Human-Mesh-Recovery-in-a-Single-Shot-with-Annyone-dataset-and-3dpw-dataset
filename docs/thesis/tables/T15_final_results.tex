@@ -5,29 +5,31 @@
 % Part B: 3612073 (Base), 3612074 (Mixed-L old labels = v9 e62), 3612075 (neck pilot), 3611339:215-220,
 % 3611336:224-229, 3614192 (NAVER); lines :117-124 for the 3612073-5 jobs.
 % 12 Nov revision: descriptive names (Mixed-L -> earlier model, App. E); notes moved under (b).
+% 12 Nov fix pass: pilot columns (depth pilot, neck pilot, earlier model) and bold cells removed; the full table with
+% the pilot columns is in appendix_h_teacher.tex (tab:final-full).
 % Old-label 3DPW numbers (119.1 / 102.5 / 111.5) are retired and never appear next to these.
 \begin{table}[!tbp]
 \centering\footnotesize
 \setlength{\tabcolsep}{3pt}
 \begin{subtable}{\linewidth}
 \centering
-\begin{tabular}{@{}lrrrrr@{}}
+\begin{tabular}{@{}lrrr@{}}
 \toprule
- & \shortstack[r]{Initial\\model} & \shortstack[r]{Depth\\pilot} & \shortstack[r]{Neck\\pilot} & \shortstack[r]{Uncorrected\\teacher} & Teacher \\
+ & \shortstack[r]{Initial\\model} & \shortstack[r]{Uncorrected\\teacher} & Teacher \\
 \midrule
-PVE (mm) & \BasePVE & 74.8 & 68.8 & \ControlPVE & \FinalPVE \\
-PA-PVE (mm) & \BasePAPVE & 54.0 & 50.9 & \ControlPAPVE & \textbf{\FinalPAPVE} \\
-Recall (\%) & \BaseRecall & 87.8 & 89.4 & \ControlRecall & \FinalRecall \\
-Root error (mm) & \BaseRootErr & \DepthPilotRootErr & 1429 & \ControlRootErr & \textbf{\FinalRootErr} \\
-Depth slope & \BaseSlope & 0.38 & 0.34 & \ControlSlope & \FinalSlope \\
-Depth intercept (m) & \BaseIntercept & 1.59 & 2.56 & \ControlIntercept & \FinalIntercept \\
-Size ratio & \BaseSize & 0.84 & 0.58 & \ControlSize & \FinalSize \\
-Neck girth pred/GT & \BaseGirth & 0.457 & 0.997 & \ControlGirth & \FinalGirth \\
-PVE\textsubscript{neck} (mm) & 27.3 & 27.7 & 10.7 & \ControlNeckSkin & \FinalNeckSkin \\
-Global head direction (deg) & \BaseHeadDir & 12.7 & \NeckPilotHeadDir & \ControlHeadDir & \FinalHeadDir \\
-Fingers (deg) & \BaseFingers & 17.4 & 8.3 & \ControlFingers & \FinalFingers \\
-neck02 bone (deg) & \BaseNeckTwo & 175.5 & 4.7 & \ControlNeckTwo & \FinalNeckTwo \\
-head bone (deg) & 177.9 & 178.0 & 11.2 & \ControlHeadBone & \FinalHeadBone \\
+PVE (mm) & \BasePVE & \ControlPVE & \FinalPVE \\
+PA-PVE (mm) & \BasePAPVE & \ControlPAPVE & \FinalPAPVE \\
+Recall (\%) & \BaseRecall & \ControlRecall & \FinalRecall \\
+Root error (mm) & \BaseRootErr & \ControlRootErr & \FinalRootErr \\
+Depth slope & \BaseSlope & \ControlSlope & \FinalSlope \\
+Depth intercept (m) & \BaseIntercept & \ControlIntercept & \FinalIntercept \\
+Size ratio & \BaseSize & \ControlSize & \FinalSize \\
+Neck girth pred/GT & \BaseGirth & \ControlGirth & \FinalGirth \\
+PVE\textsubscript{neck} (mm) & 27.3 & \ControlNeckSkin & \FinalNeckSkin \\
+Global head direction (deg) & \BaseHeadDir & \ControlHeadDir & \FinalHeadDir \\
+Fingers (deg) & \BaseFingers & \ControlFingers & \FinalFingers \\
+neck02 bone (deg) & \BaseNeckTwo & \ControlNeckTwo & \FinalNeckTwo \\
+head bone (deg) & 177.9 & \ControlHeadBone & \FinalHeadBone \\
 \bottomrule
 \end{tabular}
 \caption{AnnyOne holdout (100 images, holdout protocol, matched people); placement metrics with each body at its model's predicted depth.}
@@ -37,32 +39,29 @@ head bone (deg) & 177.9 & 178.0 & 11.2 & \ControlHeadBone & \FinalHeadBone \\
 \vspace{1em}
 \begin{subtable}{\linewidth}
 \centering
-\begin{tabular}{@{}lrrrrrr@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
- & \shortstack[r]{Initial\\model} & \shortstack[r]{Earlier\\model$^{d}$} & \shortstack[r]{Neck\\pilot} & \shortstack[r]{Uncorrected\\teacher} & Teacher & \shortstack[r]{Released\\baseline} \\
+ & \shortstack[r]{Initial\\model} & \shortstack[r]{Uncorrected\\teacher} & Teacher & \shortstack[r]{Released\\baseline} \\
 \midrule
-PVE (mm) & \BaseThreeDPW & \BaseOldThreeDPW & \NeckPilotThreeDPW & \ControlThreeDPW & \textbf{\FinalThreeDPW} & \NAVERThreeDPW \\
-PA-PVE (mm) & \BasePAThreeDPW & \BaseOldPAThreeDPW & 68.7 & \ControlPAThreeDPW & \textbf{\FinalPAThreeDPW} & \NAVERPAThreeDPW \\
-MPJPE (mm)$^{b}$ & 126.9 & 94.8 & 124.8 & \ControlMPJPEThreeDPW & \textbf{\FinalMPJPEThreeDPW} & \NAVERMPJPEThreeDPW \\
-Precision (\%) & \BasePrecThreeDPW & \BaseOldPrecThreeDPW & 53 & 62 & \FinalPrecThreeDPW & \NAVERPrecThreeDPW \\
-Recall (\%) & 100 & \BaseOldRecallThreeDPW & 100 & 99 & \FinalRecallThreeDPW & \NAVERRecallThreeDPW \\
+PVE (mm) & \BaseThreeDPW & \ControlThreeDPW & \FinalThreeDPW & \NAVERThreeDPW \\
+PA-PVE (mm) & \BasePAThreeDPW & \ControlPAThreeDPW & \FinalPAThreeDPW & \NAVERPAThreeDPW \\
+MPJPE (mm)$^{b}$ & 126.9 & \ControlMPJPEThreeDPW & \FinalMPJPEThreeDPW & \NAVERMPJPEThreeDPW \\
+Precision (\%) & \BasePrecThreeDPW & 62 & \FinalPrecThreeDPW & \NAVERPrecThreeDPW \\
+Recall (\%) & 100 & 99 & \FinalRecallThreeDPW & \NAVERRecallThreeDPW \\
 \addlinespace
-Holdout PVE, 3DPW protocol$^{c}$ & \BaseVzeroPVE & \BaseOldVzeroPVE & 72.7 & 81.2 & \FinalTestHundredPVE & (\NAVERAnnyOne)$^{a}$ \\
+Holdout PVE, 3DPW protocol$^{c}$ & \BaseVzeroPVE & 81.2 & \FinalTestHundredPVE & (\NAVERAnnyOne)$^{a}$ \\
 \bottomrule
-\multicolumn{7}{@{}p{0.97\linewidth}@{}}{\scriptsize $^{a}$The released baseline masks the helper bones by design, so
+\multicolumn{5}{@{}p{0.97\linewidth}@{}}{\scriptsize $^{a}$The released baseline masks the helper bones by design, so
 this value follows the holdout protocol and compares with the teacher's \FinalPVE{} in (a); it is potentially
 in-sample. $^{b}$Mean over all 163 Anny joints, pelvis-centred. $^{c}$The 100 images of (a) with the 3DPW protocol
-(helper bones predicted). $^{d}$Earlier ViT-L model trained on the labels before their correction
-(Appendix~\ref{app:pilots}), tested on the corrected ones like every model here. Depth pilot: depth fix, depth weight
-$\times$5, 10 epochs; neck pilot: bone correction and a 2-epoch fine-tune. 3DPW errors are against the converted labels and not
-comparable with published results (Section~\ref{sec:data-limits}).}
+(helper bones predicted). Pilot columns: Table~\ref{tab:final-full}.}
 \end{tabular}
-\caption{3DPW test (corrected labels, all 8,190 images, 3DPW protocol), one evaluation script for every model.}
+\caption{3DPW test (corrected labels, all 8,190 images, 3DPW protocol), the same evaluation code for every model.}
 \label{tab:final-3dpw}
 \end{subtable}
 \caption[The teacher against the uncorrected teacher and the initial model]{The teacher against the uncorrected
-teacher, the initial model and two pilots on the AnnyOne holdout and the 3DPW test set (one run per model). The PVE
-gap between the teacher and the uncorrected teacher lies within run-to-run variation
-(Section~\ref{sec:method-variation}); the gaps in PA-PVE, root error, neck and fingers do not.}
+teacher and the initial model on the AnnyOne holdout and the 3DPW test set. The PVE gap between the teacher and the
+uncorrected teacher lies within run-to-run variation (Section~\ref{sec:method-variation}); the gaps in root error,
+neck and fingers do not.}
 \label{tab:final}
 \end{table}

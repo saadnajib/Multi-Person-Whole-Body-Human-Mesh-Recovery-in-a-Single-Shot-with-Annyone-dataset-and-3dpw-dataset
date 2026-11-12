@@ -6,12 +6,12 @@
 % (trim in bp = px at 72 dpi), so that the two model panels are larger. "3 visible detection(s)" per model = the panel labels.
 \begin{figure}[!tbp]
 \centering
-\IfFileExists{figures/img/F26_image_compare.jpg}{%
-  \includegraphics[width=0.49\linewidth, trim=0 0 1344 0, clip]{F26_image_compare.jpg}\\[3pt]
-  \includegraphics[width=0.49\linewidth, trim=672 0 672 0, clip]{F26_image_compare.jpg}\hfill
-  \includegraphics[width=0.49\linewidth, trim=1344 0 0 0, clip]{F26_image_compare.jpg}}{\fbox{\TODO{F26 image missing}}}
-\caption[Image comparison: student and released baseline]{A real photo of three people on a stage: input (top),
-the student (bottom left) and the released baseline (bottom right). Both models detect all \ImageCompareDetections{} people;
-the photo has no ground truth.}
+\includegraphics[width=0.49\linewidth, trim=0 0 1344 0, clip]{F26_image_compare.jpg}\\[3pt]
+\includegraphics[width=0.49\linewidth, trim=672 0 672 0, clip]{F26_image_compare.jpg}\hfill
+\includegraphics[width=0.49\linewidth, trim=1344 0 0 0, clip]{F26_image_compare.jpg}
+\caption[Image comparison: student and released baseline]{A real photograph of three people on a stage: input
+(top), the student (bottom left, labelled ``Student (ViT-B)'') and the released baseline (bottom right, labelled
+``Original Multi-HMR-Anny (NAVER)''). Both models detect all \ImageCompareDetections{} people; the photograph has no
+ground truth.}
 \label{fig:image-compare}
 \end{figure}

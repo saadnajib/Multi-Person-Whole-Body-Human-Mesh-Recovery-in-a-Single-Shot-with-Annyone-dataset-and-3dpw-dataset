@@ -37,7 +37,7 @@ Section~\ref{sec:res-history} records the earlier stages that produced the initi
 \section{The six pilots}
 
 Unless noted, each pilot fine-tuned the initial model on AnnyOne only (learning rate $10^{-5}$, batch 4, 2 epochs or
-8,000 images) and was evaluated on the 100-image AnnyOne holdout in the masked protocol, in which the helper bones
+8,000 images) and was evaluated on the 100-image AnnyOne holdout in the holdout protocol, in which the helper bones
 (face, toes, breasts) are set to rest pose (Table~\ref{tab:metrics}). The success rule of each pilot was written into
 its script before the run; the full depth runs are in Table~\ref{tab:depth-runs}. The geodesic angle is the angle of
 the single rotation that maps the predicted bone onto the true one, whereas the standard loss compares the rotation
@@ -50,7 +50,7 @@ minus true age phenotype.
 \setlength{\tabcolsep}{3pt}
 \begin{longtable}{@{}>{\raggedright}p{1.6cm}>{\raggedright}p{2.6cm}>{\raggedright}p{2.7cm}>{\raggedright}p{2.95cm}>{\raggedright\arraybackslash}p{2.1cm}@{}}
 \caption[Pilot experiments: change, rule, result, control]{The six pilot experiments, each a single fine-tune of the
-initial model (Base) without a seed, on the 100-image AnnyOne holdout (masked protocol, matched people). The success
+initial model (Base) without a seed, on the 100-image AnnyOne holdout (holdout protocol, matched people). The success
 rule was written into each script before the run. Head direction is the global head orientation error.}
 \label{tab:pilots-all}\\
 \toprule
@@ -119,10 +119,12 @@ added the helper mask, L-stage~4 weighted the loss on the neck and hand bones fo
 the shape-loss weight of 20.
 
 Before the ViT-B student, ViT-S students (Student-S/1 to Student-S/final; ViT-S is one size below ViT-B) were trained
-with the initial model as teacher to meet the size requirement. All runs of Table~\ref{tab:history} predate the depth
-fix, the bone correction and the corrected 3DPW labels and report the values measured at the time, in the unmasked
+with the initial model as teacher to reduce the model size. All runs of Table~\ref{tab:history} predate the depth
+fix, the bone correction and the corrected 3DPW labels and report the values measured at the time, in the 3DPW
 protocol (helper bones scored as predicted). The best of them, Student-S/6c, reached \StudentSixcRatio{} times the PVE
-of its teacher.
+of its teacher. All ViT-S students used the feature-distillation temperature $T=\MethodKDTemp$ and weight
+\MethodKDLambda{}, and from Student-S/3 on an output-distillation weight of \MethodKDOutLambda; the ViT-B student took
+these over unchanged.
 
 Four observations from these runs shaped the student's training. With feature distillation alone nothing trains the
 heads, and Student-S/2 has by far the largest error (Table~\ref{tab:history-students}); the student therefore starts
@@ -137,5 +139,4 @@ Matrix products in TF32, a reduced-precision mode of the A100, and the teacher's
 format, reduced the ViT-S step time from \MethodItTimeBefore{} to \MethodItTimeAfter\,s on an A100 without changing
 the evaluation numbers. The student's run
 keeps both (TF32 as in the teacher, Table~\ref{tab:flags-final}; the teacher in bfloat16,
-Table~\ref{tab:flags-student}). The step times come from an earlier version of this report; their training log was not
-kept.
+Table~\ref{tab:flags-student}). The training log of these step times was not kept.

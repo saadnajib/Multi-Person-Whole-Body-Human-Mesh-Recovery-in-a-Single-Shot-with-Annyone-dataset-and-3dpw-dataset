@@ -13,13 +13,12 @@
 Model & PVE & PA-PVE & Recall & PVE & PA-PVE & Recall & \shortstack{3DPW\\training} \\
 \midrule
 Released baseline & \NAVERAnnyOne$^a$ & \NAVERPAAnnyOne$^a$ & \NAVERRecallAnnyOne$^a$ & \NAVERThreeDPW & \NAVERPAThreeDPW & \NAVERRecallThreeDPW & no \\
-Teacher & \FinalPVE & \FinalPAPVE & \FinalRecall & \textbf{\FinalThreeDPW} & \textbf{\FinalPAThreeDPW} & \FinalRecallThreeDPW & yes \\
+Teacher & \FinalPVE & \FinalPAPVE & \FinalRecall & \FinalThreeDPW & \FinalPAThreeDPW & \FinalRecallThreeDPW & yes \\
 Student & \StudentPVE & \StudentPAPVE & \StudentRecall & \StudentThreeDPW & \StudentPAThreeDPW & \StudentRecallThreeDPW & yes \\
 Uncorrected teacher & \ControlPVE & \ControlPAPVE & \ControlRecall & \ControlThreeDPW & \ControlPAThreeDPW & 99 & yes \\
 Initial model & \BasePVE & \BasePAPVE & \BaseRecall & \BaseThreeDPW & \BasePAThreeDPW & 100 & no \\
 \bottomrule
-\multicolumn{8}{@{}p{0.97\linewidth}@{}}{\scriptsize $^a$Potentially in-sample: the released baseline was trained
-on the AnnyOne release, which contains the holdout images. 3DPW errors are measured against the converted Anny
+\multicolumn{8}{@{}p{0.97\linewidth}@{}}{\scriptsize $^a$Potentially in-sample (Section~\ref{sec:res-fairness}). 3DPW errors are measured against the converted Anny
 labels and are not comparable with published SMPL-space results (Section~\ref{sec:data-limits}).}
 \end{tabular}
 \caption[Reconstruction of the student, the teacher and the released baseline]{Reconstruction of the student, its

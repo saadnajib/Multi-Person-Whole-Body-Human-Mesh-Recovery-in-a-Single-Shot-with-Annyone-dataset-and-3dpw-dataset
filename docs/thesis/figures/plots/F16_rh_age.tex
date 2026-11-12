@@ -29,6 +29,7 @@
 %   Final-masked adult: median 0.580 vs mean 0.638 (-0.059)
 %   Final-masked teen: median 0.563 vs mean 0.616 (-0.052)
 %   Final-masked kid: median 0.563 vs mean 0.611 (-0.048)
+% 12 Nov fix pass: the "child threshold" label moved to the right margin, outside the boxes.
 % Needs: pgfplots (compat 1.18) with \usepgfplotslibrary{statistics}. Colours defined locally.
 \definecolor{plFinal}{HTML}{2A78D6}% blue: Final
 \definecolor{plControl}{HTML}{EB6834}% orange: Control
@@ -36,7 +37,7 @@
 \definecolor{plMasked}{HTML}{1BAF7A}% aqua: Final-masked
 \begin{tikzpicture}
 \begin{axis}[
-  width=0.85\linewidth, height=5cm,
+  width=0.85\linewidth, height=5cm, clip=false,
   ylabel={predicted Anny age}, ymin=0.2, ymax=0.9, ytick={0.2,0.3,...,0.9},
   yticklabel style={/pgf/number format/fixed, /pgf/number format/precision=1},
   xmin=0.5, xmax=4.5, xtick={1,2,3,4}, xticklabels={adult, teen, kid, baby},
@@ -52,7 +53,7 @@
 \addlegendimage{color=plFinal!85!black, fill=plFinal!35}\addlegendentry{Teacher}
 \addlegendimage{color=plMasked!85!black, fill=plMasked!35}\addlegendentry{Teacher, full shape mask}
 \draw[dashed, thick, red!60!black] (axis cs:0.5,0.45) -- (axis cs:4.5,0.45);
-\node[anchor=south west, font=\scriptsize, text=red!60!black, inner sep=1.5pt] at (axis cs:0.52,0.45) {child threshold};
+\node[anchor=west, font=\scriptsize, text=red!60!black, inner sep=1.5pt, align=left] at (axis cs:4.5,0.45) {child\\threshold};
 % Base
 \addplot[plbox, color=plBase!85!black, fill=plBase!35, boxplot prepared={draw position=0.73, lower whisker=0.553, lower quartile=0.580, median=0.606, upper quartile=0.699, upper whisker=0.756}] coordinates {}; % adult, n = 821
 \addplot[plbox, color=plBase!85!black, fill=plBase!35, boxplot prepared={draw position=1.73, lower whisker=0.542, lower quartile=0.558, median=0.579, upper quartile=0.605, upper whisker=0.719}] coordinates {}; % teen, n = 53

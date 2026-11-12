@@ -6,11 +6,12 @@
 % (1356 px wide, JPEG quality 85). FPS values: numbers_nov.tex \Video...FPS; confirmed against timing.csv of job 3657550 (7 Nov).
 \begin{figure}[!tbp]
 \centering
-\IfFileExists{figures/img/F25_video_panels.jpg}{%
-  \includegraphics[width=\linewidth]{F25_video_panels.jpg}}{\fbox{\TODO{F25 image missing}}}
+\includegraphics[width=\linewidth]{F25_video_panels.jpg}
 \caption[Video comparison: student variants and the released baseline]{Frame \VideoFigureFrame{} of
-\VideoFrames{} of the walking clip: input, raw student, student with temporal filtering, student with landmark
-alignment, and the released baseline (bottom). The printed FPS values are model-inference speeds without
-preprocessing, landmark extraction or video input and output (Table~\ref{tab:video-fps}).}
+\VideoFrames{} of the walking clip: input (top left), raw student (top right), student with temporal filtering
+(``Student temporal'', middle left), student with landmark alignment (``Student aligned'', middle right) and the
+released baseline (``Original Multi-HMR (NAVER Anny)'', bottom). The FPS printed in each panel (playback for the
+input, model inference for the raw panels, model plus filter or alignment for the others) excludes preprocessing,
+landmark extraction and video input and output (Table~\ref{tab:video-fps}).}
 \label{fig:video-panels}
 \end{figure}

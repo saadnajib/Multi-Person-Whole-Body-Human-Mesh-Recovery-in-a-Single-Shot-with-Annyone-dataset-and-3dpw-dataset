@@ -2,7 +2,8 @@
 % distillation, same data and schedule). Rows: reported student (numbers_results.tex \Student...); the temperature
 % sweep's repeat of T = 4 (numbers_nov.tex \KDFour..., data/kd_temperature_sweep.csv); two ablation arms submitted
 % 12 Nov (REVISION_BRIEF section 5): (a) distillation losses off, teacher heads copied; (b) no teacher (no losses,
-% no head copy). Their results are pending: fill the \TODO cells when the runs are evaluated.
+% no head copy). Fix pass 12 Nov (fallback F1): the arms had not completed at submission; replace the two
+% "not completed" cells by results if they arrive (and apply F5 if only one arrives).
 \begin{table}[!tbp]
 \centering\footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -14,15 +15,15 @@ Model & \shortstack{Distillation\\losses} & \shortstack{Teacher\\heads} & PVE & 
 \midrule
 Student (reported)              & yes & yes & \StudentPVE & \StudentPAPVE & \StudentThreeDPW & \StudentPAThreeDPW \\
 Student, repeat run             & yes & yes & \KDFourHold & \KDFourHoldPA & \KDFourTP & \KDFourTPPA \\
-Without distillation losses     & no  & yes & \multicolumn{4}{c@{}}{\TODO{pending}} \\
-Without teacher                 & no  & no  & \multicolumn{4}{c@{}}{\TODO{pending}} \\
+Without distillation losses     & no  & yes & \multicolumn{4}{c@{}}{not completed at submission} \\
+Without teacher                 & no  & no  & \multicolumn{4}{c@{}}{not completed at submission} \\
 \midrule
 Teacher (ViT-L)& --  & --  & \FinalPVE & \FinalPAPVE & \FinalThreeDPW & \FinalPAThreeDPW \\
 \bottomrule
 \end{tabular}
-\caption[Distillation ablation]{Distillation ablation: ViT-B models with the student's data, schedule and
-architecture, with and without the teacher's distillation losses and copied heads (errors in mm, one run each). The
-repeat run is the $T = \MethodKDTemp$ run of the temperature sweep and indicates the run-to-run difference of one
-setting.}
+\caption[Distillation ablation: design]{Design of the distillation ablation: ViT-B models with the student's data,
+schedule and architecture, with and without the teacher's distillation losses and copied heads (errors in mm). The two
+ablation arms had not completed at submission, so the contribution of distillation is not measured. The repeat run is
+the $T = \MethodKDTemp$ run of the temperature sweep and indicates the run-to-run difference of one setting.}
 \label{tab:kd-ablation}
 \end{table}

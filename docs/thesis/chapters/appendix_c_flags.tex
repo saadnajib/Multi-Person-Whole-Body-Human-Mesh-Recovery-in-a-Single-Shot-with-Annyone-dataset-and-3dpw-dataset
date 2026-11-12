@@ -13,7 +13,7 @@
 %   sets SEED 0, as exp8 does by default (open question). Commands: REPRODUCE.md:84-85 (Final, Control), :157 (Student).
 % No job ids and no old run names in this file (plan section 5); Table~\ref{tab:names} maps names to runs.
 % 12 Nov revision: caption content moved into the paragraphs before each table (captions short, brief rule 6);
-%   descriptive names first; first person removed; ablation flags pending.
+%   descriptive names first; first person removed. Fix pass: ablation flags from exp10 and exp8 KD_MODE.
 % Trimmed 19 Oct: flags equal to the default dropped unless they matter (dropped: --load_only_backbone 0,
 %   --person_center head, --rotmat_loss l1, --global_rot_bones, --debug_anchor 2 (a print, no effect),
 %   --lr_decay_every/--lr_decay_gamma 30/0.5 in Final, --min_backbone_match 90,
@@ -28,8 +28,11 @@ This appendix lists the command-line flags passed to the training script, so tha
 identifiers are those of Table~\ref{tab:names}. Table~\ref{tab:flags-final} covers the teacher (Final) and the
 teacher without corrections (Control). The student (Student) of Section~\ref{sec:method-student} and the 60-epoch
 student (Student-60) of Section~\ref{sec:res-training-length} share Table~\ref{tab:flags-student}. The temperature
-sweep of Section~\ref{sec:res-kd-temperature} has its own, Table~\ref{tab:flags-sweep}. The flags of the two
-distillation-ablation arms (Section~\ref{sec:res-kd-ablation}) are \TODO{pending: flags of the ablation runs}.
+sweep of Section~\ref{sec:res-kd-temperature} has its own, Table~\ref{tab:flags-sweep}. The two
+distillation-ablation arms (Section~\ref{sec:res-kd-ablation}), not completed at submission, use the flags of
+Table~\ref{tab:flags-student} with \path{--eval_freq 1 --val_loss 1}. The student without distillation losses sets
+\path{--lambda_kd 0 --lambda_kd_out 0}; the ViT-B model without teacher passes no distillation flag (no
+\path{--distill_teacher_ckpt}, hence no head copy or head freeze) and trains with \path{--bone_fix none}.
 
 A flag is listed when its value differs from the default in the code, or when it keeps the default but matters for
 the result; every other flag keeps its default. The loss weights are in Table~\ref{tab:loss-weights} of
@@ -137,7 +140,7 @@ Flag & Default & Value (60 epochs) & Meaning \\
 \end{longtable}
 \endgroup
 
-Each temperature $T$ of the sweep is one full run of the student's recipe. The repeated $T = 4$ run measures how much
+Each temperature $T$ of the sweep is one full run of the student's training configuration. The repeated $T = 4$ run measures how much
 two runs with the same training settings differ (Section~\ref{sec:method-variation}). The 30- and 60-epoch students
 were trained before \path{--val_loss} existed, so they have no validation loss.
 

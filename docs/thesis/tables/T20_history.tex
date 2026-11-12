@@ -30,7 +30,7 @@ L-stage 4 & + neck and hand loss $\times$4 & 73.6 & 56.5 & 73.2 & -- \\
 Base & + shape loss weight 20 & \BaseVzeroPVE & 57.5 & 74.4 & 90 \\
 \bottomrule
 \end{tabular}
-\caption{The transfer schedule that produced the initial model, Base (Table~\ref{tab:model-names}); recall (Rec.)
+\caption{The transfer schedule that produced the initial model, Base (Table~\ref{tab:names}); recall (Rec.)
 in \%. L-stages 2--4 are evaluated during training, the initial model with the standalone script.}
 \label{tab:history-stages}
 \end{subtable}
@@ -40,7 +40,7 @@ in \%. L-stages 2--4 are evaluated during training, the initial model with the s
 \centering
 \begin{tabular}{@{}llrrrrrrrr@{}}
 \toprule
- & & & \multicolumn{5}{c}{AnnyOne holdout, unmasked} & \multicolumn{2}{c@{}}{3DPW test, v23$^{c}$} \\
+ & & & \multicolumn{5}{c}{AnnyOne holdout, 3DPW protocol} & \multicolumn{2}{c@{}}{3DPW test, v23$^{c}$} \\
 \cmidrule(lr){4-8}\cmidrule(l){9-10}
 Model & Teacher & Params & PVE & PA-PVE & MPJPE & Prec. & Rec. & PVE & PA-PVE \\
 \midrule
@@ -65,7 +65,7 @@ the script of Table~\ref{tab:final-3dpw}; the teacher (Final) reaches \FinalThre
 \label{tab:history-students}
 \end{subtable}
 \caption[History: the schedule to the initial model and the ViT-S students]{Earlier models, measured before the
-depth fix, the bone correction and the corrected 3DPW labels, on the AnnyOne holdout (100 images) in the unmasked
+depth fix, the bone correction and the corrected 3DPW labels, on the AnnyOne holdout (100 images) in the 3DPW
 protocol (helper bones scored as predicted); errors in mm, single runs without a seed. ``--'': not measured with the
 same script; the students' old-label 3DPW numbers are retired.}
 \label{tab:history}

@@ -7,7 +7,7 @@
 %   3611339:195-196 / 3611336:204-205; girth :107 / :189 / :198; PVE_neck :108 / :190 / :199; PVE :109 / :182 / :191;
 %   PA-PVE :110; recall :112; global head :113 / :191 / :200; fingers :114 / :192 / :201.
 % "not dumped" = the holdout dump 3573518 did not cover finger bones; finger4-1.R was found on the training images.
-% 12 Nov 2026: descriptive column heads, caption to three sentences, V1 -> masked protocol.
+% 12 Nov 2026: descriptive column heads, caption to three sentences, V1 -> holdout protocol.
 % Correction constants 178.8 / 179.2 / 179.8 / 179.7 deg (3579014:12, :37), from 200 training images.
 \begin{table}[!htb]
 \centering\footnotesize
@@ -34,7 +34,7 @@ fingers (deg)                       &  17.3 &   8.2 &   8.3 &  17.4 &  17.4 &   
 \end{tabular}
 \caption[Neck: the half-turned bones and their correction]{Median local bone errors (about 180\,deg is half a
 turn), neck girth and neck-skin error PVE$_\text{neck}$ (171 vertices) before and after the bone correction (Corr.;
-four constants from 200 training images). AnnyOne holdout, masked protocol, matched people; the 2-epoch columns are
+four constants from 200 training images). AnnyOne holdout, holdout protocol, matched people; the 2-epoch columns are
 AnnyOne-only fine-tunes (FT) of the initial model, the two teachers 10-epoch fine-tunes with 30\,\% 3DPW, and n.d.\
 means not dumped. Single runs; PVE gaps below about 10\,mm lie within the pilot variation of
 Table~\ref{tab:pilot-noise}.}

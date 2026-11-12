@@ -1,27 +1,26 @@
-% Revised 12 November 2026 (REVISION_BRIEF_2026-11-12.md): problem -> method -> results -> limitations.
+% Revised 12 Nov 2026 (REVISION_BRIEF_2026-11-12.md).
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
 This thesis addresses multi-person whole-body human mesh recovery from a single image in the Anny body model, whose
-named shape parameters include age and height, at reduced inference cost. No real images with Anny labels exist,
+named shape parameters include age, at reduced inference cost. No real images with Anny labels exist,
 and the large Vision Transformer encoders of accurate single-shot models are expensive.
 
-For real-image supervision, the SMPL labels of 3DPW are converted to Anny by fitting corresponding joints, giving
-\DataThreeDPWTotalImages{} images with \DataThreeDPWTotalPeople{} labelled people. A ViT-L teacher based on
+For real-image supervision, the SMPL labels of 3DPW are converted to Anny by fitting corresponding joints. A ViT-L teacher based on
 Multi-HMR is trained on synthetic AnnyOne images and converted 3DPW with two corrections: head-anchor targets
 consistent with the decoder and a fixed rotation correction of four output bones. A ViT-B student inherits the
 teacher's prediction heads through a learned projector and is distilled from the teacher's features and outputs.
-For video, temporal filtering and alignment to detected 2D landmarks run at inference without retraining.
+For video, temporal filtering and alignment to detected 2D landmarks run at inference time.
 
 The student has \ParamRatioStudent{} times fewer parameters and \FlopRatioStudent{} times fewer FLOPs than the
 teacher and runs \SpeedRatioStudent{} times faster, but is less accurate: its per-vertex error (PVE) is
 \StudentPVE\,mm on held-out AnnyOne images and \StudentThreeDPW\,mm on converted 3DPW, against \FinalPVE{} and
 \FinalThreeDPW\,mm for the teacher. On 3DPW its PVE is lower than that of the released Multi-HMR-Anny checkpoint
 (the released baseline, \NAVERThreeDPW\,mm), which was not trained on the converted labels. Neither longer training
-nor another distillation temperature closes the gap to the teacher. The teacher's detection recall on real
+nor another distillation temperature closes the gap. The teacher's detection recall on real
 photographs falls with the number of people per image (\CrowdFinalTwoRec\,\% with two, \CrowdFinalNinePlusRec\,\%
 with nine or more); the student was not evaluated there. On a walking video, filtering and alignment visibly steady
-the output and improve its placement, a qualitative result without ground truth.
+the output and improve its placement (qualitative, without ground truth).
 
 The synthetic test set is a small holdout of \MethodHoldoutN{} images without children, the real-image labels are
 converted rather than measured, every model was trained once, and the contribution of distillation was not isolated

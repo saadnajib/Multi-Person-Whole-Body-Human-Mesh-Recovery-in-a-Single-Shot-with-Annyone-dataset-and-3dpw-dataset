@@ -7,25 +7,24 @@
 % 12 Nov revision: the PNG title line (run identifier) is clipped off (trim top 26 bp); caption shortened, the
 % slope values (\Loss...Slope, ...Last) are in the text of Section 5.4 and in T29.
 % PNGs re-rendered 7 Nov with the fixed plot_loss_curves.py (four distinct line styles), tensorboard source.
+% The two PNGs are to be regenerated from the runs' CSV exports with descriptive legend labels and larger text.
 \begin{figure}[!p]
 \centering
 \begin{subfigure}[t]{\linewidth}\centering
-  \IfFileExists{figures/img/F23_student_loss_curves_e30.png}{%
-    \includegraphics[width=0.78\linewidth, trim=0 0 0 26, clip]{F23_student_loss_curves_e30.png}}{\fbox{\TODO{F23 e30 image missing}}}
+  \includegraphics[width=0.78\linewidth, trim=0 0 0 26, clip]{F23_student_loss_curves_e30.png}
   \caption{Student, \StudentEpochs{} epochs (reported)}\label{fig:loss-curves-e30}
 \end{subfigure}
 
 \medskip
 \begin{subfigure}[t]{\linewidth}\centering
-  \IfFileExists{figures/img/F23_student_loss_curves_e60.png}{%
-    \includegraphics[width=0.78\linewidth, trim=0 0 0 26, clip]{F23_student_loss_curves_e60.png}}{\fbox{\TODO{F23 e60 image missing}}}
+  \includegraphics[width=0.78\linewidth, trim=0 0 0 26, clip]{F23_student_loss_curves_e60.png}
   \caption{60-epoch student}\label{fig:loss-curves-e60}
 \end{subfigure}
-\caption[Training curves of the 30- and 60-epoch students]{Training curves of the two students: training loss
-per epoch with its terms (top, log scale) and the PVE evaluated every \LossEvalEvery{} epochs during training on the
-AnnyOne holdout and on \LossValImages{} 3DPW validation images (bottom). Over the last 20\,\% of the epochs
-(\LossThirtyWindow{} and \LossSixtyWindow) the training loss and the holdout PVE still fall, while the 3DPW
-validation PVE is flat.}
+\caption[Training curves of the 30- and 60-epoch students]{Training curves of the student and the 60-epoch
+student. Top: the training loss terms per epoch (log scale); bottom: the PVE evaluated every \LossEvalEvery{} epochs
+during training on the AnnyOne holdout monitor (the synthetic test set, not a validation set) and on the
+\LossValImages{} 3DPW validation images. The holdout monitor still falls over the last 20\,\% of the epochs, while the
+3DPW validation PVE is flat.}
 \label{fig:loss-curves}
 \label{fig:student-curves}% replaces F19 (in-training curves of the 30-epoch Student)
 \end{figure}

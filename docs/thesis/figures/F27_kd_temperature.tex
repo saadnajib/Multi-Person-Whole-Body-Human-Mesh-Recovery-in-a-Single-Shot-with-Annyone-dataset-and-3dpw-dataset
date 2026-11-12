@@ -1,18 +1,13 @@
 % F27 KD temperature sweep plot (exp9), 8 Nov. figures/img/F27_kd_temperature.pdf is drawn from
 % data/kd_temperature_sweep.csv (same numbers as the collector's kd_temperature_sweep.pdf on the cluster).
+% 12 Nov fix pass: PDF redrawn with matplotlib at text width (130 mm), 7-8 pt text, descriptive legend labels;
+% teacher and threshold values typed in the script from \FinalPVE, \FinalThreeDPW, \BarPVE, \BarThreeDPW.
 \begin{figure}[!tbp]
 \centering
-\IfFileExists{figures/img/F27_kd_temperature.pdf}{%
-  \includegraphics[width=\linewidth]{F27_kd_temperature.pdf}%
-}{%
-  \fbox{\parbox[c][5cm][c]{0.75\linewidth}{\centering
-    \TODO{figure pending}\\[1ex]
-    \small KD temperature sweep, $T \in \{1, 2, 4, 8, \KDSweepMaxT\}$: error against temperature.\\
-    Copy \texttt{kd\_temperature\_sweep.pdf} to \texttt{figures/img/F27\_kd\_temperature.pdf}.}}%
-}
+\includegraphics[width=\linewidth]{F27_kd_temperature.pdf}
 \caption[Distillation temperature sweep (plot)]{Test-set evaluation of the student against the
-feature-distillation temperature $T$ (logarithmic axis): PVE and MPJPE on the AnnyOne holdout and the 3DPW test set,
-with the teacher's PVE (dashed) and the 95\,\% thresholds (dotted). Stars mark the reported $T = \MethodKDTemp$ run;
-$T = \KDSweepMaxT$ has no result.}
+feature-distillation temperature $T$: PVE (solid) and MPJPE (dashed) on the AnnyOne holdout and the 3DPW test set,
+with the teacher's PVE (dashed lines) and the 95\,\% retention thresholds (dotted). Stars mark the reported
+$T = \MethodKDTemp$ run; $T = \KDSweepMaxT$ has no result.}
 \label{fig:kd-temperature}
 \end{figure}

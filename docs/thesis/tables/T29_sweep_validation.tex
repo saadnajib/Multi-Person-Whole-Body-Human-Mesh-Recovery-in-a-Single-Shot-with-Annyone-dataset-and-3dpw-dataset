@@ -3,26 +3,22 @@
 % 30 / 60 epochs: 3DPW validation \SelThirtyValPVE, \SelSixtyValPVE (numbers_rev.tex); holdout monitor
 % \ResSelThirtyHoldPVE, \ResSelSixtyHoldPVE (numbers_results.tex, rounded from \LossThirtyHoldLast, \LossSixtyHoldLast).
 % Temperature sweep (exp9; jobs 3717507, 3717530, 3717538, 3717581, 3717598): per-epoch validation logged by the runs,
-% values pending from the cluster -> \TODO cells.
+% values not available at submission: rows removed in the fix pass (fallback F2); add them back here if they arrive.
 \begin{table}[!tbp]
 \centering\footnotesize
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
-Run & $T$ & Epochs & \shortstack[r]{3DPW validation\\PVE (mm)} & \shortstack[r]{AnnyOne holdout\\monitor PVE (mm)} \\
+Run & $T$ & Epochs & \shortstack[r]{3DPW validation\\PVE (mm)} & \shortstack[r]{AnnyOne holdout monitor$^a$\\PVE (mm)} \\
 \midrule
 Student (reported)   & \MethodKDTemp & \StudentEpochs      & \SelThirtyValPVE & \ResSelThirtyHoldPVE \\
 60-epoch student     & \MethodKDTemp & \StudentSixtyEpochs & \SelSixtyValPVE  & \ResSelSixtyHoldPVE \\
-\addlinespace
-Temperature sweep    & 1  & \StudentEpochs & \multicolumn{2}{c@{}}{\TODO{pending}} \\
-                     & 2  & \StudentEpochs & \multicolumn{2}{c@{}}{\TODO{pending}} \\
-                     & 4  & \StudentEpochs & \multicolumn{2}{c@{}}{\TODO{pending}} \\
-                     & 8  & \StudentEpochs & \multicolumn{2}{c@{}}{\TODO{pending}} \\
-                     & \KDSweepMaxT & \StudentEpochs & \multicolumn{2}{c@{}}{\TODO{pending}} \\
 \bottomrule
+\multicolumn{5}{@{}p{0.9\linewidth}@{}}{\scriptsize $^a$The holdout is the synthetic test set; its monitored value is
+given for reference and is not a validation value (in-training evaluation; the standalone evaluation of
+Table~\ref{tab:student} gives \StudentTestHundredPVE\,mm).}
 \end{tabular}
-\caption[Sensitivity analyses on validation data]{Training length and distillation temperature judged on validation
-data: PVE at the last epoch on the \SelValImages{} 3DPW validation images and on the AnnyOne holdout as monitored
-during training (3DPW protocol). One run per setting; these are the values on which the sensitivity analyses of
-Section~\ref{sec:res-sensitivity} are judged.}
+\caption[Training length on validation data]{Training length judged on validation data: PVE at the last epoch on
+the \SelValImages{} 3DPW validation images and on the AnnyOne holdout as monitored during training (3DPW protocol).
+The per-temperature validation values of the sweep were not available at submission.}
 \label{tab:sweep-validation}
 \end{table}

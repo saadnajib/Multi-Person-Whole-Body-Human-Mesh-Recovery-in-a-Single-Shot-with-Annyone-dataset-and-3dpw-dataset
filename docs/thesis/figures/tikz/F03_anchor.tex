@@ -20,7 +20,7 @@
 \pic[thick] at (0.5,0) {stick};
 \node[dot, red!70!black] at (0.5,1.6) {};
 \draw[red!70!black, thin] (0.65,1.6) -- (1.05,1.6);
-\node[lab=2.6cm, anchor=west] at (1.05,1.35) {token, offset and depth describe the head joint; the mesh hangs from it};
+\node[lab=2.6cm, anchor=west] at (1.05,1.35) {token, offset and depth describe the head joint; the mesh is attached to it};
 % ---- panel B: what the targets said
 \node[title] at (4.15,3.1) {(b) Targets of the initial model: pelvis};
 \pic[thick] at (4.65,0) {stick};
@@ -28,7 +28,7 @@
 \draw[blue!70!black, thin] (4.8,0.8) -- (5.2,0.8);
 \node[lab=2.6cm, anchor=west] at (5.2,1.1) {translation, distance, token and offset targets built at the pelvis};
 % ---- panel C: side view, what training made of it
-\node[title] at (8.3,3.1) {(c) Result: body pushed back};
+\node[title] at (8.3,3.1) {(c) Result: body placed too far};
 \draw[thick, fill=gray!30] (8.3,0.8) rectangle (8.6,1.2);
 \draw[thick, fill=gray!30] (8.6,0.9) -- (8.8,0.8) -- (8.8,1.2) -- (8.6,1.1) -- cycle;
 \pic[dashed, gray] at (9.6,0) {stick};
@@ -58,5 +58,5 @@
 \node[lab=7.2cm, anchor=north west, text=teal!50!black] at (5.4,-2.4)
   {Teacher (dotted): $\MethodFinalSlope \times$ true $+\ \MethodFinalIntercept$\,m; offset and drawn size improve, the slope remains far from 1.};
 \node[lab=7.2cm, anchor=north west] at (5.4,-3.3)
-  {Cause: the head joint is placed at the pelvis target, so the mesh sits too low in the image; the 2D terms reduce this misfit by moving the body away.};
+  {Hypothesised mechanism (not tested in isolation): the head joint is placed at the pelvis target, so the mesh is placed too low in the image; the 2D terms reduce this misfit by moving the body away.};
 \end{tikzpicture}

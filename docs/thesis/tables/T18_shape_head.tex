@@ -6,12 +6,12 @@
 %   age bias -0.015 / abs 0.037, gender -0.008 / 0.068 (3570222:75); in-sample babies (youngest 50, GT age 0.015)
 %   predicted 0.10 (3569950:61; 3571955:174-175), height -0.25 traded (3569950:61,76); training medians gender 0.588,
 %   age 0.601, height 0.500 (3569948:8-18); holdout youngest person 0.513 (3569948:33).
-% 12 Nov 2026: caption revised, V1 -> masked protocol, Base -> initial model in part (b).
+% 12 Nov 2026: caption revised, V1 -> holdout protocol, Base -> initial model in part (b).
 \begin{table}[!htb]
 \centering\footnotesize
 \begin{tabular}{@{}lrrrrl@{}}
 \toprule
-\multicolumn{6}{@{}l}{\emph{(a) predicted minus true phenotype, 10 holdout images (draft measurement)}} \\
+\multicolumn{6}{@{}l}{\emph{(a) predicted minus true phenotype, 10 holdout images}} \\
 Phenotype & True mean & True std & Weight 1 & Weight 20 (Base) & Reading \\
 \midrule
 age         & 0.553 & 0.036 & $+0.199$ & $-0.002$ & near the mode \\
@@ -30,7 +30,7 @@ weight      & 0.382 & --    & $+0.056$ & $+0.064$ & $\approx$ \\
 \end{tabular}
 \caption[Shape head: shape weight and the pull to the median]{Shape-head errors in phenotype units $[0,1]$: (a) the
 stage before the initial model (shape weight 1) against the initial model (weight 20) on the same 10 holdout images;
-(b) the initial model, masked protocol, on the full holdout and the 50 youngest training people (in-sample). In both
+(b) the initial model, holdout protocol, on the full holdout and the 50 youngest training people (in-sample). In both
 tails predictions move toward the training median.}
 \label{tab:shape-head}
 \end{table}

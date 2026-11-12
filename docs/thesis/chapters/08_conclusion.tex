@@ -7,24 +7,22 @@
 
 This thesis addressed multi-person whole-body mesh recovery from a single image in the Anny body model at reduced
 inference cost, for which no real images with Anny labels existed. The solution has four parts: 3DPW's SMPL
-labels were converted to Anny by joint-based fitting with virtual torso joints; a ViT-L teacher was trained on
-AnnyOne and converted 3DPW with consistent head anchors and a fixed bone rotation correction; a ViT-B student
+labels were converted to Anny by joint-based fitting; a ViT-L teacher was trained on AnnyOne and converted 3DPW
+with corrected head-anchor targets and a fixed rotation correction of four output bones; a ViT-B student
 inherited the teacher's heads through a learned projector and was distilled from its features and outputs; and
-temporal filtering and landmark alignment were added for video at inference time.
+inference-time temporal filtering and landmark alignment were added for video.
 
 The student has \ParamRatioStudent{} times fewer parameters than its teacher and ran \SpeedRatioStudent{} times
 faster, at a higher error: \StudentThreeDPW{} against \FinalThreeDPW\,mm PVE on converted 3DPW, outside the
-95\,\% retention thresholds set in advance. On 3DPW it is more accurate than the released baseline, which was
-trained on different data, and neither longer training nor another distillation temperature closed the gap to the
-teacher. For the teacher, detection recall on real photographs decreases as the number of people per image grows.
-On video, filtering and alignment produced visibly steadier and better placed output, and model inference of the
-student was faster than that of the released baseline.
+95\,\% retention thresholds set in advance. Its 3DPW PVE is lower than that of the released baseline, trained
+on different data, and neither longer training nor another distillation temperature closed the gap.
+For the teacher, detection recall on real photographs falls as the number of people per image grows.
+On video, filtering and alignment produced visibly steadier and better placed output.
 
-Unresolved are the cause of the accuracy gap and the contribution of distillation, which the unfinished ablation
-did not isolate; the student's behaviour on real photographs with many people and its shape predictions there;
-body shape on real photographs (children, men); the compression of predicted depth; and a learned temporal model.
-The evaluation is bounded by a small synthetic holdout, single runs and the absence of a fairly trained baseline
-(Section~\ref{sec:disc-limitations}).
+Unresolved are the cause of the accuracy gap, the contribution of distillation (ablation not completed),
+the student's recall and shape on real photographs (not evaluated), the teacher's shape for children and men,
+the compression of predicted depth and a learned temporal model. The evaluation is bounded by a small synthetic holdout, single runs and the absence of a fairly
+trained baseline (Section~\ref{sec:disc-limitations}).
 
 \section{Future work}
 \label{sec:future}
@@ -32,20 +30,19 @@ The evaluation is bounded by a small synthetic holdout, single runs and the abse
 \paragraph{Temporal evaluation and modelling.}
 Running the filter and the alignment on the 3DPW test sequences, whose converted labels exist at \DataLabelFps{}
 frames per second, would measure steadiness and per-frame PVE together; clips with occlusion, a moving camera or
-several people, timed end to end, would follow. A learned temporal model (Section~\ref{sec:bg-temporal}) is left
-to future work.
+several people, timed end to end, would follow. A learned temporal model (Section~\ref{sec:bg-temporal}) remains
+open.
 
 \paragraph{Accuracy at reduced cost.}
-Other distillation loss weights, other forms of feature transfer and more real images per batch are the next
-candidates for narrowing the gap. A released baseline fine-tuned on the same converted 3DPW data would separate the
-effect of architecture and distillation from that of the training data.
+Finishing the distillation ablation would show what distillation contributes; other loss weights, other forms of
+feature transfer and more real images per batch could narrow the gap. A released baseline fine-tuned on the same
+converted 3DPW data would separate the effect of architecture and distillation from that of the training data.
 
 \paragraph{Real-image shape.}
 Age-group labels, body measurements or further Anny fits on real photographs could replace the constant phenotypes.
-Tests with children should separate whether Anny can represent child proportions from whether the network
-recognises a child in a photograph.
+Tests with children should separate the representability of child proportions in Anny from their recognition by
+the network.
 
 \paragraph{Reliability and reproducibility.}
-Repeated runs with uncertainty estimates and a larger, randomly drawn holdout that includes children would show
-which differences are real and how far the results generalise. A portable configuration with release checks would
-make the system easier to verify.
+Repeated runs, an evaluation of the student on Relative Human and a larger, randomly drawn holdout that includes
+children would show which differences are real and how far the results generalise.

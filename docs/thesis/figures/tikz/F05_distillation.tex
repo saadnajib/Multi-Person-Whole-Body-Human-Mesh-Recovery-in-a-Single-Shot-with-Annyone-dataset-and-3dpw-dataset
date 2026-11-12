@@ -37,5 +37,5 @@
 \draw[loss] (tout) -- node[lname] {L1 on rotations,\\ shape, depth; $\lambda=\MethodKDOutLambda$} (sout);
 \draw[arr, densely dotted, gray] (thead.south) -- (shead.north);
 % labels and task loss
-\node[font=\scriptsize, align=left, anchor=north west, text width=62mm] at ([yshift=-2mm]sproj.south west) {dotted: heads copied from the teacher at the start, then frozen for \MethodStudentFreeze{} epochs; the student also gets the task loss of Table~\ref{tab:loss-weights} against the labels};
+\node[font=\scriptsize, align=left, anchor=north west, text width=62mm] at ([yshift=-2mm]sproj.south west) {dotted: heads copied from the teacher at the start, then frozen for \MethodStudentFreeze{} epochs; the student is also trained with the supervised loss of Table~\ref{tab:loss-weights}};
 \end{tikzpicture}

@@ -5,6 +5,7 @@
 % r = Pearson r between prediction and label; slope = least-squares slope of prediction on label (1 = no shrinkage);
 % sd = population standard deviation over the matched people of Final (pred, label). Sorted by Final's r.
 % Final's r values are also macros (\PhenoRFinal..., numbers_nov.tex); the other cells come straight from the CSV.
+% 12 Nov fix pass: moved to Appendix H (app:teacher-extra), label kept.
 \begin{table}[!tbp]
 \centering\footnotesize
 \begin{tabular}{@{}lrrrrrrrr@{}}
@@ -30,7 +31,6 @@ People      & \multicolumn{2}{c}{\PhenoNBase} & \multicolumn{2}{c}{\PhenoNContro
 \end{tabular}
 \caption[Phenotype correlation on the AnnyOne holdout]{Agreement of predicted and labelled phenotypes on the
 AnnyOne holdout (matched people): Pearson $r$, least-squares slope of prediction on label (1 = no shrinkage towards
-the middle), and the spread of the teacher's predictions and of the labels. Every slope is below 1. One run per
-model.}
+the middle), and the spread of the teacher's predictions and of the labels. Every slope is below 1.}
 \label{tab:pheno-corr}
 \end{table}

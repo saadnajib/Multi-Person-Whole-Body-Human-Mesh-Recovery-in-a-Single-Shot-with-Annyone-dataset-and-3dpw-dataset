@@ -15,7 +15,7 @@
 %   Control (exp7)            3611339:166,175,182-184; head px 67.1 (3611339:166)
 %   Final (exp7 fix arm)      3611336:175,184,191-193; head px 7.6 (3611336:175)
 %   Mixed-L e62 3571963:40,55,64; Fresh-heads-L (v10 e290) 3571794:40,55,64 (no head px quoted)
-% 12 Nov 2026: descriptive row names (identifier in parentheses), caption to three sentences, V1 -> masked protocol.
+% 12 Nov 2026: descriptive row names (identifier in parentheses), caption to three sentences, V1 -> holdout protocol.
 % PVE / recall rounded to one decimal from the handover's two-decimal values (72.19 -> 72.2, 77.25 -> 77.3 as on the deck).
 \begin{table}[!htb]
 \centering\footnotesize
@@ -49,7 +49,7 @@ Fresh-heads-L & 1.49 & 0.57 & 0.28 & 2.71 &  --  & 24.0 & 74.1 & 89.0 \\
 \caption[Depth fix: pilots, teacher and uncorrected teacher]{Placement with training targets built at the pelvis
 (control rows, run only at weight $\times$1) or at the head joint (fix rows); $\times$1/5/20 is the weight of the
 distance and translation terms, and the teacher also carries the bone correction. AnnyOne holdout (100 images),
-masked protocol, matched people; head and pelvis px are 2D errors, PVE in mm, recall in \%, other metrics as in
+holdout protocol, matched people; head and pelvis px are 2D errors, PVE in mm, recall in \%, other metrics as in
 Table~\ref{tab:metrics}. Single runs without a seed; each fix row is read against the control of the same length.}
 \label{tab:depth-runs}
 \end{table}

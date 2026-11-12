@@ -17,16 +17,16 @@ Skeleton & \BgSmplJoints{} joints (23 + root): \BodySmplCentreJoints{} on the ce
   side & \BgAnnyBones{} bones: face \BodyAnnyFaceBones, hands \BodyAnnyHandBones, toes \BodyAnnyToeBones, arms
   \BodyAnnyArmBones, legs \BodyAnnyLegBones, spine \BodyAnnySpineBones, neck and head \BodyAnnyNeckHeadBones,
   breasts \BodyAnnyBreastBones, root 1 \\
-Shape & \BgSmplBetas{} betas: principal components of the scans; no single value has a meaning of its own &
+Shape & \BgSmplBetas{} betas: principal components of the scans, without individual semantics &
   \BgAnnyPhenotypes{} named phenotypes in $[0, 1]$: gender, age, muscle, weight, height, proportions, cup size,
   firmness, African, Asian, Caucasian \\
 Pose & one axis-angle rotation per joint, $\BgSmplJoints \times 3 = \BodySmplPoseNumbers$ numbers & one rigid
   transform per bone \\
-Children & needs a separate infant model or a blend towards one & covered by the age phenotype (baby at 0) \\
+Children & needs a separate infant model or a blend towards one & covered by the age phenotype (age 0: infant) \\
 Licence & research licence terms & code Apache~2.0, assets CC0 \\
 \midrule
 In this thesis & the 3DPW labels; refitted with Anny on \BodyMatchedPoints{} matched points (root and
-  \DataFittedBones{} bones move, \DataRestBones{} stay at rest) & what the model predicts: \BgAnnyBones{} rotations in
+  \DataFittedBones{} bones move, \DataRestBones{} stay at rest) & predicted by the network: \BgAnnyBones{} rotations in
   6D form ($\BgAnnyBones \times \BodyAnnyRotDims = \num{\BodyAnnyPoseNumbers}$ numbers; \BgAnnyHelperBones{} helper
   bones set to rest, \BgAnnyActiveBones{} used), \BgAnnyPhenotypes{} phenotypes and a 3D position (distance and image offset, 3 numbers) \\
 \bottomrule

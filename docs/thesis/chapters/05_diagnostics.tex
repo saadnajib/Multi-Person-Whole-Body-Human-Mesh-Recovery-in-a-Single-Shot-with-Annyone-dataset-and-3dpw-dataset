@@ -20,8 +20,9 @@
 The initial model (Base), trained on AnnyOne only, showed three visible failures: thin and twisted necks, fingers
 bent into claws, and adult bodies for children. This appendix reports the experiments that isolated their causes; the two resulting
 corrections are defined in Sections~\ref{sec:method-depth} and~\ref{sec:method-bonefix}. Unless noted, numbers are for
-the initial model on the \DiagHoldoutImages-image AnnyOne holdout in the masked protocol, in which Anny's helper bones (face, toes, breasts)
-are set to rest pose; the unmasked protocol, used on 3DPW, scores them as predicted (Table~\ref{tab:metrics}). Every
+the initial model on the \DiagHoldoutImages-image AnnyOne holdout in the holdout protocol, in which Anny's helper bones (face, toes, breasts)
+are set to rest pose; the 3DPW protocol scores them as predicted (the holdout and 3DPW protocols of
+Section~\ref{sec:method-eval}; Table~\ref{tab:metrics}). Every
 variant is a single run without a fixed seed, and differences are read against the pilot variation of
 Section~\ref{sec:diag-noise}.
 
@@ -42,11 +43,11 @@ Section~\ref{sec:diag-depth} still renders them too small. Neck shape is judged 
 \label{fig:diag-neck-base}
 \end{figure}
 
-Figure~\ref{fig:diag-neck-base} (left) shows the thin necks; the curled fingers led every real-photo demonstration
-to set them to rest pose, and a standing boy received an adult body (Figure~\ref{fig:real-photos}). The draft
-attributed these, untested, to the skinning of the stacked neck bones as a property of the rig (the skeleton that
-deforms the mesh), to the small image size of the hands, and to an unlearned age range, citing five small people in
-the demonstration photos predicted at adult ages (\DiagSmallPeopleAgeLow--\DiagSmallPeopleAgeHigh). The rig explanation was refuted (Section~\ref{sec:diag-neck}), and
+Figure~\ref{fig:diag-neck-base} (left) shows the thin necks; the curled fingers were set to rest pose in
+every demo image, and a standing boy received an adult body (Figure~\ref{fig:real-photos}). Three untested
+explanations were proposed initially: the skinning of the stacked neck bones as a property of the rig (the skeleton that
+deforms the mesh), the small image size of the hands, and an unlearned age range, the last citing five small people in
+the demo images predicted at adult ages (\DiagSmallPeopleAgeLow--\DiagSmallPeopleAgeHigh). The rig explanation was refuted (Section~\ref{sec:diag-neck}), and
 hand size explains only a small part of the finger error (Section~\ref{sec:diag-fingers}). Four of the five small
 people were adults who crouched, sat or were truncated (height phenotype
 \DiagSmallPeopleHeightLow--\DiagSmallPeopleHeightHigh); only the boy was a child, and he received an adult body (age
@@ -85,7 +86,7 @@ training PVE $-$\DiagOverfitTrainDrop\,\% (\DiagOverfitTrainBefore{} $\to$ \Diag
 \end{tabular}
 \caption[Six structural checks]{Six structural checks on the initial model (Base) before any training change, on
 synthetic AnnyOne images. The manifest is a fixed image sample excluded from every later fine-tune
-(Section~\ref{sec:diag-checks}). Check~6 trains a discarded copy for 400 steps and is scored in the unmasked
+(Section~\ref{sec:diag-checks}). Check~6 trains a discarded copy for 400 steps and is scored in the 3DPW
 protocol.}
 \label{tab:diag-checks}
 \end{table}
@@ -133,7 +134,7 @@ placing the mesh, invisible in pelvis-centred comparisons, and a bone rotated by
 hidden in group means of bone errors.
 
 % -----------------------------------------------------------------------------
-\section{The hidden depth bug}
+\section{Depth placement and the anchor targets}
 \label{sec:diag-depth}
 
 \begin{table}[!htb]
@@ -151,7 +152,7 @@ corr.\ of PVE with depth error          & --      & \DiagCorrPVEDepth \\
 \bottomrule
 \end{tabular}
 \caption[Placement of the initial model on the holdout]{Placement of people by the initial model (Base) on the
-AnnyOne holdout, masked protocol, all \DiagHoldoutPeople{} matched people; slope, intercept and drawn size are in
+AnnyOne holdout, holdout protocol, all \DiagHoldoutPeople{} matched people; slope, intercept and drawn size are in
 Table~\ref{tab:depth-runs}. The bodies have the correct metric size but stand at the wrong distance, which PVE does
 not register.}
 \label{tab:diag-placement}
@@ -177,7 +178,7 @@ between predicted and true pelvis) of \DiagRootErrFixLow--\DiagRootErrFixHigh\,m
 \DiagSizeCtrlLow--\DiagSizeCtrlHigh, and a head 2D error of \DiagHeadPxFixLow--\DiagHeadPxFixHigh{} against
 \DiagHeadPxCtrlLow--\DiagHeadPxCtrlHigh\,px; repeated-run uncertainty was not estimated. Two further checkpoints
 trained with pelvis targets carry the same fault, which remained undetected because PVE aligns the pelvis and the
-real-photo demonstrations place each body from its detection box.
+demo images place each body from its detection box.
 
 \paragraph{Remaining error.} The fix moves the intercept and the drawn size but barely the slope of predicted against true depth (\DiagSlopeSwitch{} with the target change alone,
 \DiagSlopeStrongLow--\DiagSlopeStrongHigh{} with a stronger depth loss, against \DiagDepthSlopeBase{} for the initial
@@ -205,7 +206,7 @@ twisted thin, hence the low girth.
 
 \paragraph{Hypothesis: a training setting causes the flip.} All eight dumped checkpoints of the ViT-L line leading to
 and continuing from the initial model (L-stages 2 to 4, Base, Mixed-L, three short fine-tunes of Base;
-Table~\ref{tab:model-names}) show the flip: neck02 is off by
+Table~\ref{tab:names}) show the flip: neck02 is off by
 \DiagNeckTwoRangeLow--\DiagNeckTwoRangeHigh\,deg and the girth is \DiagGirthRangeLow--\DiagGirthRangeHigh. It already
 exists in L-stage 2, before the helper mask (helper bones held at rest), the neck boost and the shape weight of 20,
 which excludes these. The 10-epoch depth fix with $\times$5 weight
@@ -270,7 +271,7 @@ contains no children (Section~\ref{sec:data-limits}), so the young tail is measu
 adults: kids receive a mean age of \DiagRHKidAge, babies \DiagRHBabyAge{} and adults \DiagRHAdultAge{} (age
 AUC \DiagRHAUC, chance 0.5). None of \DiagRHKids{} kids and \DiagRHBabiesBelow{} of \DiagRHBabies{} babies fall below
 the child threshold; their smallness goes into height. Gender carries no signal (accuracy
-\DiagRHGenderAcc\,\%). On the demonstration photos the medians over all \DiagDemoShapeLines{} predicted people (one per detection, about 30
+\DiagRHGenderAcc\,\%). On the demo images the medians over all \DiagDemoShapeLines{} predicted people (one per detection, about 30
 distinct people, nearly all adults) equal the training medians: gender \DiagDemoGenderMedian, age
 \DiagDemoAgeMedian, height \DiagDemoHeightMedian.
 
@@ -284,7 +285,7 @@ the shoulders, for example, are \DiagShoulderHeadChild{} head widths wide at age
 (leg over stature \DiagProportionsLeg).
 
 \paragraph{Further views.} Phenotype agreement on the holdout (Table~\ref{tab:pheno-corr}) and gender ranking on real photos
-(Table~\ref{tab:gender-auc}) are in Chapter~\ref{ch:results}. For
+(Table~\ref{tab:gender-auc}) are in Appendix~\ref{app:teacher-extra}. For
 the initial model, the uncorrected teacher (Control) and the teacher (Final), the slope of predicted against true
 value is below 1 for every phenotype, the same pull toward the middle. The teacher follows weight (Pearson $r =
 \PhenoRFinalWeight$) far better than muscle ($r = \PhenoRFinalMuscle$). Open are which cause dominates and ages in
@@ -308,7 +309,7 @@ yardstick, not a significance test, and do not predict the variation of the fina
 of a few millimetres are smaller, so whether the depth fix and the neck pilot cost PVE remains undetermined.
 
 % -----------------------------------------------------------------------------
-\section{What did not work}
+\section{Training changes without effect}
 \label{sec:diag-negative}
 
 Six training changes fixed none of the three failures (Table~\ref{tab:pilots-all}): an age-balanced sampler
