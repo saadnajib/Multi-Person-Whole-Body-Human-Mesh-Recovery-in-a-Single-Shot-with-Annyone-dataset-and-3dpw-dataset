@@ -150,7 +150,7 @@ used for evaluation only (Section~\ref{sec:data-rh}).
 
 \paragraph{Multi-HMR-Anny and Anny-Fit.}
 NAVER has released a Multi-HMR checkpoint that predicts Anny, trained on BEDLAM, AnnyOne and further real
-images~\cite{naver2024multihmrcode}; multi-person Anny prediction is therefore prior work. This checkpoint, Multi-HMR-Anny (the released baseline), provides the teacher's backbone weights
+images~\cite{naver2024multihmrcode}; multi-person Anny prediction is therefore prior work. This checkpoint, the released baseline, provides the teacher's backbone weights
 and serves as baseline. On the same backbone its decoder has \BgNaverHeadLayers{} cross-attention blocks
 and \BgNaverHeadParams\,M parameters, against \BgOurHeadLayers{} blocks and \BgOurHeadParams\,M in the models of this
 thesis; trained on AnnyOne, it may have seen the AnnyOne holdout (Section~\ref{sec:res-fairness}).

@@ -111,7 +111,9 @@ with the dataset camera, without a network. On visual inspection the mesh lies o
 \paragraph{Hypothesis and test.} The failures could originate outside the network, in the labels, the body model,
 its rig or the gradient path (Table~\ref{tab:diag-checks}). Checks~1, 5 and~6
 use a manifest of \DataManifestTrain{} training images (10 adults, 10 children, 10 with visible hands, 10 hard neck
-poses) and \DataManifestHoldout{} holdout images without children. Check~1 draws the decoded labels over the image without a
+poses) and \DataManifestHoldout{} holdout images without children. The entries were drawn from the AnnyOne labels by
+a script with a fixed random seed. The initial model saw the training entries during its own training, so the manifest
+children show whether a model fits a child it has seen, not whether it generalises. Check~1 draws the decoded labels over the image without a
 network, which would expose a wrong label or camera (Figure~\ref{fig:diag-gt-decode}). \emph{Result:} labels, rig
 and gradient path are correct, so the cause lies in what the training targets and losses require of the network.
 
