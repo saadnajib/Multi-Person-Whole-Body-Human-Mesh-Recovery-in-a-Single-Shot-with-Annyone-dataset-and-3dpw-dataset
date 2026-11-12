@@ -7,26 +7,24 @@
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.9cm}>{\raggedright\arraybackslash}p{2.4cm}>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{2.4cm}@{}}
 \toprule
- & old labels & rebuilt & v23 labels \\
+ & Old labels & Rebuilt labels & Corrected labels \\
 \midrule
-converter fits & v2.2 & v2.2 & v2.3 \\
-image files of \DataMissingImageSeq{} sequences & missing & re-extracted & re-extracted \\
+Converter fits & first fit & first fit & re-fit \\
+Image files of \DataMissingImageSeq{} sequences & missing & re-extracted & re-extracted \\
 \addlinespace
-train, images / people & \DataOldTrainImages{} / \DataOldTrainPeople & \DataRebuiltTrainImages{} / \DataRebuiltTrainPeople & \DataThreeDPWTrainImages{} / \DataThreeDPWTrainPeople \\
-validation & \DataOldValImages{} / \DataOldValPeople & \DataRebuiltValImages{} / \DataRebuiltValPeople & \DataThreeDPWValImages{} / \DataThreeDPWValPeople \\
-test & \DataOldTestImages{} / \DataOldTestPeople & \DataRebuiltTestImages{} / \DataRebuiltTestPeople & \DataThreeDPWTestImages{} / \DataThreeDPWTestPeople \\
-total & \DataOldTotalImages{} / \DataOldTotalPeople & \DataRebuiltTotalImages{} / \DataRebuiltTotalPeople & \DataThreeDPWTotalImages{} / \DataThreeDPWTotalPeople \\
+Training, images / people & \DataOldTrainImages{} / \DataOldTrainPeople & \DataRebuiltTrainImages{} / \DataRebuiltTrainPeople & \DataThreeDPWTrainImages{} / \DataThreeDPWTrainPeople \\
+Validation & \DataOldValImages{} / \DataOldValPeople & \DataRebuiltValImages{} / \DataRebuiltValPeople & \DataThreeDPWValImages{} / \DataThreeDPWValPeople \\
+Test & \DataOldTestImages{} / \DataOldTestPeople & \DataRebuiltTestImages{} / \DataRebuiltTestPeople & \DataThreeDPWTestImages{} / \DataThreeDPWTestPeople \\
+Total & \DataOldTotalImages{} / \DataOldTotalPeople & \DataRebuiltTotalImages{} / \DataRebuiltTotalPeople & \DataThreeDPWTotalImages{} / \DataThreeDPWTotalPeople \\
 \addlinespace
-gender reversed & yes & yes & no \\
-actor missing in two-person frames & yes & yes & no \\
-labels missing (no image file) & yes & no & no \\
-used for training & history models only & never & Final, Control, Student \\
+Gender reversed & yes & yes & no \\
+Actor missing in two-person frames & yes & yes & no \\
+Labels missing (no image file) & yes & no & no \\
+Used for training & earlier models (App.~\ref{app:pilots}) & never & teacher, uncorrected teacher, student \\
 \bottomrule
 \end{tabular}
-\caption[The three 3DPW-Anny label sets]{The three 3DPW-Anny label sets. All are built at every third frame with the same drop rules. The v23
-labels have fewer images than the rebuilt set but the same people, because both actors of a two-person
-sequence now share each frame. \texttt{outdoors\_crosscountry\_00} yields no labels in any set
-(Section~\ref{sec:data-defects}). Numbers measured on the old labels are retired and never appear next to
-numbers on the v23 labels.}
+\caption[The three 3DPW-Anny label sets]{The three 3DPW-Anny label sets, all built at every third frame with the
+same drop rules. The corrected labels have fewer images than the rebuilt set but the same people, because both
+actors of a two-person sequence share each frame. Converter versions are listed in Appendix~\ref{app:conversion}.}
 \label{tab:label-sets}
 \end{table}
