@@ -102,9 +102,9 @@ project folder on the cluster. The log of job $j$ is \path{logs/<log name>_}$j$\
 
 Of the \KDSweepArms{} temperature-sweep jobs (submitted 6 November), four completed; the $T = \KDSweepMaxT$ job
 (3717598) trained to the end, but its post-training evaluation failed on a network time-out, so it has no final table.
-The per-temperature validation values of the sweep were logged by the runs but are not reported in this thesis. Two
-runs of this revision had not completed at submission and contribute no number: the two arms of the distillation
-ablation, submitted on 12 November.
+The per-temperature validation values of the sweep were logged during training but had not been retrieved when this
+thesis was handed in. The two arms of the distillation ablation are implemented (launcher in Table~\ref{tab:runs}, flags in
+Appendix~\ref{app:flags}) but had produced no result when this thesis was handed in and contribute no number.
 
 \input{tables/T13_runs}
 

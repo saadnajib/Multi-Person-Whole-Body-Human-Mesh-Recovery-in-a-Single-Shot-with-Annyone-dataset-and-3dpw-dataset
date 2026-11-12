@@ -32,8 +32,7 @@ model and the teacher with the holdout protocol, each body at its model's predic
 \label{fig:holdout-montage-more}
 \end{figure}
 
-Figure~\ref{fig:holdout-montage-more} shows the two holdout images of the earlier four-image figure that are not
-repeated in Section~\ref{sec:res-final}; the label printed on the prediction panels (``V1\_eval\_masked'') is
+Figure~\ref{fig:holdout-montage-more} shows two further holdout images; the label printed on the prediction panels (``V1\_eval\_masked'') is
 the identifier of the holdout protocol. In all four images mesh colours mark detections, not identities; people without a
 ground-truth mesh (the foreground arm in 579862) are not scored, and people a model misses (the two lying in the
 foreground of 579865) have no mesh. During training the teacher stayed below the uncorrected teacher at all ten
@@ -126,8 +125,8 @@ crosses the identity at \FinalIdentityCross\,m.
 The teacher's pelvis lands farther from its true pixel than the uncorrected teacher's (\FinalPelvisPx{} against
 \ControlPelvisPx{} pixels), probably because the head is pinned while the body is still drawn too small. Its root
 error is also above that of the depth pilot (\num{\DepthPilotRootErr}\,mm), possibly because of the real images or
-the bone correction. Neither explanation was tested, and the reason why the slope of predicted against true depth
-does not move is unknown. The single-image figure of the depth fix (Figure~\ref{fig:depth-579862}), in which the initial model draws the
+the bone correction. Neither explanation was tested, and why the slope of predicted against true depth stays far from 1
+is unknown. The single-image figure of the depth fix (Figure~\ref{fig:depth-579862}), in which the initial model draws the
 man far behind his true position and too small and the depth pilot close to his true size, shows the depth pilot,
 not the teacher.
 
@@ -167,7 +166,8 @@ disagree, and the holdout contains no children to check them against.
 On the demo photos (Figures~\ref{fig:real-photos} and~\ref{fig:photo-montages}) most men look male with the teacher,
 and the boy keeps an adult body. The gender gain is consistent with the corrected 3DPW gender labels, which supervise
 the shape head on real people for the first time. Only detected people are scored on Relative Human, so the matched
-sets differ between models.
+sets differ between models. The neck pilot (bone correction and a 2-epoch fine-tune) equals the initial model on
+Relative Human within run-to-run variation (child-vs-adult AUC \RHAUCNeckPilot{} against \RHAUCBase).
 
 At the cut-off 0.5 the gender accuracy of the two masked models is near chance only because both sexes moved up, so
 most men are classified as women. A cut-off for real photos would have to be chosen on 3DPW validation, which was not

@@ -29,10 +29,10 @@ identifiers are those of Table~\ref{tab:names}. Table~\ref{tab:flags-final} cove
 teacher without corrections (Control). The student (Student) of Section~\ref{sec:method-student} and the 60-epoch
 student (Student-60) of Section~\ref{sec:res-training-length} share Table~\ref{tab:flags-student}. The temperature
 sweep of Section~\ref{sec:res-kd-temperature} has its own, Table~\ref{tab:flags-sweep}. The two
-distillation-ablation arms (Section~\ref{sec:res-kd-ablation}), not completed at submission, use the flags of
-Table~\ref{tab:flags-student} with \path{--eval_freq 1 --val_loss 1}. The student without distillation losses sets
-\path{--lambda_kd 0 --lambda_kd_out 0}; the ViT-B model without teacher passes no distillation flag (no
-\path{--distill_teacher_ckpt}, hence no head copy or head freeze) and trains with \path{--bone_fix none}.
+distillation-ablation arms (Section~\ref{sec:res-kd-ablation}) use the flags of
+Table~\ref{tab:flags-student} with \texttt{-{}-eval\_freq 1 -{}-val\_loss 1}. The student without distillation losses sets
+\texttt{-{}-lambda\_kd 0 -{}-lambda\_kd\_out 0}; the ViT-B model without teacher passes no distillation flag (no
+\path{--distill_teacher_ckpt}, hence no head copy or head freeze) and trains with \texttt{-{}-bone\_fix none}.
 
 A flag is listed when its value differs from the default in the code, or when it keeps the default but matters for
 the result; every other flag keeps its default. The loss weights are in Table~\ref{tab:loss-weights} of

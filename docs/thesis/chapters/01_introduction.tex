@@ -62,8 +62,8 @@ video filter and alignment; the pretrained backbone weights come from the releas
   Anny labels by fitting corresponding joints and virtual torso joints; the labels were checked with mesh overlays
   and a joint comparison (Chapter~\ref{ch:data}).
 \item \textbf{A compact reconstruction system.} A ViT-L teacher is trained on AnnyOne and converted 3DPW with two
-  corrections to its supervision, consistent head-anchor targets and a fixed output rotation correction for flipped
-  bones, both identified by diagnostic experiments (Appendix~\ref{ch:diagnostics}). A ViT-B student receives a copy
+  corrections, head-anchor targets consistent with the decoder and a fixed rotation correction of four output bones,
+  both identified by diagnostic experiments (Appendix~\ref{ch:diagnostics}). A ViT-B student receives a copy
   of the teacher's prediction heads, which read its features through a learned projector, and imitates the teacher's
   features and outputs.
 \item \textbf{An evaluation under one protocol.} All models are evaluated with the same labels and settings, with

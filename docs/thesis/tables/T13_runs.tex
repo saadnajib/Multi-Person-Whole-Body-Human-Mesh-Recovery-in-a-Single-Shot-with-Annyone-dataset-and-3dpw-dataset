@@ -21,7 +21,7 @@
 % thesis copies F23/F25/F26 (artefacts of 6 Nov: F25 frame 178 and F26 cut from the final deck, slides 18 and 11).
 % 12 Nov: caption shortened (path key moved to sec:app-runs); "Student, 60 epochs" -> Student-60; sweep row updated
 % (CA "8 Nov: exp9 temperature sweep done": T=1,2,4,8 completed, T=16 3717598 trained but failed after training on an
-% HTTP 504 time-out); rows added for the distillation ablation (two arms, submitted 12 Nov, job ids pending) and the
+% HTTP 504 time-out); rows added for the distillation ablation (two arms; submission not confirmed, no job ids) and the
 % student's Relative Human evaluation (pending), brief section 5. Fix pass 12 Nov (D1): ablation rows "not completed at
 % submission" (launcher slurm/experiments/exp10_kd_ablation.sh, record file), Relative Human row of the student and the
 % sweep's pending-validation clause removed; V1 -> holdout protocol.
@@ -60,8 +60,8 @@ Model cost: parameters, GFLOPs, latency of Multi-HMR-Anny and Final (A100) & 361
 Student-60: the same training configuration trained twice as long, own evaluation & 3623342 & \path{exp8_distill_vitb}; \path{results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60/train/checkpoints/00059.pt}; \path{final_table.json} in the same run folder \\
 Loss curves of the 30- and 60-epoch runs, from their tensorboard files (Figure~\ref{fig:loss-curves}) & none (login node) & \path{scripts/analysis/plot_loss_curves.py}; \path{results/experiments/exp9_kd_temperature/loss_curves/<run>_loss_curves.png}, \path{.pdf}, \path{.csv}; thesis copies \path{figures/img/F23_student_loss_curves_e30.png}, \path{_e60.png} \\
 Temperature sweep, \KDSweepArms{} runs (submitted 6 Nov; $T = 1, 2, 4, 8$ finished; $T = 16$ trained to the end, but its post-training evaluation failed on a network time-out) & 3717507, 3717530, 3717538, 3717581, 3717598 ($T = 1, 2, 4, 8, 16$) & \path{exp8_distill_vitb} (one job per temperature, submitted by \path{slurm/experiments/exp9_kd_temperature.sh}; record \path{logs/exp9_kd_temperature_<date>.txt}); collector \path{scripts/analysis/kd_temperature_sweep.py} writes \path{results/experiments/exp9_kd_temperature/kd_temperature_sweep.csv}, \path{.png}, \path{.pdf}\\
-Distillation ablation, the student without distillation losses (Student-noKD): both distillation losses off (submitted 12 Nov) & not completed at submission & \path{exp8_distill_vitb}, submitted by \path{slurm/experiments/exp10_kd_ablation.sh}; record \path{logs/exp10_kd_ablation_<date>.txt} \\
-Distillation ablation, the ViT-B model without teacher (ViT-B-noTeacher): same data and schedule, no teacher (submitted 12 Nov) & not completed at submission & \path{exp8_distill_vitb}, submitted by \path{slurm/experiments/exp10_kd_ablation.sh}; record \path{logs/exp10_kd_ablation_<date>.txt} \\
+Distillation ablation, the student without distillation losses (Student-noKD): both distillation losses off & no result at hand-in & \path{exp8_distill_vitb}, launcher \path{slurm/experiments/exp10_kd_ablation.sh} (record \path{logs/exp10_kd_ablation_<date>.txt}) \\
+Distillation ablation, the ViT-B model without teacher (ViT-B-noTeacher): same data and schedule, no teacher & no result at hand-in & \path{exp8_distill_vitb}, launcher \path{slurm/experiments/exp10_kd_ablation.sh} (record \path{logs/exp10_kd_ablation_<date>.txt}) \\
 \addlinespace
 \multicolumn{3}{@{}l}{\emph{Evaluations and demos}} \\
 3DPW test (v23): Base, Mixed-L, neck pilot (Final and Control in their own jobs) & 3612073, 3612074, 3612075 & \path{eval-test3dpw} (task 0), lines 117--125 \\

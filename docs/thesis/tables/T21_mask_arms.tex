@@ -34,11 +34,9 @@ Weight & \SpreadWeightFinal & \SpreadWeightMasked & n/m & $>$ \SpreadRuleThresho
 \end{tabular}
 
 \smallskip
-\parbox{\linewidth}{\scriptsize The full mask covers the \MethodShapeMaskCount{} constants of
-the converted labels (age 0.55 and seven values at 0.5), the partial mask only the seven at 0.5; gender stays
-supervised in all three. Relative Human: matched people of the validation split (full columns in
-Table~\ref{tab:relhuman}); demo: 12 images, not matched to people; n/m: not measured. Rule: thresholds fixed before
-the first masked run that a masked model had to meet to replace the teacher.}
+\parbox{\linewidth}{\scriptsize Full mask: the \MethodShapeMaskCount{} constants of the converted labels (age 0.55, seven
+values at 0.5); partial mask: the seven at 0.5; gender stays supervised in all three. Relative Human: matched people
+(Table~\ref{tab:relhuman}); demo: 12 images, not matched to people; n/m: not measured. Rule: Section~\ref{sec:res-mask}.}
 \caption[The shape-mask arms]{The teacher without, with full and with partial shape mask on the AnnyOne holdout,
 the 3DPW test set, Relative Human and the demo images. Both masked models fail the gender
 threshold of the replacement rule.}

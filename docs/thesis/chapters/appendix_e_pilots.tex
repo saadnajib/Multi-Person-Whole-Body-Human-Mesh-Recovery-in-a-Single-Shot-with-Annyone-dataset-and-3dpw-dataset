@@ -38,7 +38,7 @@ Section~\ref{sec:res-history} records the earlier stages that produced the initi
 
 Unless noted, each pilot fine-tuned the initial model on AnnyOne only (learning rate $10^{-5}$, batch 4, 2 epochs or
 8,000 images) and was evaluated on the 100-image AnnyOne holdout in the holdout protocol, in which the helper bones
-(face, toes, breasts) are set to rest pose (Table~\ref{tab:metrics}). The success rule of each pilot was written into
+(face, toes, breasts) are set to rest pose (Section~\ref{sec:method-eval}). The success rule of each pilot was written into
 its script before the run; the full depth runs are in Table~\ref{tab:depth-runs}. The geodesic angle is the angle of
 the single rotation that maps the predicted bone onto the true one, whereas the standard loss compares the rotation
 matrices element-wise with L1. A flagged bone is one that the per-bone dump of the initial model

@@ -301,8 +301,7 @@ Section~\ref{sec:method-kd-history}).
 taken over from the earlier ViT-S distillation training configuration, and the \MethodStudentEpochs-epoch schedule was fixed by the
 compute budget; neither was tuned on test data (selection protocol: Section~\ref{sec:res-selection}).
 Section~\ref{sec:res-kd-temperature} varies $T$ over \KDSweepArms{} values up to \KDSweepMaxT{} as a sensitivity
-analysis; the ablation designed to isolate the contribution of the distillation terms
-(Section~\ref{sec:res-kd-ablation}) had not completed at submission.
+analysis.
 
 % -----------------------------------------------------------------------------
 \section{The ViT-B student}
@@ -329,15 +328,16 @@ The 95\,\% retention threshold was fixed before training: $E_s\le E_t/\MethodRul
 metric $E$ with teacher error $E_t$, together with fewer parameters, fewer FLOPs and a faster forward pass. Read as
 ``error at most 1.05 times the teacher's'', the thresholds would be \MethodBarHoldoutAlt{} and
 \MethodBarThreeDPWAlt\,mm. The evaluation job recomputes the thresholds from the teacher as re-measured in that job
-(Table~\ref{tab:student}). The same thresholds are applied separately against the released baseline (comparison not
+(Table~\ref{tab:student}). The rule fixed before training covers PVE and MPJPE on both test sets and the three cost
+measures; the PA-PVE and recall thresholds shown in Table~\ref{tab:student} apply the same factor for reference. The
+same thresholds are applied separately against the released baseline (comparison not
 training-matched; Section~\ref{sec:res-fairness}).
 
 \subsection{Models compared}
 \label{sec:method-models}
 
 Table~\ref{tab:model-names} defines the compared models; their run identifiers are listed in Table~\ref{tab:names}
-(Appendix~\ref{app:reproduction}). Earlier models are in Appendix~\ref{app:pilots}, the two ablation models without
-distillation, not completed at submission, in Section~\ref{sec:res-kd-ablation}.
+(Appendix~\ref{app:reproduction}). Earlier models are in Appendix~\ref{app:pilots}, the two ablation models in Section~\ref{sec:res-kd-ablation}.
 
 \begin{table}[!htb]
 \centering\footnotesize

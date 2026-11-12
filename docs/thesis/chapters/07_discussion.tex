@@ -25,25 +25,23 @@ holdout and \StudentThreeDPW{} against \FinalThreeDPW\,mm on converted 3DPW, mis
 (\NAVERThreeDPW\,mm) and its PA-PVE slightly higher (\StudentPAThreeDPW{} against \NAVERPAThreeDPW\,mm); this
 compares trained systems, not architectures (Section~\ref{sec:res-fairness}).
 
-What distillation contributes remains unanswered. The ablation of Section~\ref{sec:res-kd-ablation}, which trains
-the same ViT-B model on the same data and schedule without the distillation losses and without any teacher, had not
-completed at submission. The student's accuracy can therefore not be attributed to distillation rather than to the
-initialisation, the copied heads or the real-image data.
+What distillation contributes remains unanswered (Section~\ref{sec:res-kd-ablation}): the student's accuracy cannot
+be attributed to distillation rather than to the initialisation, the copied heads or the real-image data.
 
 Training length and temperature were fixed in advance, and the sensitivity runs changed no setting
 (Section~\ref{sec:res-selection}). Doubling the training length lowered the 3DPW validation PVE only from
 \SelThirtyValPVE{} to \SelSixtyValPVE\,mm and the holdout PVE to \StudentSixtyPVE\,mm, without improving the 3DPW
 test PVE (\StudentSixtyThreeDPW\,mm; Section~\ref{sec:res-training-length}). Across temperatures from 1 to 8 the 3DPW
-test PVE differed by at most \KDTPRange\,mm, which single runs cannot separate from training variation
-(Section~\ref{sec:res-kd-temperature}); validation values of the sweep are not reported. Untested causes of the gap are the smaller backbone, the 3DPW share per
+test PVE differed by at most \KDTPRange\,mm, which one repeated pair cannot establish as an effect of the temperature
+(Section~\ref{sec:res-kd-temperature}); the validation values of the sweep were logged during training but had not
+been retrieved when this thesis was handed in. Untested causes of the gap are the smaller backbone, the 3DPW share per
 batch and the teacher's 3DPW error.
 
 \paragraph{Multi-person detection.}
 For the teacher, recall on Relative Human falls with the number of people per image: \CrowdFinalOneRec\,\% and
 \CrowdFinalTwoRec\,\% with one and two labelled people, \CrowdFinalThreeFourRec\,\% for three or four,
 \CrowdFinalFiveEightRec\,\% for five to eight and \CrowdFinalNinePlusRec\,\% for nine or more
-(Section~\ref{sec:res-multiperson}). The student was not evaluated on Relative Human, and its
-recall in crowded images remains unmeasured.
+(Section~\ref{sec:res-multiperson}).
 
 \paragraph{Video.}
 On the walking clip the student kept a tracked body in \VideoStudentMatched{} of \VideoFrames{} frames
@@ -77,14 +75,14 @@ reported separately.
   temperature analysis rests on test-set values only (Section~\ref{sec:res-sensitivity}).
 \item \textbf{Baseline fairness.} No baseline was trained on the same data, so a lower PVE does not show a better
   architecture (Section~\ref{sec:res-fairness}).
-\item \textbf{Distillation ablation.} No ViT-B model trained without distillation on the same data and schedule was
-  evaluated, and the student's loss terms were not switched off one at a time, so the contribution of distillation is
+\item \textbf{Distillation ablation.} The two ablation arms, ViT-B models trained on the same data and schedule
+  without distillation, are implemented but had produced no result when this thesis was handed in, and the student's loss terms were not switched off one at a time, so the contribution of distillation is
   not established (Section~\ref{sec:res-kd-ablation}).
 \item \textbf{Single runs.} Each model was trained once without a fixed seed (Section~\ref{sec:method-variation}).
-\item \textbf{Shape.} Shape on real photographs was evaluated on the teacher only; the student, the deployed model,
-  was not evaluated. The child--adult separation improves but remains unreliable, and the predicted gender of men
+\item \textbf{Shape and crowd recall.} Shape and crowd recall on real photographs were evaluated on the teacher
+  only; the student, the deployed model, was not evaluated on Relative Human. The child--adult separation improves but remains unreliable, and the predicted gender of men
   stays near \RHMenGenderFinal{} (Section~\ref{sec:res-rh}).
-\item \textbf{Depth.} Predicted depth grows by only about \FinalSlope\,m per metre of true depth, and a single image leaves
+\item \textbf{Depth.} The teacher's predicted depth grows by only about \FinalSlope\,m per metre of true depth, and a single image leaves
   size and distance ambiguous (Section~\ref{sec:res-depth}).
 \item \textbf{Multi-person and video evaluation.} Multi-person evaluation is limited to detection recall, with no
   occlusion or crowd benchmark with 3D labels; the video is one clip of one person.

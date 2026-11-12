@@ -43,7 +43,7 @@ CC0~\cite{naver2025annycode}. This thesis uses the full rig of \BgAnnyBones{} bo
 written. The package loads a pruned rig of \BgAnnyDefaultRigBones{} bones by default, which matches neither the
 checkpoint nor the labels; package version, rig and mesh must be those used to create them. Pose is one rigid
 transform per bone, applied by Equation~\eqref{eq:bg-lbs}. \BgAnnyHelperBones{} helper bones (toes, breasts, small
-face bones), whose rotation an image does not show, are kept at rest, leaving \BgAnnyActiveBones{} predicted bones.
+face bones), whose rotation an image does not show, are not supervised, leaving \BgAnnyActiveBones{} supervised bones (Section~\ref{sec:method-architecture}).
 The neck has the stacked bones \texttt{neck01} to \texttt{neck03}, followed by \texttt{head}.
 
 Shape is set by \BgAnnyPhenotypes{} named \emph{phenotype} values in $[0,1]$, among them \texttt{gender},
@@ -52,7 +52,7 @@ Shape is set by \BgAnnyPhenotypes{} named \emph{phenotype} values in $[0,1]$, am
 directly interpretable (older, heavier). Gender 0 is the male end and 1 the female end,
 with rest statures of \BgStatureGenderZero\,m and \BgStatureGenderOne\,m. Age interpolates five anchor bodies spaced
 evenly from $-\tfrac{1}{3}$ to 1: age 0 is the baby, \BgAgeAnchorChild{} the child, \BgAgeAnchorYoung{} the young adult
-and 1 the old adult. The newborn anchor lies below 0 and is unreachable for a network output squashed into $(0,1)$.
+and 1 the old adult. The newborn anchor lies below 0 and is unreachable for a network output bounded to $(0,1)$ by a sigmoid.
 
 At the mean AnnyOne shape, increasing age from 0 to 1 raises the skeletal height from \BgSweepHeightAgeZero\,m to
 \BgSweepHeightAgeOne\,m (\BgSweepHeightAgeHalf\,m at 0.5; Figure~\ref{fig:bg-age-sweep}), so most growth occurs below
@@ -223,7 +223,7 @@ PHALP~\cite{rajasegaran2022phalp} and 4DHumans~\cite{goel2023humans4d} track peo
 any multi-person video method, and WHAM~\cite{shin2024wham} recovers motion in world coordinates.
 
 The student is frame-wise, so its predicted body can jitter or change size between frames. Two inference-time steps
-are added without retraining (Sections~\ref{sec:method-video} and~\ref{sec:method-temporal}). An exponential moving
+are added without retraining (Section~\ref{sec:method-video}). An exponential moving
 average blends each tracked person's new bone rotations, phenotypes and position with the previous estimates; like
 SmoothNet it smooths outputs without image features, but it is a fixed formula, causal (only current and past frames
 contribute) and operates on body-model parameters. The body's position and depth are then adjusted to match 2D

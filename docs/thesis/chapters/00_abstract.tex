@@ -19,10 +19,10 @@ teacher and runs \SpeedRatioStudent{} times faster, but is less accurate: its pe
 (the released baseline, \NAVERThreeDPW\,mm), which was not trained on the converted labels. Neither longer training
 nor another distillation temperature closes the gap. The teacher's detection recall on real
 photographs falls with the number of people per image (\CrowdFinalTwoRec\,\% with two, \CrowdFinalNinePlusRec\,\%
-with nine or more); the student was not evaluated there. On a walking video, filtering and alignment visibly steady
+with nine or more). On a walking video, filtering and alignment visibly steady
 the output and improve its placement (qualitative, without ground truth).
 
 The synthetic test set is a small holdout of \MethodHoldoutN{} images without children, the real-image labels are
 converted rather than measured, every model was trained once, and the contribution of distillation was not isolated
-by an ablation. Body shape on real photographs was analysed for the teacher only, which separates children from
-adults better than the initial model but not reliably.
+by an ablation. Detection recall in crowds and body shape on real photographs were analysed for the teacher only;
+the teacher separates children from adults better than the initial model but not reliably.

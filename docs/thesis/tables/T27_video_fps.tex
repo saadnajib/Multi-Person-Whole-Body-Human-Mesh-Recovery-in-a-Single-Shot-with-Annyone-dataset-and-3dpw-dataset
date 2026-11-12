@@ -23,11 +23,9 @@ Student, aligned & \VideoStudentAlignedFPS & plus filter and alignment fit & \Vi
 Released baseline & \VideoNAVERFPS & network and mesh decoding & \VideoNAVERPipeMs & \VideoNAVERPipeFPS \\
 \bottomrule
 \multicolumn{5}{@{}p{0.97\linewidth}@{}}{\scriptsize Batch-one sequential timings on one \VideoGPU{} (fp32 with
-TF32, 672-pixel input) over \VideoMeasuredFrames{} frames after \VideoWarmup{} warm-up frames; input playback
-\VideoPlaybackFPS\,FPS. $^a$The values printed in the video (Figure~\ref{fig:video-panels}). $^b$Including image
-preprocessing (\VideoPreMs\,ms) and output transfer; with rendering the aligned student reaches
-\VideoAlignedRenderFPS\,FPS. Not timed: offline landmark extraction (MediaPipe on the CPU) and video decoding and
-encoding. n/m: not measured. No column is end-to-end throughput.}
+TF32, 672-pixel input) over \VideoMeasuredFrames{} frames after \VideoWarmup{} warm-up frames.
+$^a$The values printed in the video (Figure~\ref{fig:video-panels}). $^b$Including image preprocessing and output
+transfer. n/m: not measured.}
 \end{tabular}
 \caption[Video run: inference speed and per-frame time]{Speed of the student variants and the released baseline on
 the walking clip (\VideoFrames{} frames), separated into model inference and per-frame processing including

@@ -11,6 +11,7 @@
 % recall teacher x 0.95 (82.7, 94.1 computed here); cost: the student must be lower.
 % 12 Nov revision: "AnnyOne holdout, V1" -> "AnnyOne holdout"; "test-100, V0" -> "AnnyOne holdout, 3DPW protocol";
 % caption shortened, released-baseline thresholds moved to the text (Section 5.2).
+% Second review: holdout PA-PVE threshold 52.9 -> \BarPAPVE (53.0, printed by the evaluation job, CA:154).
 \begin{table}[!tbp]
 \centering\footnotesize
 \begin{tabular}{@{}lrrrrc@{}}
@@ -19,7 +20,7 @@ Metric & Teacher & Student & Ratio & Threshold & Met? \\
 \midrule
 \multicolumn{6}{@{}l}{\emph{AnnyOne holdout}} \\
 PVE (mm) & \FinalPVE & \StudentPVE & \StudentRatioPVE & $\leq$ \BarPVE & no \\
-PA-PVE (mm) & \FinalPAPVE & \StudentPAPVE & 1.61 & $\leq$ 52.9 & no \\
+PA-PVE (mm) & \FinalPAPVE & \StudentPAPVE & 1.61 & $\leq$ \BarPAPVE & no \\
 MPJPE (mm) & \FinalMPJPE & \StudentMPJPE & 1.63 & $\leq$ \BarMPJPE & no \\
 Recall (\%) & \FinalRecall & \StudentRecall & 0.98 & $\geq$ 82.7 & yes \\
 \addlinespace
@@ -42,7 +43,8 @@ ms per image & \TeacherMsLFortyS & \StudentMsLFortyS & \SpeedRatioStudent$\times
 \end{tabular}
 \caption[The student against its teacher and the 95\,\% retention thresholds]{The student against its teacher
 and the 95\,\% retention thresholds: each error at most the teacher's divided by 0.95, each recall at least 0.95 of
-the teacher's, and lower cost. The student misses every error threshold and meets those on recall and cost (both
-models timed in the same job).}
+the teacher's, and lower cost; the rule fixed before training covers PVE, MPJPE and cost, and the PA-PVE and recall
+thresholds are given for reference (Section~\ref{sec:method-retention}). The student misses every error threshold and
+meets those on recall and cost (both models timed in the same job).}
 \label{tab:student}
 \end{table}

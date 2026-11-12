@@ -1,3 +1,5 @@
+# Thesis Figure 5.3 (fig:kd-temperature). Usage: mk_f27_kd_temperature.py data/kd_temperature_sweep.csv figures/img/F27_kd_temperature.pdf
+# Printed at 1:1 (text width 130 mm = figure width 5.1 in); all text 8 pt (second review, defect 18).
 import csv, sys
 import matplotlib
 matplotlib.use("Agg")
@@ -22,14 +24,16 @@ ax.plot([4], [float(rep["threedpw_pve"])], "*", color=GREEN, ms=12, label="Repor
 for y, c, ls, lab in [(TEACHER_HOLD, BLUE, "--", "teacher PVE"), (BAR_HOLD, BLUE, ":", "95 % retention threshold"),
                       (TEACHER_TP, GREEN, "--", "teacher PVE"), (BAR_TP, GREEN, ":", "95 % retention threshold")]:
     ax.axhline(y, color=c, ls=ls, lw=1.1, alpha=0.9)
-    ax.text(15.5, y + 0.6, lab, color="#333333", fontsize=7, ha="right", va="bottom")
+    above = lab.startswith("95")          # threshold labels above their line, teacher labels below
+    ax.text(15.5, y + 0.6 if above else y - 0.6, lab, color="#333333", fontsize=8, ha="right",
+            va="bottom" if above else "top")
 ax.set_xscale("log", base=2)
 ax.set_xticks([1, 2, 4, 8, 16]); ax.set_xticklabels(["1", "2", "4", "8", "16\n(no result)"])
-ax.set_xlim(0.8, 20); ax.set_ylim(70, 130)
+ax.set_xlim(0.8, 20); ax.set_ylim(68, 130)
 ax.set_xlabel("distillation temperature T (logarithmic axis)"); ax.set_ylabel("error (mm)")
 ax.grid(True, color="#e3e3e3", lw=0.5); ax.set_axisbelow(True)
 ax.tick_params(labelsize=8, width=0.6)
-ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.27), ncol=2, fontsize=7.5, frameon=False,
+ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.27), ncol=2, fontsize=8, frameon=False,
           handlelength=2.6, columnspacing=1.5)
 fig.tight_layout()
 fig.savefig(out)

@@ -13,7 +13,7 @@ and results on earlier 3DPW label sets are kept apart from those on the correcte
 % Sizes: numbers_data.tex, \VideoFrames numbers_video.tex; roles: exp7_final_model.sh:13, :225-226, :741-749.
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{4.9cm}l@{}}
 \toprule
-Split & Size (images / people) & Use & Chapters \\
+Split & Size (images / people) & Use & \shortstack[l]{Chapters /\\appendices} \\
 \midrule
 AnnyOne training & \DataAnnyOneTrainImages{} images & training of all models of this thesis; \DataMixAnnyOne\% of each mixed batch & \ref{ch:method}, \ref{ch:results} \\
 AnnyOne holdout & \MethodHoldoutN{} / \MethodHoldoutPeople & synthetic test set and in-training monitor; excluded from training & \ref{ch:diagnostics}, \ref{ch:results} \\
@@ -43,7 +43,7 @@ each image resized to \DataInputPx{} pixels. The field of view varies between im
 training and evaluation use each image's own intrinsics.
 
 \paragraph{Split.} AnnyOne has no official split. The last \MethodHoldoutN{} images, with \MethodHoldoutPeople{}
-people, form the holdout (indices in Section~\ref{sec:method-eval}; limitations in Section~\ref{sec:data-limits}),
+people, form the holdout (indices \DataHoldoutFirstIndex{} to \DataHoldoutLastIndex; limitations in Section~\ref{sec:data-limits}),
 which no model trained in this thesis has seen; all earlier images form the training set. Unless stated otherwise,
 holdout errors use the holdout protocol (Section~\ref{sec:method-eval}).
 
