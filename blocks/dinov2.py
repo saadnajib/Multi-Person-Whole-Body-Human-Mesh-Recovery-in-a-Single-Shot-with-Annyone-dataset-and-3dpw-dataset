@@ -5,11 +5,15 @@
 import torch
 from torch import nn
 
+from dinov2_hub import load_dinov2
+
 class Dinov2Backbone(nn.Module):
     def __init__(self, name='dinov2_vitb14', pretrained=False, *args, **kwargs):
         super().__init__()
         self.name = name
-        self.encoder = torch.hub.load('facebookresearch/dinov2', self.name, pretrained=pretrained)
+        # dinov2_hub.load_dinov2: the same torch.hub entry point, from the local hub cache when it is there (no
+        # request to GitHub per model build) and with retries on network errors; see dinov2_hub.py
+        self.encoder = load_dinov2(self.name, pretrained=pretrained)
         self.patch_size = self.encoder.patch_size
         self.embed_dim = self.encoder.embed_dim
 

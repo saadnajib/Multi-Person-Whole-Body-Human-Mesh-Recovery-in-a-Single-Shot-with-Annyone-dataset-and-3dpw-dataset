@@ -509,14 +509,20 @@ class Trainer(object):
                 # teacher runs under no_grad: it is never updated, and this
                 # also avoids building a second backward graph through 300M+
                 # frozen parameters.
-                if self.teacher is not None and self.kd_loss is not None:
+                # exp10 (distillation ablation, exp8 KD_MODE=nokd): with BOTH weights 0 no distillation term exists, so
+                # the teacher is not run in the training step at all (no 0 * kd term, whose gradient could be
+                # 0 * inf = NaN, and one ViT-L forward saved per step). With any weight > 0 nothing changes.
+                if self.teacher is not None and self.kd_loss is not None and kd_terms_active(self.args):
                     with torch.no_grad():
                         t_out = self.teacher(x, is_training=True,
                                              idx=gt['idx'], K=gt['K'])
                     kd = self.kd_loss(pred['backbone_feat'],
                                       t_out['backbone_feat'])
                     kd = torch.nan_to_num(kd, nan=0.0, posinf=0.0, neginf=0.0)
-                    loss = loss + self.args.lambda_kd * kd
+                    if float(self.args.lambda_kd) != 0.0:
+                        loss = loss + self.args.lambda_kd * kd
+                    else:                      # weight 0 (only the output KD is on): logged, never in the graph
+                        kd = kd.detach()
                     dict_loss['kd'] = kd
 
                     # --- OUTPUT-level distillation --------------------------
@@ -811,7 +817,10 @@ class Trainer(object):
                 loss = loss + self.args.lambda_kd * kd
                 dict_loss['kd'] = kd
                 lko = float(getattr(self.args, 'lambda_kd_out', 0.0))
-                if lko > 0:
+                # lko > 0: as in training. lko == 0 (exp10, KD_MODE=nokd): the same value is still measured, as a
+                # MONITOR of the distance to the teacher's outputs, and stays out of total (as kd with lambda_kd 0,
+                # which adds 0 * kd above).
+                if lko > 0 or not kd_terms_active(self.args):
                     if pred['rotmat'].shape == t_out['rotmat'].shape:
                         a = self.args
                         kd_rot = self.loss.rotation_distill_term(pred['rotmat'], t_out['rotmat'].detach())
@@ -821,10 +830,15 @@ class Trainer(object):
                         kd_out = (a.alpha_rotmat * kd_rot + a.alpha_shape * kd_shp
                                   + a.alpha_dist * kd_dst)
                         kd_out = torch.nan_to_num(kd_out, nan=0.0, posinf=0.0, neginf=0.0)
-                        loss = loss + lko * kd_out
+                        if lko > 0:
+                            loss = loss + lko * kd_out
                         dict_loss['kd_out'] = kd_out
                     else:
                         meters.setdefault('_skipped', {})['kd_out'] = 'student / teacher rotmat shapes differ'
+                if not kd_terms_active(self.args):
+                    meters.setdefault('_notes', {})['kd'] = (
+                        'lambda_kd 0 and lambda_kd_out 0: kd / kd_out are monitors of the distance to the teacher, '
+                        'not part of total (no distillation loss in this run)')
             dict_loss['total'] = loss
         for k, v in dict_loss.items():
             if k not in meters:
@@ -851,6 +865,12 @@ class Trainer(object):
             print(f"[val_loss] epoch={self.current_epoch:03d} ds={ds_tag} skipped {k}: {why}", flush=True)
         for k, why in sorted((meters.get('_notes') or {}).items()):
             print(f"[val_loss] epoch={self.current_epoch:03d} ds={ds_tag} note {k}: {why}", flush=True)
+
+
+def kd_terms_active(args):
+    """True when a distillation term enters the training loss: --lambda_kd != 0 (feature KL) or --lambda_kd_out > 0
+    (output L1). False = both weights 0 (exp8 KD_MODE=nokd): a loaded teacher then only initialises the heads."""
+    return float(getattr(args, 'lambda_kd', 0.0)) != 0.0 or float(getattr(args, 'lambda_kd_out', 0.0)) > 0.0
 
 
 # --------------------------------------------------------------------------- #
@@ -1376,10 +1396,23 @@ def main(args):
         if student_dim == teacher_dim and getattr(model, 'feat_proj', None) is None:
             print("[distill] WARNING: student and teacher have the SAME width - "
                   "is --backbone actually set to a smaller ViT?", flush=True)
+        if not kd_terms_active(args):
+            print("[distill] NO distillation loss: lambda_kd=0 and lambda_kd_out=0. The teacher is used for the head "
+                  "copy only (--init_heads_from_teacher) and is not run in the training step; with --val_loss 1 the "
+                  "kd / kd_out values on the validation images are monitors, not part of total", flush=True)
         # the projector is part of what must be optimised
         _kd_params = list(kd_loss.parameters())
         if _kd_params:
             optimizer.add_param_group({'params': _kd_params})
+    elif getattr(model, 'feat_proj', None) is not None and not args.eval_only:
+        # exp10 (exp8 KD_MODE=supervised): --head_dim without a teacher. model.py builds feat_proj and the heads at
+        # head_dim from --head_dim alone, so the architecture (parameters, FLOPs) is the distilled student's; with
+        # --load_only_backbone 1 every non-backbone tensor keeps its fresh initialisation, and all of it is in the
+        # optimiser built above. Training only (an --eval_only run loads every tensor from --pretrained).
+        _fresh = (not (args.pretrained and os.path.isfile(args.pretrained))) or bool(args.load_only_backbone)
+        print(f"[model] projector-fed heads, no teacher: backbone {model.backbone_dim} -> heads {model.embed_dim} "
+              f"(feat_proj {sum(p.numel() for p in model.feat_proj.parameters()):,} params); supervised losses only; "
+              f"heads {'at their fresh initialisation' if _fresh else 'as loaded from --pretrained'}", flush=True)
 
     trainer = Trainer(model=model, loss=loss, optimizer=optimizer, device=device,
                       args=args, scheduler=scheduler, teacher=teacher, kd_loss=kd_loss)

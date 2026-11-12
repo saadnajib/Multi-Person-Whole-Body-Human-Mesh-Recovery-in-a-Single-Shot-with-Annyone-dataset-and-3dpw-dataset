@@ -6,6 +6,7 @@ import torch
 from torch import nn
 import numpy as np
 from utils import unpatch
+from dinov2_hub import load_dinov2
 import torch.nn.functional as F
 import math
 
@@ -18,7 +19,8 @@ class Encoder(nn.Module):
         self.name = name
 
         # ViT-Backbone
-        self.backbone = torch.hub.load('facebookresearch/dinov2', self.name, pretrained=pretrained)
+        # the same torch.hub entry point, local hub cache first and retried on network errors (dinov2_hub.py)
+        self.backbone = load_dinov2(self.name, pretrained=pretrained)
         self.patch_size = self.backbone.patch_size
         self.embed_dim = self.backbone.embed_dim
 
