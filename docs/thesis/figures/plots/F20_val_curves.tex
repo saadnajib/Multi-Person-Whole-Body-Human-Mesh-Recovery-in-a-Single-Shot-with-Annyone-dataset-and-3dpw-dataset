@@ -10,6 +10,7 @@
 % 19 Oct trimming pass: moved from the results chapter to Appendix D; the figure environment now lives in this file,
 % so Appendix D needs only \input{figures/plots/F20_val_curves}. The results chapter (LaTeX Chapter 5, file
 % 06_results.tex, sec:res-final) reads it in one sentence. 6 Nov: caption reworded (axes named), facts unchanged.
+% 12 Nov: caption shortened to three sentences, descriptive names in caption and legend (brief rule 6).
 % Needs: pgfplots (compat 1.18) with \usepgfplotslibrary{groupplots}. Colours defined locally.
 \begin{figure}[tbp]
 \centering
@@ -27,20 +28,19 @@
   tick label style={font=\footnotesize}, label style={font=\small}, title style={font=\small},
 ]
 \nextgroupplot[title={3DPW validation}, ymin=72, ymax=84,
-  legend style={font=\footnotesize, at={(0.97,0.97)}, anchor=north east, draw=gray!50}, legend cell align=left]
+  legend style={font=\footnotesize, at={(1.15,-0.32)}, anchor=north, draw=gray!50, legend columns=2, /tikz/every even column/.append style={column sep=8pt}}, legend cell align=left]
 \addplot[color=plControl, mark=square*, mark size=1.6pt, thick, dashed, mark options={solid}] coordinates {(1,80.6) (2,76.1) (3,80.9) (4,75.5) (5,77.2) (6,78.2) (7,77.4) (8,76.7) (9,78.7) (10,75.9)};
-\addlegendentry{Control}
+\addlegendentry{Uncorrected teacher (Control)}
 \addplot[color=plFinal, mark=*, mark size=1.7pt, thick] coordinates {(1,79.9) (2,75.7) (3,77.8) (4,74.4) (5,75.5) (6,75.0) (7,73.4) (8,75.4) (9,75.3) (10,74.5)};
-\addlegendentry{Final}
+\addlegendentry{Teacher (Final)}
 \nextgroupplot[title={AnnyOne holdout (in training)}, ymin=72, ymax=84]
 \addplot[color=plControl, mark=square*, mark size=1.6pt, thick, dashed, mark options={solid}] coordinates {(1,79.3) (2,77.7) (3,77.7) (4,79.8) (5,79.4) (6,78.2) (7,83.2) (8,78.6) (9,76.8) (10,81.2)};
 \addplot[color=plFinal, mark=*, mark size=1.7pt, thick] coordinates {(1,81.1) (2,80.2) (3,80.1) (4,80.8) (5,81.6) (6,82.3) (7,81.1) (8,81.9) (9,78.9) (10,79.3)};
 \end{groupplot}
 \end{tikzpicture}
-\caption[In-training PVE per epoch, Final and Control]{PVE of Final and Control after each training epoch (one run
-each, no seed). The x-axis is the epoch and the y-axis the PVE; lower is better. Left: \LossValImages{} images of the
-corrected 3DPW validation labels. Right: the AnnyOne holdout as evaluated during training, in setting V0 (helper bones
-unmasked), so the last-epoch values are higher than the V1 numbers of Table~\ref{tab:final-annyone}
-(\FinalPVE\,mm for Final and \ControlPVE\,mm for Control). Values from the training logs; read in Section~\ref{sec:res-final}.}
+\caption[In-training PVE per epoch, teacher and uncorrected teacher]{PVE of the teacher (Final) and the
+uncorrected teacher (Control) after each training epoch. Left: \LossValImages{} corrected 3DPW validation images;
+right: the AnnyOne holdout as evaluated during training (setting V0, helper bones unmasked), hence above the V1 values
+of Table~\ref{tab:final-annyone} (\FinalPVE\,mm and \ControlPVE\,mm).}
 \label{fig:val-curves}
 \end{figure}

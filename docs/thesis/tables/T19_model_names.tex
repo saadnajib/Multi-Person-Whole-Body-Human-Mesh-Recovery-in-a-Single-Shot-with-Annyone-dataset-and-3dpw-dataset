@@ -1,7 +1,13 @@
-% T19 Model names: thesis name -> old run / checkpoint name, start, backbone, data, schedule (and the one setting
-% that is new in the row). Owner: Appendix writer. First table of Appendix A. The ONLY place in the thesis where the
-% old run names (v2-v10, exp7, student v1-v8, ...) appear next to the thesis names; the chapters use the thesis names
-% only. Same content as docs/model_names.md (for the deck and the handover).
+% T19 Model names: descriptive name of the main text -> run identifier -> old run / checkpoint name, start, backbone,
+% data, schedule (and the one setting that is new in the row). Owner: Appendix writer. First table of Appendix A.
+% 12 Nov revision (REVISION_BRIEF_2026-11-12.md section 2 rule 4): the main text uses descriptive names only; this
+% table is the single place that maps them to the run identifiers (Student, Student-60, Final, Control, Base,
+% Multi-HMR-Anny, Final-masked, Final-partial-mask, Mixed-L, Fresh-heads-L, L-stage 1-4, Student-S/*). First column =
+% descriptive name, identifier in bold below it. Rows for the two distillation-ablation arms added (brief section 5:
+% (a) distillation losses off, teacher heads still copied; (b) no teacher, no losses, no head copy; submitted 12 Nov,
+% run names and job ids pending). Student-60 was called "Student, 60 epochs" before 12 Nov. The table key moved from
+% the caption into the paragraph before the table (appendix_a_reproduction.tex, sec:app-names).
+% Same content as docs/model_names.md (for the deck and the handover).
 % Trimmed 19 Oct to one longtable (was two: part 2 held the full flag lists and checkpoint paths; recover with
 % git show 76aa1a4:docs/thesis/tables/T19_model_names.tex). Full flags of Final, Control and the Student: Appendix C;
 % checkpoint paths of every model with a number in the thesis: T13.
@@ -28,74 +34,69 @@
 %   Student: slurm/experiments/exp8_distill_vitb.sh header and :319-331; job 3614191 (done 19 Oct; V1 holdout PVE 119.6
 %     3614191:195-207, 3DPW test v23 PVE 110.1, final table 3614191:259-283 FAIL; data/CLUSTER_ANSWERS.md last section).
 %     Typed 119.6 / 110.1 replaced by \StudentPVE / \StudentThreeDPW on 6 Nov.
-%   Student, 60 epochs (added 6 Nov): job 3623342, RUN ..._e60, checkpoint 00059.pt; data/CLUSTER_ANSWERS.md "6 Nov: 60-epoch
+%   Student-60 (added 6 Nov): job 3623342, RUN ..._e60, checkpoint 00059.pt; data/CLUSTER_ANSWERS.md "6 Nov: 60-epoch
 %     student final table" and the paragraph after it (LR halved every 24 = exp8's default 2/5 of EPOCHS,
 %     slurm/experiments/exp8_distill_vitb.sh:229; EVAL_FREQ 5; FAIL on all four bars); same starting weights and flags as the Student.
 %   Temperature sweep (added 6 Nov): slurm/experiments/exp9_kd_temperature.sh header (TEMPS 1 2 4 8 16, RUN names
-%     <prefix>_e30_kdT<t>_sweep in results/experiments/exp8_distill_vitb/, EVAL_FREQ 1, VAL_LOSS 1, everything else exp8's defaults); submitted 6 Nov, job ids
-%     not yet in the repository (open question F8).
+%     <prefix>_e30_kdT<t>_sweep in results/experiments/exp8_distill_vitb/, EVAL_FREQ 1, VAL_LOSS 1, everything else
+%     exp8's defaults); jobs 3717507/3717530/3717538/3717581/3717598 (CA "8 Nov: exp9 temperature sweep done"; T=16
+%     trained to the end, post-training step failed on an HTTP 504 time-out).
 \begingroup
 \expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}% let \path break after _ and - here
 \scriptsize
 \setlength{\tabcolsep}{2.5pt}
-\begin{longtable}{@{}>{\raggedright}p{1.75cm}>{\raggedright}p{2.9cm}>{\raggedright}p{2.6cm}>{\raggedright}p{0.95cm}>{\raggedright}p{1.15cm}>{\raggedright\arraybackslash}p{2.75cm}@{}}
-\caption[Model names: old run names, starting weights, data and schedule]{Model names: the thesis name of every
-model, the run or checkpoint name it had during the project (``ep.''\ = the epoch kept), the weights it started from,
-the backbone, the training data and the schedule, with the setting that is new in the row. Backbone: L, B, S = DINOv2
-ViT-L, ViT-B, ViT-S with 14-pixel patches; ``all'' = every block trained, ``last 4'' = the last 4 of 24 blocks, ``+p''
-= a linear projector to the heads' width 1024. Data: A = AnnyOne; A+P = 70\,\% AnnyOne and 30\,\% 3DPW train, with
-the old labels (before their correction, Chapter~\ref{ch:data}) or the corrected v23 labels. Schedule: epochs
-$\times$ iterations per epoch $\times$ batch, then the learning rate, halved every 30 epochs unless noted (planned
-epochs where the run stopped early). Checkpoints lie in \path{logs/anny_model/<run>/checkpoints/} with copies in
-\path{models/multiHMR/}; Table~\ref{tab:runs} gives the path of every model with a number in the thesis, and
-Appendix~\ref{app:flags} the full flags of Final, Control and the Student. ``Not recorded'': no script, log or
-document in the repository states it.}
+\begin{longtable}{@{}>{\raggedright}p{1.95cm}>{\raggedright}p{2.75cm}>{\raggedright}p{2.5cm}>{\raggedright}p{0.95cm}>{\raggedright}p{1.15cm}>{\raggedright\arraybackslash}p{2.8cm}@{}}
+\caption[Model names and run identifiers]{Descriptive name used in the main text, run identifier (bold) and
+recorded run name of every model, with starting weights, backbone, training data and schedule. Key in
+Section~\ref{sec:app-names}.}
 \label{tab:names}\\
 \toprule
-Thesis name & Old run / checkpoint name & Starting weights & Backb. & Data & Schedule; what is new \\
+Main-text name, \textbf{identifier} & Recorded run / checkpoint name & Starting weights & Backb. & Data & Schedule; what it is \\
 \midrule
 \endfirsthead
 \toprule
-Thesis name & Old run / checkpoint name & Starting weights & Backb. & Data & Schedule; what is new \\
+Main-text name, \textbf{identifier} & Recorded run / checkpoint name & Starting weights & Backb. & Data & Schedule; what it is \\
 \midrule
 \endhead
 \bottomrule
 \endfoot
 \multicolumn{6}{@{}l}{\emph{Released starting point and baseline}} \\
-Multi-HMR-Anny & \path{multiHMR_672_L_anny} (NAVER's release) & trained by NAVER & L, own decoder & A, BEDLAM, COCO, MPII & not recorded; evaluated with its own model class \\
+the released baseline\newline\textbf{Multi-HMR-Anny} & \path{multiHMR_672_L_anny} (NAVER's release) & trained by NAVER & L, own decoder & A, BEDLAM, COCO, MPII & not recorded; evaluated with its own model class \\
 \addlinespace
-\multicolumn{6}{@{}l}{\emph{Our ViT-L line (``L''), the transfer schedule}} \\
-L-stage 1 & \path{anny_s1_pretrained_bb_v2} & Multi-HMR-Anny backbone, fresh heads & L, all & A & 150 $\times$ 1,000 $\times$ 4, $10^{-4}$, from epoch 177 at $3\cdot10^{-5}$; side branch, no checkpoint kept \\
-L-stage 2 & \path{anny_s2_frozen_bb_v2}, ep.~299 (``v2'') & Multi-HMR-Anny backbone, fresh heads & L, frozen & A & 150 $\times$ 1,000 $\times$ 4, $10^{-4}$, from epoch 283 at $3\cdot10^{-5}$ \\
-L-stage 3 & \path{anny_s2_partialft_v3}, ep.~54 (``v3'') & L-stage 2, epoch 299 & L, last 4 & A & 300 $\times$ 1,000 $\times$ 4, $10^{-5}$; helper bones held at rest \\
-L-stage 4 & \path{anny_s2_boosted_v4}, ep.~299 (``v4'') & L-stage 3, epoch 54 & L, last 4 & A & 300 $\times$ 1,000 $\times$ 4, $10^{-5}$; neck and hand bones weighted $\times$4 \\
-Base & \path{anny_s2_shape_v5}, ep.~99 (``v5'') & L-stage 4, epoch 299 & L, last 4 & A & 100 $\times$ 1,000 $\times$ 4, $10^{-5}$; shape weight 20 \\
-Mixed-L & \path{anny_teacher_v9_mixed}, ep.~62 and 149 (``v9'') & Base & L, last 4 & A+P, old & 150 $\times$ 1,000 $\times$ 4, $10^{-5}$, halved every 60 \\
-Fresh-heads-L & \path{anny_v10_scratch_mixed}, ep.~290 (``v10'', not from scratch) & Multi-HMR-Anny backbone, fresh heads & L, last 4 & A+P, old & 300 $\times$ 1,000 $\times$ 4, $10^{-5}$; 3DPW from the first step, no neck or hand weight \\
+\multicolumn{6}{@{}l}{\emph{ViT-L line (``L''): the transfer schedule and the initial model}} \\
+earlier model\newline\textbf{L-stage 1} & \path{anny_s1_pretrained_bb_v2} & Multi-HMR-Anny backbone, fresh heads & L, all & A & 150 $\times$ 1,000 $\times$ 4, $10^{-4}$, from epoch 177 at $3\cdot10^{-5}$; side branch, no checkpoint kept \\
+earlier model\newline\textbf{L-stage 2} & \path{anny_s2_frozen_bb_v2}, ep.~299 (``v2'') & Multi-HMR-Anny backbone, fresh heads & L, frozen & A & 150 $\times$ 1,000 $\times$ 4, $10^{-4}$, from epoch 283 at $3\cdot10^{-5}$ \\
+earlier model\newline\textbf{L-stage 3} & \path{anny_s2_partialft_v3}, ep.~54 (``v3'') & L-stage 2, epoch 299 & L, last 4 & A & 300 $\times$ 1,000 $\times$ 4, $10^{-5}$; helper bones held at rest \\
+earlier model\newline\textbf{L-stage 4} & \path{anny_s2_boosted_v4}, ep.~299 (``v4'') & L-stage 3, epoch 54 & L, last 4 & A & 300 $\times$ 1,000 $\times$ 4, $10^{-5}$; neck and hand bones weighted $\times$4 \\
+the initial model\newline\textbf{Base} & \path{anny_s2_shape_v5}, ep.~99 (``v5'') & L-stage 4, epoch 299 & L, last 4 & A & 100 $\times$ 1,000 $\times$ 4, $10^{-5}$; shape weight 20; AnnyOne only, start of every later fine-tune \\
+earlier model\newline\textbf{Mixed-L} & \path{anny_teacher_v9_mixed}, ep.~62 and 149 (``v9'') & Base & L, last 4 & A+P, old & 150 $\times$ 1,000 $\times$ 4, $10^{-5}$, halved every 60 \\
+earlier model\newline\textbf{Fresh-heads-L} & \path{anny_v10_scratch_mixed}, ep.~290 (``v10'', not from scratch) & Multi-HMR-Anny backbone, fresh heads & L, last 4 & A+P, old & 300 $\times$ 1,000 $\times$ 4, $10^{-5}$; 3DPW from the first step, no neck or hand weight \\
 \addlinespace
-\multicolumn{6}{@{}l}{\emph{The last experiment: two arms and two shape-mask variants}} \\
-Control & exp7 \path{v5_root_dist1_nofix_v23_e10}, ep.~9; job 3611339 & Base & L, last 4 & A+P, v23 & 10 $\times$ 1,000 $\times$ 4, $10^{-5}$; 3DPW hands masked, pelvis targets \\
-Final & exp7 \path{v5_pc_dist5_bonefix_v23_e10}, ep.~9; job 3611336 & Base and its bone correction & L, last 4 & A+P, v23 & as Control, with head targets, depth and translation weights 5, bone correction \\
-Final-masked & exp7 \path{v5_pc_dist5_bonefix_v23_e10_shpmask}, ep.~9; job 3612325 & as Final & L, last 4 & A+P, v23 & as Final, 8 converter constants masked for 3DPW people \\
-Final-partial-mask & exp7 \path{v5_pc_dist5_bonefix_v23_e10_shpmask_noage}, ep.~9; job 3614042 & as Final & L, last 4 & A+P, v23 & as Final, the 7 constants other than age masked; not adopted \\
+\multicolumn{6}{@{}l}{\emph{Teacher experiment (exp7): two arms and two shape-mask variants}} \\
+the teacher without corrections (uncorrected teacher)\newline\textbf{Control} & exp7 \path{v5_root_dist1_nofix_v23_e10}, ep.~9; job 3611339 & Base & L, last 4 & A+P, v23 & 10 $\times$ 1,000 $\times$ 4, $10^{-5}$; 3DPW hands masked, pelvis targets \\
+the teacher\newline\textbf{Final} & exp7 \path{v5_pc_dist5_bonefix_v23_e10}, ep.~9; job 3611336 & Base and its bone correction & L, last 4 & A+P, v23 & as Control, with head targets, depth and translation weights 5, bone correction \\
+the teacher with full shape mask\newline\textbf{Final-masked} & exp7 \path{v5_pc_dist5_bonefix_v23_e10_shpmask}, ep.~9; job 3612325 & as Final & L, last 4 & A+P, v23 & as Final, 8 converter constants masked for 3DPW people \\
+the teacher with partial shape mask\newline\textbf{Final-partial-mask} & exp7 \path{v5_pc_dist5_bonefix_v23_e10_shpmask_noage}, ep.~9; job 3614042 & as Final & L, last 4 & A+P, v23 & as Final, the 7 constants other than age masked; not adopted \\
 \addlinespace
-\multicolumn{6}{@{}l}{\emph{ViT-S students (``Student-S''), history; teacher Base unless noted}} \\
-Student-S/1 & distillation v1, \path{anny_distill_vits} & ImageNet DINOv2-S, random heads & S, all & A & 300 $\times$ 1,000 $\times$ 4, $10^{-4}$; feature distillation \\
-Student-S/2 & v2, \path{anny_distill_vits_v2_a} & Student-S/1, epoch 199 & S, all & A & 200 $\times$ 1,000 $\times$ 4, $2\cdot10^{-5}$, halved every 60 \\
-Student-S/3 & v3, \path{anny_distill_vits_v3} & ImageNet DINOv2-S; 54 of 67 head tensors from Base & S, all & A & 150 $\times$ 1,000 $\times$ 4, $5\cdot10^{-5}$, halved every 60; output distillation \\
-Student-S/4 & v4, \path{anny_distill_vits_v4} & NAVER's \path{multiHMR_672_S} backbone; heads as /3 & S, all & A & 150 $\times$ 1,000 $\times$ 8, $7\cdot10^{-5}$, halved every 60 \\
-Student-S/5 & v5, \path{anny_distill_vits_v5} & as Student-S/4 & S, all & A & as /4; heads frozen for 5 epochs \\
-Student-S/6 & v6, \path{anny_distill_vits_v6}, ep.~137 & NAVER's ViT-S backbone; all 67 head tensors from Base & S+p & A & as /4; stopped at epoch 138 by the time limit \\
-Student-S/6b & v6b, \path{anny_distill_vits_v6b}, ep.~140 & Student-S/6, epoch 137 & S+p & A & 150 $\times$ 1,000 $\times$ 8, $2\cdot10^{-5}$, halved every 60; teacher in bfloat16 \\
-Student-S/6c & v6c, \path{anny_distill_vits_v6c}, ep.~149 & Student-S/6b, epoch 140 & S+p & A & 150 $\times$ 1,000 $\times$ 16, $3\cdot10^{-5}$, halved every 60 \\
-Student-S/mixed & v7, \path{anny_distill_vits_v7_mixed}, ep.~130 & Student-S/6b, epoch 140 & S+p & A+P, old & 150 $\times$ 1,000 $\times$ 8, $2\cdot10^{-5}$, halved every 60 \\
-Student-S/final & v8, \path{anny_distill_vits_v8_final}, ep.~52 & Student-S/6c, epoch 149; teacher Mixed-L & S+p & A+P, old & 150 $\times$ 1,000 $\times$ 16, $3\cdot10^{-5}$, halved every 60 \\
+\multicolumn{6}{@{}l}{\emph{ViT-S students (``Student-S''), earlier models; teacher Base unless noted}} \\
+earlier model\newline\textbf{Student-S/1} & distillation v1, \path{anny_distill_vits} & ImageNet DINOv2-S, random heads & S, all & A & 300 $\times$ 1,000 $\times$ 4, $10^{-4}$; feature distillation \\
+earlier model\newline\textbf{Student-S/2} & v2, \path{anny_distill_vits_v2_a} & Student-S/1, epoch 199 & S, all & A & 200 $\times$ 1,000 $\times$ 4, $2\cdot10^{-5}$, halved every 60 \\
+earlier model\newline\textbf{Student-S/3} & v3, \path{anny_distill_vits_v3} & ImageNet DINOv2-S; 54 of 67 head tensors from Base & S, all & A & 150 $\times$ 1,000 $\times$ 4, $5\cdot10^{-5}$, halved every 60; output distillation \\
+earlier model\newline\textbf{Student-S/4} & v4, \path{anny_distill_vits_v4} & NAVER's \path{multiHMR_672_S} backbone; heads as /3 & S, all & A & 150 $\times$ 1,000 $\times$ 8, $7\cdot10^{-5}$, halved every 60 \\
+earlier model\newline\textbf{Student-S/5} & v5, \path{anny_distill_vits_v5} & as Student-S/4 & S, all & A & as /4; heads frozen for 5 epochs \\
+earlier model\newline\textbf{Student-S/6} & v6, \path{anny_distill_vits_v6}, ep.~137 & NAVER's ViT-S backbone; all 67 head tensors from Base & S+p & A & as /4; stopped at epoch 138 by the time limit \\
+earlier model\newline\textbf{Student-S/6b} & v6b, \path{anny_distill_vits_v6b}, ep.~140 & Student-S/6, epoch 137 & S+p & A & 150 $\times$ 1,000 $\times$ 8, $2\cdot10^{-5}$, halved every 60; teacher in bfloat16 \\
+earlier model\newline\textbf{Student-S/6c} & v6c, \path{anny_distill_vits_v6c}, ep.~149 & Student-S/6b, epoch 140 & S+p & A & 150 $\times$ 1,000 $\times$ 16, $3\cdot10^{-5}$, halved every 60 \\
+earlier model\newline\textbf{Student-S/mixed} & v7, \path{anny_distill_vits_v7_mixed}, ep.~130 & Student-S/6b, epoch 140 & S+p & A+P, old & 150 $\times$ 1,000 $\times$ 8, $2\cdot10^{-5}$, halved every 60 \\
+earlier model\newline\textbf{Student-S/final} & v8, \path{anny_distill_vits_v8_final}, ep.~52 & Student-S/6c, epoch 149; teacher Mixed-L & S+p & A+P, old & 150 $\times$ 1,000 $\times$ 16, $3\cdot10^{-5}$, halved every 60 \\
 \addlinespace
-\multicolumn{6}{@{}l}{\emph{ViT-B student (requirement 1b)}} \\
-Student & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30}; job 3614191 (done 19 Oct) & NAVER's \path{multiHMR_672_B} backbone; every head tensor from Final; teacher Final & B+p, all & A+P, v23 & 30 $\times$ 1,000 $\times$ 8, $3\cdot10^{-5}$, halved every 12; Final's targets and masks; holdout \StudentPVE, 3DPW \StudentThreeDPW\,mm, 95\,\% rule not met \\
-Student, 60 epochs & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60}, ep.~59; job 3623342 & as Student & B+p, all & A+P, v23 & as Student, but \StudentSixtyEpochs{} epochs, halved every \LossLRHalfSixty; holdout \StudentSixtyPVE, 3DPW \StudentSixtyThreeDPW\,mm, 95\,\% rule not met; training-length experiment, not the reported model \\
+\multicolumn{6}{@{}l}{\emph{ViT-B student (requirement 1b) and its sensitivity runs}} \\
+the student\newline\textbf{Student} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30}; job 3614191 (done 19 Oct) & NAVER's \path{multiHMR_672_B} backbone; every head tensor from Final; teacher Final & B+p, all & A+P, v23 & 30 $\times$ 1,000 $\times$ 8, $3\cdot10^{-5}$, halved every 12; Final's targets and masks; holdout \StudentPVE, 3DPW \StudentThreeDPW\,mm, 95\,\% rule not met; the reported model \\
+the 60-epoch student\newline\textbf{Student-60} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60}, ep.~59; job 3623342 & as Student & B+p, all & A+P, v23 & as Student, but \StudentSixtyEpochs{} epochs, halved every \LossLRHalfSixty; holdout \StudentSixtyPVE, 3DPW \StudentSixtyThreeDPW\,mm, 95\,\% rule not met; training-length analysis, not the reported model \\
+the student at temperature $t$\newline\textbf{Student, $T=t$} & exp8 (submitted by exp9) \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT<t>_sweep}; jobs in Table~\ref{tab:runs} & as Student & B+p, all & A+P, v23 & as Student, with feature-distillation temperature $t \in \{1, 2, 4, 8, 16\}$; evaluation after every epoch and validation loss on (both only measure); temperature analysis \\
 \addlinespace
-\multicolumn{6}{@{}l}{\emph{Distillation-temperature sweep (submitted 6 Nov, results pending)}} \\
-Student, $T=t$ & exp8 (submitted by exp9) \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT<t>_sweep}; jobs \TODO{ids pending} & as Student & B+p, all & A+P, v23 & as Student, with feature-distillation temperature $t \in \{1, 2, 4, 8, 16\}$; evaluation after every epoch and validation loss on (both only measure) \\
+\multicolumn{6}{@{}l}{\emph{Distillation ablation (submitted 12 November, results pending)}} \\
+the student without distillation losses\newline\textbf{Student-noKD} & exp8 variant, \TODO{pending: run name, job id} & as Student (teacher heads copied) & B+p, all & A+P, v23 & as Student, with both distillation losses off; arm (a) of Section~\ref{sec:res-kd-ablation} \\
+ViT-B without teacher\newline\textbf{ViT-B-noTeacher} & exp8 variant, \TODO{pending: run name, job id} & NAVER's \path{multiHMR_672_B} backbone, fresh heads & B+p, all & A+P, v23 & as Student, with no teacher: no distillation losses, no head copy; arm (b) of Section~\ref{sec:res-kd-ablation} \\
 \end{longtable}
 \endgroup

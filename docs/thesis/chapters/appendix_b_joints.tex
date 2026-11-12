@@ -3,16 +3,16 @@
 % Never \input tables/draft_mapping.tex: it defines the same table label as this file.
 % TODO (author): check the spine rows, neck offset and scale factor against a converter log (README.md).
 
-The converter has to know which Anny bone stands for each SMPL joint. The two skeletons are the ones in
+The converter requires, for each SMPL joint, the Anny bone that represents it. The two skeletons are the ones in
 Table~\ref{tab:body-models}: SMPL has \BgSmplJoints{} joints and Anny has \BgAnnyBones{} bones, of which the root and
 \DataFittedBones{} rotate in the fit. Some joints of the two rigs sit at different places, so names alone are not
 enough. The converter compares the two rest skeletons (the default standing pose) before it fits the posed frames.
 
-For each hip, Anny has two possible bones, the upper-leg bone and the pelvis bone. I take the one whose head (the
-point where the bone starts) lies about as far from the pelvis as SMPL's hip joint; for the v23 fits this is the
-upper-leg bone. For the spine, I order the
-Anny spine bones by their height, scaled so that the hip midpoint is 0 and the neck is 1. I then keep the ordered
-triple of bones whose heights are together closest to the heights of SMPL's three spine joints. For the limbs and the
+For each hip, Anny has two candidate bones, the upper-leg bone and the pelvis bone. The converter selects the one
+whose head (the point where the bone starts) lies about as far from the pelvis as SMPL's hip joint; for the v23 fits
+this is the upper-leg bone. For the spine, the Anny spine bones are ordered by their height, normalised so that the
+hip midpoint is 0 and the neck is 1, and the ordered triple of bones whose heights are jointly closest to the heights
+of SMPL's three spine joints is kept. For the limbs and the
 head, the converter takes the Anny bone of the same body part from a fixed list of names: the shoulder, for example,
 goes to the head of the upper-arm bone. Each run saves the bones it picked together with the fits.
 
@@ -27,7 +27,7 @@ bone $b$ assigned to joint $k$:
  \boldsymbol\delta_k=(\mathbf Q^0_b)^\top(\mathbf j^{S\to A}_k-\mathbf h^0_b).
  \label{eq:rest-offset}
 \end{equation}
-In words, the first formula moves the SMPL joint into Anny's rest skeleton. It shifts the joint from SMPL's hip
+The first formula moves the SMPL joint into Anny's rest skeleton. It shifts the joint from SMPL's hip
 midpoint to Anny's, scales it by $s$ and turns it with $\mathbf Q_{S\to A}$. The second formula then measures the
 offset from the Anny bone head, in that bone's own frame. The offset stays fixed and
 turns with the bone, so it is not an extra joint fitted in each frame.
@@ -58,6 +58,6 @@ their rest rotation.}
 \end{table}
 
 Each fit stores its own correspondence in three arrays: \path{anny_bone_names}, \path{joint_offsets_local} and
-\path{offset_joints}. To reproduce a particular fit, use these arrays and not this table. The code is in
+\path{offset_joints}. A particular fit is reproduced from these arrays, not from this table. The code is in
 \path{scripts/data/smpl_to_anny.py}. Appendix~\ref{app:conversion} shows how geometric matching and virtual joints
-changed the fit error, and why matching by name failed in my first converter.
+changed the fit error, and why matching by name failed in the first version of the converter.

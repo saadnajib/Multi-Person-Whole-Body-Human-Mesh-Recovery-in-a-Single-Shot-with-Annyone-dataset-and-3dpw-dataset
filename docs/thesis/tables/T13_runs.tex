@@ -19,15 +19,18 @@
 % docs/video_inference.md:36-60 and its output table; job id pending, open question F6); image comparison
 % (slurm/demo/run_image_compare.sh:81, docs/image_comparison.md "Output"; job id and photo pending, open question F7);
 % thesis copies F23/F25/F26 (artefacts of 6 Nov: F25 frame 178 and F26 cut from the final deck, slides 18 and 11).
+% 12 Nov: caption shortened (path key moved to sec:app-runs); "Student, 60 epochs" -> Student-60; sweep row updated
+% (CA "8 Nov: exp9 temperature sweep done": T=1,2,4,8 completed, T=16 3717598 trained but failed after training on an
+% HTTP 504 time-out); rows added for the distillation ablation (two arms, submitted 12 Nov, job ids pending) and the
+% student's Relative Human evaluation (pending), brief section 5.
 \begingroup
 \expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}% let \path break after _ and - here
 \scriptsize
 \setlength{\tabcolsep}{2.5pt}
 \begin{longtable}{@{}>{\raggedright}p{3.75cm}>{\raggedright}p{2.35cm}>{\raggedright\arraybackslash}p{6.5cm}@{}}
-\caption[Runs, jobs, logs and checkpoints]{The Slurm jobs behind every number, table and figure of the thesis, with
-the log and the checkpoint or output. Model names as in Table~\ref{tab:names}. Paths are relative to the project
-folder on the cluster; the log of job $j$ is \path{logs/<log name>_}$j$\path{.out} (array jobs: \path{_}$j$\path{_<task>.out}; the video and image jobs: \path{logs/<log name>-}$j$\path{.out}, with a hyphen).
-\textsf{E7} stands for \path{results/experiments/exp7_final_model/}, \textsf{M} for \path{models/multiHMR/}.}
+\caption[Runs, jobs, logs and checkpoints]{Slurm jobs behind the numbers, tables and figures of the thesis, with
+log name and checkpoint or output. Run identifiers as in Table~\ref{tab:names}; path conventions in
+Section~\ref{sec:app-runs}.}
 \label{tab:runs}\\
 \toprule
 Model or item: what the job did & Job(s) & Log name; checkpoint or output \\
@@ -48,18 +51,21 @@ Control: the same & 3611339 & \path{exp7_final_model}; \textsf{E7}\path{/v5_root
 Final-masked: the same & 3612325 & \path{exp7_final_model}; \textsf{E7}\path{/v5_pc_dist5_bonefix_v23_e10_shpmask/} \\
 Final-partial-mask: the same (done 19 Oct) & 3614042 & \path{exp7_final_model} (holdout table lines 191--215); \textsf{E7}\path{/v5_pc_dist5_bonefix_v23_e10_shpmask_noage/} \\
 Student: distillation from Final, 30 epochs, own evaluation (done 19 Oct) & 3614191 (smoke test 3613926) & \path{exp8_distill_vitb}; \path{results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/train/checkpoints/00029.pt}; \path{final_table.json} in the same run folder \\
-Multi-HMR-Anny: holdout and 3DPW test with my code & 3614192 (3613928 crashed: FFN width) & \path{eval-test3dpw} (task 0); \textsf{M}\path{/multiHMR_672_L_anny.pt} \\
+Multi-HMR-Anny: holdout and 3DPW test with the evaluation code of this thesis & 3614192 (3613928 crashed: FFN width) & \path{eval-test3dpw} (task 0); \textsf{M}\path{/multiHMR_672_L_anny.pt} \\
 Model cost: parameters, GFLOPs, latency of Multi-HMR-Anny and Final (A100) & 3614947 & \path{model_cost}; \path{results/diagnostics/model_cost_naver_vs_final.json} \\
 \addlinespace
-\multicolumn{3}{@{}l}{\emph{Training length and distillation temperature (added 6 Nov)}} \\
-Student, 60 epochs: the same recipe trained twice as long, own evaluation & 3623342 & \path{exp8_distill_vitb}; \path{results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60/train/checkpoints/00059.pt}; \path{final_table.json} in the same run folder \\
+\multicolumn{3}{@{}l}{\emph{Training length, distillation temperature and distillation ablation}} \\
+Student-60: the same recipe trained twice as long, own evaluation & 3623342 & \path{exp8_distill_vitb}; \path{results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60/train/checkpoints/00059.pt}; \path{final_table.json} in the same run folder \\
 Loss curves of the 30- and 60-epoch runs, from their tensorboard files (Figure~\ref{fig:loss-curves}) & none (login node) & \path{scripts/analysis/plot_loss_curves.py}; \path{results/experiments/exp9_kd_temperature/loss_curves/<run>_loss_curves.png}, \path{.pdf}, \path{.csv}; thesis copies \path{figures/img/F23_student_loss_curves_e30.png}, \path{_e60.png} \\
-Temperature sweep, \KDSweepArms{} runs (submitted 6 Nov) & 3717507, 3717530, 3717538, 3717581, 3717598 ($T = 1, 2, 4, 8, 16$) & \path{exp8_distill_vitb} (one job per temperature, submitted by \path{slurm/experiments/exp9_kd_temperature.sh}; record \path{logs/exp9_kd_temperature_<date>.txt}); collector \path{scripts/analysis/kd_temperature_sweep.py} writes \path{results/experiments/exp9_kd_temperature/kd_temperature_sweep.csv}, \path{.png}, \path{.pdf} \\
+Temperature sweep, \KDSweepArms{} runs (submitted 6 Nov; $T = 1, 2, 4, 8$ finished; $T = 16$ trained to the end, but its post-training evaluation failed on a network time-out) & 3717507, 3717530, 3717538, 3717581, 3717598 ($T = 1, 2, 4, 8, 16$) & \path{exp8_distill_vitb} (one job per temperature, submitted by \path{slurm/experiments/exp9_kd_temperature.sh}; record \path{logs/exp9_kd_temperature_<date>.txt}); collector \path{scripts/analysis/kd_temperature_sweep.py} writes \path{results/experiments/exp9_kd_temperature/kd_temperature_sweep.csv}, \path{.png}, \path{.pdf}; per-temperature validation numbers \TODO{pending: validation values from the cluster} \\
+Distillation ablation, arm (a): Student-noKD, the student's recipe with both distillation losses off (submitted 12 Nov) & \TODO{pending: job ids} & \TODO{pending: log name and output} \\
+Distillation ablation, arm (b): ViT-B-noTeacher, the same data and schedule with no teacher (submitted 12 Nov) & \TODO{pending: job ids} & \TODO{pending: log name and output} \\
 \addlinespace
 \multicolumn{3}{@{}l}{\emph{Evaluations and demos}} \\
 3DPW test (v23): Base, Mixed-L, neck pilot (Final and Control in their own jobs) & 3612073, 3612074, 3612075 & \path{eval-test3dpw} (task 0), lines 117--125 \\
 3DPW test (v23): Student-S/6c, Student-S/final, also AnnyOne test-100 & 3615020\_2, 3615020\_4 & \path{eval-test3dpw}, line 119 (\_2) and 118 (\_4) \\
 Relative Human: Base, neck pilot, Final, Final-masked, Final-partial-mask & 3611285\_0, \_1, 3612131, 3613616, 3616821 & \path{eval_rh}; \path{results/diagnostics/relative_human_val_<tag>/} \\
+Relative Human: Student & \TODO{pending: job id} & \TODO{pending: log name and output} \\
 Demos: neck pilot, Final, Final-masked, each next to Base & 3581312, 3612078, 3613617 & \path{demo-compare}; \path{demo_montage_photos/}, \path{demo_montage_3dpwtest/} \\
 Demos: predicted fingers (Base, Final); rest pose (Base, Final, Final-masked) & 3615018, 3615019 & \path{demo-compare}; scripts \path{slurm/demo/run_demo_compare_hands.sh}, \path{_rest.sh} (copies made on the cluster) \\
 Video, raw Student and Multi-HMR-Anny on \path{man_walking.mp4} (frame and match counts) & 3642415 & \path{video-compare} (log \path{logs/video-compare-3642415.out}); \path{results/video_compare/video_3642415/comparison.mp4} \\

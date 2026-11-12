@@ -7,6 +7,10 @@
 % Trimmed 19 Oct: the scripts table (old A.4, tab:scripts-new) and the commands (old A.5) moved to docs/thesis/REPRODUCE.md;
 % labels sec:app-scripts and sec:app-commands now sit on the pointer at the end of the runs section. Long version:
 % git show 76aa1a4:docs/thesis/chapters/appendix_a_reproduction.tex.
+% 12 Nov revision (REVISION_BRIEF_2026-11-12.md): opening states that the main text uses descriptive names; name key
+% moved here from the T19 caption, path key from the T13 caption; sweep status (CA "8 Nov"), ablation arms and the
+% student's Relative Human run added as pending; first person removed; run-to-run variation by reference to
+% sec:method-variation.
 % 6 Nov additions: exp9 header; exp8_distill_vitb.sh:257, :932, :1142 (seed only in the bone-fix trace; train.py
 % has no manual_seed); docs/video_inference.md:36-60, :387-440; demo_video.py:826-843, :911-926. Pending: F6-F8.
 
@@ -15,25 +19,40 @@
 \begingroup % until the end of the file: \path may also break after _ and - (long run names)
 \expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\_\do\-}%
 
-Every number in this thesis can be traced in two steps. Each headline number is a macro in one of the files
-\path{numbers_*.tex} of the thesis source, and the comment next to it names the job and the line of its log, for
-example \texttt{3611336:191}. A job is one piece of work that Slurm, the scheduler of the cluster, ran for me, and
-the job id is the number Slurm gave it. Table~\ref{tab:runs} maps each job to the model, the log and the checkpoint.
-Table~\ref{tab:names} maps every model name to the run name it had during the project. Job ids and old run names
-appear only in this appendix.
+The main text refers to every model by a descriptive name, such as the teacher, the student or the initial model.
+This appendix collects the run identifiers behind these names, together with the Slurm jobs, logs, checkpoints and
+files that produced each number.
+
+Every number can be traced in two steps. Each headline number is a macro in one of the files \path{numbers_*.tex} of
+the thesis source, and the comment next to it names the job and the line of its log, for example
+\texttt{3611336:191}. A job is one unit of work run by Slurm, the scheduler of the cluster, and the job id is the
+number Slurm assigned to it. Table~\ref{tab:names} maps every descriptive name to its run identifier and to the run
+name recorded during the project; Table~\ref{tab:runs} maps each job to the model, the log and the checkpoint. Job
+ids and recorded run names appear only in this appendix.
 
 \section{Model names}
 \label{sec:app-names}
 
-``L'' is my ViT-L line, every model that keeps the ViT-L backbone. L-stage 1 to 4 are the steps of the transfer
-schedule that turned NAVER's released model into mine. Base is the end of that schedule and the start of every later
-fine-tune. Final and Control are the two runs of the last teacher experiment (exp7). Both are the same
-\MethodFinalEpochs-epoch fine-tune of Base, one with the two corrections and one without them. The number after ``Student-S/'' is the old version number of a ViT-S student,
-and Student is the ViT-B model distilled from Final.
+The ViT-L line (``L'') comprises every model that keeps the ViT-L backbone. L-stage 1 to 4 are the steps of the
+transfer schedule that turned NAVER's released model into the initial model (Base), which is the end of that
+schedule and the start of every later fine-tune. The teacher (Final) and the teacher without corrections (Control)
+are the two arms of the last teacher experiment (exp7): the same \MethodFinalEpochs-epoch fine-tune of Base, with and
+without the two corrections. The number after ``Student-S/'' is the old version number of a ViT-S student; the
+student (Student) is the ViT-B model distilled from the teacher. The 60-epoch student (Student-60) is the student's
+recipe trained twice as long, for the analysis of Section~\ref{sec:res-training-length}; it is not the reported model.
+The sweep of Section~\ref{sec:res-kd-temperature} trains the same recipe at \KDSweepArms{} distillation temperatures.
+The two arms of the distillation ablation (Section~\ref{sec:res-kd-ablation}), Student-noKD and ViT-B-noTeacher,
+are defined in the last rows of the table.
 
-``Student, 60 epochs'' is the Student's recipe trained twice as long, for the experiment of
-Section~\ref{sec:res-training-length}. It is not the reported model. The sweep of
-Section~\ref{sec:res-kd-temperature} trains the same recipe at \KDSweepArms{} distillation temperatures.
+In Table~\ref{tab:names}, ``ep.''\ is the epoch kept. Backbone: L, B, S = DINOv2 ViT-L, ViT-B, ViT-S with 14-pixel
+patches; ``all'' = every block trained, ``last 4'' = the last 4 of 24 blocks, ``+p'' = a linear projector to the
+heads' width 1024. Data: A = AnnyOne; A+P = 70\,\% AnnyOne and 30\,\% 3DPW train, with the old labels (before their
+correction, Chapter~\ref{ch:data}) or the corrected v23 labels. Schedule: epochs $\times$ iterations per epoch
+$\times$ batch, then the learning rate, halved every 30 epochs unless noted (planned epochs where the run stopped
+early). Checkpoints lie in \path{logs/anny_model/<run>/checkpoints/} with copies in \path{models/multiHMR/};
+Table~\ref{tab:runs} gives the path of every model with a number in the thesis, and Appendix~\ref{app:flags} the
+full flags of Final, Control and the student. ``Not recorded'' means that no script, log or document in the
+repository states the value.
 
 \input{tables/T19_model_names}
 
@@ -63,7 +82,7 @@ the video once on the CPU and writes a JSON file before the GPU job starts. \pat
 That PyTorch build has GPU kernels up to compute capability 8.6. For this reason the training and evaluation scripts
 ask for A100, A40, L40S and RTX A6000 nodes and refuse an H100 or H200 (compute capability 9.0). The V100 nodes
 \texttt{gifu} and \texttt{glendale} are excluded: every converter task sent there failed within a minute with an
-argument-parser error whose cause I do not know. Only the 3DPW converter ran on H100 nodes, through a small virtual
+argument-parser error whose cause was not identified. Only the 3DPW converter ran on H100 nodes, through a small virtual
 environment with PyTorch 2.1.2 for CUDA 12.1 on top of \texttt{multihmr}
 (\texttt{PY\_VENV=/netscratch/najib/venv\_cu121}). Steps that need only NumPy (building the 3DPW label files, the re-fit
 check) run on the login node. The model-cost script needs a GPU node, because \path{model.py} imports the renderer and
@@ -72,9 +91,17 @@ the login node has no EGL.
 \section{Runs, jobs, logs and checkpoints}
 \label{sec:app-runs}
 
-Table~\ref{tab:runs} lists every job behind a number, a table or a figure of the thesis. All of them have finished
-except the \KDSweepArms{} sweep jobs, which I submitted on 6 November. The table still lacks the job ids of the
-sweep, of the five-panel video and of the stage photo.
+Table~\ref{tab:runs} lists every job behind a number, a table or a figure of the thesis. Paths are relative to the
+project folder on the cluster. The log of job $j$ is \path{logs/<log name>_}$j$\path{.out} (array jobs:
+\path{_}$j$\path{_<task>.out}; the video and image jobs: \path{logs/<log name>-}$j$\path{.out}, with a hyphen).
+\textsf{E7} stands for \path{results/experiments/exp7_final_model/}, \textsf{M} for \path{models/multiHMR/}.
+
+All recorded jobs have finished. Of the \KDSweepArms{} temperature-sweep jobs (submitted 6 November), four completed;
+the $T = \KDSweepMaxT$ job (3717598) trained to the end, but its post-training evaluation failed on a network
+time-out, so it has no final table. The per-temperature validation values of the sweep are
+\TODO{pending: validation values from the cluster}. Three runs of this revision are still open: the two arms of the
+distillation ablation, submitted on 12 November (\TODO{pending: job ids}), and the evaluation of the student on
+Relative Human (\TODO{pending: job id}).
 
 \input{tables/T13_runs}
 
@@ -85,55 +112,58 @@ from the login node in the repository clone. The flags each training run passes 
 \section{What cannot be reproduced exactly}
 \label{sec:app-repro-limits}
 
-The training code sets no random seed. The \texttt{-{}-seed} of the holdout trace only picks which training images the
-bone correction is estimated on. The Student script passes its seed to that trace and nowhere else
+The training code sets no random seed. The \texttt{-{}-seed} of the holdout trace only selects the training images on
+which the bone correction is estimated. The student's script passes its seed to that trace and nowhere else
 (\path{exp8_distill_vitb.sh}, lines 257 and 1142). The sweep runs through the same script, so this also holds for the
-60-epoch run and for every temperature. The order in which training images are drawn (with replacement) therefore
-differs between two runs of the same command. So does the number of optimiser steps skipped for non-finite gradients
-(\MethodFinalNaNSteps{} in Final, 10 in Control, out of $\num{\MethodFinalSteps}$).
+60-epoch student and for every temperature. The order in which training images are drawn (with replacement)
+therefore differs between two runs of the same command, as does the number of optimiser steps skipped for
+non-finite gradients (\MethodFinalNaNSteps{} in Final, 10 in Control, out of $\num{\MethodFinalSteps}$). Two identical
+2-epoch pilots differed by \NoisePVE\,mm PVE, \NoiseHeadDeg\,deg head direction and \DiagNoiseRecall{} recall points
+(Table~\ref{tab:pilot-noise}); they do not establish an interval for a repeat of Final or Control
+(Section~\ref{sec:method-variation}).
 
-Two runs of one 2-epoch configuration differed by \NoisePVE\,mm PVE, \NoiseHeadDeg\,deg head direction and
-\DiagNoiseRecall{} recall points (Table~\ref{tab:pilot-noise}). These two pilots do not establish an expected interval for a repeat of Final or Control. Final and Control also ran on different GPU types (Final on an A100, Control on an A40,
-both with TF32). This changes the speed, and it can change the last digits of the arithmetic. Evaluating a fixed checkpoint
-involves no sampling. I did not test whether it repeats exactly across GPU types.
+Final and Control also ran on different GPU types (Final on an A100, Control on an A40, both with TF32). This changes
+the speed, and it can change the last digits of the arithmetic. Evaluating a fixed checkpoint involves no sampling;
+whether it repeats exactly across GPU types was not tested.
 
 Apart from the temperature, the sweep runs evaluate after every epoch instead of every fifth and also compute the
-training loss on the validation images (\texttt{-{}-val\_loss 1}). Both additions only read values out of the model; neither changes a weight. Because
-of this, the sweep's own $T=4$ run repeats the reported recipe and will give a second estimate of run-to-run
-variation.
+training loss on the validation images (\texttt{-{}-val\_loss 1}). Both additions only read values out of the model
+and change no weight. The sweep's own $T=4$ run therefore repeats the reported recipe and gives a second estimate of
+run-to-run variation (Section~\ref{sec:method-variation}).
 
-There are three more things I cannot repeat. The history scripts of the L line and of Student-S were edited after their runs, so their
-recipes in Table~\ref{tab:names} are as recorded there, not re-run. \path{train.py} keeps only the last two or three
-checkpoints of a run, so intermediate epochs are gone. The checkpoints, the AnnyOne and 3DPW data and the Relative
-Human annotations are not in the repository, and 3DPW and Relative Human come with their own licences.
+Three further items cannot be repeated. The history scripts of the L line and of Student-S were edited after their
+runs, so their recipes in Table~\ref{tab:names} are as recorded there, not re-run. \path{train.py} keeps only the
+last two or three checkpoints of a run, so intermediate epochs are lost. The checkpoints, the AnnyOne and 3DPW data
+and the Relative Human annotations are not in the repository, and 3DPW and Relative Human come with their own
+licences.
 
 \section{Evidence that the video comparison ran}
 \label{sec:app-video}
 
-For the video comparison of job 3642415 I have the log \path{video-compare-3642415.out} and the matching error
-log. It used the 30-epoch Student checkpoint
+The video comparison of job 3642415 is documented by the log \path{video-compare-3642415.out} and the matching error
+log. It used the 30-epoch checkpoint of the student (Student)
 \path{results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30/train/checkpoints/00029.pt}
-with the correction selected by that run's \path{student_fix_arg.txt}. The baseline was
+with the correction selected by that run's \path{student_fix_arg.txt}. The released baseline (Multi-HMR-Anny) was
 \path{models/multiHMR/multiHMR_672_L_anny.pt} and the input was \path{man_walking.mp4}. Both checkpoints loaded with
-100\,\% state coverage, meaning every saved weight found its place in the model. The renderer reported an NVIDIA L40S and passed its test mesh.
+100\,\% state coverage, meaning every saved weight found its place in the model. The renderer reported an NVIDIA L40S
+and passed its test mesh.
 
 The final log lines report \VideoFrames{} processed frames for each model, \VideoStudentMatched{} student matches and
 \VideoBaselineMatched{} baseline matches. The output is \path{results/video_compare/video_3642415/comparison.mp4}. The
-job ran before the temporal filter and the later timing code existed. So its log does not give the inference speed of the two
-models measured on the same frames, and it has no number for how much the pose or the body shape changes from frame
-to frame.
+job ran before the temporal filter and the later timing code existed. Its log therefore gives neither the inference
+speed of the two models on the same frames nor any measure of frame-to-frame change in pose or body shape.
 
 The five-panel video of Section~\ref{sec:res-video} came from a later run of the same launcher with
-\path{TEMPORAL=ema} and \path{ALIGNMENT=landmarks}. It adds the filtered and the aligned Student panels
+\path{TEMPORAL=ema} and \path{ALIGNMENT=landmarks}. It adds the filtered and the aligned student panels
 (Section~\ref{sec:method-temporal}) and a frame-rate label on every panel. This run is job \VideoJob{} (\path{results/video_compare/video_3657550/}). It ran
 on one \VideoGPU{} in fp32 with TF32 at 672 pixels, timed \VideoMeasuredFrames{} frames after \VideoWarmup{}
 warm-up frames, and used the filter constants of Section~\ref{sec:method-temporal}. Its own summaries give the same
-matched-frame counts as job 3642415: \VideoStudentMatched{} of \VideoFrames{} for the Student and
+matched-frame counts as job 3642415: \VideoStudentMatched{} of \VideoFrames{} for the student and
 \VideoBaselineMatched{} for the baseline.
 
 The frame-rate label on each panel counts a different amount of work (Table~\ref{tab:video-fps}; definitions in
 \path{docs/video_inference.md}, lines 387--440). \path{timing.csv} has one row per model panel, and the input panel's
-playback rate is a column of those rows. The raw Student and the
+playback rate is a column of those rows. The raw student and the
 baseline show \texttt{inference\_fps}, model inference alone. The filtered panel shows \texttt{processing\_fps} from
 \path{student_temporal/summary.json}, which also counts the filter and the Anny re-decode. The aligned panel shows the
 same quantity from \path{student_aligned/summary.json}, which counts the filter work as well as the alignment fit, but not the
@@ -143,7 +173,7 @@ The video implementation and the EGL correction are in commits \texttt{1d5621b} 
 FPS implementation is \texttt{a0fa59f}. The video comparison is launched through \path{slurm/demo/run_video_compare.sh}, and
 \path{docs/video_inference.md} describes how to run it, where each timing starts and stops, and which files it
 writes. The stage photo of Section~\ref{sec:res-image-compare} was made by \path{demo_image_compare.py}, normally
-launched through \path{slurm/demo/run_image_compare.sh}, whose defaults are the same Student, correction and baseline
+launched through \path{slurm/demo/run_image_compare.sh}, whose defaults are the same student, correction and baseline
 (\path{docs/image_comparison.md}). It is job 3657637, with its output in
 \path{results/image_compare/images_3657637/}.
 
