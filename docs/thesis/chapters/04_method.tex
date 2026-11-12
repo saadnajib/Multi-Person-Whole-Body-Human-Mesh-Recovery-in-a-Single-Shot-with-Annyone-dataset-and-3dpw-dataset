@@ -181,7 +181,7 @@ $\num{\MethodFinalSteps}$ for the teacher).
 \section{Training with real images}
 \label{sec:method-real}
 
-A weighted sampler draws on average \MethodMixRatio\% of each batch from converted 3DPW-train (v23 labels,
+A weighted sampler draws on average \MethodMixRatio\% of each batch from converted 3DPW-train (corrected labels,
 $\num{\MethodTrainThreeDPWImages}$ images) and \MethodSynthRatio\% from AnnyOne; since AnnyOne images contain more
 people, an estimated \MethodThreeDPWPeopleShare\% of the supervised people are real. The 3DPW test split is never used
 for training.
@@ -350,7 +350,7 @@ Released baseline (Multi-HMR-Anny) & ViT-L & AnnyOne release & NAVER's release; 
 \bottomrule
 \end{tabular}
 \caption[Models compared]{Models compared in this thesis. Each name denotes one training run; 3DPW is the converted
-training split (v23 labels, \MethodMixRatio\% of each batch).}
+training split (corrected labels, \MethodMixRatio\% of each batch).}
 \label{tab:model-names}
 \end{table}
 
@@ -389,7 +389,7 @@ covers the \MethodActiveBones{} supervised bones; without this step PVE is \Meth
 people. A trace script adds placement and per-bone metrics.
 
 \paragraph{3DPW test.} All $\num{\MethodTestImages}$ test images ($\num{\MethodTestPeople}$ people) are evaluated
-against the v23 labels with one script for every model, without the helper-bone step. With converted targets and
+against the corrected labels with one script for every model, without the helper-bone step. With converted targets and
 MPJPE over all \MethodNumBones{} Anny joints, these numbers are not comparable with published 3DPW results
 (Section~\ref{sec:data-limits}).
 

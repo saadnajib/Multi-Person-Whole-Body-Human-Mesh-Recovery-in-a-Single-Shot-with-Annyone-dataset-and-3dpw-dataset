@@ -19,7 +19,7 @@ Heads & HPH at width \MethodHPHDim{} (\MethodParamsHeadsL\,M) & copied from the 
 Params / GFLOPs / ms & \MethodParamsTotalL\,M / \num{\MethodGflopsL} / \MethodMsL & \MethodStudentParams\,M / \MethodStudentGflops{} / \MethodStudentMs{} (\MethodRatioParams$\times$ / \MethodRatioGflops$\times$ / \MethodRatioMs$\times$ less) \\
 Schedule & \MethodFinalEpochs{} epochs $\times$ \num{\MethodFinalIters} iterations $\times$ batch \MethodFinalBatch{} $=$ \num{\MethodFinalImages} images & \MethodStudentEpochs{} epochs $\times$ \num{\MethodStudentIters} iterations $\times$ batch \MethodStudentBatch{} $=$ \num{\MethodStudentImages} images \\
 Learning rate & \MethodFinalLR, constant & \MethodStudentLR, halved every \MethodStudentLRDecay{} epochs \\
-Targets & head anchor, depth weight \MethodWDist, \MethodMixRatio\% 3DPW (v23), hand mask & identical \\
+Targets & head anchor, depth weight \MethodWDist, \MethodMixRatio\% 3DPW (corrected labels), hand mask & identical \\
 Distillation & -- & feature KL $\lambda=\MethodKDLambda$, $T=\MethodKDTemp$; output L1 $\lambda=\MethodKDOutLambda$ \\
 Bone correction & four bones, estimated on the initial model & teacher's in training; own one afterwards \\
 \midrule
@@ -29,8 +29,8 @@ Bone correction & four bones, estimated on the initial model & teacher's in trai
 AnnyOne holdout PVE & \MethodTeacherHoldoutPVE{} $\to$ \textbf{\MethodBarHoldout} & \MethodNaverHoldoutPVE{} $\to$ \MethodBarNaverHoldout{} (possibly in-sample) \\
 % Final holdout V1 MPJPE 77.9 re-measured in the student job, bar 82.0 = 77.9/0.95: 3614191:259-263 (macros \FinalMPJPE, \BarMPJPE in numbers_results.tex)
 AnnyOne holdout MPJPE & \FinalMPJPE{} $\to$ \textbf{\BarMPJPE} & \MethodNaverHoldoutMPJPE{} $\to$ \MethodBarNaverHoldoutMPJPE \\
-3DPW test PVE (v23) & \MethodTeacherThreeDPWPVE{} $\to$ \textbf{\MethodBarThreeDPW} & \MethodNaverThreeDPWPVE{} $\to$ \MethodBarNaverThreeDPW \\
-3DPW test MPJPE (v23) & \MethodTeacherThreeDPWMPJPE{} $\to$ \MethodBarThreeDPWMPJPE & \MethodNaverThreeDPWMPJPE{} $\to$ \MethodBarNaverThreeDPWMPJPE \\
+3DPW test PVE & \MethodTeacherThreeDPWPVE{} $\to$ \textbf{\MethodBarThreeDPW} & \MethodNaverThreeDPWPVE{} $\to$ \MethodBarNaverThreeDPW \\
+3DPW test MPJPE & \MethodTeacherThreeDPWMPJPE{} $\to$ \MethodBarThreeDPWMPJPE & \MethodNaverThreeDPWMPJPE{} $\to$ \MethodBarNaverThreeDPWMPJPE \\
 \bottomrule
 \end{tabular}
 \caption[The student's recipe and the 95\,\% bars]{Recipe and cost of the student next to its teacher (A) and the
