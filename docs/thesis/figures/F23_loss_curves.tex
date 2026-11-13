@@ -7,21 +7,21 @@
 % 12 Nov revision: the PNG title line (run identifier) is clipped off (trim top 26 bp); caption shortened, the
 % slope values (\Loss...Slope, ...Last) are in the text of Section 5.4 and in T29.
 % PNGs re-rendered 7 Nov with the fixed plot_loss_curves.py (four distinct line styles), tensorboard source.
-% The two PNGs are to be regenerated from the runs' CSV exports with descriptive legend labels and larger text.
+% 13 Nov: redrawn as PDFs by figures/scripts/mk_f23_loss_curves.py from data/loss_curves_student_e30.csv and _e60.csv.
 \begin{figure}[!p]
 \centering
 \begin{subfigure}[t]{\linewidth}\centering
-  \includegraphics[width=0.78\linewidth, trim=0 0 0 26, clip]{F23_student_loss_curves_e30.png}
+  \includegraphics[width=\linewidth]{F23_student_loss_curves_e30.pdf}
   \caption{Student, \StudentEpochs{} epochs (reported)}\label{fig:loss-curves-e30}
 \end{subfigure}
 
 \medskip
 \begin{subfigure}[t]{\linewidth}\centering
-  \includegraphics[width=0.78\linewidth, trim=0 0 0 26, clip]{F23_student_loss_curves_e60.png}
+  \includegraphics[width=\linewidth]{F23_student_loss_curves_e60.pdf}
   \caption{60-epoch student}\label{fig:loss-curves-e60}
 \end{subfigure}
 \caption[Training curves of the 30- and 60-epoch students]{Training curves of the student and the 60-epoch
-student. Top: the training loss terms per epoch (log scale); bottom: the PVE evaluated every \LossEvalEvery{} epochs
+student. Left: the training loss terms per epoch (log scale); right: the PVE evaluated every \LossEvalEvery{} epochs
 during training on the AnnyOne holdout monitor (the synthetic test set, not a validation set) and on the
 \LossValImages{} 3DPW validation images. The holdout monitor still falls over the last 20\,\% of the epochs, while the
 3DPW validation PVE is flat.}
