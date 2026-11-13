@@ -1,4 +1,4 @@
-% Revised 12 Nov 2026 (REVISION_BRIEF_2026-11-12.md).
+% Revised 12 Nov 2026 (REVISION_BRIEF_2026-11-12.md); 13 Nov.
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
@@ -6,9 +6,9 @@ This thesis addresses multi-person whole-body human mesh recovery from a single 
 named shape parameters include age, at reduced inference cost. No real images with Anny labels exist,
 and the large Vision Transformer encoders of accurate single-shot models are expensive.
 
-For real-image supervision, the SMPL labels of 3DPW are converted to Anny by fitting corresponding joints. A ViT-L teacher based on
-Multi-HMR is trained on synthetic AnnyOne images and converted 3DPW with two corrections: head-anchor targets
-consistent with the decoder and a fixed rotation correction of four output bones. A ViT-B student inherits the
+For real-image supervision, 3DPW's SMPL labels are converted to Anny by fitting corresponding joints. A ViT-L teacher based on
+Multi-HMR is trained on synthetic AnnyOne images and converted 3DPW with corrected head-anchor targets
+and a fixed rotation correction of four output bones. A ViT-B student inherits the
 teacher's prediction heads through a learned projector and is distilled from the teacher's features and outputs.
 For video, temporal filtering and alignment to detected 2D landmarks run at inference time.
 
@@ -17,12 +17,12 @@ teacher and runs \SpeedRatioStudent{} times faster, but is less accurate: its pe
 \StudentPVE\,mm on held-out AnnyOne images and \StudentThreeDPW\,mm on converted 3DPW, against \FinalPVE{} and
 \FinalThreeDPW\,mm for the teacher. On 3DPW its PVE is lower than that of the released Multi-HMR-Anny checkpoint
 (the released baseline, \NAVERThreeDPW\,mm), which was not trained on the converted labels. Neither longer training
-nor another distillation temperature closes the gap. The teacher's detection recall on real
-photographs falls with the number of people per image (\CrowdFinalTwoRec\,\% with two, \CrowdFinalNinePlusRec\,\%
+nor another distillation temperature closes the gap. An ablation finds no measurable effect of the
+distillation losses, whereas training with the transferred teacher heads lowers the 3DPW PVE by \AblNoTeachDiffTP\,mm.
+The teacher's detection recall on real photographs falls with crowd size (\CrowdFinalTwoRec\,\% with two, \CrowdFinalNinePlusRec\,\%
 with nine or more). On a walking video, filtering and alignment visibly steady
 the output and improve its placement (qualitative, without ground truth).
 
 The synthetic test set is a small holdout of \MethodHoldoutN{} images without children, the real-image labels are
-converted rather than measured, every model was trained once, and the contribution of distillation was not isolated
-by an ablation. Detection recall in crowds and body shape on real photographs were analysed for the teacher only;
-the teacher separates children from adults better than the initial model but not reliably.
+converted rather than measured, and every model was trained once. Crowd recall and body shape on real photographs were analysed for the teacher only,
+which separates children from adults better than the initial model but not reliably.

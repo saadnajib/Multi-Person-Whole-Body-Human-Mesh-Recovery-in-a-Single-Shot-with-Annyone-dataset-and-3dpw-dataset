@@ -67,8 +67,10 @@ video filter and alignment; the pretrained backbone weights come from the releas
   of the teacher's prediction heads, which read its features through a learned projector, and imitates the teacher's
   features and outputs.
 \item \textbf{An evaluation under one protocol.} All models are evaluated with the same labels and settings, with
-  pose, placement and shape assessed separately, ablations of the teacher corrections, sensitivity
-  analyses of training length and temperature, and detection recall by the number of people per image.
+  pose, placement and shape assessed separately, ablations of the teacher corrections, an ablation that separates
+  the distillation losses from the transferred teacher heads (Section~\ref{sec:res-kd-ablation}), sensitivity
+  analyses of training length and temperature on validation data, and detection recall by the number of people per
+  image.
 \item \textbf{A video pipeline.} The pose, shape and position of each tracked person are filtered over time, and
   position and depth are aligned to detected 2D landmarks, without retraining (Section~\ref{sec:method-temporal}). The student and the released baseline are compared on
   the same frames.

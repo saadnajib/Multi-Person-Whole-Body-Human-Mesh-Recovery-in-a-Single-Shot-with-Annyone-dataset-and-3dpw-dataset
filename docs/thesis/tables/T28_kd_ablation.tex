@@ -1,28 +1,30 @@
 % T28 Distillation ablation (Section 5.3, sec:res-kd-ablation). New 12 Nov 2026 (supervisor feedback: ViT-B without
 % distillation, same data and schedule). Rows: reported student (numbers_results.tex \Student...); the temperature
-% sweep's repeat of T = 4 (numbers_nov.tex \KDFour..., data/kd_temperature_sweep.csv); two ablation arms submitted
-% 12 Nov (REVISION_BRIEF section 5): (a) distillation losses off, teacher heads copied; (b) no teacher (no losses,
-% no head copy). Fix pass 12 Nov (fallback F1). Second review (defect 3): the submission of the two arms is not
-% confirmed (no job ids); the arms are implemented but had produced no result at hand-in; cells read "no result".
+% sweep's repeat of T = 4 (numbers_nov.tex \KDFour..., data/kd_temperature_sweep.csv); the two ablation arms
+% (numbers_rev.tex \AblNoKD..., \AblNoTeach...; data/kd_ablation_table.csv; data/CLUSTER_ANSWERS.md "13 Nov: exp10
+% results" A: jobs 3744297, 3744307, last checkpoint, own bone correction estimated after training); teacher
+% (numbers_results.tex \Final...). 13 Nov: design table turned into a results table with MPJPE columns.
+% Holdout: holdout protocol, 100 images; 3DPW test: 3DPW protocol, 8,190 images.
 \begin{table}[!tbp]
 \centering\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lccrrrr@{}}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}>{\raggedright}p{3.0cm}ccrrrrrr@{}}
 \toprule
- & & & \multicolumn{2}{c}{AnnyOne holdout} & \multicolumn{2}{c@{}}{3DPW test} \\
-\cmidrule(lr){4-5}\cmidrule(l){6-7}
-Model & \shortstack{Distillation\\losses} & \shortstack{Teacher\\heads} & PVE & PA-PVE & PVE & PA-PVE \\
+ & & & \multicolumn{3}{c}{AnnyOne holdout} & \multicolumn{3}{c@{}}{3DPW test} \\
+\cmidrule(lr){4-6}\cmidrule(l){7-9}
+Model & \shortstack{Distillation\\losses} & \shortstack{Teacher\\heads} & PVE & PA-PVE & MPJPE & PVE & PA-PVE & MPJPE \\
 \midrule
-Student (reported)              & yes & yes & \StudentPVE & \StudentPAPVE & \StudentThreeDPW & \StudentPAThreeDPW \\
-Student, repeat run             & yes & yes & \KDFourHold & \KDFourHoldPA & \KDFourTP & \KDFourTPPA \\
-Without distillation losses     & no  & yes & \multicolumn{4}{c@{}}{no result} \\
-Without teacher                 & no  & no  & \multicolumn{4}{c@{}}{no result} \\
+Student (reported)          & yes & yes & \StudentPVE & \StudentPAPVE & \StudentMPJPE & \StudentThreeDPW & \StudentPAThreeDPW & \StudentMPJPEThreeDPW \\
+Student, repeat run         & yes & yes & \KDFourHold & \KDFourHoldPA & \KDFourHoldMPJPE & \KDFourTP & \KDFourTPPA & \KDFourTPMPJPE \\
+Without distillation losses & no  & yes & \AblNoKDHold & \AblNoKDHoldPA & \AblNoKDHoldMPJPE & \AblNoKDTP & \AblNoKDTPPA & \AblNoKDTPMPJPE \\
+Without teacher             & no  & no  & \AblNoTeachHold & \AblNoTeachHoldPA & \AblNoTeachHoldMPJPE & \AblNoTeachTP & \AblNoTeachTPPA & \AblNoTeachTPMPJPE \\
 \midrule
-Teacher (ViT-L)& --  & --  & \FinalPVE & \FinalPAPVE & \FinalThreeDPW & \FinalPAThreeDPW \\
+Teacher (ViT-L)             & --  & --  & \FinalPVE & \FinalPAPVE & \FinalMPJPE & \FinalThreeDPW & \FinalPAThreeDPW & \FinalMPJPEThreeDPW \\
 \bottomrule
 \end{tabular}
-\caption[Distillation ablation: design]{Design of the distillation ablation: ViT-B models with the student's data,
-schedule and architecture, with and without the teacher's distillation losses and copied heads (errors in mm). The repeat run is
-the $T = \MethodKDTemp$ run of the temperature sweep and indicates the run-to-run difference of one setting.}
+\caption[Distillation ablation]{Distillation ablation: ViT-B models with the student's data, schedule and backbone
+initialisation, with and without the distillation losses and the transferred teacher heads (errors in mm, last
+checkpoint, one run each). The repeat run is the $T = \MethodKDTemp$ run of the temperature sweep and indicates the
+difference between two runs of one configuration.}
 \label{tab:kd-ablation}
 \end{table}

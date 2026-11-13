@@ -1,4 +1,5 @@
 % Revised 12 November 2026 (REVISION_BRIEF_2026-11-12.md): four-question conclusion, compact future work.
+% 13 Nov: distillation-ablation result in the conclusion; future work on head transfer and distillation targets.
 \chapter{Conclusion and future work}
 \label{ch:conclusion}
 
@@ -15,12 +16,15 @@ inference-time temporal filtering and landmark alignment were added for video.
 The student has \ParamRatioStudent{} times fewer parameters than its teacher and ran \SpeedRatioStudent{} times
 faster, at a higher error: \StudentThreeDPW{} against \FinalThreeDPW\,mm PVE on converted 3DPW, outside the
 95\,\% retention thresholds set in advance. Its 3DPW PVE is lower than that of the released baseline, trained
-on different data, and neither longer training nor another distillation temperature closed the gap.
+on different data, and neither longer training nor another distillation temperature closed the gap. In this
+configuration the distillation losses had no measurable effect on accuracy, whereas a ViT-B model trained without
+the teacher was clearly less accurate; the student is therefore a ViT-B model with heads transferred from the teacher,
+and its accuracy is owed to these heads rather than to the distillation losses.
 For the teacher, detection recall on real photographs falls as the number of people per image grows.
 On video, filtering and alignment produced visibly steadier and better placed output.
 
-Unresolved are the cause of the accuracy gap, the contribution of distillation (ablation not completed),
-the student's recall and shape on real photographs (not evaluated), the teacher's shape for children and men,
+Unresolved are the cause of the accuracy gap, the separate roles of the head copy, its freeze and the bone
+correction, the student's recall and shape on real photographs (not evaluated), the teacher's shape for children and men,
 the compression of predicted depth and a learned temporal model. The evaluation is bounded by a small synthetic holdout, single runs and the absence of a fairly
 trained baseline (Section~\ref{sec:disc-limitations}).
 
@@ -34,8 +38,9 @@ several people, timed end to end, would follow. A learned temporal model (Sectio
 open.
 
 \paragraph{Accuracy at reduced cost.}
-Finishing the distillation ablation would show what distillation contributes; other loss weights, other forms of
-feature transfer and more real images per batch could narrow the gap. A released baseline fine-tuned on the same
+Separating the head transfer from its warm-up freeze and from the teacher's bone correction would show which part
+carries the teacher's benefit. Other distillation targets, such as other feature layers or loss weights, and more
+real images per batch could narrow the gap. A released baseline fine-tuned on the same
 converted 3DPW data would separate the effect of architecture and distillation from that of the training data.
 
 \paragraph{Real-image shape.}

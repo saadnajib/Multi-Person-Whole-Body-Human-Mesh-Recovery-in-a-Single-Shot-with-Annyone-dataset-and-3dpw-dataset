@@ -7,6 +7,7 @@
 % (a) distillation losses off, teacher heads still copied; (b) no teacher, no losses, no head copy; submission not confirmed,
 % run names fixed by slurm/experiments/exp10_kd_ablation.sh "RUN NAMES"; not completed at submission, fix pass D1). Student-60 was called "Student, 60 epochs" before 12 Nov. The table key moved from
 % the caption into the paragraph before the table (appendix_a_reproduction.tex, sec:app-names).
+% 13 Nov: ablation rows completed (jobs 3744297, 3744307; CA "13 Nov: exp10 results" A); results in tab:kd-ablation.
 % Same content as docs/model_names.md (for the deck and the handover).
 % Trimmed 19 Oct to one longtable (was two: part 2 held the full flag lists and checkpoint paths; recover with
 % git show 76aa1a4:docs/thesis/tables/T19_model_names.tex). Full flags of Final, Control and the Student: Appendix C;
@@ -95,8 +96,8 @@ the student\newline\textbf{Student} & exp8 \path{student_vitb_from_v5_pc_dist5_b
 the 60-epoch student\newline\textbf{Student-60} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e60}, ep.~59; job 3623342 & as Student & B+p, all & A+P, v23 & as Student, but \StudentSixtyEpochs{} epochs, halved every \LossLRHalfSixty; holdout \StudentSixtyPVE, 3DPW \StudentSixtyThreeDPW\,mm, 95\,\% retention thresholds not met; training-length analysis, not the reported model \\
 the student at temperature $t$\newline\textbf{Student, $T=t$} & exp8 (submitted by exp9) \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT<t>_sweep}; jobs in Table~\ref{tab:runs} & as Student & B+p, all & A+P, v23 & as Student, with feature-distillation temperature $t \in \{1, 2, 4, 8, 16\}$; evaluation after every epoch and validation loss on (both only measure); temperature analysis \\
 \addlinespace
-\multicolumn{6}{@{}l}{\emph{Distillation ablation (implemented, not completed)}} \\
-the student without distillation losses\newline\textbf{Student-noKD} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_nokd}; no result & as Student (teacher heads copied) & B+p, all & A+P, v23 & as Student, with both distillation losses off; arm (a) of Section~\ref{sec:res-kd-ablation} \\
-the ViT-B model without teacher\newline\textbf{ViT-B-noTeacher} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_supervised}; no result & NAVER's \path{multiHMR_672_B} backbone, fresh heads & B+p, all & A+P, v23 & as Student, with no teacher: no distillation losses, no head copy or freeze, no bone correction in training; arm (b) of Section~\ref{sec:res-kd-ablation} \\
+\multicolumn{6}{@{}l}{\emph{Distillation ablation}} \\
+the student without distillation losses\newline\textbf{Student-noKD} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_nokd}, ep.~29; job 3744297 & as Student (teacher heads copied) & B+p, all & A+P, v23 & as Student, with both distillation losses off; holdout \AblNoKDHold, 3DPW \AblNoKDTP\,mm, 95\,\% retention thresholds not met; arm (a), results in Table~\ref{tab:kd-ablation} \\
+the ViT-B model without teacher\newline\textbf{ViT-B-noTeacher} & exp8 \path{student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_supervised}, ep.~29; job 3744307 & NAVER's \path{multiHMR_672_B} backbone, fresh heads & B+p, all & A+P, v23 & as Student, with no teacher: no distillation losses, no head copy or freeze, no bone correction in training; holdout \AblNoTeachHold, 3DPW \AblNoTeachTP\,mm, 95\,\% retention thresholds not met; arm (b), results in Table~\ref{tab:kd-ablation} \\
 \end{longtable}
 \endgroup

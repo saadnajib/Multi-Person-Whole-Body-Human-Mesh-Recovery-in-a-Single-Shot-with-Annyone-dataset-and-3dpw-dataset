@@ -14,6 +14,7 @@
 % and sweep-validation TODO removed; protocol names with the V1/V0 mapping line; "recipe" -> training configuration.
 % 6 Nov additions: exp9 header; exp8_distill_vitb.sh:257, :932, :1142 (seed only in the bone-fix trace; train.py
 % has no manual_seed); docs/video_inference.md:36-60, :387-440; demo_video.py:826-843, :911-926. Pending: F6-F8.
+% 13 Nov: sweep validation values and ablation runs (jobs 3744297, 3744307) completed; data/CLUSTER_ANSWERS.md "13 Nov".
 
 \chapter{Model names, runs and reproduction}
 \label{app:reproduction}
@@ -102,9 +103,13 @@ project folder on the cluster. The log of job $j$ is \path{logs/<log name>_}$j$\
 
 Of the \KDSweepArms{} temperature-sweep jobs (submitted 6 November), four completed; the $T = \KDSweepMaxT$ job
 (3717598) trained to the end, but its post-training evaluation failed on a network time-out, so it has no final table.
-The per-temperature validation values of the sweep were logged during training but had not been retrieved when this
-thesis was handed in. The two arms of the distillation ablation are implemented (launcher in Table~\ref{tab:runs}, flags in
-Appendix~\ref{app:flags}) but had produced no result when this thesis was handed in and contribute no number.
+The final-epoch validation values of all five runs, including the $T = \KDSweepMaxT$ run, were read from the training logs by
+\path{scripts/analysis/sweep_validation_table.py} (Table~\ref{tab:sweep-validation}). The two runs of the distillation
+ablation (jobs 3744297 and 3744307) were submitted together on 12 November by
+\path{slurm/experiments/exp10_kd_ablation.sh} (record \path{logs/exp10_kd_ablation_20261112_225014.txt}, commit
+\texttt{7b7edf1}) and completed after about six hours each; their results are in Table~\ref{tab:kd-ablation}. Their
+inference times are not reported, since they share the student's architecture and the second job was timed under a
+different load.
 
 \input{tables/T13_runs}
 

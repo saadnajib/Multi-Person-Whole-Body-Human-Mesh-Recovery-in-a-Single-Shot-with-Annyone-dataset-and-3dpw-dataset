@@ -36,9 +36,49 @@
 
 % --- Model-selection protocol (exp8_distill_vitb.sh header; data/CLUSTER_ANSWERS.md "6 Nov: loss curves")
 \newcommand{\SelValImages}{300}               % 3DPW validation images of the in-training evaluation
-\newcommand{\SelThirtyValPVE}{87.8}           % mm, in-training 3DPW-validation PVE at epoch 30, reported student (87.75)
+\newcommand{\SelThirtyValPVE}{87.7}           % mm, in-training 3DPW-validation PVE at epoch 30, reported student (tensorboard 87.75, 6 Nov; printed 87.7 by scripts/analysis/sweep_validation_table.py, CA 13 Nov B; 87.7 used so that the run-to-run difference -1.5 adds up)
 \newcommand{\SelSixtyValPVE}{86.0}            % mm, same at epoch 60, 60-epoch student (85.96)
 
 % --- Second-round review (defects 9, 12)
 \newcommand{\BarPAPVE}{53.0}                  % mm, holdout PA-PVE threshold as printed by the evaluation job (unrounded teacher / 0.95); data/CLUSTER_ANSWERS.md:154
 \newcommand{\RHAUCNeckPilot}{0.613}           % child-vs-adult AUC, neck pilot (exp6, bone correction + 2-epoch fine-tune); docs/handover.md:894, :1687 (3611285_1:25-33)
+
+% --- 13 Nov 2026: exp10 results. Source for all macros below: data/CLUSTER_ANSWERS.md "13 Nov: exp10 results";
+%     data/kd_ablation_table.csv (A) and data/sweep_validation_table.csv (B). All values in mm unless stated.
+% A. Distillation ablation (launcher record logs/exp10_kd_ablation_20261112_225014.txt; jobs 3744297, 3744307)
+\newcommand{\AblNoKDHold}{118.2}\newcommand{\AblNoKDHoldPA}{79.7}\newcommand{\AblNoKDHoldMPJPE}{125.3}\newcommand{\AblNoKDHoldRec}{85.0}   % without distillation losses, holdout (holdout protocol); CA 13 Nov A
+\newcommand{\AblNoKDTP}{110.0}\newcommand{\AblNoKDTPPA}{71.6}\newcommand{\AblNoKDTPMPJPE}{111.6}\newcommand{\AblNoKDTPRec}{100.0}   % same, 3DPW test (8,190 images); CA 13 Nov A
+\newcommand{\AblNoKDRootErr}{911.7}   % holdout root error, without distillation losses; CA 13 Nov A
+\newcommand{\AblNoTeachHold}{122.6}\newcommand{\AblNoTeachHoldPA}{81.0}\newcommand{\AblNoTeachHoldMPJPE}{130.0}\newcommand{\AblNoTeachHoldRec}{85.4}   % without teacher, holdout; CA 13 Nov A
+\newcommand{\AblNoTeachTP}{116.7}\newcommand{\AblNoTeachTPPA}{79.1}\newcommand{\AblNoTeachTPMPJPE}{123.1}\newcommand{\AblNoTeachTPRec}{99.0}   % without teacher, 3DPW test; CA 13 Nov A
+\newcommand{\AblNoTeachRootErr}{799.5}   % holdout root error, without teacher; CA 13 Nov A
+\newcommand{\AblNoKDValPVE}{86.1}\newcommand{\AblNoKDValPA}{61.2}\newcommand{\AblNoKDValMPJPE}{85.1}\newcommand{\AblNoKDValHold}{122.9}   % final-epoch in-training validation (3DPW val 300 images; holdout monitor); CA 13 Nov A
+\newcommand{\AblNoTeachValPVE}{91.5}\newcommand{\AblNoTeachValPA}{66.7}\newcommand{\AblNoTeachValMPJPE}{97.3}\newcommand{\AblNoTeachValHold}{131.9}   % same, without teacher; CA 13 Nov A
+\newcommand{\AblTaskLossRep}{48.40}\newcommand{\AblTaskLossNoKD}{48.25}\newcommand{\AblTaskLossNoTeach}{50.14}   % final-epoch validation loss, supervised ("task") part, 3DPW val; CA 13 Nov A
+\newcommand{\AblFeatLossRep}{13.0}\newcommand{\AblFeatLossNoKD}{306.0}   % final-epoch feature-distillation term on 3DPW val (monitor only for the arm without losses); CA 13 Nov A
+\newcommand{\AblOutLossRep}{10.4}\newcommand{\AblOutLossNoKD}{11.8}     % final-epoch output-distillation term, same; CA 13 Nov A
+\newcommand{\AblRunDiffTPMPJPE}{0.5}   % |repeat - reported| 3DPW MPJPE (111.5 vs 112.0); CA 13 Nov A
+\newcommand{\AblRunDiffVal}{1.5}       % |repeat - reported| 3DPW-val PVE (86.2 vs 87.7); CA 13 Nov A and B
+\newcommand{\AblNoKDDiffHold}{1.1}\newcommand{\AblNoKDDiffHoldMPJPE}{1.1}   % without losses minus repeat, holdout PVE / MPJPE (+); CA 13 Nov A
+\newcommand{\AblNoKDDiffTP}{0.1}\newcommand{\AblNoKDDiffTPMPJPE}{0.1}       % same, 3DPW PVE (-0.1) / MPJPE (+0.1); CA 13 Nov A
+\newcommand{\AblNoKDDiffVal}{0.2}      % same, 3DPW-val PVE (-0.2); CA 13 Nov A (from unrounded values; rounded table gives -0.1; not used in the text)
+\newcommand{\AblNoTeachDiffHold}{5.5}\newcommand{\AblNoTeachDiffHoldMPJPE}{5.8}   % without teacher minus repeat, holdout PVE / MPJPE (+); CA 13 Nov A
+\newcommand{\AblNoTeachDiffTP}{6.6}\newcommand{\AblNoTeachDiffTPPA}{7.1}\newcommand{\AblNoTeachDiffTPMPJPE}{11.6}   % same, 3DPW test PVE / PA-PVE / MPJPE (+); CA 13 Nov A
+\newcommand{\AblNoTeachDiffVal}{5.2}   % same, 3DPW-val PVE (+); CA 13 Nov A (from unrounded values; rounded table gives 5.3; not used in the text)
+\newcommand{\AblTeachVsLossTP}{6.7}\newcommand{\AblTeachVsLossTPMPJPE}{11.5}\newcommand{\AblTeachVsLossHold}{4.5}   % without teacher minus without losses: 3DPW PVE, MPJPE; holdout PVE (+); CA 13 Nov A (holdout 4.5 from unrounded values; rounded table gives 4.4; not used in the text)
+% B. Validation values of the temperature sweep, final epoch (scripts/analysis/sweep_validation_table.py); CA 13 Nov B
+%    per T: 3DPW-val PVE / PA-PVE / MPJPE; holdout monitor PVE; best 3DPW-val PVE; its epoch; final minus best
+\newcommand{\SwOneVal}{86.7}\newcommand{\SwOneValPA}{61.2}\newcommand{\SwOneValMPJPE}{85.6}\newcommand{\SwOneHold}{119.4}\newcommand{\SwOneBest}{85.4}\newcommand{\SwOneBestEp}{29}\newcommand{\SwOneGap}{1.2}
+\newcommand{\SwTwoVal}{87.7}\newcommand{\SwTwoValPA}{61.4}\newcommand{\SwTwoValMPJPE}{86.7}\newcommand{\SwTwoHold}{121.2}\newcommand{\SwTwoBest}{86.3}\newcommand{\SwTwoBestEp}{29}\newcommand{\SwTwoGap}{1.4}
+\newcommand{\SwFourVal}{86.2}\newcommand{\SwFourValPA}{60.7}\newcommand{\SwFourValMPJPE}{85.2}\newcommand{\SwFourHold}{118.4}\newcommand{\SwFourBest}{85.0}\newcommand{\SwFourBestEp}{29}\newcommand{\SwFourGap}{1.3}
+\newcommand{\SwEightVal}{85.2}\newcommand{\SwEightValPA}{60.8}\newcommand{\SwEightValMPJPE}{84.0}\newcommand{\SwEightHold}{122.8}\newcommand{\SwEightBest}{84.9}\newcommand{\SwEightBestEp}{29}\newcommand{\SwEightGap}{0.3}
+\newcommand{\SwSixteenVal}{85.5}\newcommand{\SwSixteenValPA}{60.4}\newcommand{\SwSixteenValMPJPE}{84.1}\newcommand{\SwSixteenHold}{123.4}\newcommand{\SwSixteenBest}{85.1}\newcommand{\SwSixteenBestEp}{29}\newcommand{\SwSixteenGap}{0.4}
+\newcommand{\SelThirtyValPA}{60.6}\newcommand{\SelThirtyValMPJPE}{86.9}   % reported student, final epoch, 3DPW val PA-PVE / MPJPE; CA 13 Nov B
+\newcommand{\SelSixtyValPA}{60.2}\newcommand{\SelSixtyValMPJPE}{85.0}     % 60-epoch student, same; CA 13 Nov B
+\newcommand{\SelSixtyBest}{84.8}\newcommand{\SelSixtyBestEp}{55}\newcommand{\SelSixtyGap}{1.2}   % 60-epoch student, best 3DPW-val PVE, its epoch, final minus best; CA 13 Nov B
+\newcommand{\SwValSpread}{2.6}         % max - min 3DPW-val PVE over T = 1, 2, 4, 8, 16 (87.7 at T=2 - 85.2 at T=8; 2.6 from unrounded values as printed by the script); CA 13 Nov B
+\newcommand{\SwValLowT}{8}\newcommand{\SwValHighT}{2}   % temperatures with the lowest / highest 3DPW-val PVE; CA 13 Nov B
+\newcommand{\SwValEightOverFour}{1.0}  % 3DPW-val PVE, T=4 repeat minus T=8 (86.2 - 85.2); CA 13 Nov B
+\newcommand{\SwValMaxGap}{1.4}         % largest final-minus-best 3DPW-val PVE over all runs (T=2); CA 13 Nov B
+\newcommand{\SwValRecall}{100}         % percent, 3DPW-val recall in every run; CA 13 Nov B
+

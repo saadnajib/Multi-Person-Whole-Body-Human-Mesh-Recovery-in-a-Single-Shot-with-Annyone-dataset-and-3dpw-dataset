@@ -1,25 +1,40 @@
 % T29 Sensitivity analyses judged on validation data (Section 5.4, sec:res-training-length / sec:res-kd-temperature).
-% New 12 Nov 2026. In-training evaluation at the LAST epoch of each run (last checkpoint, no early stopping).
+% New 12 Nov 2026. In-training evaluation at the LAST epoch of each run (last checkpoint, no early stopping), 3DPW
+% protocol with the training bone correction; 300 images of the 3DPW validation split; AnnyOne holdout as monitor.
 % 30 / 60 epochs: 3DPW validation \SelThirtyValPVE, \SelSixtyValPVE (numbers_rev.tex); holdout monitor
 % \ResSelThirtyHoldPVE, \ResSelSixtyHoldPVE (numbers_results.tex, rounded from \LossThirtyHoldLast, \LossSixtyHoldLast).
-% Temperature sweep (exp9; jobs 3717507, 3717530, 3717538, 3717581, 3717598): per-epoch validation logged by the runs,
-% values not available at submission: rows removed in the fix pass (fallback F2); add them back here if they arrive.
+% 13 Nov: the five sweep rows restored (exp9; jobs 3717507, 3717530, 3717538, 3717581, 3717598) from
+% scripts/analysis/sweep_validation_table.py (data/CLUSTER_ANSWERS.md "13 Nov: exp10 results" B;
+% data/sweep_validation_table.csv; macros \Sw... and \Sel... in numbers_rev.tex). The reported run was evaluated every
+% 5 epochs; its best epoch is not given by the script output. Recall 100 % in every row (\SwValRecall).
 \begin{table}[!tbp]
 \centering\footnotesize
-\begin{tabular}{@{}lrrrr@{}}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrrrrr@{}}
 \toprule
-Run & $T$ & Epochs & \shortstack[r]{3DPW validation\\PVE (mm)} & \shortstack[r]{AnnyOne holdout monitor$^a$\\PVE (mm)} \\
+ & & \multicolumn{3}{c}{3DPW val., last epoch} & \shortstack[r]{Holdout\\monitor$^a$} & \multicolumn{2}{c@{}}{3DPW val.\ PVE} \\
+\cmidrule(lr){3-5}\cmidrule(l){7-8}
+Run & Epochs & PVE & PA-PVE & MPJPE & PVE & best (epoch) & last $-$ best \\
 \midrule
-Student (reported)   & \MethodKDTemp & \StudentEpochs      & \SelThirtyValPVE & \ResSelThirtyHoldPVE \\
-60-epoch student     & \MethodKDTemp & \StudentSixtyEpochs & \SelSixtyValPVE  & \ResSelSixtyHoldPVE \\
+\multicolumn{8}{@{}l}{\emph{Temperature sweep}} \\
+$T = 1$                   & \StudentEpochs & \SwOneVal & \SwOneValPA & \SwOneValMPJPE & \SwOneHold & \SwOneBest{} (\SwOneBestEp) & \SwOneGap \\
+$T = 2$                   & \StudentEpochs & \SwTwoVal & \SwTwoValPA & \SwTwoValMPJPE & \SwTwoHold & \SwTwoBest{} (\SwTwoBestEp) & \SwTwoGap \\
+$T = 4$ (repeat run)      & \StudentEpochs & \SwFourVal & \SwFourValPA & \SwFourValMPJPE & \SwFourHold & \SwFourBest{} (\SwFourBestEp) & \SwFourGap \\
+$T = 8$                   & \StudentEpochs & \SwEightVal & \SwEightValPA & \SwEightValMPJPE & \SwEightHold & \SwEightBest{} (\SwEightBestEp) & \SwEightGap \\
+$T = \KDSweepMaxT$        & \StudentEpochs & \SwSixteenVal & \SwSixteenValPA & \SwSixteenValMPJPE & \SwSixteenHold & \SwSixteenBest{} (\SwSixteenBestEp) & \SwSixteenGap \\
+\addlinespace
+\multicolumn{8}{@{}l}{\emph{Training length} ($T = \MethodKDTemp$, evaluated every \LossEvalEvery{} epochs)} \\
+Student (reported)        & \StudentEpochs      & \SelThirtyValPVE & \SelThirtyValPA & \SelThirtyValMPJPE & \ResSelThirtyHoldPVE & -- & -- \\
+60-epoch student          & \StudentSixtyEpochs & \SelSixtyValPVE  & \SelSixtyValPA  & \SelSixtyValMPJPE  & \ResSelSixtyHoldPVE & \SelSixtyBest{} (\SelSixtyBestEp) & \SelSixtyGap \\
 \bottomrule
-\multicolumn{5}{@{}p{0.9\linewidth}@{}}{\scriptsize $^a$The holdout is the synthetic test set; its monitored value is
+\multicolumn{8}{@{}p{0.95\linewidth}@{}}{\scriptsize $^a$The holdout is the synthetic test set; its monitored value is
 given for reference and is not a validation value (in-training evaluation; the standalone evaluation of
-Table~\ref{tab:student} gives \StudentTestHundredPVE\,mm).}
+Table~\ref{tab:student} gives \StudentTestHundredPVE\,mm for the reported student). Differences quoted in the text
+are computed from the unrounded values.}
 \end{tabular}
-\caption[Training length on validation data]{Training length judged on validation data: PVE at the last epoch on
-the \SelValImages{} 3DPW validation images and on the AnnyOne holdout as monitored during training (3DPW protocol).
-The per-temperature validation values of the sweep were logged during training but had not been retrieved when this
-thesis was handed in.}
+\caption[Temperature and training length on validation data]{Temperature sweep and training length judged on
+validation data: errors in mm at the last epoch on the \SelValImages{} 3DPW validation images and on the AnnyOne
+holdout as monitored during training (3DPW protocol), with the lowest 3DPW validation PVE of each run and its epoch.
+All runs use the student's configuration and differ only in $T$ or in the number of epochs.}
 \label{tab:sweep-validation}
 \end{table}

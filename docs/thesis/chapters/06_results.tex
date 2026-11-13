@@ -7,7 +7,8 @@
 \label{ch:results}
 
 This chapter evaluates the ViT-B student, the model intended for deployment, against its ViT-L teacher and the
-released baseline. It then describes the design of the ablation intended to measure what distillation contributes, the sensitivity to training length and distillation temperature, detection recall in
+released baseline. It then measures what distillation contributes with an ablation, judges the sensitivity to
+training length and distillation temperature on validation data, and reports detection recall in
 crowded images, and the student on a photograph and a video. The last section analyses the teacher.
 
 \section{Experimental setup}
@@ -38,7 +39,8 @@ $T = \MethodKDTemp$ and the loss weights were taken over from the earlier ViT-S 
 evaluation uses the last checkpoint of a run; there is no early stopping, and no checkpoint or hyperparameter of the
 student was selected on the 3DPW test set. The in-training validation set is 3DPW validation; the reported student
 ends at \SelThirtyValPVE\,mm PVE there. The \StudentSixtyEpochs-epoch run and the temperature sweep were trained
-afterwards as sensitivity analyses (Section~\ref{sec:res-sensitivity}) and changed no setting. Two limitations
+afterwards as sensitivity analyses, judged on the 3DPW validation images (Section~\ref{sec:res-sensitivity}), and
+changed no setting. Two limitations
 remain. The AnnyOne holdout serves both as in-training monitor and as the reported synthetic test set, and the two
 teacher corrections were adopted on diagnostics measured on it (Appendix~\ref{ch:diagnostics}); the choice of the
 teacher over its two shape-masked variants was made on Relative Human (Section~\ref{sec:res-mask}). Neither set is
@@ -105,29 +107,46 @@ the video of Section~\ref{sec:res-video}.
 
 % -----------------------------------------------------------------------------
 
-\section{Distillation ablation: design and status}
+\section{Contribution of distillation}
 \label{sec:res-kd-ablation}
 
 \input{tables/T28_kd_ablation}
 
 The student differs from a plain ViT-B fine-tune in two ways: it is trained with the feature and output
-distillation losses, and its heads are initialised by copying the teacher's. Two ablation arms with the student's
-data, schedule and architecture separate these contributions. The first arm switches the distillation losses off
-but still copies the teacher heads, keeps the warm-up freeze of the copied heads and uses the teacher's bone
-correction; its difference to the student isolates the effect of the losses. The second arm uses no teacher at all,
-neither losses nor copied heads; its difference to the student measures the whole contribution of the teacher.
-Because nothing is copied, the second arm also has no warm-up freeze and trains without the teacher's bone
-correction; its own correction is estimated after training, as for the student. Table~\ref{tab:kd-ablation} lists
-both arms next to the reported student and the repeat of the same setting from the temperature sweep, which
-indicates how far two runs of one configuration differ.
+distillation losses (Section~\ref{sec:method-kd}), and its heads are initialised by copying the teacher's. Two
+ablation models with the student's data, schedule, architecture and backbone initialisation separate these
+mechanisms (Table~\ref{tab:kd-ablation}). The student without distillation losses switches both losses off but still
+copies the teacher heads, freezes them for the first \MethodStudentFreeze{} epochs and trains with the teacher's bone
+correction. The ViT-B model without teacher uses no teacher at all: no distillation losses and no copied heads, hence
+no freeze and no teacher bone correction in training. Each model was trained once and is evaluated at its last
+checkpoint with its own bone correction, estimated after training as for the student. The repeat run of the student
+indicates the difference between two runs of one configuration: \KDNoiseHold\,mm PVE on the holdout, \KDNoiseTP\,mm
+PVE and \AblRunDiffTPMPJPE\,mm MPJPE on 3DPW.
 
-Both arms are implemented (flags in Appendix~\ref{app:flags}) but had produced no result when this thesis was handed
-in, so Table~\ref{tab:kd-ablation} gives their design only. The contribution of distillation is therefore not established:
-the student's accuracy relative to the teacher and to the released baseline may be due to the distillation losses,
-the copied teacher heads, the pretrained ViT-B backbone or the training data, and this thesis cannot separate them.
-The individual loss terms of the student were not switched off one at a time either. No claim is made that the
-distilled student is more accurate than a ViT-B model trained on the same data and schedule without a teacher
-(Section~\ref{sec:disc-limitations}).
+Removing the distillation losses changes no error by more than this run-to-run difference. Against the repeat run,
+the holdout PVE and MPJPE rise by \AblNoKDDiffHold{} and \AblNoKDDiffHoldMPJPE\,mm, the 3DPW PVE falls by
+\AblNoKDDiffTP\,mm and the 3DPW MPJPE rises by \AblNoKDDiffTPMPJPE\,mm. In this configuration the distillation losses have no measurable
+effect on accuracy. The feature loss nevertheless does what it is built for: on the 3DPW validation images its term
+at the last epoch is \AblFeatLossRep{} for the repeat run, which was trained with it, and \AblFeatLossNoKD{} for the
+model without losses, for which it was only measured (output term: \AblOutLossRep{} against \AblOutLossNoKD). The
+closer agreement of the student's features with the teacher's does not translate into a lower error.
+
+Removing the teacher altogether raises the 3DPW test PVE by \AblNoTeachDiffTP\,mm, the PA-PVE by
+\AblNoTeachDiffTPPA\,mm and the MPJPE by \AblNoTeachDiffTPMPJPE\,mm against the repeat run, and the holdout PVE by
+\AblNoTeachDiffHold\,mm, several times the run-to-run difference. Against the model without losses, which keeps the
+transferred heads, the 3DPW differences are \AblTeachVsLossTP\,mm PVE and \AblTeachVsLossTPMPJPE\,mm MPJPE. The
+benefit of the teacher therefore comes through the transferred output heads, together with their warm-up freeze and
+the teacher's bone correction in training, and not through the distillation losses. The in-training validation
+agrees: at the last epoch the 3DPW validation PVE is \SwFourVal{} for the repeat run, \AblNoKDValPVE{} without losses
+and \AblNoTeachValPVE\,mm without teacher, and the supervised part of the validation loss is \AblTaskLossRep,
+\AblTaskLossNoKD{} and \AblTaskLossNoTeach. Both ablation models miss the same retention thresholds as the student.
+Their holdout root errors (\AblNoKDRootErr{} and \AblNoTeachRootErr\,mm, against \ResStudentRootErr\,mm for the
+student) do not follow the ordering of the other errors and are not interpreted.
+
+The student is therefore accurately described as a ViT-B model with output heads transferred from the teacher; its
+accuracy is not attributed to the distillation losses. The limits of this ablation (single runs, the three parts of
+head transfer not separated, one schedule and one loss configuration) are stated in
+Section~\ref{sec:disc-limitations}.
 
 % -----------------------------------------------------------------------------
 
@@ -136,11 +155,10 @@ distilled student is more accurate than a ViT-B model trained on the same data a
 
 \input{tables/T29_sweep_validation}
 
-The training-length analysis is judged on the 3DPW validation images, at the last epoch of each run
-(Table~\ref{tab:sweep-validation}). For the temperature sweep the validation values were logged during training but had not been
-retrieved when this thesis was handed in, so only the final test-set evaluation of each run can be shown. This is a limitation of the
-analysis, not of the selection: $T$ was fixed before training (Section~\ref{sec:res-selection}), and the sweep
-changed no setting.
+Both sensitivity analyses are judged on the \SelValImages{} 3DPW validation images, at the last epoch of each run
+(Table~\ref{tab:sweep-validation}); the test-set evaluation of each run follows as its final evaluation and is not
+used for selection. $T$ and the training length were fixed before training (Section~\ref{sec:res-selection}), and
+neither analysis changed a setting.
 
 \subsection{Training length}
 \label{sec:res-training-length}
@@ -158,9 +176,9 @@ training loss follow the learning-rate halvings (every \LossLRHalfThirty{} and \
 Over the last 20\,\% of the epochs the training loss (\LossThirtyTrainSlope{} and \LossSixtyTrainSlope\,\% per
 epoch) and the holdout PVE (\LossThirtyHoldSlope{} and \LossSixtyHoldSlope\,\% per epoch) still fall in both runs,
 but the 3DPW validation PVE is flat (\LossThirtyValSlope{} and \LossSixtyValSlope\,\% per epoch). At the last epoch it
-is \SelThirtyValPVE\,mm after 30 and \SelSixtyValPVE\,mm after 60 epochs (Table~\ref{tab:sweep-validation}). This
-difference is smaller than the \NoisePVE\,mm by which two identical pilots differed on the holdout, but the
-run-to-run variation of the 3DPW validation PVE itself was not measured. Longer training thus clearly improves the
+is \SelThirtyValPVE\,mm after 30 and \SelSixtyValPVE\,mm after 60 epochs (Table~\ref{tab:sweep-validation}), a
+difference comparable to the \AblRunDiffVal\,mm by which two runs of the 30-epoch configuration differ on the same
+images; the 60-epoch run ends \SelSixtyGap\,mm above its best evaluation. Longer training thus clearly improves the
 synthetic monitor and changes the real validation images only slightly; the 30 epochs fixed in advance were kept,
 since the longer run was a sensitivity analysis and not a selection step.
 
@@ -183,19 +201,25 @@ student's real-image gap. No other training length was evaluated.
 The temperature $T$ sets how strongly the feature distillation softens the channel distributions before the student
 is compared with the teacher (Section~\ref{sec:bg-kd}). Since $T = \MethodKDTemp$ was taken over without a search,
 \KDSweepArms{} runs with $T \in \{1, 2, 4, 8, \KDSweepMaxT\}$ and the reported training configuration otherwise test
-how much the result depends on it; the output distillation has no temperature. The sweep runs evaluate after every
-epoch and log a validation loss; these values were logged during training but had not been retrieved when this
-thesis was handed in. Because the sweep trains
+how much the result depends on it; the output distillation has no temperature. Because the sweep trains
 $T = \MethodKDTemp$ again, it also provides a second run of the reported setting.
 
-The final evaluation (Figure~\ref{fig:kd-temperature}; values in Table~\ref{tab:kd-temperature},
-Appendix~\ref{app:teacher-extra}) is nearly flat. Over $T = 1$ to 8 the holdout PVE moves by \KDHoldRange\,mm
-(\KDOneHold{} to \KDFourHold\,mm) and the 3DPW PVE by \KDTPRange\,mm (\KDTwoTP{} to \KDFourTP\,mm). On the holdout
-this is below the \KDNoiseHold\,mm by which the sweep's own $T = 4$ run differs from the reported one. On 3DPW the sweep spans \KDTPRange\,mm while the one
-repeated pair agrees to \KDNoiseTP\,mm; a single repeat does not establish an effect of $T$, and the formally lowest
-combined error at $T = \KDPickT$ is not interpreted as an improvement. No temperature brings the student close to the error thresholds; at $T = 8$ the holdout recall
-(\KDEightHoldRec\,\%) also falls just below its threshold of \ResBarRecall\,\%. The run with $T = \KDSweepMaxT$ has no
-test evaluation for technical reasons (Appendix~\ref{app:reproduction}).
+On the validation images (Table~\ref{tab:sweep-validation}) the last-epoch 3DPW PVE spans \SwValSpread\,mm over the
+five temperatures, from \SwEightVal\,mm at $T = \SwValLowT$ to \SwTwoVal\,mm at $T = \SwValHighT$, while the two runs
+with $T = \MethodKDTemp$ differ by \AblRunDiffVal\,mm on the same images. Selection on validation data would have
+favoured $T = \SwValLowT$, by \SwValEightOverFour\,mm over the repeat run with $T = \MethodKDTemp$; this difference is
+not interpreted, and the value fixed beforehand is kept. The holdout monitor does not rank the temperatures in the
+same order, and recall is \SwValRecall\,\% in every run. In every run the last epoch is at most \SwValMaxGap\,mm
+above the best epoch, so using the last checkpoint without early stopping costs little.
+
+The test-set evaluation (Figure~\ref{fig:kd-temperature}; values in Table~\ref{tab:kd-temperature},
+Appendix~\ref{app:teacher-extra}) is a secondary view and is consistent with this. Over $T = 1$ to 8 the holdout PVE
+moves by \KDHoldRange\,mm (\KDOneHold{} to \KDFourHold\,mm), below the \KDNoiseHold\,mm by which the two runs with
+$T = \MethodKDTemp$ differ, and the 3DPW PVE by \KDTPRange\,mm (\KDTwoTP{} to \KDFourTP\,mm); the formally lowest
+combined test error at $T = \KDPickT$ is not interpreted as an improvement. No temperature brings the student close
+to the error thresholds; at $T = 8$ the holdout recall (\KDEightHoldRec\,\%) also falls just below its threshold of
+\ResBarRecall\,\%. The run with $T = \KDSweepMaxT$ completed training and has validation values, but no test
+evaluation for technical reasons (Appendix~\ref{app:reproduction}).
 
 Neither temperature nor training length changes the 3DPW result or brings the student within the retention
 thresholds; longer training lowers the synthetic holdout error by \StudentSixtyGainHoldout\,mm. The 30-epoch student

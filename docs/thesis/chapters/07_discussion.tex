@@ -1,4 +1,5 @@
 % Revised 12 November 2026 (REVISION_BRIEF_2026-11-12.md): answers, interpretation, limitations by reference.
+% 13 Nov: distillation ablation and sweep validation values (data/CLUSTER_ANSWERS.md "13 Nov: exp10 results").
 \chapter{Discussion}
 \label{ch:discussion}
 
@@ -25,16 +26,22 @@ holdout and \StudentThreeDPW{} against \FinalThreeDPW\,mm on converted 3DPW, mis
 (\NAVERThreeDPW\,mm) and its PA-PVE slightly higher (\StudentPAThreeDPW{} against \NAVERPAThreeDPW\,mm); this
 compares trained systems, not architectures (Section~\ref{sec:res-fairness}).
 
-What distillation contributes remains unanswered (Section~\ref{sec:res-kd-ablation}): the student's accuracy cannot
-be attributed to distillation rather than to the initialisation, the copied heads or the real-image data.
+Of the two mechanisms that pass the teacher on to the student, only head transfer is shown to help
+(Section~\ref{sec:res-kd-ablation}). Without the distillation losses no error changes by more than the difference
+between two runs of one configuration, whereas a ViT-B model trained without teacher has a 3DPW test PVE
+\AblNoTeachDiffTP\,mm and an MPJPE \AblNoTeachDiffTPMPJPE\,mm higher than a repeat run of the student. The feature loss brings the student's
+features closer to the teacher's without lowering the error. The answer to this question is therefore threefold: a
+model with \ParamRatioStudent{} times fewer parameters was obtained; its gap to the teacher remains, outside the
+retention thresholds; and its advantage over a ViT-B model without teacher comes from the transferred heads, not
+from the distillation losses.
 
-Training length and temperature were fixed in advance, and the sensitivity runs changed no setting
-(Section~\ref{sec:res-selection}). Doubling the training length lowered the 3DPW validation PVE only from
+Training length and temperature were fixed in advance, and the sensitivity runs, judged on the 3DPW validation
+images, changed no setting (Section~\ref{sec:res-selection}). Doubling the training length lowered the 3DPW validation PVE only from
 \SelThirtyValPVE{} to \SelSixtyValPVE\,mm and the holdout PVE to \StudentSixtyPVE\,mm, without improving the 3DPW
-test PVE (\StudentSixtyThreeDPW\,mm; Section~\ref{sec:res-training-length}). Across temperatures from 1 to 8 the 3DPW
-test PVE differed by at most \KDTPRange\,mm, which one repeated pair cannot establish as an effect of the temperature
-(Section~\ref{sec:res-kd-temperature}); the validation values of the sweep were logged during training but had not
-been retrieved when this thesis was handed in. Untested causes of the gap are the smaller backbone, the 3DPW share per
+test PVE (\StudentSixtyThreeDPW\,mm; Section~\ref{sec:res-training-length}). Across the five temperatures the 3DPW
+validation PVE differed by at most \SwValSpread\,mm, against \AblRunDiffVal\,mm between two runs with the same
+temperature, and the last checkpoint was at most \SwValMaxGap\,mm above the best epoch
+(Section~\ref{sec:res-kd-temperature}). Untested causes of the gap are the smaller backbone, the 3DPW share per
 batch and the teacher's 3DPW error.
 
 \paragraph{Multi-person detection.}
@@ -71,13 +78,14 @@ reported separately.
 \begin{itemize}
 \item \textbf{Evaluation data.} The synthetic test set is the last \MethodHoldoutN{} AnnyOne images, without
   children, which also served as the in-training monitor; it supports no broad generalisation claim. The 3DPW labels
-  are converted, and the 3DPW errors are not comparable with published results (Section~\ref{sec:data-limits}). The
-  temperature analysis rests on test-set values only (Section~\ref{sec:res-sensitivity}).
+  are converted, and the 3DPW errors are not comparable with published results (Section~\ref{sec:data-limits}).
 \item \textbf{Baseline fairness.} No baseline was trained on the same data, so a lower PVE does not show a better
   architecture (Section~\ref{sec:res-fairness}).
-\item \textbf{Distillation ablation.} The two ablation arms, ViT-B models trained on the same data and schedule
-  without distillation, are implemented but had produced no result when this thesis was handed in, and the student's loss terms were not switched off one at a time, so the contribution of distillation is
-  not established (Section~\ref{sec:res-kd-ablation}).
+\item \textbf{Distillation ablation.} Each ablation model was trained once. The head copy, its warm-up freeze and
+  the teacher's bone correction in training were not separated from each other. The model without teacher was
+  trained with the schedule and learning rate chosen for transferred heads, which may disadvantage freshly
+  initialised heads. No other loss weights or feature layers were tried for distillation, so the finding concerns
+  this configuration, not distillation in general (Section~\ref{sec:res-kd-ablation}).
 \item \textbf{Single runs.} Each model was trained once without a fixed seed (Section~\ref{sec:method-variation}).
 \item \textbf{Shape and crowd recall.} Shape and crowd recall on real photographs were evaluated on the teacher
   only; the student, the deployed model, was not evaluated on Relative Human. The child--adult separation improves but remains unreliable, and the predicted gender of men

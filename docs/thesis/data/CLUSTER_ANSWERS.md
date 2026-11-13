@@ -202,24 +202,11 @@ urllib.error.HTTPError 504 Gateway Timeout (a download), so no final table. Hold
 Noise (sweep T4 - reported T4): holdout PVE -2.5, 3DPW 0.0 mm. Teacher re-measured 73.7 / 88.9-89.0 in every arm.
 Reading: the temperature has no effect beyond the run-to-run noise; T=4 is kept.
 
-## PENDING exp10 (supervisor feedback 12 Nov: no-distillation ablation, validation-based sweep reporting, student on Relative Human; `docs/experiments_plan.md` "exp10")
+## PENDING exp10, remaining items (supervisor feedback 12 Nov; `docs/experiments_plan.md` "exp10")
 
-Commands: `docs/experiments_plan.md`, section "exp10", block **Commands** (after `git pull`, `conda activate multihmr`).
-Submitted 12 Nov [to be confirmed by the author: paste the job ids]. Send back:
+Items 1 (sweep validation table) and 2 (distillation ablation) of the original request arrived on 13 Nov and are
+recorded in the section "13 Nov: exp10 results" below. Still pending, send back:
 
-1. **Now, no GPU**: the stdout of `scripts/analysis/sweep_validation_table.py` over the five sweep runs + the reported
-   e30 run + the e60 run, and `results/experiments/exp10_kd_ablation/validation/sweep_validation_table.{csv,md}`
-   (final-epoch 3DPW-validation and holdout metrics per T incl. T 16, best epoch, the "lowest at T = ..., spread ..."
-   lines, the two "training length" lines).
-2. **Ablation arms** (`bash slurm/experiments/exp10_kd_ablation.sh`): the launcher output (two `submitted: job <id>`
-   lines) or `logs/exp10_kd_ablation_<date>.txt`; per job `logs/exp8_distill_vitb_<jobid>.out` (start-up lines,
-   `NaN/Inf gradient steps skipped`, the `=== 6. FINAL TABLE` block) and, from
-   `results/experiments/exp8_distill_vitb/student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_{nokd,supervised}/`:
-   `final_table.json`, `settings.txt`, `train_lines.log`, `bone_fix.json`, `holdout_student/summary.json`,
-   `eval_3dpw_test_student.log`. Then the stdout of `scripts/analysis/kd_ablation_table.py` and
-   `results/experiments/exp10_kd_ablation/kd_ablation_table.{csv,md}`, and
-   `results/experiments/exp10_kd_ablation/loss_curves/*_{nokd,supervised}_loss_curves.{png,pdf,csv}` with the printed
-   slopes / VERDICT lines of `plot_loss_curves.py`.
 3. **T 16 sweep arm** (`POST_ONLY=1 KD_T=16 ... RUN=..._kdT16_sweep bash slurm/experiments/exp8_distill_vitb.sh`):
    `logs/exp8_distill_vitb_<jobid>.out` (FINAL TABLE block), `<RUN>/final_table.json`, and the re-run collector
    `scripts/analysis/kd_temperature_sweep.py` (stdout + `results/experiments/exp9_kd_temperature/kd_temperature_sweep.{csv,png,pdf}`),
@@ -231,3 +218,87 @@ Submitted 12 Nov [to be confirmed by the author: paste the job ids]. Send back:
    Then the stdout of `scripts/analysis/rh_recall_by_crowd.py student=... final=...` and
    `results/analysis/rh_recall_by_crowd/rh_recall_by_crowd.{csv,md}`.
    The released baseline (`multiHMR_672_L_anny.pt`) cannot be run through this evaluation (original model class).
+
+## 13 Nov: exp10 results (distillation ablation; validation values of the temperature sweep)
+
+### A. Distillation ablation (launcher record `logs/exp10_kd_ablation_20261112_225014.txt`)
+
+Submitted 12 Nov 2026, 22:50, git 7b7edf1, by `slurm/experiments/exp10_kd_ablation.sh`. Both jobs COMPLETED, about
+6 h each. Same data, schedule (30 epochs), architecture and backbone initialisation as the student; one run each; last
+checkpoint; each arm's own bone correction estimated after training.
+
+- Arm 1, the student without distillation losses: run `student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_nokd`,
+  job 3744297. Both distillation losses off; teacher heads still copied, frozen for the first 5 epochs, teacher bone
+  correction used in training.
+- Arm 2, the ViT-B model without teacher: run `student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_supervised`,
+  job 3744307. No teacher at all (no distillation losses, no head copy, no freeze, no teacher bone correction in
+  training).
+
+Final test numbers (holdout protocol on the 100 AnnyOne holdout images; 3DPW test, 8,190 images, 3DPW protocol),
+PVE / PA-PVE / MPJPE (mm) / recall (%):
+
+| Model | AnnyOne holdout | 3DPW test |
+|---|---|---|
+| Student (reported, job 3614191) | 119.6 / 80.8 / 127.2 / 85.4 | 110.1 / 71.8 / 112.0 / 99.0 |
+| Student, repeat run (T=4 sweep run) | 117.1 / 81.4 / 124.2 / 85.8 | 110.1 / 72.0 / 111.5 / 100.0 |
+| Without distillation losses (3744297) | 118.2 / 79.7 / 125.3 / 85.0 | 110.0 / 71.6 / 111.6 / 100.0 |
+| Without teacher (3744307) | 122.6 / 81.0 / 130.0 / 85.4 | 116.7 / 79.1 / 123.1 / 99.0 |
+| Teacher | 73.7 / 50.3 / 77.9 / 87.0 | 89.0 / 57.6 / 88.3 / 99.0 |
+
+Holdout root error: without distillation losses 911.7 mm; without teacher 799.5 mm.
+
+In-training validation at the final epoch (3DPW protocol; 300 3DPW validation images; AnnyOne holdout as monitor):
+3DPW-val PVE, PA-PVE, MPJPE; holdout PVE (mm):
+- Student reported: 87.7, 60.6, 86.9; 122.8
+- Repeat: 86.2, 60.7, 85.2; 118.4
+- Without distillation losses: 86.1, 61.2, 85.1; 122.9
+- Without teacher: 91.5, 66.7, 97.3; 131.9
+
+Validation loss at the final epoch on the 3DPW validation images: supervised part ("task") 48.40 (repeat), 48.25
+(without distillation losses), 50.14 (without teacher). Feature-distillation term measured as a monitor: 13.0 for the
+repeat (trained with it) against 306.0 for the arm without distillation losses; output-distillation term 10.4 against
+11.8.
+
+Differences (mm):
+- repeat minus reported (run-to-run): holdout PVE -2.5; 3DPW PVE 0.0; 3DPW MPJPE -0.5; 3DPW-val PVE -1.5.
+- without losses minus repeat: holdout PVE +1.1, MPJPE +1.1; 3DPW PVE -0.1, MPJPE +0.1; 3DPW-val PVE -0.2.
+- without teacher minus repeat: holdout PVE +5.5, MPJPE +5.8; 3DPW PVE +6.6, PA-PVE +7.1, MPJPE +11.6; 3DPW-val PVE +5.2.
+- without teacher minus without losses: 3DPW PVE +6.7, MPJPE +11.5; holdout PVE +4.5.
+
+Both arms fail the same 95 % retention thresholds as the student. Inference times of the two arms are not reported
+(same architecture as the student; the second job was timed under different load).
+
+Reading: removing the distillation losses changes no accuracy value by more than the run-to-run difference (no
+measurable effect in this configuration; the feature term keeps the student's features close to the teacher's, 13.0
+against 306.0, without lowering the error). Removing the teacher altogether costs 6.6 mm PVE and 11.6 mm MPJPE on 3DPW
+test (5.5 mm PVE on the holdout): the benefit of the teacher comes through the transferred heads (with warm-up freeze
+and teacher bone correction in training), not through the distillation losses. Not separated: head copy, freeze and
+bone correction; one run per arm; the arm without teacher used the schedule and learning rate chosen for transferred
+heads; no other distillation weights or feature layers were tried.
+
+### B. Validation values of the temperature sweep (`scripts/analysis/sweep_validation_table.py`)
+
+Final epoch; 3DPW protocol with the training bone correction; 300 images of the 3DPW validation split; AnnyOne holdout
+as monitor. Columns: 3DPW-val PVE / PA-PVE / MPJPE; holdout PVE; best 3DPW-val PVE (epoch); final minus best (mm).
+
+| Run | 3DPW-val PVE / PA-PVE / MPJPE | holdout PVE | best 3DPW-val PVE (epoch) | final - best |
+|---|---|---|---|---|
+| T=1 | 86.7 / 61.2 / 85.6 | 119.4 | 85.4 (29) | +1.2 |
+| T=2 | 87.7 / 61.4 / 86.7 | 121.2 | 86.3 (29) | +1.4 |
+| T=4 (sweep run) | 86.2 / 60.7 / 85.2 | 118.4 | 85.0 (29) | +1.3 |
+| T=8 | 85.2 / 60.8 / 84.0 | 122.8 | 84.9 (29) | +0.3 |
+| T=16 | 85.5 / 60.4 / 84.1 | 123.4 | 85.1 (29) | +0.4 |
+| Reported student (T=4, 30 epochs, evaluated every 5 epochs) | 87.7 / 60.6 / 86.9 | 122.8 | - | - |
+| 60-epoch student | 86.0 / 60.2 / 85.0 | 113.0 | 84.8 (55) | +1.2 |
+
+Spread over the five temperatures on 3DPW-val PVE: 2.6 mm (lowest T=8, highest T=2). Two runs of the same T=4
+configuration differ by 1.5 mm on the same images. Recall 100 % everywhere. The T=16 run has validation values
+(training finished) but still no test evaluation.
+
+Reading: the temperature changes the 3DPW validation PVE by at most 2.6 mm against 1.5 mm between two identical runs;
+selection on validation would have favoured T=8 by 1.0 mm over the T=4 repeat, which is not interpreted; T=4 was fixed
+beforehand and is kept; the last checkpoint is at most 1.4 mm above the best epoch.
+
+Note: the reported student's 3DPW-val PVE was recorded on 6 Nov from tensorboard as 87.75 (thesis macro
+`\SelThirtyValPVE` = 87.8); the script prints 87.7 (the same value 87.75 formatted to one decimal by Python, which rounds the binary value 87.7499... down).
+The thesis now uses 87.7 throughout, so that the differences above (repeat minus reported -1.5) add up.

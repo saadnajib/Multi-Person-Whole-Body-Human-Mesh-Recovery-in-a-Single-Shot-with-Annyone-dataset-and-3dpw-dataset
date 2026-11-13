@@ -1,0 +1,6 @@
+model,run,job,distillation_losses,teacher_heads,holdout_pve,holdout_pa_pve,holdout_mpjpe,holdout_recall,holdout_root_err,threedpw_pve,threedpw_pa_pve,threedpw_mpjpe,threedpw_recall,val3dpw_pve,val3dpw_pa_pve,val3dpw_mpjpe,val_holdout_pve,val_loss_task,val_loss_feat_kd,val_loss_out_kd,source
+student_reported,student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30,3614191,yes,yes,119.6,80.8,127.2,85.4,,110.1,71.8,112.0,99.0,87.7,60.6,86.9,122.8,,,,CLUSTER_ANSWERS.md 13 Nov (A)
+student_repeat,student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_kdT4_sweep,3717538,yes,yes,117.1,81.4,124.2,85.8,,110.1,72.0,111.5,100.0,86.2,60.7,85.2,118.4,48.40,13.0,10.4,CLUSTER_ANSWERS.md 13 Nov (A)
+without_distillation_losses,student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_nokd,3744297,no,yes,118.2,79.7,125.3,85.0,911.7,110.0,71.6,111.6,100.0,86.1,61.2,85.1,122.9,48.25,306.0,11.8,CLUSTER_ANSWERS.md 13 Nov (A)
+without_teacher,student_vitb_from_v5_pc_dist5_bonefix_v23_e10_00009_e30_supervised,3744307,no,no,122.6,81.0,130.0,85.4,799.5,116.7,79.1,123.1,99.0,91.5,66.7,97.3,131.9,50.14,,,CLUSTER_ANSWERS.md 13 Nov (A)
+teacher,Final,,,,73.7,50.3,77.9,87.0,,89.0,57.6,88.3,99.0,,,,,,,,CLUSTER_ANSWERS.md 13 Nov (A)

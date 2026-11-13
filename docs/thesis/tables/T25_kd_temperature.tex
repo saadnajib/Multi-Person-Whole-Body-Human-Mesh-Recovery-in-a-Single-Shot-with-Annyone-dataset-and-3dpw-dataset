@@ -3,9 +3,10 @@
 % 3717507, 3717530, 3717538, 3717581). T = 16 (job 3717598) trained to the end but stopped in a post-training step on an
 % HTTP 504 Gateway Timeout, so it has no final numbers. Run-to-run noise: sweep T 4 minus reported T 4 (collector).
 % 12 Nov fix pass: moved to Appendix H (app:teacher-extra), label kept; the run-to-run note is in Section 5.4.
+% 13 Nov: T = 16 wording "no test evaluation" (its validation values are in tab:sweep-validation).
 \begin{table}[!tbp]
 \centering\footnotesize
-\newcommand{\Pend}{\multicolumn{8}{c@{}}{no result: the run stopped after training on a network time-out}}%
+\newcommand{\Pend}{\multicolumn{8}{c@{}}{no test evaluation: the post-training step failed on a network time-out}}%
 \setlength{\tabcolsep}{4pt}%
 \begin{tabular}{@{}lrrrrrrrr@{}}
 \toprule
@@ -29,7 +30,7 @@ softens the channel softmax of the projected backbone tokens before the KL term,
 distillation is an L1 term without temperature. Everything else is the reported training configuration (\StudentEpochs{} epochs).}
 \end{tabular}
 \caption[Distillation temperature sweep: final test evaluation]{Test-set evaluation of the student for each
-distillation temperature $T$ (errors in mm, recall in \%; $T = \KDSweepMaxT$ without a result).
+distillation temperature $T$ (errors in mm, recall in \%; $T = \KDSweepMaxT$ without a test evaluation).
 These values are reported for completeness and were not used to select $T$, which was fixed in advance
 (Section~\ref{sec:res-selection}).}
 \label{tab:kd-temperature}
