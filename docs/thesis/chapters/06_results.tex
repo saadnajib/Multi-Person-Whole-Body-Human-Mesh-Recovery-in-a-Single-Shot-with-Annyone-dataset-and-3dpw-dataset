@@ -112,41 +112,25 @@ the video of Section~\ref{sec:res-video}.
 
 \input{tables/T28_kd_ablation}
 
-The student differs from a plain ViT-B fine-tune in two ways: it is trained with the feature and output
-distillation losses (Section~\ref{sec:method-kd}), and its heads are initialised by copying the teacher's. Two
-ablation models with the student's data, schedule, architecture and backbone initialisation separate these
-mechanisms (Table~\ref{tab:kd-ablation}). The student without distillation losses switches both losses off but still
-copies the teacher heads, freezes them for the first \MethodStudentFreeze{} epochs and trains with the teacher's bone
-correction. The ViT-B model without teacher uses no teacher at all: no distillation losses and no copied heads, hence
-no freeze and no teacher bone correction in training. Each model was trained once and is evaluated at its last
-checkpoint with its own bone correction, estimated after training as for the student. The repeat run of the student
-indicates the difference between two runs of one configuration: \KDNoiseHold\,mm PVE on the holdout, \KDNoiseTP\,mm
-PVE and \AblRunDiffTPMPJPE\,mm MPJPE on 3DPW.
+The teacher reaches the student by two routes: its output heads are copied into the student, and two distillation
+losses pull the student's features and outputs towards the teacher's (Section~\ref{sec:method-kd}). Two ablation
+models with the student's data, schedule, architecture and backbone initialisation separate these routes
+(Table~\ref{tab:kd-ablation}); each was trained once and is evaluated like the student. A repeat run of the student
+indicates how far two runs of one configuration differ: \KDNoiseHold\,mm PVE on the holdout, \KDNoiseTP\,mm PVE and
+\AblRunDiffTPMPJPE\,mm MPJPE on 3DPW.
 
-Removing the distillation losses changes no error by more than this run-to-run difference. Against the repeat run,
-the holdout PVE and MPJPE rise by \AblNoKDDiffHold{} and \AblNoKDDiffHoldMPJPE\,mm, the 3DPW PVE falls by
-\AblNoKDDiffTP\,mm and the 3DPW MPJPE rises by \AblNoKDDiffTPMPJPE\,mm. In this configuration the distillation losses have no measurable
-effect on accuracy. The feature loss nevertheless does what it is built for: on the 3DPW validation images its term
-at the last epoch is \AblFeatLossRep{} for the repeat run, which was trained with it, and \AblFeatLossNoKD{} for the
-model without losses, for which it was only measured (output term: \AblOutLossRep{} against \AblOutLossNoKD). The
-closer agreement of the student's features with the teacher's does not translate into a lower error.
-
-Removing the teacher altogether raises the 3DPW test PVE by \AblNoTeachDiffTP\,mm, the PA-PVE by
-\AblNoTeachDiffTPPA\,mm and the MPJPE by \AblNoTeachDiffTPMPJPE\,mm against the repeat run, and the holdout PVE by
-\AblNoTeachDiffHold\,mm, several times the run-to-run difference. Against the model without losses, which keeps the
-transferred heads, the 3DPW differences are \AblTeachVsLossTP\,mm PVE and \AblTeachVsLossTPMPJPE\,mm MPJPE. The
-benefit of the teacher therefore comes through the transferred output heads, together with their warm-up freeze and
-the teacher's bone correction in training, and not through the distillation losses. The in-training validation
-agrees: at the last epoch the 3DPW validation PVE is \SwFourVal{} for the repeat run, \AblNoKDValPVE{} without losses
-and \AblNoTeachValPVE\,mm without teacher, and the supervised part of the validation loss is \AblTaskLossRep,
-\AblTaskLossNoKD{} and \AblTaskLossNoTeach. Both ablation models miss the same retention thresholds as the student.
-Their holdout root errors (\AblNoKDRootErr{} and \AblNoTeachRootErr\,mm, against \ResStudentRootErr\,mm for the
-student) do not follow the ordering of the other errors and are not interpreted.
-
-The student is therefore accurately described as a ViT-B model with output heads transferred from the teacher; its
-accuracy is not attributed to the distillation losses. The limits of this ablation (single runs, the three parts of
-head transfer not separated, one schedule and one loss configuration) are stated in
-Section~\ref{sec:disc-limitations}.
+The teacher contributes clearly. A ViT-B model trained without it is \AblNoTeachDiffTP\,mm worse in PVE,
+\AblNoTeachDiffTPPA\,mm in PA-PVE and \AblNoTeachDiffTPMPJPE\,mm in MPJPE on the 3DPW test set than the repeat run,
+and \AblNoTeachDiffHold\,mm worse in PVE on the holdout, several times the run-to-run difference. This gain is
+already obtained by the model that keeps the transferred heads, with their warm-up freeze and the teacher's bone
+correction in training, but switches both distillation losses off: its errors lie within the run-to-run difference
+of the student's on both datasets (3DPW PVE \AblNoKDTP{} against \KDFourTP\,mm, holdout PVE \AblNoKDHold{} against
+\KDFourHold\,mm), and the 3DPW validation images agree (\AblNoKDValPVE{} against \SwFourVal\,mm). In this
+configuration the distillation losses therefore show no measurable additional effect on accuracy beyond head
+transfer, although the feature loss does align the features as intended (its term on the validation images is
+\AblFeatLossRep{} with the loss and \AblFeatLossNoKD{} without). The finding holds for single runs with one loss
+weighting, one feature layer and one schedule and is not a statement about distillation in general; these limits and
+the unseparated parts of head transfer are discussed in Section~\ref{sec:disc-limitations}.
 
 % -----------------------------------------------------------------------------
 

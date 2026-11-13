@@ -26,14 +26,14 @@ holdout and \StudentThreeDPW{} against \FinalThreeDPW\,mm on converted 3DPW, mis
 (\NAVERThreeDPW\,mm) and its PA-PVE slightly higher (\StudentPAThreeDPW{} against \NAVERPAThreeDPW\,mm); this
 compares trained systems, not architectures (Section~\ref{sec:res-fairness}).
 
-Of the two mechanisms that pass the teacher on to the student, only head transfer is shown to help
-(Section~\ref{sec:res-kd-ablation}). Without the distillation losses no error changes by more than the difference
-between two runs of one configuration, whereas a ViT-B model trained without teacher has a 3DPW test PVE
-\AblNoTeachDiffTP\,mm and an MPJPE \AblNoTeachDiffTPMPJPE\,mm higher than a repeat run of the student. The feature loss brings the student's
-features closer to the teacher's without lowering the error. The answer to this question is therefore threefold: a
+The teacher improves the compact model: a ViT-B model trained without it has a 3DPW test PVE
+\AblNoTeachDiffTP\,mm and an MPJPE \AblNoTeachDiffTPMPJPE\,mm higher than a repeat run of the student
+(Section~\ref{sec:res-kd-ablation}). This gain is obtained by head transfer alone; in the configuration tested, the
+distillation losses add no measurable further effect, although the feature loss brings the student's features
+closer to the teacher's. The answer to this question is therefore threefold: a
 model with \ParamRatioStudent{} times fewer parameters was obtained; its gap to the teacher remains, outside the
-retention thresholds; and its advantage over a ViT-B model without teacher comes from the transferred heads, not
-from the distillation losses.
+retention thresholds; and its advantage over a ViT-B model without teacher is obtained through the transferred heads, with no
+measurable further gain from the distillation losses in this configuration.
 
 Training length and temperature were fixed in advance, and the sensitivity runs, judged on the 3DPW validation
 images, changed no setting (Section~\ref{sec:res-selection}). Doubling the training length lowered the 3DPW validation PVE only from

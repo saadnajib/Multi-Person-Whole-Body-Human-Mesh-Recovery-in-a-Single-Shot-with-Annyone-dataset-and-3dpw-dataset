@@ -17,8 +17,8 @@ teacher and runs \SpeedRatioStudent{} times faster, but is less accurate: its pe
 \StudentPVE\,mm on held-out AnnyOne images and \StudentThreeDPW\,mm on converted 3DPW, against \FinalPVE{} and
 \FinalThreeDPW\,mm for the teacher. On 3DPW its PVE is lower than that of the released Multi-HMR-Anny checkpoint
 (the released baseline, \NAVERThreeDPW\,mm), which was not trained on the converted labels. Neither longer training
-nor another distillation temperature closes the gap. An ablation finds no measurable effect of the
-distillation losses, whereas training with the transferred teacher heads lowers the 3DPW PVE by \AblNoTeachDiffTP\,mm.
+nor another distillation temperature closes the gap. An ablation shows that the teacher lowers the student's 3DPW PVE by \AblNoTeachDiffTP\,mm through its
+transferred heads, with no measurable further effect of the distillation losses in the configuration tested.
 The teacher's detection recall on real photographs falls with crowd size (\CrowdFinalTwoRec\,\% with two, \CrowdFinalNinePlusRec\,\%
 with nine or more). On a walking video, filtering and alignment visibly steady
 the output and improve its placement (qualitative, without ground truth).
